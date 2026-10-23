@@ -1616,6 +1616,49 @@ h2 {
 .folded-live-notice__line + .folded-live-notice__line {
   margin-top: 0.35rem;
 }
+/* Over the input for a player back after their streak ended (see
+   components/WelcomeBackCard.tsx). In the flow, so it pushes the input down
+   rather than covering the drop, and gone once a word is played. */
+.welcome-back-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0 0 0.9rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  font-size: 0.92rem;
+  line-height: 1.4;
+  animation: de-prefix-hint-in 0.18s var(--ease-standard);
+}
+.welcome-back-card__copy {
+  flex: 1;
+}
+.welcome-back-card__title {
+  margin: 0 0 0.2rem;
+  font-weight: 800;
+}
+.welcome-back-card__line {
+  margin: 0;
+}
+.welcome-back-card .welcome-back-card__close {
+  flex: none;
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  margin: -0.3rem -0.4rem -0.3rem 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.welcome-back-card .welcome-back-card__close:hover {
+  color: var(--fg);
+}
 @keyframes de-prefix-hint-in {
   from {
     opacity: 0;

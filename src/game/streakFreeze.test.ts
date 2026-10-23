@@ -10,7 +10,9 @@ import {
   freezesOn,
   recordFreezes,
   savedFreezeCovering,
+  startStreak,
   streakReport,
+  welcomeBack,
 } from "./streakFreeze";
 import type { StreakState } from "./types";
 
@@ -261,5 +263,54 @@ describe("recordFreezes", () => {
   it("forgets days after two months", () => {
     const old = recordFreezes(streakOf({ bankedFreezes: 1 }), "2026-07-01");
     expect(recordFreezes(old, "2026-10-01").freezeHistory).not.toHaveProperty("2026-07-01");
+  });
+});
+
+describe("welcomeBack", () => {
+  const lapsed = { currentStreak: 0, longestStreak: 12, lastCompletedDate: "2026-10-01" };
+
+  it("greets a player whose ended streak once reached 3 days", () => {
+    expect(welcomeBack(streakOf(lapsed), "2026-10-10")).toEqual({
+      best: 12,
+      lastPlayed: "2026-10-01",
+      freeze: true,
+    });
+  });
+
+  it("greets nobody who never reached 3 days, never played, or has a live streak", () => {
+    expect(welcomeBack(streakOf({ ...lapsed, longestStreak: 2 }), "2026-10-10")).toBeNull();
+    expect(welcomeBack(streakOf({ ...lapsed, lastCompletedDate: undefined }), "2026-10-10")).toBeNull();
+    expect(welcomeBack(streakOf({ currentStreak: 4, lastCompletedDate: "2026-10-09" }), "2026-10-10")).toBeNull();
+  });
+
+  it("offers the freeze at most once every 30 days", () => {
+    const given = streakOf({ ...lapsed, welcomeBackFreezeDate: "2026-09-15" });
+    expect(welcomeBack(given, "2026-10-10")?.freeze).toBe(false);
+    expect(welcomeBack(given, "2026-10-15")?.freeze).toBe(true);
+  });
+});
+
+describe("startStreak", () => {
+  it("starts a returning player's streak with one saved freeze, and records the day", () => {
+    const lapsed = streakOf({ currentStreak: 0, longestStreak: 5, lastCompletedDate: "2026-10-01" });
+    expect(startStreak(lapsed, "2026-10-10")).toEqual({
+      bankedFreezes: 1,
+      welcomeBackFreezeDate: "2026-10-10",
+    });
+  });
+
+  it("starts anyone else's with none", () => {
+    const fresh = streakOf({ currentStreak: 0, longestStreak: 0, lastCompletedDate: undefined });
+    expect(startStreak(fresh, "2026-10-10")).toMatchObject({ bankedFreezes: 0 });
+    const recent = streakOf({
+      currentStreak: 0,
+      longestStreak: 5,
+      lastCompletedDate: "2026-10-01",
+      welcomeBackFreezeDate: "2026-10-01",
+    });
+    expect(startStreak(recent, "2026-10-10")).toEqual({
+      bankedFreezes: 0,
+      welcomeBackFreezeDate: "2026-10-01",
+    });
   });
 });

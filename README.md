@@ -936,7 +936,10 @@ anything that matters.
   has ever reached 28 (the cap never goes back down), and the 🔥 turns to
   🧊 while one is covering. There is no free missed day: every missed day
   spends a freeze or ends the streak, and a gap they cannot cover resets
-  the streak to zero. Those checks live in `storage.ts` and `streakFreeze.ts`,
+  the streak to zero. A player who once reached 3 days and comes back after
+  losing a streak sees a "Welcome back" card with their best streak, and the
+  new streak starts with one saved freeze (at most once every 30 days; see
+  `welcomeBack`). Those checks live in `storage.ts` and `streakFreeze.ts`,
   which ignore archive puzzles and clear expired streaks on load. The
   streak board shows each player's streak as their game reports it.
 

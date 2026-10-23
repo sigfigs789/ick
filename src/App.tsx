@@ -13,11 +13,14 @@ import { ConfettiBurst } from "./components/ConfettiBurst";
 import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
 import { ImprovementCelebration } from "./components/ImprovementCelebration";
 import { QuickShareButton } from "./components/QuickShareButton";
+import { WelcomeBackCard } from "./components/WelcomeBackCard";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { isWinningRarity } from "./game/rank";
 import { completedWholeMonth } from "./game/perfectMonth";
+import { welcomeBack } from "./game/streakFreeze";
+import { dismissWelcomeBack, welcomeBackDismissedOn } from "./game/storage";
 import {
   averageImprovement,
   improvementCelebrationDue,
@@ -94,6 +97,18 @@ export default function App() {
   // closed.
   const [shareRequests, setShareRequests] = useState(0);
   useEffect(() => setShareRequests(0), [date]);
+  // A player back after their streak ended (see game/streakFreeze.ts), greeted
+  // on today's puzzle until its first word or until the card is closed --
+  // closed for that day, so a reload does not bring it back.
+  const [welcomeDismissedOn, setWelcomeDismissedOn] = useState(welcomeBackDismissedOn);
+  const welcome =
+    isToday && progress.acceptedWords.length === 0 && welcomeDismissedOn !== date
+      ? welcomeBack(streak, date)
+      : null;
+  const closeWelcome = () => {
+    dismissWelcomeBack(date);
+    setWelcomeDismissedOn(date);
+  };
 
   // The compact share-link code identifies its origin without exposing a
   // long UTM parameter in the result text.
@@ -291,6 +306,12 @@ export default function App() {
         {/* The input sits straight under the drop, so it stays where it is
             as words land below it rather than being pushed down the page by
             each one. */}
+        {welcome && (
+          <WelcomeBackCard
+            welcome={welcome}
+            onDismiss={closeWelcome}
+          />
+        )}
         {guessEntry}
         <GuessLog
           acceptedWords={progress.acceptedWords}
