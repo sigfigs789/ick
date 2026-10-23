@@ -21,6 +21,11 @@ interface Props {
   retryOffered?: boolean;
   /** Spend the retry to see the word (see useDailyPuzzle.revealAnswer). */
   onReveal?: () => void;
+  /**
+   * The word of the day section at all, button or word. False for the hidden
+   * arm of the word of the day experiment (see game/wordOfDay.ts).
+   */
+  wordOfDay?: boolean;
 }
 
 export function DropDisplay({
@@ -30,6 +35,7 @@ export function DropDisplay({
   completed = false,
   retryOffered = false,
   onReveal,
+  wordOfDay = true,
 }: Props) {
   // Recomputed only when the drop itself changes -- a full dictionary scan,
   // so it's not something we want re-running on unrelated re-renders.
@@ -69,7 +75,7 @@ export function DropDisplay({
           </span>
         ))}
       </p>
-      {completed && reveal && hidden && (
+      {wordOfDay && completed && reveal && hidden && (
         <div className="drop-display__reveal">
           <button
             type="button"
@@ -90,7 +96,7 @@ export function DropDisplay({
           />
         </div>
       )}
-      {completed && reveal && !hidden && (
+      {wordOfDay && completed && reveal && !hidden && (
         <div className="drop-display__reveal">
           {definition ? (
             <button

@@ -1,3 +1,5 @@
+import { parseExperiment, type Experiment } from "./experiment";
+
 /**
  * The /analyticsV2 report: what `analytics_v2` returns (see the 2026-10-30
  * migration, which is where every number is defined), read into types.
@@ -96,8 +98,9 @@ export interface Report {
   sources: Source[];
   window: Window;
   scores: { tiers: Tier[]; buckets: Record<number, number> };
-  /** For one arm of the come-back test: how many players it has drawn. Zero on the whole report. */
-  assigned: number;
+  /** The experiments, when they were asked for (see experiment.ts). */
+  wordOfDay?: Experiment | null;
+  comeBack?: Experiment | null;
 }
 
 type Json = Record<string, unknown>;
@@ -198,20 +201,17 @@ export function parseReport(raw: unknown): Report {
         .map((t) => ({ tier: t.tier as string, finished: num(t.finished), shared: num(t.shared), ...rate(t) })),
       buckets: counts(scores.buckets),
     },
-    assigned: num(r.assigned),
   };
 }
 
-/** An arm of the come-back test (see game/comeBackTest.ts). */
-export type Arm = "show" | "hide";
-
-/** The report for the puzzle the reader is on, over everybody or over one arm of the come-back test. */
-export async function fetchReport(today: string, arm?: Arm): Promise<Report> {
-  const response = await fetch(`/api/review?list=analytics-v2&today=${today}${arm ? `&arm=${arm}` : ""}`, {
+/** The report for the puzzle the reader is on, with the experiments when `experiments` asks for them. */
+export async function fetchReport(today: string, experiments = false): Promise<Report> {
+  const response = await fetch(`/api/review?list=analytics-v2&today=${today}${experiments ? "&experiments=1" : ""}`, {
     signal: AbortSignal.timeout(15_000),
     cache: "no-store",
   });
   if (!response.ok) throw new Error(`analytics-v2 ${response.status}`);
   const body = (await response.json()) as Json;
-  return parseReport(body.report);
+  if (!experiments) return parseReport(body.report);
+  return { ...parseReport(body.report), wordOfDay: parseExperiment(body.wordOfDay), comeBack: parseExperiment(body.comeBack) };
 }

@@ -21,16 +21,16 @@ afterEach(() => {
 });
 
 describe("ComeBackCard", () => {
-  it("says the one thing tomorrow is worth to the show arm", async () => {
-    localStorage.setItem("ick:come-back-test", "show");
+  it("says the one thing tomorrow is worth to the shown arm", async () => {
+    localStorage.setItem("ick:come-back-test", "shown");
     render(<ComeBackCard streak={streak} date="2026-10-22" />);
     expect(await screen.findByText(/Tomorrow earns a 🧊 freeze/)).toBeInTheDocument();
     expect(screen.queryByText(/make it a 3-day streak/)).not.toBeInTheDocument();
     expect(tracked).not.toHaveBeenCalled();
   });
 
-  it("shows nothing to the hide arm", async () => {
-    localStorage.setItem("ick:come-back-test", "hide");
+  it("shows nothing to the hidden arm", async () => {
+    localStorage.setItem("ick:come-back-test", "hidden");
     const { container } = render(<ComeBackCard streak={streak} date="2026-10-22" />);
     await Promise.resolve();
     expect(container).toBeEmptyDOMElement();
@@ -40,7 +40,7 @@ describe("ComeBackCard", () => {
     const { unmount } = render(<ComeBackCard streak={streak} date="2026-10-22" />);
     await vi.waitFor(() => expect(tracked).toHaveBeenCalledTimes(1));
     const variant = tracked.mock.calls[0][0];
-    expect(["show", "hide"]).toContain(variant);
+    expect(["shown", "hidden"]).toContain(variant);
     expect(localStorage.getItem("ick:come-back-test")).toBe(variant);
     unmount();
     render(<ComeBackCard streak={streak} date="2026-10-22" />);

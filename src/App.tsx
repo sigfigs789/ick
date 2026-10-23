@@ -19,6 +19,7 @@ import { ComeBackCard } from "./components/ComeBackCard";
 import { WelcomeBackCard } from "./components/WelcomeBackCard";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
+import { useWordOfDay } from "./hooks/useWordOfDay";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { isWinningRarity } from "./game/rank";
 import { celebrationFor } from "./game/celebration";
@@ -99,6 +100,9 @@ export default function App() {
   const [improvement, setImprovement] = useState<Improvement | null>(null);
   const endImprovement = useCallback(() => setImprovement(null), []);
   const sound = useSound();
+  // Half of players never see the word of the day; the draw is the first
+  // finished puzzle, where it would first appear (see game/wordOfDay.ts).
+  const wordOfDayShown = useWordOfDay(progress.completed, date);
   // The share panel stays out of the way until the Share beside the guess
   // count is pressed, which opens it and scrolls to it. Each press bumps the
   // count, so a second press scrolls back to it again. A new puzzle starts
@@ -315,6 +319,7 @@ export default function App() {
             completed={progress.completed}
             retryOffered={retryOffered}
             onReveal={revealAnswer}
+            wordOfDay={wordOfDayShown}
           />
         </PuzzleNav>
         {/* Over the words it is about: a fold rejected live on this puzzle

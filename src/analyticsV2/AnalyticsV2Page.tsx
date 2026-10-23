@@ -2,7 +2,8 @@ import { useCallback, type CSSProperties, type ReactNode } from "react";
 import { ReviewPage } from "../components/ReviewPage";
 import { useReviewList } from "../components/reviewList";
 import { todayDateString } from "../game/date";
-import { fetchReport, type Arm, type Rate, type Report, type Source } from "./report";
+import { fetchReport, type Rate, type Report, type Source } from "./report";
+import { ExperimentView } from "./ExperimentView";
 import {
   addDays,
   average,
@@ -36,22 +37,15 @@ import {
  */
 export function AnalyticsV2Page() {
   const today = todayDateString();
-  // Yesterday's report is only for the scorecard's day-on-day change, and the
-  // arms only for the come-back test, so a failure there leaves those blank
-  // rather than the page.
+  // Yesterday's report is only for the scorecard's day-on-day change, so a
+  // failure there leaves the changes blank rather than the page.
   const load = useCallback(async () => {
-    const [report, before, show, hide] = await Promise.all([
-      fetchReport(today),
-      fetchReport(addDays(today, -1)).catch(() => null),
-      fetchReport(today, "show").catch(() => null),
-      fetchReport(today, "hide").catch(() => null),
-    ]);
-    return [{ report, before, arms: show && hide ? { show, hide } : null }];
+    const [report, before] = await Promise.all([fetchReport(today, true), fetchReport(addDays(today, -1)).catch(() => null)]);
+    return [{ report, before }];
   }, [today]);
   const { rows, state, refreshing, refresh, retry } = useReviewList(load);
   const report = rows[0]?.report;
   const before = rows[0]?.before ?? null;
-  const arms = rows[0]?.arms ?? null;
   return (
     <ReviewPage
       title="Analytics v2"
@@ -64,20 +58,12 @@ export function AnalyticsV2Page() {
       empty="Nobody has played yet."
       isEmpty={!report}
     >
-      {report && <Dashboard report={report} before={before} arms={arms} />}
+      {report && <Dashboard report={report} before={before} />}
     </ReviewPage>
   );
 }
 
-function Dashboard({
-  report,
-  before,
-  arms,
-}: {
-  report: Report;
-  before: Report | null;
-  arms: Record<Arm, Report> | null;
-}) {
+function Dashboard({ report, before }: { report: Report; before: Report | null }) {
   const w = report.window;
   const yesterday = addDays(report.today, -1);
   const saturday = lastSaturday(report.today);
@@ -115,16 +101,43 @@ function Dashboard({
         <Scorecard rows={scorecard(report)} before={before ? scorecard(before) : []} />
       </Section>
 
-      <Section
-        title="Come-back test"
-        note={
-          "The line under the streak that says what tomorrow is worth, shown to half of players and hidden from the other half. " +
-          "Each arm is the scorecard over its own players, counted from the day they were drawn: the first time " +
-          "they banked a word on today's puzzle."
-        }
-      >
-        {arms ? <ArmScorecard arms={arms} /> : <p className="review__meta av2__note">The arms could not be loaded.</p>}
-      </Section>
+      {report.wordOfDay && (
+        <Section
+          title="Experiment: word of the day"
+          note="Whether showing the word of the day under a finished puzzle moves the scorecard. Over players."
+        >
+          <ExperimentView
+            experiment={report.wordOfDay}
+            subject="the word of the day"
+            about={
+              <>
+                Half of players never see the word under a finished puzzle&rsquo;s drop. Each is drawn once, the first
+                time they finish a puzzle. Try either arm with <code>?word-of-day=hidden</code> or <code>=shown</code>;
+                a forced arm is not counted.
+              </>
+            }
+          />
+        </Section>
+      )}
+
+      {report.comeBack && (
+        <Section
+          title="Experiment: come-back tip"
+          note="Whether the line under the streak saying what tomorrow is worth moves the scorecard. Over players."
+        >
+          <ExperimentView
+            experiment={report.comeBack}
+            subject="the come-back tip"
+            about={
+              <>
+                Half of players never see the line under the streak that says what tomorrow is worth. Each is drawn
+                once, the first time it would appear: a word banked on today&rsquo;s puzzle. Try either arm with{" "}
+                <code>?come-back=hidden</code> or <code>=shown</code>; a forced arm, or a tester, is not counted.
+              </>
+            }
+          />
+        </Section>
+      )}
 
       <Section title="Acquisition" note="Last 28 days.">
         <Tiles
@@ -326,64 +339,6 @@ function Scorecard({ rows, before }: { rows: Row[]; before: Row[] }) {
         {rows.map((r) => (
           <li key={r.metric}>
             <strong>{r.metric.replace("*", "")}:</strong> {r.detail}. {r.how}
-          </li>
-        ))}
-      </ul>
-    </>
-  );
-}
-
-const ARMS: { arm: Arm; name: string }[] = [
-  { arm: "show", name: "Tips shown (50%)" },
-  { arm: "hide", name: "No tips (50%)" },
-];
-
-/** The scorecard once per arm of the come-back test, side by side. */
-function ArmScorecard({ arms }: { arms: Record<Arm, Report> }) {
-  const rows = { show: scorecard(arms.show), hide: scorecard(arms.hide) };
-  return (
-    <>
-      <div className="av2__table-wrap">
-        <table className="av2__table av2__scorecard">
-          <thead>
-            <tr>
-              <th scope="col">Metric</th>
-              {ARMS.map(({ arm, name }) => (
-                <th key={arm} scope="col">
-                  {name}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.show.map((r, i) => (
-              <tr key={r.metric}>
-                <th scope="row">{r.metric}</th>
-                {ARMS.map(({ arm }) => {
-                  const row = rows[arm][i];
-                  return (
-                    <td key={arm} className="av2__standing">
-                      <strong className="av2__score">{row.value ?? "–"}</strong>
-                      <span className={`av2__pill av2__pill--${row.standing ?? "early"}`}>
-                        {row.standing ? STANDING_NAMES[row.standing] : "Too early"}
-                      </span>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <ul className="av2__notes">
-        {ARMS.map(({ arm, name }) => (
-          <li key={arm}>
-            <strong>{name}:</strong> {count(arms[arm].assigned)} players drawn.{" "}
-            {rows[arm]
-              .slice(0, 3)
-              .map((r) => `${r.metric}: ${r.detail}`)
-              .join("; ")}
-            .
           </li>
         ))}
       </ul>
