@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import App from "./App";
-import { trackLeaderboardJoined, trackModeAssigned, trackUiVariantAssigned } from "./analytics";
+import { trackLeaderboardJoined, trackModeAssigned } from "./analytics";
 import { AppHeader } from "./components/AppHeader";
 import { AnalyticsPage } from "./components/AnalyticsPage";
 import { AnalyticsV2Page } from "./analyticsV2/AnalyticsV2Page";
@@ -25,7 +25,6 @@ import { usesFreeformRules } from "./game/dictionary";
 import { modeIsChosen } from "./game/mode";
 import { useGameMode } from "./hooks/useGameMode";
 import { takeFreshAssignment } from "./game/onboarding";
-import { takeFreshUiAssignment } from "./game/uiVariant";
 import { syncHistory } from "./game/leaderboard";
 import { hasJoined, joinBoard } from "./game/player";
 import { playedPuzzleCount } from "./game/storage";
@@ -224,8 +223,6 @@ export function Root() {
   useEffect(() => {
     const assignment = takeFreshAssignment();
     if (assignment) trackModeAssigned(assignment);
-    const ui = takeFreshUiAssignment();
-    if (ui) trackUiVariantAssigned(ui);
   }, []);
 
   /**

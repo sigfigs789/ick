@@ -20,9 +20,8 @@ interface Props {
 }
 
 /**
- * Share from the top of the guess log, on the new play screen (see
- * game/uiVariant.ts). One tap copies the result and opens the share panel
- * below, which shows what was copied and the choices behind it.
+ * Share from the top of the guess log, on the play screen (see App.tsx).
+ * One tap copies the result and opens the share panel below, which shows what was copied and the choices behind it.
  *
  * Copies exactly what the panel's own Share button would: the text is built at
  * the moment of the tap from the same saved choices the panel reads and writes
