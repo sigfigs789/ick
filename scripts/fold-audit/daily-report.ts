@@ -105,8 +105,9 @@ async function main(): Promise<void> {
     const named = confirmed.get(word)?.base;
     // An exemption exists to lift the score the fold gave it. A redirect can move
     // it either way -- `choping` scored as `chope` is rarer than as `chop` -- so
-    // what it must do is land on the base it named.
-    if (redirected.has(word) ? still?.base !== named : !(after > folded + 0.005)) {
+    // what it must do is land on the base it named, or, where that base is rarer
+    // than the word itself (`outskirts` -> `outskirt`), stop folding at all.
+    if (redirected.has(word) ? !!still && still.base !== named : !(after > folded + 0.005)) {
       unmoved.push(word);
     }
     const path = fold.path.split(">").map((w: string) => `\`${w}\``).join(" → ");

@@ -1,53 +1,59 @@
-name: Daily fold check
+name: Weekly fold check
 
-# Every morning, checks the next puzzle nobody has checked yet -- the one after
-# the last checked date, and never closer than three days out (Mountain Time) --
-# for answers whose Standard-mode fold lands on a word of a different meaning --
+# Once a week, checks the next 14 puzzles after the last checked date for
+# answers whose Standard-mode fold lands on a word of a different meaning --
 # `rehearse` scored as `hearse`, `scowly` as `scow` -- and opens a draft PR
-# fixing them.
+# fixing them. It never starts closer than three days out (Mountain Time).
+# Fourteen puzzles a week keeps the checked range moving ahead of the calendar.
 #
-#   1. scripts/fold-audit/dump-folds.ts lists every playable answer for that
-#      day's drop whose fold lowers its score. Only that drop's answers: each
-#      word goes through the real submission gate.
-#   2. Claude judges each fold against scripts/fold-audit/RUBRIC.md, then a
-#      second pass defends every flag (scripts/fold-audit/DAILY.md). Only the
+#   1. plan: scripts/fold-audit/dump-folds.ts lists every playable answer for
+#      each of the 14 drops whose fold lowers its score -- each word through the
+#      real submission gate. plan-batch.py keeps each word once, on the earliest
+#      puzzle it comes up on, drops the words an already-checked puzzle judged
+#      on the same fold, and splits the rest into shards.
+#   2. judge: one Claude run per shard, a few at a time. Each judges its folds
+#      against scripts/fold-audit/RUBRIC.md, then a second pass defends every
+#      flag and a third breaks ties (scripts/fold-audit/DAILY.md). Only the
 #      flags that survive are applied -- the detector alone over-flags ~2x.
-#   3. Where the judge named the form the word really comes from (`scowly` ->
-#      `scowl`) and both passes agreed, price-bases.ts looks that base up. If
-#      it already has a measured score, apply-daily.py redirects the fold there
-#      in fold-review-verdicts.json; otherwise -- no base, or one no corpus
-#      measures -- it exempts the word in fold-exemptions.json. Both are dated
-#      from that puzzle, and daily-report.ts tables each word, its fold, and its
-#      score before and after for the PR body.
-#
-#   4. A second job hands the PR to claude-review-fold-pr.yml, which comments
+#   3. apply: apply-batch.py runs the daily pipeline puzzle by puzzle, oldest
+#      first. Where the judge named the form the word really comes from
+#      (`scowly` -> `scowl`), both passes agreed, and that base has a measured
+#      score, the fold is redirected there in fold-review-verdicts.json;
+#      otherwise the word is exempted in fold-exemptions.json. Both are dated
+#      from the puzzle the word was judged on. The PR body tables the batch,
+#      and each puzzle's word-by-word table goes up as a PR comment.
+#   4. review: hands the PR to claude-review-fold-pr.yml, which comments
 #      "approve" or "decline" and labels the PR to match. It does not merge.
 #
 # scripts/fold-audit/checked-through.txt holds the last puzzle date whose folds
-# were checked, by this workflow or by hand several drops at once. Every run
-# moves it forward in its PR -- a run with nothing to fix still opens one, so the
-# date is recorded -- and the next run starts after the latest of that file on
-# main and on any open fold-check PR. Run it by hand for a particular date with:
+# were checked, by this workflow or by hand. Every run moves it to the end of
+# its batch in its PR -- a run with nothing to fix still opens one, so the date
+# is recorded -- and the next run starts after the latest of that file on main
+# and on any open fold-check PR. Run it by hand from a particular date with:
 #
-#   gh workflow run daily-fold-check.yml --repo sigfigs789/ick -f date=2026-10-08
+#   gh workflow run daily-fold-check.yml --repo sigfigs789/ick -f date=2027-02-01
 #
 # Runs on the Claude subscription, as sigfigs789/krausen's Claude workflows do:
 # it needs a CLAUDE_CODE_OAUTH_TOKEN repository secret (Settings -> Secrets ->
 # Actions), made with `claude setup-token`. Without it the job says so and stops.
-# The PR is opened with GITHUB_TOKEN, so "Test" does
-# not start on it by itself; the build and fold tests run here instead.
+# The PR is opened with GITHUB_TOKEN, so "Test" does not start on it by itself;
+# the build and fold tests run here instead.
 
 on:
   schedule:
-    # 14:17 UTC is 7-8am in Denver, so the three-day floor is the same puzzle
-    # whichever side of DST it is. Off the hour because GitHub drops :00
-    # schedules under load (the first one, 2026-10-07, never fired).
-    - cron: "17 14 * * *"
+    # Mondays at 14:17 UTC, 7-8am in Denver. Off the hour because GitHub drops
+    # :00 schedules under load (the first one, 2026-10-07, never fired).
+    - cron: "17 14 * * 1"
   workflow_dispatch:
     inputs:
       date:
-        description: Puzzle date (YYYY-MM-DD). Defaults to three days from today, Mountain Time.
+        description: First puzzle date (YYYY-MM-DD). Defaults to the day after the last checked date.
         required: false
+        type: string
+      days:
+        description: How many puzzles to check
+        required: false
+        default: "14"
         type: string
       model:
         description: Claude model to use
@@ -69,24 +75,208 @@ concurrency:
   group: daily-fold-check
   cancel-in-progress: false
 
+env:
+  # From here on every puzzle has been checked, so its dump is a record of
+  # what the judges have already seen. The earlier daily runs left gaps.
+  JUDGED_FROM: "2026-10-26"
+  # Rows per Claude run, and per subagent within it.
+  SHARD_ROWS: "3000"
+  CHUNK_ROWS: "250"
+
 jobs:
-  check:
+  plan:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 30
     outputs:
-      pr: ${{ steps.pr.outputs.pull-request-number }}
-      applied: ${{ steps.apply.outputs.applied }}
-    env:
-      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      start: ${{ steps.range.outputs.start }}
+      end: ${{ steps.range.outputs.end }}
+      shards: ${{ steps.plan.outputs.shards }}
+      count: ${{ steps.plan.outputs.count }}
 
     steps:
       - name: Check for the Claude subscription token
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: |
           if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
             echo "::error::Add a CLAUDE_CODE_OAUTH_TOKEN repository secret (from \`claude setup-token\`) first."
             exit 1
           fi
 
+      - name: Check out WordInk
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Pick the puzzles
+        id: range
+        env:
+          INPUT_DATE: ${{ inputs.date }}
+          INPUT_DAYS: ${{ inputs.days || '14' }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          ledger=scripts/fold-audit/checked-through.txt
+          if ! [[ "$INPUT_DAYS" =~ ^[1-9][0-9]?$ ]]; then
+            echo "::error::Bad days '$INPUT_DAYS'; use 1-99."
+            exit 1
+          fi
+          if [ -n "$INPUT_DATE" ]; then
+            start="$INPUT_DATE"
+          else
+            # The latest checked date: main's, or one an open fold-check PR has
+            # recorded but nobody has merged yet.
+            through="$(tr -d '[:space:]' < "$ledger")"
+            for branch in $(gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 100 \
+                --json headRefName -q '.[].headRefName | select(startswith("codex/fold-check-"))'); do
+              theirs="$(gh api "repos/$GITHUB_REPOSITORY/contents/$ledger?ref=$branch" \
+                -H "Accept: application/vnd.github.raw" 2>/dev/null | tr -d '[:space:]' || true)"
+              if [[ "$theirs" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ && "$theirs" > "$through" ]]; then
+                through="$theirs"
+              fi
+            done
+            start="$(date -d "$through +1 day" +%F)"
+            floor="$(TZ=America/Denver date -d '+3 days' +%F)"
+            if [[ "$floor" > "$start" ]]; then start="$floor"; fi
+          fi
+          if ! [[ "$start" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            echo "::error::Bad date '$start'; use YYYY-MM-DD."
+            exit 1
+          fi
+          end="$(date -d "$start +$((INPUT_DAYS - 1)) days" +%F)"
+          echo "Checking $start to $end." | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "start=$start" >> "$GITHUB_OUTPUT"
+          echo "end=$end" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node.js
+        if: steps.range.outputs.start != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.range.outputs.start != ''
+        run: npm ci
+
+      - name: Dump and split the folds
+        id: plan
+        if: steps.range.outputs.start != ''
+        env:
+          START: ${{ steps.range.outputs.start }}
+          END: ${{ steps.range.outputs.end }}
+        run: |
+          set -euo pipefail
+          out=scripts/fold-audit/out
+          days() { local d="$1"; while [[ ! "$d" > "$2" ]]; do echo "$d"; d="$(date -d "$d +1 day" +%F)"; done; }
+          before="$(date -d "$START -1 day" +%F)"
+          if [[ ! "$JUDGED_FROM" > "$before" ]]; then
+            ./node_modules/.bin/vite-node scripts/fold-audit/dump-folds.ts -- $(days "$JUDGED_FROM" "$before")
+            mv "$out/folds.tsv" "$out/folds-checked.tsv"
+          fi
+          ./node_modules/.bin/vite-node scripts/fold-audit/dump-folds.ts -- $(days "$START" "$END") 2>&1 \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+          python3 scripts/fold-audit/plan-batch.py --checked "$out/folds-checked.tsv" \
+            --shard-rows "$SHARD_ROWS" --chunk-rows "$CHUNK_ROWS" | tee -a "$GITHUB_STEP_SUMMARY"
+          rm -f "$out/folds-checked.tsv"
+          echo "shards=$(cat "$out/batch/shards.json")" >> "$GITHUB_OUTPUT"
+          echo "count=$(tail -n +2 "$out/batch/todo.tsv" | grep -c . || true)" >> "$GITHUB_OUTPUT"
+
+      - name: Keep the plan for the other jobs
+        if: steps.range.outputs.start != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: fold-plan
+          path: scripts/fold-audit/out/
+          retention-days: 7
+
+  judge:
+    needs: plan
+    if: needs.plan.outputs.count != '' && needs.plan.outputs.count != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      # The subscription's rate limit, not GitHub's, is what this protects.
+      max-parallel: 3
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
+
+    steps:
+      - name: Check out WordInk
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Fetch the plan
+        uses: actions/download-artifact@v4
+        with:
+          name: fold-plan
+          path: scripts/fold-audit/out/
+
+      - name: Lay out the shard's chunks
+        run: |
+          mkdir -p scripts/fold-audit/out/daily
+          mv "scripts/fold-audit/out/batch/shards/${{ matrix.shard }}" scripts/fold-audit/out/daily/chunks
+          echo "Shard ${{ matrix.shard }}: $(cat scripts/fold-audit/out/daily/chunks/*.txt | wc -l) folds" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Judge the folds
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          claude_args: >-
+            --model ${{ inputs.model || 'claude-opus-5-5' }}
+            --max-turns 150
+            --allowedTools "Read,Write,Glob,Grep,LS,Task,Agent"
+          prompt: |
+            You are running WordInk's fold check on shard ${{ matrix.shard }}
+            of the ${{ needs.plan.outputs.start }} to
+            ${{ needs.plan.outputs.end }} puzzles, in GitHub Actions.
+
+            Follow scripts/fold-audit/DAILY.md exactly. The chunks are in
+            scripts/fold-audit/out/daily/chunks/. Judge every row, then write
+            scripts/fold-audit/out/daily/flagged.tsv and
+            scripts/fold-audit/out/daily/confirmed.tsv.
+
+            Run every subagent in the foreground (run_in_background: false)
+            and do not end your turn until both files are written: this is a
+            headless run, so ending the turn kills any subagent still working.
+
+            Do not edit any other file, and do not run git or gh -- the
+            workflow applies your verdicts and opens the pull request.
+
+      # Claude writes confirmed.tsv even when it is empty, so a missing file
+      # means the judging never finished -- not that every fold was right.
+      - name: Check the verdicts were written
+        run: test -f scripts/fold-audit/out/daily/confirmed.tsv
+
+      - name: Keep the verdicts
+        uses: actions/upload-artifact@v4
+        with:
+          name: fold-verdicts-${{ matrix.shard }}
+          path: |
+            scripts/fold-audit/out/daily/flagged.tsv
+            scripts/fold-audit/out/daily/confirmed.tsv
+          retention-days: 7
+
+  apply:
+    needs: [plan, judge]
+    # Every shard must have finished: a missing one would record its puzzles as
+    # checked when they were not.
+    if: >-
+      always() && needs.plan.outputs.start != '' &&
+      (needs.judge.result == 'success' || needs.plan.outputs.count == '0')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    outputs:
+      pr: ${{ steps.pr.outputs.pull-request-number }}
+      applied: ${{ steps.apply.outputs.applied }}
+    env:
+      START: ${{ needs.plan.outputs.start }}
+      END: ${{ needs.plan.outputs.end }}
+
+    steps:
       - name: Check out WordInk
         uses: actions/checkout@v4
         with:
@@ -101,146 +291,66 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Pick the puzzle
-        id: puzzle
-        env:
-          INPUT_DATE: ${{ inputs.date }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          ledger=scripts/fold-audit/checked-through.txt
-          if [ -n "$INPUT_DATE" ]; then
-            date="$INPUT_DATE"
-          else
-            # The latest checked date: main's, or one an open fold-check PR has
-            # recorded but nobody has merged yet.
-            through="$(tr -d '[:space:]' < "$ledger")"
-            for branch in $(gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 100 \
-                --json headRefName -q '.[].headRefName | select(startswith("codex/fold-check-"))'); do
-              theirs="$(gh api "repos/$GITHUB_REPOSITORY/contents/$ledger?ref=$branch" \
-                -H "Accept: application/vnd.github.raw" 2>/dev/null | tr -d '[:space:]' || true)"
-              if [[ "$theirs" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ && "$theirs" > "$through" ]]; then
-                through="$theirs"
-              fi
-            done
-            date="$(date -d "$through +1 day" +%F)"
-            floor="$(TZ=America/Denver date -d '+3 days' +%F)"
-            if [[ "$floor" > "$date" ]]; then date="$floor"; fi
-            echo "Checked through $through; checking $date." | tee -a "$GITHUB_STEP_SUMMARY"
-          fi
-          if ! [[ "$date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
-            echo "::error::Bad date '$date'; use YYYY-MM-DD."
-            exit 1
-          fi
-          echo "date=$date" >> "$GITHUB_OUTPUT"
-
-      - name: Dump the drop's folds
-        id: dump
-        env:
-          DATE: ${{ steps.puzzle.outputs.date }}
-        run: |
-          set -euo pipefail
-          ./node_modules/.bin/vite-node scripts/fold-audit/dump-folds.ts -- "$DATE"
-          out=scripts/fold-audit/out
-          mkdir -p "$out/daily/chunks"
-          # word|path|score with the fold|score without it|rule, 250 to a chunk.
-          tail -n +2 "$out/folds.tsv" \
-            | awk -F'\t' '{ print $3 "|" $7 "|" $11 "|" $10 "|" $5 }' \
-            | split -l 250 -d -a 2 --additional-suffix=.txt - "$out/daily/chunks/chunk-"
-          drop="$(awk -F'\t' 'NR == 2 { print $2 }' "$out/folds.tsv")"
-          count="$(tail -n +2 "$out/folds.tsv" | grep -c . || true)"
-          echo "drop=$drop" >> "$GITHUB_OUTPUT"
-          echo "count=$count" >> "$GITHUB_OUTPUT"
-          echo "$DATE \`$drop\`: $count score-lowering folds to judge" | tee -a "$GITHUB_STEP_SUMMARY"
-
-      - name: Judge the folds
-        if: steps.dump.outputs.count != '0'
-        uses: anthropics/claude-code-action@v1
+      - name: Fetch the plan
+        uses: actions/download-artifact@v4
         with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          claude_args: >-
-            --model ${{ inputs.model || 'claude-opus-5-5' }}
-            --max-turns 150
-            --allowedTools "Read,Write,Glob,Grep,LS,Task,Agent"
-          prompt: |
-            You are running WordInk's daily fold check for the
-            ${{ steps.puzzle.outputs.date }} puzzle, drop
-            `${{ steps.dump.outputs.drop }}`, in GitHub Actions.
+          name: fold-plan
+          path: scripts/fold-audit/out/
 
-            Follow scripts/fold-audit/DAILY.md exactly. The chunks are in
-            scripts/fold-audit/out/daily/chunks/. Judge every row, then write
-            scripts/fold-audit/out/daily/flagged.tsv and
-            scripts/fold-audit/out/daily/confirmed.tsv.
-
-            Run every subagent in the foreground (run_in_background: false)
-            and do not end your turn until both files are written: this is a
-            headless run, so ending the turn kills any subagent still working.
-
-            Do not edit any other file, and do not run git or gh -- the
-            workflow applies your verdicts and opens the pull request.
-
-      - name: Price the named bases
-        if: steps.dump.outputs.count != '0'
-        env:
-          DATE: ${{ steps.puzzle.outputs.date }}
-        run: ./node_modules/.bin/vite-node scripts/fold-audit/price-bases.ts -- "$DATE"
+      - name: Fetch the verdicts
+        if: needs.plan.outputs.count != '0'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: fold-verdicts-*
+          path: scripts/fold-audit/out/verdicts/
 
       - name: Apply the confirmed folds
         id: apply
-        if: steps.dump.outputs.count != '0'
-        env:
-          DATE: ${{ steps.puzzle.outputs.date }}
         run: |
           set -euo pipefail
-          python3 scripts/fold-audit/apply-daily.py --date "$DATE"
-          applied="$(grep -c . scripts/fold-audit/out/daily/applied.txt || true)"
-          redirected="$(grep -c . scripts/fold-audit/out/daily/redirected.txt || true)"
-          echo "applied=$applied" >> "$GITHUB_OUTPUT"
-          echo "redirected=$redirected" >> "$GITHUB_OUTPUT"
-
-      - name: Build the report
-        if: steps.apply.outputs.applied != '' && steps.apply.outputs.applied != '0'
-        env:
-          DATE: ${{ steps.puzzle.outputs.date }}
-        run: ./node_modules/.bin/vite-node scripts/fold-audit/daily-report.ts -- "$DATE"
+          out=scripts/fold-audit/out
+          # One header, then every shard's rows.
+          for name in flagged confirmed; do
+            files=("$out"/verdicts/*/"$name.tsv")
+            if [ -e "${files[0]}" ]; then
+              { head -n 1 "${files[0]}"; for f in "${files[@]}"; do tail -n +2 "$f"; done; } > "$out/batch/$name.tsv"
+            else
+              printf 'word\tscope\tbase\treason\tverify\n' > "$out/batch/$name.tsv"
+            fi
+          done
+          python3 scripts/fold-audit/apply-batch.py
+          echo "applied=$(grep -c . "$out/batch/applied.txt" || true)" >> "$GITHUB_OUTPUT"
 
       # A red check here still opens the PR, with the failure at the top of it --
       # the verdicts are the expensive part and should not be thrown away.
       - name: Build and test
         id: checks
-        if: steps.apply.outputs.applied != '' && steps.apply.outputs.applied != '0'
+        if: steps.apply.outputs.applied != '0'
         continue-on-error: true
         run: |
           set -eo pipefail
           npm run build 2>&1 | tail -n 40
           npx vitest run src/game/ 2>&1 | tail -n 60
 
-      # Only once the check has finished -- nothing to judge, or the verdicts
-      # applied -- and never backwards, for a run by hand on an earlier date.
-      - name: Record the checked date
+      # Never backwards, for a run by hand on an earlier range.
+      - name: Record the checked dates
         id: record
-        if: steps.dump.outputs.count == '0' || steps.apply.outcome == 'success'
-        env:
-          DATE: ${{ steps.puzzle.outputs.date }}
         run: |
           ledger=scripts/fold-audit/checked-through.txt
-          if [[ "$DATE" > "$(tr -d '[:space:]' < "$ledger")" ]]; then
-            echo "$DATE" > "$ledger"
+          if [[ "$END" > "$(tr -d '[:space:]' < "$ledger")" ]]; then
+            echo "$END" > "$ledger"
           fi
           applied="${{ steps.apply.outputs.applied }}"
-          if [ -n "$applied" ] && [ "$applied" != "0" ]; then
-            echo "title=Fix $applied wrong folds from the $DATE puzzle (${{ steps.dump.outputs.drop }})" >> "$GITHUB_OUTPUT"
+          if [ "$applied" != "0" ]; then
+            echo "title=Fix $applied wrong folds from the $START to $END puzzles" >> "$GITHUB_OUTPUT"
           else
-            echo "title=Fold check: no wrong folds on the $DATE puzzle (${{ steps.dump.outputs.drop }})" >> "$GITHUB_OUTPUT"
+            echo "title=Fold check: no wrong folds on the $START to $END puzzles" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Read the report
         id: report
-        if: steps.record.outcome == 'success'
         env:
           CHECKS: ${{ steps.checks.outcome }}
-          DATE: ${{ steps.puzzle.outputs.date }}
         run: |
           {
             echo "body<<FOLD_PR_EOF"
@@ -249,27 +359,22 @@ jobs:
               echo "> \`npm run build\` or \`vitest run src/game/\` failed on this change; see the run log."
               echo
             fi
-            if [ -f scripts/fold-audit/out/daily/pr-body.md ]; then
-              cat scripts/fold-audit/out/daily/pr-body.md
-            else
-              echo "Daily fold check for the **$DATE** puzzle: no fold was confirmed wrong, so nothing changes but \`scripts/fold-audit/checked-through.txt\`, which records the date as checked."
-            fi
+            cat scripts/fold-audit/out/batch/pr-body.md
             echo
             echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             echo
             echo "🤖 Generated with [Claude Code](https://claude.com/claude-code)"
             echo "FOLD_PR_EOF"
           } >> "$GITHUB_OUTPUT"
-          cat scripts/fold-audit/out/daily/pr-body.md >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+          cat scripts/fold-audit/out/batch/pr-body.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Open draft pull request
         id: pr
-        if: steps.record.outcome == 'success'
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           base: main
-          branch: codex/fold-check-${{ steps.puzzle.outputs.date }}
+          branch: codex/fold-check-${{ needs.plan.outputs.start }}-to-${{ needs.plan.outputs.end }}
           delete-branch: true
           draft: true
           add-paths: |
@@ -279,6 +384,18 @@ jobs:
           commit-message: ${{ steps.record.outputs.title }}
           title: ${{ steps.record.outputs.title }}
           body: ${{ steps.report.outputs.body }}
+
+      # All the tables together are too long for one PR body.
+      - name: Post each puzzle's table
+        if: steps.pr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ steps.pr.outputs.pull-request-number }}
+        run: |
+          for f in scripts/fold-audit/out/batch/reports/*.md; do
+            [ -e "$f" ] || continue
+            gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body-file "$f"
+          done
 
       - name: Report the result
         if: always()
@@ -292,11 +409,11 @@ jobs:
           fi
 
   review:
-    needs: check
-    if: needs.check.outputs.pr != '' && needs.check.outputs.applied != '' && needs.check.outputs.applied != '0'
+    needs: apply
+    if: needs.apply.outputs.pr != '' && needs.apply.outputs.applied != '' && needs.apply.outputs.applied != '0'
     uses: ./.github/workflows/claude-review-fold-pr.yml
     with:
-      pr: ${{ fromJSON(needs.check.outputs.pr) }}
+      pr: ${{ fromJSON(needs.apply.outputs.pr) }}
       model: ${{ inputs.model || 'claude-opus-5-5' }}
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
