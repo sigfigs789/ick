@@ -11,12 +11,19 @@ import { PuzzleNav } from "./components/PuzzleNav";
 import { FoldedLiveNotice } from "./components/FoldedLiveNotice";
 import { ConfettiBurst } from "./components/ConfettiBurst";
 import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
+import { ImprovementCelebration } from "./components/ImprovementCelebration";
 import { QuickShareButton } from "./components/QuickShareButton";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { isWinningRarity } from "./game/rank";
 import { completedWholeMonth } from "./game/perfectMonth";
+import {
+  averageImprovement,
+  improvementCelebrationDue,
+  markImprovementCelebrated,
+  type Improvement,
+} from "./game/improvement";
 import { totalRarityScore } from "./game/dictionary";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
@@ -78,6 +85,8 @@ export default function App() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [showPerfectMonth, setShowPerfectMonth] = useState(false);
   const endPerfectMonth = useCallback(() => setShowPerfectMonth(false), []);
+  const [improvement, setImprovement] = useState<Improvement | null>(null);
+  const endImprovement = useCallback(() => setImprovement(null), []);
   const sound = useSound();
   // The share panel stays out of the way until the Share beside the guess
   // count is pressed, which opens it and scrolls to it. Each press bumps the
@@ -177,6 +186,27 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perfectMonth, date]);
 
+  // The player's average on the way up (see game/improvement.ts), celebrated
+  // when today's puzzle is finished -- the day's total is final then, so it is
+  // the first moment the average it joins means anything. Only on the finish
+  // itself, as the Rare burst above is only on the word: a puzzle that mounts
+  // already finished, by reload or by stepping back from the archive, throws
+  // none. The record of the last celebration keeps it to one a week.
+  const finishedToday = isToday && progress.completed;
+  const wasFinished = useRef({ date, finished: finishedToday });
+  useEffect(() => {
+    const before = wasFinished.current;
+    wasFinished.current = { date, finished: finishedToday };
+    if (!finishedToday || before.date !== date || before.finished) return;
+    if (!improvementCelebrationDue(date)) return;
+    const rise = averageImprovement(date, progress.mode);
+    if (!rise) return;
+    markImprovementCelebrated(date);
+    sound.rising();
+    setImprovement(rise);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finishedToday, date]);
+
   const guessEntry = (
     <>
       {!progress.completed && (
@@ -211,6 +241,9 @@ export default function App() {
           days={Number(date.slice(8, 10))}
           onDone={endPerfectMonth}
         />
+      ) : improvement ? (
+        // After the perfect month's card, if both land on one finish.
+        <ImprovementCelebration improvement={improvement} onDone={endImprovement} />
       ) : (
         showConfetti && <ConfettiBurst />
       )}

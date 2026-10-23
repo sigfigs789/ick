@@ -96,6 +96,23 @@ export function playComplete(): void {
 }
 
 /**
+ * A quick climbing run for the player's average going up (see
+ * components/ImprovementCelebration.tsx): a C-major scale racing up two octaves
+ * and landing on a held chord -- the puzzle-complete chime, but still going.
+ */
+export function playRising(): void {
+  const c = getContext();
+  if (!c) return;
+  const now = c.currentTime;
+  const run = [523.25, 587.33, 659.25, 698.46, 783.99, 880, 987.77]; // C5..B5
+  run.forEach((freq, i) => tone(c, freq, now + i * 0.055, 0.1, { peakGain: 0.11 }));
+  const landing = now + run.length * 0.055;
+  [1046.5, 1318.51, 1567.98].forEach((freq) => // C6 E6 G6
+    tone(c, freq, landing, 0.6, { type: "triangle", peakGain: 0.08 }),
+  );
+}
+
+/**
  * The context for a sound nobody pressed anything to hear -- a chat message
  * arriving -- or null before the player has touched the page. A context made
  * or resumed without a gesture stays suspended, and whatever was scheduled on
