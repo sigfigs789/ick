@@ -9,7 +9,7 @@ import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
 import legacyRarityData from "../data/rarity-legacy.json";
 import scoreOverrideData from "../data/score-overrides.json";
-import estimatedZipfData from "../data/estimated-zipf.json";
+import estimatedZipfData from "../data/estimated-zipf";
 import foldExemptionData from "../data/fold-exemptions.json";
 import foldReviewVerdictData from "../data/fold-review-verdicts.json";
 import boundResidueData from "../data/bound-residues.json";
@@ -833,7 +833,7 @@ function overrideBase(word: string, scoring: Scoring, date?: string): string | u
   return lexiconHas(verdict.base, scoring) ? verdict.base : undefined;
 }
 
-// -- Claude's estimated Zipf (src/data/estimated-zipf.json) ------------------
+// -- Claude's estimated Zipf (src/data/estimated-zipf/) ----------------------
 /**
  * One run of the "Estimate unattested Zipf" workflow: the frequencies Claude
  * guessed for the words one puzzle can accept that no corpus measures.

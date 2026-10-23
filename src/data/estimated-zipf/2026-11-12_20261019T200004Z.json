@@ -1,0 +1,11 @@
+{
+  "since": "2026-11-12",
+  "drop": "GHT",
+  "model": "claude-opus-5-5",
+  "source": "claude",
+  "run": "https://github.com/sigfigs789/ick/actions/runs/39315529976",
+  "estimatedAt": "2026-10-19T20:00:04Z",
+  "zipf": {
+    "pseudoenlightenments": -0.85
+  }
+}
