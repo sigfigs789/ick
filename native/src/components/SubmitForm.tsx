@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Animated,
+  Easing,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import type { Feedback } from '../../../src/hooks/useDailyPuzzle';
 import { radius, space } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
@@ -10,11 +19,23 @@ interface Props {
   feedback: Feedback | null;
   /** A live lookup is running and the player is waiting on it. */
   checking?: boolean;
+  /**
+   * The word data the verdict needs is still downloading. Typing stays open,
+   * but the button shows a spinner and waits, as on the website.
+   */
+  loading?: boolean;
   onSubmit: (word: string) => void;
 }
 
 /** Where a guess is typed. */
-export function SubmitForm({ drop, disabled, feedback, checking = false, onSubmit }: Props) {
+export function SubmitForm({
+  drop,
+  disabled,
+  feedback,
+  checking = false,
+  loading = false,
+  onSubmit,
+}: Props) {
   const theme = useTheme();
   const [value, setValue] = useState('');
   const inputRef = useRef<TextInput>(null);
@@ -94,9 +115,10 @@ export function SubmitForm({ drop, disabled, feedback, checking = false, onSubmi
   });
 
   const trimmed = value.trim();
+  const blocked = disabled || loading || !trimmed;
 
   function submit() {
-    if (!trimmed || disabled) return;
+    if (blocked) return;
     onSubmit(value);
     setValue('');
     // Tapping the on-screen button should not dismiss the keyboard -- the
@@ -143,18 +165,19 @@ export function SubmitForm({ drop, disabled, feedback, checking = false, onSubmi
 
           <Pressable
             onPress={submit}
-            disabled={disabled || !trimmed}
+            disabled={blocked}
             accessibilityRole="button"
-            accessibilityLabel="Submit word"
-            accessibilityState={{ disabled: disabled || !trimmed }}
+            accessibilityLabel={loading ? 'Loading the word list' : 'Submit word'}
+            accessibilityState={{ disabled: blocked, busy: loading }}
             style={({ pressed }) => [
               styles.submit,
               {
                 backgroundColor: theme.accent,
-                opacity: disabled || !trimmed ? 0.4 : pressed ? 0.7 : 1,
+                opacity: blocked ? 0.4 : pressed ? 0.7 : 1,
               },
             ]}
           >
+            {loading && <ActivityIndicator size="small" color={theme.accentFg} />}
             <Text style={[styles.submitText, { color: theme.accentFg }]}>Submit</Text>
           </Pressable>
         </View>
@@ -189,6 +212,9 @@ const styles = StyleSheet.create({
     fontSize: 17,
   },
   submit: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.xs,
     justifyContent: 'center',
     paddingHorizontal: space.lg,
     borderRadius: radius.md,

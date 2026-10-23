@@ -15,6 +15,12 @@ interface Props {
   /** A live lookup is running and the player is waiting on it. */
   checking?: boolean;
   /**
+   * The word data the verdict needs is still downloading. Typing stays open,
+   * but the button shows a spinner and waits, so a word is never sent into a
+   * pause the player cannot see.
+   */
+  loading?: boolean;
+  /**
    * Answers with the verdict when it has one: a rejected word stays in the box
    * (see handleSubmit), so anything that can reject must say so.
    */
@@ -42,6 +48,7 @@ export function SubmitForm({
   disabled,
   feedback,
   checking = false,
+  loading = false,
   onSubmit,
   date,
   mode,
@@ -91,7 +98,7 @@ export function SubmitForm({
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const submitted = value;
-    if (!submitted.trim() || disabled) return;
+    if (!submitted.trim() || disabled || loading) return;
     // Tapping the on-screen Submit button (as opposed to the keyboard's own
     // "go"/"done" key) shouldn't dismiss the mobile keyboard -- re-focus so
     // the player can keep typing their next guess without tapping back in.
@@ -153,12 +160,16 @@ export function SubmitForm({
         </span>
         <button
           type="submit"
-          disabled={disabled || !value.trim()}
+          className={loading ? "submit-form__button--loading" : undefined}
+          disabled={disabled || loading || !value.trim()}
+          aria-busy={loading || undefined}
+          aria-label={loading ? "Loading the word list" : undefined}
           // Without this, tapping Submit on mobile focuses the button first
           // (stealing focus from the input) and closes the keyboard before
           // the click/submit even fires.
           onMouseDown={(e) => e.preventDefault()}
         >
+          {loading && <span className="submit-form__spinner" aria-hidden="true" />}
           {submitLabel}
         </button>
       </div>

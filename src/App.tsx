@@ -69,6 +69,7 @@ export default function App() {
     feedback,
     liveNote,
     checking,
+    wordDataLoading,
     submitWord,
     canRetry,
     retryOffered,
@@ -255,6 +256,7 @@ export default function App() {
           disabled={progress.completed}
           feedback={feedback}
           checking={checking}
+          loading={wordDataLoading}
           onSubmit={submitWord}
           date={date}
           mode={playMode}

@@ -17,6 +17,29 @@ describe("SubmitForm", () => {
     expect(screen.queryByRole("button", { name: /submit/i })).not.toBeInTheDocument();
   });
 
+  it("waits, with a spinner, while the word data downloads", async () => {
+    const onSubmit = vi.fn();
+    const { rerender } = render(
+      <SubmitForm drop="str" disabled={false} feedback={null} loading onSubmit={onSubmit} submitLabel="Play" />
+    );
+
+    // Typing stays open, but neither the button nor the keyboard sends it.
+    const input = screen.getByLabelText(/enter a word containing "STR"/i);
+    await userEvent.type(input, "strange{Enter}");
+    const button = screen.getByRole("button", { name: "Loading the word list" });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute("aria-busy", "true");
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(input).toHaveValue("strange");
+
+    // Once it is in, the same word goes through.
+    rerender(
+      <SubmitForm drop="str" disabled={false} feedback={null} onSubmit={onSubmit} submitLabel="Play" />
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Play" }));
+    expect(onSubmit).toHaveBeenCalledWith("strange");
+  });
+
   it("submits the typed word and clears the box", async () => {
     const onSubmit = vi.fn();
     render(

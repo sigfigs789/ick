@@ -504,12 +504,18 @@ export function useDailyPuzzle() {
       // priced off the estimates and reviewed folds. Nearly always a no-op: the
       // files arrive within moments of the puzzle appearing. If one could not
       // be fetched at all, the guess is not spent, and trying again refetches.
+      // The box pulses meanwhile, as it does for a live lookup: the Play button
+      // waits for the files (see `wordDataLoading`), but a caller that submits
+      // some other way would otherwise sit on an inert box.
       if (!wordDataLoaded(viewedDate)) {
+        setChecking(true);
         try {
           await wordDataReady(viewedDate);
         } catch {
           showFeedback("rejected", WORD_DATA_UNAVAILABLE);
           return { ok: false };
+        } finally {
+          setChecking(false);
         }
       }
       const result = evaluateSubmission(raw, drop, progressRef.current.acceptedWords, viewedDate);
@@ -896,6 +902,12 @@ export function useDailyPuzzle() {
     copyToOtherMode,
     liveNote,
     checking,
+    /**
+     * The deferred word data this puzzle needs is still on its way (see
+     * game/wordData.ts). The Play button shows it and waits, rather than take
+     * a word it cannot judge yet.
+     */
+    wordDataLoading: !metadataLoaded,
     /** The player's words whose fold was rejected live, not yet acknowledged. */
     foldNotices,
     dismissFoldNotices,
