@@ -6268,6 +6268,19 @@ h2 {
   font-size: 1rem;
   margin-bottom: 0.2rem;
 }
+.av2__moved {
+  margin-left: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--fg-muted);
+}
+.av2__moved--up {
+  color: var(--success-fg);
+}
+.av2__moved--down {
+  color: var(--danger-fg);
+}
 .av2__notes li {
   margin-bottom: 0.3rem;
 }
