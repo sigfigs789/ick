@@ -248,9 +248,7 @@ describe("gameplay end to end", () => {
       "Yesterday's Best Word",
     );
     fireEvent.click(screen.getByRole("button", { name: "Yesterday's Best Word" }));
-    expect(document.querySelector(".yesterdays-best")).toHaveTextContent(
-      `Yesterday's best on “${dropForDate(YESTERDAY)}”`,
-    );
+    expect(document.querySelector(".yesterdays-best__word")).toBeInTheDocument();
     expect(document.querySelectorAll(".yesterdays-best")).toHaveLength(1);
     expect(loggedWords()).toEqual([]);
   });

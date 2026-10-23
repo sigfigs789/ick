@@ -879,12 +879,6 @@ h2 {
 .yesterdays-best__button:hover {
   background: var(--card-bg);
 }
-.yesterdays-best__label {
-  margin: 0;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--fg-muted);
-}
 .yesterdays-best__word,
 .yesterdays-best__finder {
   opacity: 0;
@@ -895,7 +889,7 @@ h2 {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  margin: 0.25rem 0 0;
+  margin: 0;
   font-family: var(--font-display);
   font-size: 1.05rem;
   font-weight: 800;

@@ -27,14 +27,14 @@ const yesterdayCache = pageCache<readonly FoundWord[]>();
  * Yesterday's drop is not today's, so the word spoils nothing here and costs
  * nothing to see -- the button is there so the word is something to open, the
  * way the word of the day was, rather than a line read in passing. Opened, it
- * shows the word, its score and who found it first. Priced by the reader's own
+ * shows the word, its score and the name of whoever found it first. Priced by the reader's own
  * mode like the finds page, so the score here and the one on /found-words agree.
  *
  * The button needs no request, so it is on screen from the first paint and
  * never pushes the input down when the feed lands. Opened while the feed loads,
  * on a failed read, or for a day nobody found anything, it names the word
  * yesterday's drop offered instead (the one its finished puzzle revealed, see
- * dictionary.learnableWordForDrop), with no finder.
+ * dictionary.learnableWordForDrop), with no finder under it.
  */
 export function YesterdaysBest({ date }: Props) {
   const yesterday = addDays(date, -1);
@@ -96,11 +96,6 @@ export function YesterdaysBest({ date }: Props) {
   const scoredOn = found?.foundOn || yesterday;
   return (
     <div className="yesterdays-best">
-      <p className="yesterdays-best__label">
-        Yesterday's best on {"“"}
-        {yesterdayDrop}
-        {"”"}
-      </p>
       <p className="yesterdays-best__word">
         {best.word}
         {/* The score alone, wearing its tier's colours, as the word of the day
@@ -111,15 +106,8 @@ export function YesterdaysBest({ date }: Props) {
           <span className="sr-only"> {best.rarity}</span>
         </span>
       </p>
-      <p className="yesterdays-best__finder">{finderLine(found)}</p>
+      {found?.firstFinder && <p className="yesterdays-best__finder">{found.firstFinder}</p>}
     </div>
   );
 }
 
-/** Who got there first, or what the word is when nobody's finds can be read. */
-function finderLine(found: FoundWord | undefined): string {
-  if (!found) return "The best word the drop offered";
-  const others = found.finders > 1 ? ` · ${found.finders} players found it` : "";
-  if (found.firstFinder) return `First found by ${found.firstFinder}${others}`;
-  return found.finders === 1 ? "Found by 1 player" : `Found by ${found.finders} players`;
-}

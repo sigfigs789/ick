@@ -86,29 +86,19 @@ describe("the yesterday's best word button", () => {
     expect(await screen.findByText("asphyxiate")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Yesterday's Best Word" })).not.toBeInTheDocument();
     expect(document.querySelector(".yesterdays-best__score")?.textContent).toMatch(/\d/);
-    expect(
-      screen.getByText(`First found by ${handleFor("p1")} · 3 players found it`),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(new RegExp(`Yesterday's best on .${dropForDate(YESTERDAY)}.`)),
-    ).toBeInTheDocument();
+    expect(document.querySelector(".yesterdays-best__finder")).toHaveTextContent(
+      new RegExp(`^${handleFor("p1")}$`),
+    );
     expect(String((fetchMock.mock.calls[0] as unknown[])[0])).toContain(`today=${YESTERDAY}`);
   });
 
-  it("names only the first finder when nobody else found it", async () => {
-    stubFetch([{ word: "asphyxiate", zipf: 2.09, finders: 1, foundOn: YESTERDAY, firstPlayer: "p1" }]);
-    render(<YesterdaysBest date={TODAY} />);
-    reveal();
-
-    expect(await screen.findByText(`First found by ${handleFor("p1")}`)).toBeInTheDocument();
-  });
-
-  it("counts the finders on a feed that does not name the first one", async () => {
+  it("names nobody on a feed that does not say who found it first", async () => {
     stubFetch([{ word: "asphyxiate", zipf: 2.09, finders: 2, foundOn: YESTERDAY }]);
     render(<YesterdaysBest date={TODAY} />);
     reveal();
 
-    expect(await screen.findByText("Found by 2 players")).toBeInTheDocument();
+    expect(await screen.findByText("asphyxiate")).toBeInTheDocument();
+    expect(document.querySelector(".yesterdays-best__finder")).toBeNull();
   });
 
   it("reveals the word yesterday's drop offered before the feed answers", () => {
@@ -117,7 +107,7 @@ describe("the yesterday's best word button", () => {
     reveal();
 
     expect(screen.getByText(OFFERED)).toBeInTheDocument();
-    expect(screen.getByText("The best word the drop offered")).toBeInTheDocument();
+    expect(document.querySelector(".yesterdays-best__finder")).toBeNull();
   });
 
   it("reveals the word yesterday's drop offered when the finds can't be read", async () => {
@@ -127,7 +117,7 @@ describe("the yesterday's best word button", () => {
     reveal();
 
     expect(screen.getByText(OFFERED)).toBeInTheDocument();
-    expect(screen.queryByText(/found by/i)).not.toBeInTheDocument();
+    expect(document.querySelector(".yesterdays-best__finder")).toBeNull();
   });
 
   it("reveals the word yesterday's drop offered for a day nobody found anything", async () => {
@@ -137,6 +127,6 @@ describe("the yesterday's best word button", () => {
     reveal();
 
     expect(screen.getByText(OFFERED)).toBeInTheDocument();
-    expect(screen.queryByText(/found by/i)).not.toBeInTheDocument();
+    expect(document.querySelector(".yesterdays-best__finder")).toBeNull();
   });
 });
