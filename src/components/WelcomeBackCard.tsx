@@ -23,7 +23,7 @@ export function WelcomeBackCard({ welcome, onDismiss }: Props) {
           Your best streak was <strong>{welcome.best} days</strong>.{" "}
           {welcome.freeze ? (
             <>
-              Play today to start a new one, and get a free <span aria-hidden="true">🧊</span>{" "}
+              Play today to start a new one, and earn a <span aria-hidden="true">🧊</span>{" "}
               streak freeze to cover a missed day.
             </>
           ) : (
