@@ -8,7 +8,7 @@ import { addDays } from "./date";
 import { asMode } from "./mode";
 import { evaluateSubmission } from "./submit";
 import curated from "../data/dictionary.json";
-import estimatedZipfData from "../data/estimated-zipf.json";
+import estimatedZipfData from "../data/estimated-zipf";
 
 /**
  * How much of the lexicon has a frequency, tracked in src/data/zipf-coverage.json.
@@ -16,7 +16,7 @@ import estimatedZipfData from "../data/estimated-zipf.json";
  * Every word in the curated list and the corpus is one of:
  *   - measured:   a frequency corpus attests it;
  *   - estimated:  no corpus does, but Claude has guessed a Zipf for it
- *                 (src/data/estimated-zipf.json);
+ *                 (src/data/estimated-zipf/);
  *   - unattested: neither, so wherever it is accepted it scores the sentinel,
  *                 a flat 10.00.
  * Estimated and unattested words are each split by whether the rules of the

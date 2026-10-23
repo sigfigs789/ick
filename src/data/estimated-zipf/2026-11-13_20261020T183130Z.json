@@ -1,0 +1,22 @@
+{
+  "since": "2026-11-13",
+  "drop": "MIN",
+  "model": "claude-opus-5-5",
+  "source": "claude",
+  "run": "https://github.com/sigfigs789/ick/actions/runs/39475386706",
+  "estimatedAt": "2026-10-20T18:31:30Z",
+  "zipf": {
+    "abdominohysterotomies": -1.2,
+    "autoradioluminography": -0.5,
+    "crystalloluminescent": -0.7,
+    "disdenominationalize": -1.3,
+    "enantiodiscriminating": -0.8,
+    "hyperdiscriminability": -1.1,
+    "manganocummingtonite": -0.4,
+    "nondenominationality": -0.6,
+    "octahydrocurcuminoid": -0.9,
+    "roentgenoluminescent": -0.5,
+    "semiantiministerial": -1.2,
+    "sonochemiluminescent": -0.6
+  }
+}

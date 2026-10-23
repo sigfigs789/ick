@@ -2,7 +2,7 @@
  * List the words a puzzle can accept that no frequency corpus measures -- the
  * ones that score the unattested sentinel (a flat 10.00 Legend before any fold)
  * -- so the "Estimate unattested Zipf" workflow can hand them to Claude for a
- * guessed frequency. See src/data/estimated-zipf.json.
+ * guessed frequency. See src/data/estimated-zipf/.
  *
  * Run with vite-node so the answer comes from the game's own code rather than a
  * mirror of it: every word in the curated list and the corpus that contains the

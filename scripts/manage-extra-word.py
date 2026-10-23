@@ -42,7 +42,7 @@ RARITY_PATH = ROOT / "src" / "data" / "rarity.json"
 LEGACY_RARITY_PATH = ROOT / "src" / "data" / "rarity-legacy.json"
 SCORE_OVERRIDES_PATH = ROOT / "src" / "data" / "score-overrides.json"
 FOLD_EXEMPTIONS_PATH = ROOT / "src" / "data" / "fold-exemptions.json"
-ESTIMATED_ZIPF_PATH = ROOT / "src" / "data" / "estimated-zipf.json"
+ESTIMATED_ZIPF_DIR = ROOT / "src" / "data" / "estimated-zipf"
 BOUND_RESIDUES_PATH = ROOT / "src" / "data" / "bound-residues.json"
 MEASUREMENT_UNITS_PATH = ROOT / "src" / "data" / "measurement-units.json"
 DICTIONARY_TEST_PATH = ROOT / "src" / "game" / "dictionary.test.ts"
@@ -1227,13 +1227,15 @@ def estimated_zipf(word: str) -> float | None:
     if _ESTIMATED_ZIPF is None:
         _ESTIMATED_ZIPF = {}
         since: dict[str, str] = {}
-        if ESTIMATED_ZIPF_PATH.exists():
-            for batch in json.loads(ESTIMATED_ZIPF_PATH.read_text())["batches"]:
-                for w, z in batch["zipf"].items():
-                    if w in since and since[w] <= batch["since"]:
-                        continue
-                    since[w] = batch["since"]
-                    _ESTIMATED_ZIPF[w] = z
+        # One file per batch; name order is the order the game reads them in
+        # (see batch_file_name in scripts/estimate-zipf.py).
+        for path in sorted(ESTIMATED_ZIPF_DIR.glob("*.json")):
+            batch = json.loads(path.read_text())
+            for w, z in batch["zipf"].items():
+                if w in since and since[w] <= batch["since"]:
+                    continue
+                since[w] = batch["since"]
+                _ESTIMATED_ZIPF[w] = z
     return _ESTIMATED_ZIPF.get(word)
 
 
