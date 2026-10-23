@@ -250,3 +250,65 @@ describe("the share panel", () => {
     expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument();
   });
 });
+
+describe("the welcome-back card", () => {
+  const lapsed = {
+    currentStreak: 0,
+    longestStreak: 12,
+    lastCompletedDate: "2026-08-01",
+    totalCompleted: 12,
+    crushedIt: 0,
+    elite: 0,
+    highScore: 0,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    markSeen("instructions");
+    vi.mocked(useSound).mockReturnValue({
+      accept: vi.fn(),
+      reject: vi.fn(),
+      complete: vi.fn(),
+      applause: vi.fn(),
+      rising: vi.fn(),
+    });
+  });
+
+  it("greets a player back after their streak ended, with the freeze on offer, until closed", async () => {
+    vi.mocked(useDailyPuzzle).mockReturnValue(
+      puzzle({ streak: lapsed }) as ReturnType<typeof useDailyPuzzle>
+    );
+    render(<App />);
+
+    expect(screen.getByText(/welcome back/i)).toBeInTheDocument();
+    expect(screen.getByText("12 days")).toBeInTheDocument();
+    expect(screen.getByText(/streak freeze to cover a missed day/i)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+    expect(screen.queryByText(/welcome back/i)).not.toBeInTheDocument();
+  });
+
+  it("is not shown on an archived puzzle, once a word is played, or to a player who never reached 3 days", () => {
+    const cases = [
+      puzzle({ streak: lapsed, isToday: false }),
+      puzzle({
+        streak: lapsed,
+        progress: {
+          date: "2026-08-13",
+          drop: "str",
+          acceptedWords: [{ word: "strange", rarity: "Common", zipf: 5 }],
+          rejectedAttempts: [],
+          completed: false,
+        },
+      }),
+      puzzle({ streak: { ...lapsed, longestStreak: 2 } }),
+    ];
+    for (const value of cases) {
+      vi.mocked(useDailyPuzzle).mockReturnValue(value as ReturnType<typeof useDailyPuzzle>);
+      const { unmount } = render(<App />);
+      expect(screen.queryByText(/welcome back/i)).not.toBeInTheDocument();
+      unmount();
+    }
+  });
+});

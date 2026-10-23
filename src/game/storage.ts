@@ -10,6 +10,7 @@ import {
   coveredThrough,
   earnFreeze,
   recordFreezes,
+  startStreak,
 } from "./streakFreeze";
 
 /**
@@ -429,8 +430,9 @@ function updateStreakOnValidAnswer(date: string): void {
     lastCompletedDate: date,
     crushedIt: streak.crushedIt,
     elite: streak.elite,
-    // Saved freezes belong to the streak that earned them.
-    bankedFreezes: continuesStreak ? streak.bankedFreezes : 0,
+    // Saved freezes belong to the streak that earned them; a new one starts
+    // with none, or with a welcome-back freeze for a returning player.
+    ...(continuesStreak ? { bankedFreezes: streak.bankedFreezes } : startStreak(streak, date)),
   };
   // Recorded after the day's freeze is earned, so the day shows what it ended with.
   saveStreak(recordFreezes(earnFreeze(updated), date));

@@ -91,6 +91,62 @@ export function backdateFreezes(streak: StreakState): StreakState {
   };
 }
 
+/** The best streak that makes a lapsed player a returning one: the first freeze's. */
+const WELCOME_BACK_MIN_BEST = FIRST_FREEZE_DAY;
+
+/**
+ * Days after one welcome-back freeze before the next. A player who comes and
+ * goes every week should not find a free freeze waiting each time.
+ */
+export const WELCOME_BACK_COOLDOWN_DAYS = 30;
+
+export interface WelcomeBack {
+  /** The longest streak the player has had. */
+  best: number;
+  /** The last day they played. */
+  lastPlayed: string;
+  /** Whether today's first word starts the new streak with a saved freeze. */
+  freeze: boolean;
+}
+
+/**
+ * A player coming back to a streak that has ended, having once run at least
+ * three days: someone the game kept for a while and then lost. The streak
+ * reset to zero while they were away, and a zero says nothing about the
+ * player who earned it, so the play screen greets them with the best they
+ * managed and a reason to start again. Null for anyone else -- a new player,
+ * a live streak, or a day already played.
+ *
+ * The reason is a saved freeze for the new streak, given on today's first
+ * word (see `startStreak`): a player who has just lost a streak to a missed
+ * day is the one most likely to miss another before day 3 earns one. At most
+ * one every WELCOME_BACK_COOLDOWN_DAYS.
+ */
+export function welcomeBack(streak: StreakState, today: string): WelcomeBack | null {
+  const lastPlayed = streak.lastCompletedDate;
+  const best = Math.max(streak.longestStreak, streak.currentStreak);
+  if (streak.currentStreak > 0 || !lastPlayed || lastPlayed >= today) return null;
+  if (best < WELCOME_BACK_MIN_BEST) return null;
+  const given = streak.welcomeBackFreezeDate;
+  const freeze = !given || daysSinceEpoch(today, given) >= WELCOME_BACK_COOLDOWN_DAYS;
+  return { best, lastPlayed, freeze };
+}
+
+/**
+ * The saved freezes a streak starting on `date` begins with: none, as saved
+ * freezes belong to the streak that earned them -- unless the player is
+ * returning (see `welcomeBack`), when it begins with one.
+ */
+export function startStreak(
+  streak: StreakState,
+  date: string
+): Pick<StreakState, "bankedFreezes" | "welcomeBackFreezeDate"> {
+  if (!welcomeBack(streak, date)?.freeze) {
+    return { bankedFreezes: 0, welcomeBackFreezeDate: streak.welcomeBackFreezeDate };
+  }
+  return { bankedFreezes: 1, welcomeBackFreezeDate: date };
+}
+
 /** The last day the streak reaches: the last day played, or a later frozen one. */
 export function coveredThrough(streak: StreakState): string | undefined {
   let latest = streak.lastCompletedDate;
