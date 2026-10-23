@@ -201,4 +201,43 @@ describe("the congratulation bubble", () => {
     render(<CongratsBubble today="2026-09-17" />);
     await waitFor(() => expect(screen.queryByRole("button")).toBeNull());
   });
+
+  it("tells the reader it was them, and makes a fuss of it", async () => {
+    localStorage.setItem("ick:player", JSON.stringify({ id: ALICE }));
+    stubFetch({ weekly: [WINNER] });
+    const { container } = render(<CongratsBubble today={MONDAY} />);
+
+    const bubble = await screen.findByRole("button", {
+      name: "You won! Top of last week's Standard board",
+    });
+    expect(bubble).toHaveClass("congrats-bubble__pop--you");
+    // Gold confetti greets it before anything is pressed.
+    expect(container.querySelector(".confetti--grand")).not.toBeNull();
+
+    await userEvent.click(bubble);
+    // Popped: the stamp and the gold ink, not the plain blot.
+    expect(container.querySelector(".congrats-bubble__stamp")).toHaveTextContent("Champion!");
+    expect(container.querySelector(".congrats-bubble__splat--you")).not.toBeNull();
+    await waitFor(
+      () => expect(container.querySelector(".congrats-bubble__stamp")).toBeNull(),
+      { timeout: 4000 },
+    );
+  });
+
+  it("congratulates somebody else in the third person, however alike the names", async () => {
+    // A reader who is not the winner -- the match is on the id, never the name.
+    localStorage.setItem(
+      "ick:player",
+      JSON.stringify({ id: "33333333-3333-4333-8333-333333333333" }),
+    );
+    stubFetch({ weekly: [WINNER] });
+    const { container } = render(<CongratsBubble today={MONDAY} />);
+
+    expect(
+      await screen.findByRole("button", {
+        name: `Congrats ${handleFor(ALICE)} for last week's Standard win`,
+      }),
+    ).not.toHaveClass("congrats-bubble__pop--you");
+    expect(container.querySelector(".confetti")).toBeNull();
+  });
 });

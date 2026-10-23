@@ -3392,6 +3392,118 @@ h2 {
       scale(calc(var(--drop-size) * 0.9));
   }
 }
+
+/*
+ * The reader's own win (see CongratsBubble): the same bubble, addressed to them
+ * and dressed for it. Bigger and bolder, a crown that bobs, a band of light
+ * sweeping across the gold every couple of seconds and a glow that breathes --
+ * the one bubble on the board that should be impossible to look past. Every
+ * piece of the motion is decoration over a bubble that reads fine standing
+ * still, which is what the reduced-motion rule leaves.
+ */
+.congrats-bubble__pop--you {
+  position: relative;
+  overflow: hidden;
+  gap: 0.65rem;
+  padding: 0.8rem 1.35rem;
+  border: 2px solid var(--best-word-accent);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--best-word-bg) 70%, var(--best-word-accent)) 0%,
+    var(--best-word-bg) 55%,
+    color-mix(in srgb, var(--best-word-bg) 70%, var(--best-word-accent)) 100%
+  );
+  font-size: 0.95rem;
+  animation:
+    congrats-bubble-in 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) backwards,
+    congrats-own-glow 2.2s ease-in-out 0.5s infinite;
+}
+/* The sweep of light: a pale band, skewed, run across the bubble and parked off
+   its far edge until the next pass. */
+.congrats-bubble__pop--you::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgb(255 255 255 / 0.55) 50%,
+    transparent 65%
+  );
+  transform: translateX(-110%);
+  animation: congrats-own-shine 2.6s ease-in-out 0.6s infinite;
+  pointer-events: none;
+}
+.congrats-bubble__pop--you .congrats-bubble__emoji {
+  font-size: 1.5rem;
+  animation: congrats-own-crown 1.3s ease-in-out infinite;
+}
+.congrats-bubble__headline {
+  font-size: 1.15em;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+}
+.congrats-bubble__detail {
+  font-weight: 700;
+  color: var(--fg-muted);
+}
+@keyframes congrats-own-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 6px 18px rgb(0 0 0 / 0.18),
+      0 0 0 0 color-mix(in srgb, var(--best-word-accent) 55%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 6px 18px rgb(0 0 0 / 0.18),
+      0 0 0 7px color-mix(in srgb, var(--best-word-accent) 0%, transparent),
+      0 0 28px color-mix(in srgb, var(--best-word-accent) 60%, transparent);
+  }
+}
+@keyframes congrats-own-shine {
+  0% {
+    transform: translateX(-110%);
+  }
+  45%,
+  100% {
+    transform: translateX(110%);
+  }
+}
+@keyframes congrats-own-crown {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-8deg);
+  }
+  50% {
+    transform: translateY(-3px) rotate(8deg);
+  }
+}
+/* Its ink is gold, and there is more of it: the prize is still the prize when
+   it lands. Everything in the blot is drawn in --fg, so one override repaints
+   the body and every droplet. */
+.congrats-bubble__splat--you {
+  --fg: var(--best-word-accent);
+  width: 7rem;
+  height: 7rem;
+  margin: -3.5rem;
+}
+/* Popped: CHAMPION stamped across the screen over the gold flash and confetti,
+   on the jackpot's own slam (see JackpotStamp), in the winning row's gold. Each
+   bubble's layer is its own stacking context, so it is the reader's whole layer
+   that is lifted: another bubble still floating must not paint over the stamp
+   -- nor, before the pop, over the reader's own bubble. */
+.congrats-bubble--you {
+  z-index: 30;
+}
+.congrats-bubble__stamp {
+  color: #1a1300;
+  background: linear-gradient(135deg, #fde68a, var(--best-word-accent) 55%, #f59e0b);
+  border: 2px solid #fff7d6;
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--best-word-accent) 35%, transparent),
+    0 0 56px color-mix(in srgb, var(--best-word-accent) 65%, transparent);
+}
 .leaderboard__imported {
   color: var(--success-fg);
   font-weight: 700;
