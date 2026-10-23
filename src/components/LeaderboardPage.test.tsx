@@ -680,6 +680,27 @@ describe("the leaderboard page", () => {
     expect(boardRows(MONTH_BOARD)[2]).toHaveTextContent("214");
   });
 
+  it("tells a player near the top of a big board which top band they are in", async () => {
+    const me = joinBoard();
+    // A hundred players this week, and this browser sits fourth: top 5%.
+    const crowd = Array.from({ length: 100 }, (_, index) => ({
+      ...WEEKLY[1],
+      rank: index + 1,
+      playerId: `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
+      score: 100 - index,
+    }));
+    crowd[3] = { ...crowd[3], playerId: me ?? "" };
+    stubFetch({ ...OPEN, weekly: crowd });
+    render(<LeaderboardPage />);
+
+    await waitFor(() =>
+      expect(boardRows("This week")[3]).toHaveTextContent("Top 5%. Your ink is running hot."),
+    );
+    // Only on the player's own row, and not on a two-player board.
+    expect(boardRows("This week")[2]).not.toHaveTextContent("Top");
+    expect(boardRows(MONTH_BOARD).some((row) => /top \d+%/i.test(row.textContent ?? ""))).toBe(false);
+  });
+
   it("shows no extra row when the player is on the board", async () => {
     joinBoard();
     stubFetch();

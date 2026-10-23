@@ -26,6 +26,11 @@ import { WEEK_BEST_DAYS, weekLabel, weekStart } from "../game/week";
 import { formatScore, formatTotal } from "../game/dictionary";
 import { navigate } from "../routes";
 import { CongratsBubble } from "./CongratsBubble";
+import {
+  TOP_PERCENT_COPY,
+  topPercentBand,
+  type TopPercentBand,
+} from "../game/topPercent";
 
 type LoadState = "loading" | "ready" | "error";
 
@@ -739,7 +744,7 @@ export function LeaderboardPage() {
   );
 }
 
-interface BoardProps<Entry extends { playerId: string }> {
+interface BoardProps<Entry extends { playerId: string; rank: number | null }> {
   heading: string;
   /** A note beside the heading, set smaller -- when the board resets. */
   headingDetail?: string;
@@ -748,8 +753,11 @@ interface BoardProps<Entry extends { playerId: string }> {
   self: Entry | null;
   /** What the two stacked figures on the right of each row are. */
   columns: readonly [string, string];
-  /** One row of this board. */
-  renderRow: (entry: Entry, isYou: boolean) => ReactNode;
+  /**
+   * One row of this board. `boardSize` is how many players the board is known
+   * to hold -- a floor, since a board longer than the response is cut.
+   */
+  renderRow: (entry: Entry, isYou: boolean, boardSize: number) => ReactNode;
   emptyMessage: string;
   playerId: string | null;
   /**
@@ -778,8 +786,15 @@ const SCORE_COLUMNS = ["Total score", "Best find"] as const;
  */
 const STREAK_COLUMNS = ["Streak", "Longest streak"] as const;
 
-function scoreRow(entry: BoardEntry, isYou: boolean): ReactNode {
-  return <Row key={entry.playerId} entry={entry} isYou={isYou} />;
+function scoreRow(entry: BoardEntry, isYou: boolean, boardSize: number): ReactNode {
+  return (
+    <Row
+      key={entry.playerId}
+      entry={entry}
+      isYou={isYou}
+      band={isYou ? topPercentBand(entry.rank, boardSize) : null}
+    />
+  );
 }
 
 function streakRow(entry: StreakEntry, isYou: boolean): ReactNode {
@@ -798,7 +813,7 @@ function streakRow(entry: StreakEntry, isYou: boolean): ReactNode {
  * bottom edge of the board exactly as it docks the row of a player inside it.
  * The rank on it is the real one, not one past the last row that fits.
  */
-function Board<Entry extends { playerId: string }>({
+function Board<Entry extends { playerId: string; rank: number | null }>({
   heading,
   headingDetail,
   entries,
@@ -815,6 +830,11 @@ function Board<Entry extends { playerId: string }>({
   onBack,
   onForward,
 }: BoardProps<Entry>) {
+  // Everybody the board is known to hold: the rows sent, or further down if the
+  // player's own row came back from below the cut at a rank past them. Still a
+  // floor when the board is longer than either, which only ever under-awards a
+  // top-percent band (see game/topPercent.ts).
+  const boardSize = Math.max(entries.length, self?.rank ?? 0);
   return (
     <section className="leaderboard__board" aria-label={heading}>
       <h2 className="leaderboard__board-heading">
@@ -923,7 +943,9 @@ function Board<Entry extends { playerId: string }>({
             tabIndex={0}
             aria-label={`${heading}, top ${entries.length}`}
           >
-            {entries.map((entry) => renderRow(entry, playerId === entry.playerId))}
+            {entries.map((entry) =>
+              renderRow(entry, playerId === entry.playerId, boardSize)
+            )}
             {self && (
               <>
                 {/* The gap between the board and the row below its cut, said in
@@ -944,7 +966,7 @@ function Board<Entry extends { playerId: string }>({
                     it back into the flow after the gap.
                     Always "you": the server sends this row only to the player it
                     belongs to. */}
-                {renderRow(self, true)}
+                {renderRow(self, true, boardSize)}
               </>
             )}
           </ol>
@@ -981,7 +1003,16 @@ function Board<Entry extends { playerId: string }>({
  * `formatTotal` -- a total is a sum of numbers priced to the cent, so a tenth
  * of it is a digit the player cannot account for.
  */
-function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
+function Row({
+  entry,
+  isYou,
+  band,
+}: {
+  entry: BoardEntry;
+  isYou: boolean;
+  /** The top-percent band this player's own row has earned, if any. */
+  band: TopPercentBand | null;
+}) {
   /**
    * Whoever is top of this board, dressed as the winner they are.
    *
@@ -1020,6 +1051,20 @@ function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
       <span className="leaderboard__name">
         {entry.name}
         {isYou && <span className="leaderboard__you">you</span>}
+        {band && (
+          // A little nod beside "you" for a player near the top of a big board.
+          // The quip is the hover text and what a screen reader hears; the chip
+          // itself stays short enough not to push the name onto two lines.
+          <span
+            className={`leaderboard__top leaderboard__top--${band}`}
+            title={TOP_PERCENT_COPY[band].quip}
+          >
+            <span aria-hidden="true">
+              {TOP_PERCENT_COPY[band].emoji} top {band}%
+            </span>
+            <span className="sr-only">{TOP_PERCENT_COPY[band].quip}</span>
+          </span>
+        )}
       </span>
       <span className="leaderboard__score">{formatTotal(entry.score)}</span>
       {/* One strip under the name and the total, so the find's word can take

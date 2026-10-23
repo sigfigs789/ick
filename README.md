@@ -571,6 +571,15 @@ scrolling, because a row you have to scroll to is one you may as well not have.
 The cost is that `player` joins the CDN cache key: the 60-second read cache is
 shared per player rather than across everybody.
 
+**A nod for the top 10%, 5% and 1%.** A player's own row on the day, week and
+month boards gets a small chip beside "you" — ✨ top 10%, 🔥 top 5%, 💎 top 1% —
+with a quip on hover (`src/game/topPercent.ts`). Only the tightest band shows,
+the leader keeps the trophy instead, and a band only exists once the board is big
+enough for it (ten players for 10%, a hundred for 1%), so second of three is not
+told it is in the top 5%. The board size is the rows sent, or the player's own
+rank if that is further down, which is a floor, so a band can be under-awarded but
+never over-awarded.
+
 **A month, not all of time and not a season.** The second board used to sum every
 puzzle ever, and then a hand-picked season (2026-08-01 to 2026-12-31). A window
 that ends is what makes it worth ranking — somebody arriving late has something

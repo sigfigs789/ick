@@ -3534,6 +3534,48 @@ h2 {
      the row that must not be broken across two lines mid-word. */
   white-space: nowrap;
 }
+/*
+ * The top-percent nod beside "you" (see game/topPercent.ts): the same pill
+ * shape, in a warmer ink per band, with one wiggle as the board lands so it is
+ * noticed once and then left alone. The global reduced-motion rule stills it.
+ */
+.leaderboard__top {
+  display: inline-block;
+  margin-left: 0.3rem;
+  padding: 0.06rem 0.32rem;
+  border-radius: 0.25rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: #fff;
+  animation: leaderboard-top-wiggle 0.9s ease-out 0.3s 1 both;
+}
+.leaderboard__top--10 {
+  background: #6a5acd;
+}
+.leaderboard__top--5 {
+  background: #d9480f;
+}
+.leaderboard__top--1 {
+  background: linear-gradient(135deg, #0c8599, #7048e8, #c2255c);
+}
+@keyframes leaderboard-top-wiggle {
+  0% {
+    transform: scale(0.6) rotate(0);
+    opacity: 0;
+  }
+  40% {
+    transform: scale(1.15) rotate(-6deg);
+    opacity: 1;
+  }
+  65% {
+    transform: scale(1) rotate(4deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
 .leaderboard__detail {
   grid-area: detail;
   display: flex;
