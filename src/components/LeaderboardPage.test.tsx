@@ -694,7 +694,7 @@ describe("the leaderboard page", () => {
     render(<LeaderboardPage />);
 
     await waitFor(() =>
-      expect(boardRows("This week")[3]).toHaveTextContent("Top 5%. Your ink is running hot."),
+      expect(boardRows("This week")[3]).toHaveTextContent("Top 5%. You're on fire."),
     );
     // Only on the player's own row, and not on a two-player board.
     expect(boardRows("This week")[2]).not.toHaveTextContent("Top");

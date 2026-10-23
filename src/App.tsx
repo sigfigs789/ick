@@ -11,6 +11,7 @@ import { PuzzleNav } from "./components/PuzzleNav";
 import { FoldedLiveNotice } from "./components/FoldedLiveNotice";
 import { ConfettiBurst } from "./components/ConfettiBurst";
 import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
+import { StandingCelebration } from "./components/StandingCelebration";
 import { QuickShareButton } from "./components/QuickShareButton";
 import { isNewPlayUi } from "./game/uiVariant";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
@@ -18,6 +19,7 @@ import { useSound } from "./hooks/useSound";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { isWinningRarity } from "./game/rank";
 import { completedWholeMonth } from "./game/perfectMonth";
+import { checkStanding, type StandingNotice } from "./game/topPercent";
 import { totalRarityScore } from "./game/dictionary";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
@@ -38,6 +40,17 @@ import {
   endSessionSegment,
   resumeSession,
 } from "./game/sessionTime";
+
+/**
+ * How long after the page opens to ask where the player stands on the month's
+ * board. Late enough to stay out of the first paint's way.
+ */
+const STANDING_OPEN_DELAY_MS = 2500;
+/**
+ * How long after today's puzzle finishes to ask again: long enough for the last
+ * word's score to have reached the board before the board is read.
+ */
+const STANDING_FINISH_DELAY_MS = 4000;
 
 export default function App() {
   useForceUpdate();
@@ -181,6 +194,43 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perfectMonth, date]);
 
+  // Where the player stands against everybody else on the month's board (see
+  // game/topPercent.ts): asked once a moment after the page opens -- which is
+  // also when the month just gone is reported -- and again when today's puzzle
+  // finishes, which is when a day's climb into a new band is final.
+  const [standing, setStanding] = useState<StandingNotice | null>(null);
+  const endStanding = useCallback(() => setStanding(null), []);
+  const finishedToday = isToday && progress.completed;
+  const wasFinishedToday = useRef(finishedToday);
+  const standingAsked = useRef(false);
+  useEffect(() => {
+    const finishing = finishedToday && !wasFinishedToday.current;
+    wasFinishedToday.current = finishedToday;
+    // Only the open and the finish ask: every other change to this flag is a
+    // step through the archive or a reload of a day already done.
+    if (!finishing && standingAsked.current) return;
+    let cancelled = false;
+    const timeout = window.setTimeout(
+      () => {
+        // Set when the ask goes out rather than when it is scheduled, so a
+        // mount that is torn down and remounted (StrictMode) still asks once.
+        standingAsked.current = true;
+        checkStanding(undefined, { fresh: finishing })
+          .then((notice) => {
+            if (!cancelled && notice) setStanding(notice);
+          })
+          // A board that cannot be read is a cheer that does not happen, never
+          // something the player should see.
+          .catch(() => {});
+      },
+      finishing ? STANDING_FINISH_DELAY_MS : STANDING_OPEN_DELAY_MS
+    );
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, [finishedToday]);
+
   const guessEntry = (
     <>
       {!progress.completed && (
@@ -215,6 +265,8 @@ export default function App() {
           days={Number(date.slice(8, 10))}
           onDone={endPerfectMonth}
         />
+      ) : standing ? (
+        <StandingCelebration notice={standing} onDone={endStanding} />
       ) : (
         showConfetti && <ConfettiBurst />
       )}

@@ -28,6 +28,7 @@ import { navigate } from "../routes";
 import { CongratsBubble } from "./CongratsBubble";
 import {
   TOP_PERCENT_COPY,
+  boardSize as knownBoardSize,
   topPercentBand,
   type TopPercentBand,
 } from "../game/topPercent";
@@ -792,7 +793,8 @@ function scoreRow(entry: BoardEntry, isYou: boolean, boardSize: number): ReactNo
       key={entry.playerId}
       entry={entry}
       isYou={isYou}
-      band={isYou ? topPercentBand(entry.rank, boardSize) : null}
+      // Not on the leader's row: the trophy already says more than a percentage.
+      band={isYou && entry.rank > 1 ? topPercentBand(entry.rank, boardSize) : null}
     />
   );
 }
@@ -834,7 +836,7 @@ function Board<Entry extends { playerId: string; rank: number | null }>({
   // player's own row came back from below the cut at a rank past them. Still a
   // floor when the board is longer than either, which only ever under-awards a
   // top-percent band (see game/topPercent.ts).
-  const boardSize = Math.max(entries.length, self?.rank ?? 0);
+  const boardSize = knownBoardSize(entries, self);
   return (
     <section className="leaderboard__board" aria-label={heading}>
       <h2 className="leaderboard__board-heading">

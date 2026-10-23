@@ -3536,7 +3536,7 @@ h2 {
 }
 /*
  * The top-percent nod beside "you" (see game/topPercent.ts): the same pill
- * shape, in a warmer ink per band, with one wiggle as the board lands so it is
+ * shape, in a warmer colour per band, with one wiggle as the board lands so it is
  * noticed once and then left alone. The global reduced-motion rule stills it.
  */
 .leaderboard__top {
@@ -3559,6 +3559,20 @@ h2 {
 }
 .leaderboard__top--1 {
   background: linear-gradient(135deg, #0c8599, #7048e8, #c2255c);
+}
+/* The top-percent card on the puzzle page (components/StandingCelebration.tsx):
+   the perfect-month card, ringed in its band's colour rather than gold. */
+.standing--10 {
+  border-color: #6a5acd;
+  box-shadow: var(--card-shadow), 0 0 0 6px rgb(106 90 205 / 0.18);
+}
+.standing--5 {
+  border-color: #d9480f;
+  box-shadow: var(--card-shadow), 0 0 0 6px rgb(217 72 15 / 0.18);
+}
+.standing--1 {
+  border-color: #7048e8;
+  box-shadow: var(--card-shadow), 0 0 0 6px rgb(112 72 232 / 0.22);
 }
 @keyframes leaderboard-top-wiggle {
   0% {

@@ -580,6 +580,15 @@ told it is in the top 5%. The board size is the rows sent, or the player's own
 rank if that is further down, which is a floor, so a band can be under-awarded but
 never over-awarded.
 
+The puzzle page tells the player too, against everybody on the month's board in
+the mode they play: a card the first time they reach a band in a month ("Top 5%
+this month! You're 12th of 340 players so far, ahead of 96% of them."), and in
+the first week of a new month, how the last one finished if it finished in a band.
+The board is read a moment after the page opens and again a few seconds after
+today's puzzle finishes. What has been said is kept per mode and month in
+`ick:top-percent`, so each band is announced once, a tighter one is still news,
+and slipping out and back in is not.
+
 **A month, not all of time and not a season.** The second board used to sum every
 puzzle ever, and then a hand-picked season (2026-08-01 to 2026-12-31). A window
 that ends is what makes it worth ranking — somebody arriving late has something
