@@ -1553,6 +1553,56 @@ h2 {
     color-mix(in srgb, var(--rarity-legend-dot) 32%, transparent);
 }
 
+/* A just-scored badge pops in while its number rolls up. */
+.rarity-badge--fresh {
+  animation: badge-pop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+@keyframes badge-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Mythic and Legend badges keep a slow sheen running across them, so the top
+   of the ladder is something you notice from across the log. */
+.rarity-badge.rarity--mythic,
+.rarity-badge.rarity--legend {
+  position: relative;
+  overflow: hidden;
+}
+.rarity-badge.rarity--mythic::after,
+.rarity-badge.rarity--legend::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgb(255 255 255 / 0.55) 50%,
+    transparent 65%
+  );
+  transform: translateX(-120%);
+  animation: badge-sheen 3.2s ease-in-out 0.6s infinite;
+  pointer-events: none;
+}
+@keyframes badge-sheen {
+  0% {
+    transform: translateX(-120%);
+  }
+  40%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+
 /* Submit form */
 .submit-form {
   margin-bottom: 0.375rem;
@@ -2222,6 +2272,72 @@ h2 {
   to {
     transform: translate(calc((var(--confetti-index) - 12) * 1.8vw), 108vh)
       rotate(540deg);
+    opacity: 0;
+  }
+}
+
+/* A Mythic or Legend (see components/JackpotStamp.tsx): the screen flashes
+   and the tier slams in over the grand confetti, then everything fades. */
+.jackpot {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 21;
+  display: grid;
+  place-items: center;
+}
+.jackpot__flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 45%,
+    color-mix(in srgb, #ffd54a 55%, transparent),
+    transparent 65%
+  );
+  opacity: 0;
+  animation: jackpot-flash 1.1s ease-out forwards;
+}
+@keyframes jackpot-flash {
+  15% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.jackpot__stamp {
+  position: relative;
+  padding: 0.5rem 1.4rem;
+  border-radius: 1rem;
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 11vw, 3.6rem);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, currentColor 30%, transparent),
+    0 0 48px color-mix(in srgb, currentColor 45%, transparent);
+  animation: jackpot-stamp 2.4s cubic-bezier(0.2, 1.4, 0.4, 1) forwards;
+}
+@keyframes jackpot-stamp {
+  0% {
+    transform: scale(2.6) rotate(-14deg);
+    opacity: 0;
+  }
+  12% {
+    transform: scale(0.92) rotate(-6deg);
+    opacity: 1;
+  }
+  20% {
+    transform: scale(1.06) rotate(-6deg);
+  }
+  28%,
+  75% {
+    transform: scale(1) rotate(-6deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.15) rotate(-6deg) translateY(-1.5rem);
     opacity: 0;
   }
 }
@@ -5725,6 +5841,76 @@ h2 {
   }
   100% {
     box-shadow: var(--card-shadow);
+  }
+}
+
+/* A word that beat the day's earlier best says so, and the card glows gold
+   for a moment. */
+.guess-log__new-best {
+  grid-column: 3;
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: #ffd54a;
+  color: #3d2c00;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  animation: new-best-in 2.6s cubic-bezier(0.2, 1.6, 0.4, 1) forwards;
+}
+@keyframes new-best-in {
+  0% {
+    transform: scale(0) rotate(-12deg);
+    opacity: 0;
+  }
+  15% {
+    transform: scale(1.2) rotate(4deg);
+    opacity: 1;
+  }
+  25%,
+  85% {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+}
+.guess-log__entry--new-best {
+  animation: entry-new-best 1.8s var(--ease-standard);
+}
+.guess-log__entry--landed.guess-log__entry--new-best {
+  animation:
+    slot-fill 0.38s var(--ease-standard),
+    entry-new-best 1.8s var(--ease-standard);
+}
+.guess-log__entry--new-best .guess-log__crown {
+  display: inline-block;
+  animation: crown-hop 0.7s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+@keyframes entry-new-best {
+  0%,
+  45% {
+    box-shadow:
+      0 0 0 3px #ffd54a,
+      0 0 24px color-mix(in srgb, #ffd54a 60%, transparent);
+  }
+  100% {
+    box-shadow: var(--card-shadow);
+  }
+}
+@keyframes crown-hop {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-0.5rem) scale(1.35) rotate(-12deg);
+  }
+  100% {
+    transform: translateY(0) scale(1);
   }
 }
 

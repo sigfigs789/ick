@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { DropDisplay } from "./components/DropDisplay";
 import { GuessLog } from "./components/GuessLog";
 import { DEV_TOOLS } from "./dev/devTools";
@@ -10,6 +10,7 @@ import { WordRulesModal } from "./components/WordRulesModal";
 import { PuzzleNav } from "./components/PuzzleNav";
 import { FoldedLiveNotice } from "./components/FoldedLiveNotice";
 import { ConfettiBurst } from "./components/ConfettiBurst";
+import { JackpotStamp } from "./components/JackpotStamp";
 import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
 import { ImprovementCelebration } from "./components/ImprovementCelebration";
 import { QuickShareButton } from "./components/QuickShareButton";
@@ -20,6 +21,8 @@ import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { isWinningRarity } from "./game/rank";
+import { celebrationFor } from "./game/celebration";
+import type { Rarity } from "./game/types";
 import { completedWholeMonth } from "./game/perfectMonth";
 import { welcomeBack } from "./game/streakFreeze";
 import { dismissWelcomeBack, welcomeBackDismissedOn } from "./game/storage";
@@ -87,7 +90,11 @@ export default function App() {
   // header's switch does (see index.css).
   const playMode = modeChosen ? mode : undefined;
   const [showWordRules, setShowWordRules] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
+  // The celebration for the word just accepted, keyed by its feedback so two
+  // good words in a row each get their own burst rather than sharing one.
+  const [burst, setBurst] = useState<{ key: number; grand: boolean; rarity: Rarity } | null>(
+    null,
+  );
   const [showPerfectMonth, setShowPerfectMonth] = useState(false);
   const endPerfectMonth = useCallback(() => setShowPerfectMonth(false), []);
   const [improvement, setImprovement] = useState<Improvement | null>(null);
@@ -155,11 +162,19 @@ export default function App() {
     };
   }, []);
 
-  // Play a chime/buzz on every submission, pitched by rarity when accepted.
+  // Play a chime/buzz on every submission, pitched by rarity when accepted --
+  // and celebrate every Rare-or-better word, louder the rarer it is (see
+  // game/celebration.ts). Only a fresh verdict does this, never a puzzle
+  // restored from storage.
   useEffect(() => {
     if (!feedback) return;
     if (feedback.kind === "accepted" && feedback.rarity) {
       sound.accept(feedback.rarity);
+      const celebration = celebrationFor(feedback.rarity);
+      if (celebration === "grand") sound.jackpot();
+      if (celebration !== "none") {
+        setBurst({ key: feedback.key, grand: celebration === "grand", rarity: feedback.rarity });
+      }
     } else if (feedback.kind === "rejected") {
       sound.reject();
     }
@@ -168,20 +183,25 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedback]);
 
+  // Each burst clears itself once its pieces have fallen.
+  useEffect(() => {
+    if (!burst) return;
+    const timeout = window.setTimeout(() => setBurst(null), burst.grand ? 2800 : 1800);
+    return () => window.clearTimeout(timeout);
+  }, [burst]);
+
   const hasWinningWord = progress.acceptedWords.some((word) =>
     isWinningRarity(word.rarity),
   );
-  // Celebrate the first qualifying word only, never a puzzle restored
-  // from storage that already contains one.
+  // The completion chime, for the day's first qualifying word only -- never a
+  // puzzle restored from storage that already contains one. The confetti now
+  // comes with every good word (above), but this chime stays a once-a-day
+  // milestone. A first winning word that is already a jackpot has its own
+  // fanfare instead.
   const hadWinningWord = useRef(hasWinningWord);
   useEffect(() => {
-    if (hasWinningWord && !hadWinningWord.current) {
-      hadWinningWord.current = true;
-      sound.complete();
-      setShowConfetti(true);
-      const timeout = window.setTimeout(() => setShowConfetti(false), 1800);
-      return () => window.clearTimeout(timeout);
-    }
+    const jackpot = progress.acceptedWords.some((word) => celebrationFor(word.rarity) === "grand");
+    if (hasWinningWord && !hadWinningWord.current && !jackpot) sound.complete();
     hadWinningWord.current = hasWinningWord;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasWinningWord]);
@@ -262,7 +282,12 @@ export default function App() {
         // After the perfect month's card, if both land on one finish.
         <ImprovementCelebration improvement={improvement} onDone={endImprovement} />
       ) : (
-        showConfetti && <ConfettiBurst />
+        burst && (
+          <Fragment key={burst.key}>
+            <ConfettiBurst grand={burst.grand} />
+            {burst.grand && <JackpotStamp rarity={burst.rarity} date={date} />}
+          </Fragment>
+        )
       )}
 
       {/* Not mounted where reporting is off: inside a Reddit post both scripts

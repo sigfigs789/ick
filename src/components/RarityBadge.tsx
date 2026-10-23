@@ -1,4 +1,5 @@
-import { formatRarityScore } from "../game/dictionary";
+import { formatRarityScore, formatScore, rarityScore } from "../game/dictionary";
+import { useRollingNumber } from "../hooks/useRollingNumber";
 import { rarityClassName } from "./rarityStyles";
 import type { Rarity } from "../game/types";
 
@@ -28,17 +29,38 @@ interface Props {
    * undated one showed the pre-lift 9.3 under a Mythic label (2026-10-07).
    */
   date: string | undefined;
+  /** Just scored: the badge pops in and its number rolls up to the score. */
+  fresh?: boolean;
 }
 
-export function RarityBadge({ rarity, zipf, date }: Props) {
+export function RarityBadge({ rarity, zipf, date, fresh = false }: Props) {
   const className = rarityClassName(rarity, date);
   return (
-    <span className={`rarity-badge ${className}`}>
+    <span className={`rarity-badge ${className}${fresh ? " rarity-badge--fresh" : ""}`}>
       <span className="rarity-badge__dot" aria-hidden="true" />
       {RARITY_TAG[rarity]}
-      {zipf !== undefined && (
-        <span className="rarity-badge__score">{formatRarityScore(zipf, date)}</span>
-      )}
+      {zipf !== undefined &&
+        (fresh ? (
+          <RollingScore zipf={zipf} date={date} />
+        ) : (
+          <span className="rarity-badge__score">{formatRarityScore(zipf, date)}</span>
+        ))}
+    </span>
+  );
+}
+
+/**
+ * The score rolling up to its value. The rolling digits are decoration: the
+ * final score is what a screen reader is given, from the first frame.
+ */
+function RollingScore({ zipf, date }: { zipf: number; date: string | undefined }) {
+  const final = formatRarityScore(zipf, date);
+  const shown = formatScore(useRollingNumber(rarityScore(zipf, date), true), date);
+  if (shown === final) return <span className="rarity-badge__score">{final}</span>;
+  return (
+    <span className="rarity-badge__score">
+      <span aria-hidden="true">{shown}</span>
+      <span className="sr-only">{final}</span>
     </span>
   );
 }
