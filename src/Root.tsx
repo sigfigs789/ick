@@ -1,23 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import App from "./App";
 import { trackLeaderboardJoined, trackModeAssigned } from "./analytics";
 import { AppHeader } from "./components/AppHeader";
-import { AnalyticsPage } from "./components/AnalyticsPage";
-import { AnalyticsV2Page } from "./analyticsV2/AnalyticsV2Page";
-import { DeadStreaksPage } from "./components/DeadStreaksPage";
 import { ChatBubble } from "./components/ChatBubble";
-import { FeedbackPage } from "./components/FeedbackPage";
-import { FoundWordsPage } from "./components/FoundWordsPage";
-import { FoldReviewPage } from "./components/FoldReviewPage";
-import { FoldedLivePage } from "./components/FoldedLivePage";
-import { FreeformFeedbackPage } from "./components/FreeformFeedbackPage";
 import { FreeformModal } from "./components/FreeformModal";
-import { HelpPage } from "./components/HelpPage";
+import { PageErrorBoundary } from "./components/PageErrorBoundary";
 import { InstructionsModal } from "./components/InstructionsModal";
-import { LeaderboardPage } from "./components/LeaderboardPage";
-import { TotalLeaderboardPage } from "./components/TotalLeaderboardPage";
-import { SuggestedWordsPage } from "./components/SuggestedWordsPage";
-import { TransferPage } from "./components/TransferPage";
 import { DevDateBar } from "./dev/DevDateBar";
 import { DEV_TOOLS } from "./dev/devTools";
 import { todayDateString } from "./game/date";
@@ -30,7 +18,74 @@ import { hasJoined, joinBoard } from "./game/player";
 import { playedPuzzleCount } from "./game/storage";
 import { hasSeen, headerBadgeFor, markSeen } from "./game/whatsNew";
 import { takesPlayerMessages } from "./game/playerMessages";
+import { lazyPage } from "./lazyPage";
 import { useRoute } from "./routes";
+
+/*
+ * Every page but the puzzle, fetched when it is first opened rather than with
+ * the app.
+ *
+ * Most players open the puzzle and nothing else, so the boards, the review
+ * pages and the analytics dashboards were code they downloaded and parsed for
+ * nothing before the drop could appear. Each is now its own chunk. The puzzle
+ * (App) stays in the first load: it is the page nearly every visit is for, and
+ * waiting on a second request for it would make the common case slower.
+ *
+ * See chunkRecovery for what happens when a chunk fails to arrive, and
+ * PageErrorBoundary for what is shown if it still does not.
+ */
+const AnalyticsPage = lazyPage(
+  () => import("./components/AnalyticsPage"),
+  (m) => m.AnalyticsPage,
+);
+const AnalyticsV2Page = lazyPage(
+  () => import("./analyticsV2/AnalyticsV2Page"),
+  (m) => m.AnalyticsV2Page,
+);
+const DeadStreaksPage = lazyPage(
+  () => import("./components/DeadStreaksPage"),
+  (m) => m.DeadStreaksPage,
+);
+const FeedbackPage = lazyPage(
+  () => import("./components/FeedbackPage"),
+  (m) => m.FeedbackPage,
+);
+const FoldReviewPage = lazyPage(
+  () => import("./components/FoldReviewPage"),
+  (m) => m.FoldReviewPage,
+);
+const FoldedLivePage = lazyPage(
+  () => import("./components/FoldedLivePage"),
+  (m) => m.FoldedLivePage,
+);
+const FoundWordsPage = lazyPage(
+  () => import("./components/FoundWordsPage"),
+  (m) => m.FoundWordsPage,
+);
+const FreeformFeedbackPage = lazyPage(
+  () => import("./components/FreeformFeedbackPage"),
+  (m) => m.FreeformFeedbackPage,
+);
+const HelpPage = lazyPage(
+  () => import("./components/HelpPage"),
+  (m) => m.HelpPage,
+);
+const LeaderboardPage = lazyPage(
+  () => import("./components/LeaderboardPage"),
+  (m) => m.LeaderboardPage,
+);
+const SuggestedWordsPage = lazyPage(
+  () => import("./components/SuggestedWordsPage"),
+  (m) => m.SuggestedWordsPage,
+);
+const TotalLeaderboardPage = lazyPage(
+  () => import("./components/TotalLeaderboardPage"),
+  (m) => m.TotalLeaderboardPage,
+);
+const TransferPage = lazyPage(
+  () => import("./components/TransferPage"),
+  (m) => m.TransferPage,
+);
 
 /**
  * How long a tab has to have been away before returning to it re-syncs.
@@ -293,6 +348,29 @@ export function Root() {
     };
   }, []);
 
+  /**
+   * Fetch the two pages the header's tabs lead to once the browser is idle, so
+   * tapping a tab does not wait on a download.
+   *
+   * After the first paint rather than with it: the point of splitting them out
+   * was to keep them off the puzzle's critical path, and an idle callback is
+   * the browser telling us that path is clear. Safari has no
+   * requestIdleCallback, so it gets a plain delay instead. A failure is left
+   * for the page's own render to retry when it is opened.
+   */
+  useEffect(() => {
+    const prefetch = () => {
+      LeaderboardPage.preload();
+      FoundWordsPage.preload();
+    };
+    if (typeof window.requestIdleCallback === "function") {
+      const handle = window.requestIdleCallback(prefetch, { timeout: 5000 });
+      return () => window.cancelIdleCallback(handle);
+    }
+    const timer = window.setTimeout(prefetch, 2000);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   return (
     /* The one page frame, so the header above the router is inside the column
        every page reads in. The two pages beside the puzzle are wider than it:
@@ -313,39 +391,47 @@ export function Root() {
         badgeLabel={badge?.label}
         onBadgeDone={retireBadge}
       />
-      {route === "leaderboard" ? (
-        <LeaderboardPage />
-      ) : route === "found-words" ? (
-        <FoundWordsPage />
-      ) : route === "suggested-words" ? (
-        /* The two review pages, which no tab points at: they render under the
-           same header as everything else, because a page of this app is a page
-           of this app -- there is nothing to be gained by giving a list its own
-           frame, and the header's "?" is as welcome here as anywhere. */
-        <SuggestedWordsPage />
-      ) : route === "feedback" ? (
-        <FeedbackPage />
-      ) : route === "freeform-feedback" ? (
-        <FreeformFeedbackPage />
-      ) : route === "fold-review" ? (
-        <FoldReviewPage />
-      ) : route === "folded-live" ? (
-        <FoldedLivePage />
-      ) : route === "analytics" ? (
-        <AnalyticsPage />
-      ) : route === "analytics-v2" ? (
-        <AnalyticsV2Page />
-      ) : route === "transfer" ? (
-        <TransferPage />
-      ) : route === "leaderboard-total" ? (
-        <TotalLeaderboardPage />
-      ) : route === "dead-streaks" ? (
-        <DeadStreaksPage />
-      ) : route === "help" ? (
-        <HelpPage />
-      ) : (
-        <App />
-      )}
+      {/* Under the header, so the header stays put while a page's chunk is
+          on its way -- only the page's own area waits, and only the first
+          time that page is opened in a visit. The error boundary outside it
+          keeps the header up too if the page cannot load at all. */}
+      <PageErrorBoundary resetKey={route}>
+        <Suspense fallback={<p className="app__page-loading">Loading…</p>}>
+          {route === "leaderboard" ? (
+            <LeaderboardPage />
+          ) : route === "found-words" ? (
+            <FoundWordsPage />
+          ) : route === "suggested-words" ? (
+            /* The two review pages, which no tab points at: they render under the
+               same header as everything else, because a page of this app is a page
+               of this app -- there is nothing to be gained by giving a list its own
+               frame, and the header's "?" is as welcome here as anywhere. */
+            <SuggestedWordsPage />
+          ) : route === "feedback" ? (
+            <FeedbackPage />
+          ) : route === "freeform-feedback" ? (
+            <FreeformFeedbackPage />
+          ) : route === "fold-review" ? (
+            <FoldReviewPage />
+          ) : route === "folded-live" ? (
+            <FoldedLivePage />
+          ) : route === "analytics" ? (
+            <AnalyticsPage />
+          ) : route === "analytics-v2" ? (
+            <AnalyticsV2Page />
+          ) : route === "transfer" ? (
+            <TransferPage />
+          ) : route === "leaderboard-total" ? (
+            <TotalLeaderboardPage />
+          ) : route === "dead-streaks" ? (
+            <DeadStreaksPage />
+          ) : route === "help" ? (
+            <HelpPage />
+          ) : (
+            <App />
+          )}
+        </Suspense>
+      </PageErrorBoundary>
       {/* Queued behind the instructions rather than stacked on top of them: a
           first-timer during the week is owed both sheets, and two dialogs in
           one paint is not a way to deliver either. The how-to-play comes first

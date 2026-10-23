@@ -2,9 +2,14 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { Root } from './Root.tsx'
+import { installChunkRecovery } from './chunkRecovery'
 import { assignStartingMode } from './game/onboarding'
 import { adoptPlayerFromUrl } from './game/player'
 import { visitorTag } from './game/visitor'
+
+// First, so a chunk that fails at any point in the visit -- including one
+// asked for during the first render -- reloads the tab (see chunkRecovery.ts).
+installChunkRecovery()
 
 // Muse AI's `?player=` id, stored before Root's `joinBoard` would mint a new
 // one (see game/player.ts). Taken out of the address bar once read, so it is
