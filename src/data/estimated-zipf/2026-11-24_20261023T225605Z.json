@@ -1,0 +1,12 @@
+{
+  "since": "2026-11-24",
+  "drop": "ESC",
+  "model": "claude-opus-5-5",
+  "source": "claude",
+  "estimatedAt": "2026-10-23T22:56:05Z",
+  "note": "Words the ESC drop still had unestimated; #567 moved ESC earlier, to 2026-11-24. Done by hand ahead of the daily job",
+  "zipf": {
+    "immunocytofluorescent": -0.8,
+    "reticulatocoalescent": -1.4
+  }
+}

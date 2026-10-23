@@ -1,0 +1,12 @@
+{
+  "since": "2026-11-28",
+  "drop": "REF",
+  "model": "claude-opus-5-5",
+  "source": "claude",
+  "estimatedAt": "2026-10-23T22:56:05Z",
+  "note": "Words the REF drop still had unestimated; #567 moved REF earlier, to 2026-11-28. Done by hand ahead of the daily job",
+  "zipf": {
+    "refunctionalizations": -0.9,
+    "spectroreflectometer": -0.7
+  }
+}

@@ -15,7 +15,12 @@ import b6 from "./2026-11-12_20261019T200004Z.json";
 import b7 from "./2026-11-13_20261020T183130Z.json";
 import b8 from "./2026-11-14_20261022T183747Z.json";
 import b9 from "./2026-11-16_20261023T182758Z.json";
+import b10 from "./2026-11-22_20261023T230629Z.json";
+import b11 from "./2026-11-24_20261023T225605Z.json";
+import b12 from "./2026-11-28_20261023T225605Z.json";
+import b13 from "./2026-11-29_20261023T230631Z.json";
+import b14 from "./2026-12-03_20261023T225605Z.json";
 
 export default {
-  batches: [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9],
+  batches: [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14],
 };

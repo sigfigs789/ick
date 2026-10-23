@@ -1,0 +1,14 @@
+{
+  "since": "2026-11-29",
+  "drop": "TEC",
+  "model": "claude-opus-5-5",
+  "source": "claude",
+  "estimatedAt": "2026-10-23T23:06:31Z",
+  "note": "Words the TEC drop still had unestimated; #567 moved TEC earlier, to 2026-11-29. Done by hand ahead of the daily job",
+  "zipf": {
+    "cytohistotechnicians": -1.4,
+    "hypercalprotectinemia": -1.1,
+    "immunohistodetection": -1.0,
+    "tectonofractographic": -1.4
+  }
+}
