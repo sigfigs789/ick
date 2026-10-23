@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Evaluates candidate 2-3 letter drops against the curated dictionary and
-picks the ones with plenty of familiar (Common/Very Common) matches, per the
+picks the ones with plenty of familiar (Common) matches, per the
 "avoid drops so hard only obscure words work" requirement.
 
 Run:
@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "src" / "data"
 
 MIN_TOTAL_MATCHES = 25
-MIN_FAMILIAR_MATCHES = 8  # Very Common + Common
+MIN_FAMILIAR_MATCHES = 8  # Common
 MIN_FAMILIAR_ZIPF_TENTHS = 42  # an absolute familiarity floor, not a band edge
 
 # Hand-picked candidate pool: digraphs/trigraphs that are common English

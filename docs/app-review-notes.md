@@ -27,8 +27,8 @@ word that contains them in order: `thINK`, `wrINKle`, `INKling`.
 
 The twist is what it scores. Most word games reward length or speed. WordInk
 scores **rarity**: each accepted word is measured against published English
-word-frequency data and given a score out of ten and a tier, from Very Common
-up to Legend. So the game is not "find a word", it is "find the word nobody
+word-frequency data and given a score out of ten and a tier, from Common up
+to Legend. So the game is not "find a word", it is "find the word nobody
 else thought of" — and the interesting move is usually a word you already know
 but would never normally reach for.
 

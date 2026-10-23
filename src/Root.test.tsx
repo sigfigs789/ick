@@ -117,20 +117,22 @@ describe("keeping the board in step on open", () => {
 
     // The page picked off the address bar, and the header above it -- the same
     // element on all three, which is what makes the tabs a way between them
-    // rather than three headers that have to be kept in step.
-    expect(screen.getByText("found words")).toBeInTheDocument();
+    // rather than three headers that have to be kept in step. Found rather than
+    // got: every page but the puzzle is its own chunk, so it arrives a tick
+    // after the header does.
+    expect(await screen.findByText("found words")).toBeInTheDocument();
     expect(screen.getByRole("banner")).toHaveTextContent("WordInk");
     expect(
       screen.getByRole("button", { name: /Leaderboards/ }),
     ).toBeInTheDocument();
   });
 
-  it("renders the two review pages, which no tab points at", () => {
+  it("renders the two review pages, which no tab points at", async () => {
     stubFetch();
     window.history.replaceState(null, "", "/suggested-words");
     const { unmount } = render(<Root />);
 
-    expect(screen.getByText("suggested words")).toBeInTheDocument();
+    expect(await screen.findByText("suggested words")).toBeInTheDocument();
     // Unlinked: the header is the same header, and none of its tabs claims to be
     // the page you are on.
     expect(
@@ -140,7 +142,7 @@ describe("keeping the board in step on open", () => {
 
     window.history.replaceState(null, "", "/feedback");
     render(<Root />);
-    expect(screen.getByText("feedback")).toBeInTheDocument();
+    expect(await screen.findByText("feedback")).toBeInTheDocument();
   });
 
   it("sends only the days this browser can prove were played on their own date", () => {
@@ -155,11 +157,12 @@ describe("keeping the board in step on open", () => {
     expect(postedDates(fetchMock)).toEqual(["2026-08-20"]);
   });
 
-  it("has the id in place before the leaderboard renders", () => {
+  it("has the id in place before the leaderboard renders", async () => {
     stubFetch();
 
     window.history.replaceState(null, "", "/leaderboard");
     render(<Root />);
+    await screen.findByText("leaderboard");
 
     // Child effects run before a parent's, so a page landed on directly would
     // read the id, find none, and ask for boards without saying who was asking

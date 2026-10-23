@@ -5,7 +5,8 @@ import type { StreakState } from "../game/types";
 /** How saved freezes work, for the freeze badge's popup. */
 const FREEZE_RULES =
   "🧊 keeps your streak alive for one more day. Earn your first 🧊 on day 3, then one every 7 days played. " +
-  "You can hold 1 🧊 after a 3 day streak, 2 🧊 after 14 days and 3 🧊 after 28 days.";
+  "You can hold 1 🧊 after a 3 day streak, 2 🧊 after 14 days and 3 🧊 after 28 days. " +
+  "Lose a streak after reaching 3 days and your next one starts with a 🧊 (once every 30 days).";
 
 function freezeSummary(banked: number, cap: number): string {
   if (banked === 0) return "No 🧊 acquired";
@@ -70,7 +71,7 @@ interface Props {
   /** Whether `date` is today's puzzle, which is when a freeze spent yesterday is news. */
   isToday?: boolean;
   /**
-   * The new play screen (see game/uiVariant.ts): leave out what would only be
+   * The play screen (see App.tsx): leave out what would only be
    * zeros -- the freeze badge until the player can hold a freeze, the total until a word
    * is banked, and the whole strip for a player with neither a streak, a
    * freeze cap, nor a word yet.

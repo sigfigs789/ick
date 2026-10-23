@@ -24,7 +24,6 @@ import { parseSourceCode, type ModeAssignment } from "./game/onboarding";
 import { IDLE_HINT_DELAY_MS, currentIdleHintArm, type IdleHintArm } from "./game/idleHint";
 import { APP_VERSION } from "./version";
 import { isBotUserAgent } from "./game/botUa";
-import { uiVariant, type UiVariantAssignment } from "./game/uiVariant";
 import { visitorTag } from "./game/visitor";
 
 /** The scalar property values both Vercel Analytics and /api/events accept. */
@@ -58,17 +57,15 @@ type EventProps = Record<string, string | number | boolean | null>;
 function mirror(name: string, props?: EventProps): void {
   if (import.meta.env.MODE === "test" || !reporting) return;
   try {
-    // The play-screen variant rides on every row for the same reason the id
-    // does: the experiment is read per player, across every event they send.
-    // So is a known visitor's tag (see game/visitor.ts), and only when there is
-    // one: the report sets those browsers apart from the players.
+    // A known visitor's tag (see game/visitor.ts) rides on every row for the
+    // same reason the id does, and only when there is one: the report sets
+    // those browsers apart from the players.
     const visitor = visitorTag();
     const body = JSON.stringify({
       name,
       props: {
         ...props,
         player_id: loadPlayerId(),
-        ui_variant: uiVariant(),
         ...(visitor ? { visitor } : {}),
       },
     });
@@ -549,22 +546,6 @@ export function trackModeAssigned(assignment: ModeAssignment) {
     reason: assignment.reason,
     source: visitSource(assignment.source),
     puzzle_date: assignment.date,
-  });
-}
-
-/**
- * The play-screen variant a browser was put in for one experiment, new or
- * returning (see game/uiVariant.ts). Sent once per browser per experiment,
- * ever, after the board id exists -- the row the report's UI test section
- * groups players by. `visit_type` is kept alongside for reports that predate
- * the experiment.
- */
-export function trackUiVariantAssigned(assignment: UiVariantAssignment) {
-  send("ui_variant_assigned", {
-    variant: assignment.variant,
-    experiment: assignment.experiment,
-    visit_type: assignment.experiment === "new" ? "first" : "returning",
-    puzzle_date: todayDateString(),
   });
 }
 

@@ -186,15 +186,12 @@ describe("AnalyticsPage", () => {
     expect(within(section("Key numbers")).getByRole("columnheader", { name: "Completed" })).toBeInTheDocument();
     expect(within(section("Key numbers")).getByRole("columnheader", { name: "Back next day" })).toBeInTheDocument();
     // Every table of the key numbers has the new columns.
-    for (const title of ["Play screen test", "Chat", "Idle hint test"]) {
+    for (const title of ["Chat", "Idle hint test"]) {
       expect(within(section(title)).getByRole("columnheader", { name: "Completed" })).toBeInTheDocument();
       expect(within(section(title)).getByRole("columnheader", { name: "Back next day" })).toBeInTheDocument();
     }
-    // The play-screen test pairs every grouping's rows by variant.
-    expect(within(section("Play screen test")).getAllByRole("row", { name: /^Everyone/ })).toHaveLength(1);
-    // Named v1 and v2, never "new", which reads as new players.
-    expect(within(section("Play screen test")).getAllByRole("cell", { name: "v1" })).toHaveLength(3);
-    expect(within(section("Play screen test")).getAllByRole("cell", { name: "v2" })).toHaveLength(3);
+    // The play-screen test is over, and its section with it.
+    expect(screen.queryByRole("heading", { name: "Play screen test" })).not.toBeInTheDocument();
     const fresh = within(section("Key numbers")).getByRole("row", { name: /^New players/ });
     expect(fresh).toHaveTextContent("10 14%");
     expect(within(section("Key numbers")).getByRole("row", { name: /^Returning players/ })).toBeInTheDocument();
@@ -219,7 +216,7 @@ describe("AnalyticsPage", () => {
     expect(section("Where new players come from")).toHaveTextContent("Great0.60 new players per sharer");
     for (const title of [
       "Growth", "Retention by arrival week", "Core players", "Resurrected players",
-      "Puzzle type", "Play screen test", "Chat", "Idle hint test", "Muse AI",
+      "Puzzle type", "Chat", "Idle hint test", "Muse AI",
     ]) {
       expect(section(title)).toHaveTextContent(/(Weak|Promising|Great|Too early)/);
     }

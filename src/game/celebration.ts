@@ -10,7 +10,7 @@ import type { AcceptedWord, Rarity } from "./types";
  * Now every good word earns its own moment, and the rarer the word the bigger
  * the moment, so the top of the ladder feels like the top of the ladder:
  *
- *   - `none`  -- Very Common through Uncommon: the chime and the score roll.
+ *   - `none`  -- Common and Uncommon: the chime and the score roll.
  *   - `burst` -- Rare, Extremely Rare, Elusive: confetti.
  *   - `grand` -- Mythic and Legend: the grand confetti, a jackpot fanfare and
  *                the tier stamped across the screen.

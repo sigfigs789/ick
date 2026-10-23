@@ -9,7 +9,7 @@ import { shareCode } from "./onboarding";
 import dropData from "../data/drops.json";
 import type { AcceptedWord, Rarity } from "./types";
 
-// Mirrors the in-app "loot tier" rarity palette (white -> brown -> green ->
+// Mirrors the in-app "loot tier" rarity palette (grey -> green ->
 // blue -> purple -> gold -> red -> black, see index.css) so the shared result
 // matches what showed up in-game. Legend, the top rank, is black -- the one
 // square that reads as absence rather than a hue, which is what makes it land.
@@ -21,8 +21,7 @@ import type { AcceptedWord, Rarity } from "./types";
 // color-independent for accessibility.
 export const RARITY_SYMBOL: Record<Rarity, string> = {
   Quotidian: "🥚",
-  "Very Common": "⬜",
-  Common: "🟫",
+  Common: "⬜",
   Uncommon: "🟩",
   Rare: "🟦",
   "Extremely Rare": "🟪",

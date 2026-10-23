@@ -12,7 +12,6 @@ const LEGACY_DATE = "2026-08-14";
 // the badge shows the correct color (via the class) and a color-independent
 // label for every tier.
 const BADGES: ReadonlyArray<[rarity: Rarity, className: string, tag: RegExp]> = [
-  ["Very Common", "rarity--very-common", /very common/i],
   ["Common", "rarity--common", /common/i],
   ["Uncommon", "rarity--uncommon", /uncommon/i],
   ["Rare", "rarity--rare", /rare/i],

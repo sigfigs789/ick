@@ -9,6 +9,7 @@ import {
 } from "../game/leaderboard";
 import { pageCache } from "../game/pageCache";
 import { useGameMode } from "../hooks/useGameMode";
+import { useRejectionMetadataLoaded } from "../hooks/useRejectionMetadataLoaded";
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
 import { navigate } from "../routes";
@@ -96,13 +97,16 @@ export function FoundWordsPage() {
    * The feed holds both modes' finds, and each word is priced by the rules of
    * the mode the *reader* is in -- so flipping the switch repaints every badge
    * here the way it repaints the puzzle, with nothing fetched. `mode` is read
-   * only to re-run this; the pricing itself asks game/mode.ts.
+   * only to re-run this; the pricing itself asks game/mode.ts. The rejection
+   * metadata is the same kind of trigger: until it is in, a word the reader's
+   * rules refuse by register is judged as merely unknown.
    */
   const [mode] = useGameMode();
+  const metadataLoaded = useRejectionMetadataLoaded();
   const priced = useMemo(
     () => repriceFoundWords(words),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `mode` is the trigger
-    [words, mode],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `mode` and `metadataLoaded` are triggers
+    [words, mode, metadataLoaded],
   );
 
   /** The day on screen, for a response to check it is still wanted. */

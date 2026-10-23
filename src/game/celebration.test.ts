@@ -8,7 +8,7 @@ function word(text: string, zipf: number): AcceptedWord {
 
 describe("celebrationFor", () => {
   it("scales the celebration with the tier", () => {
-    expect(celebrationFor("Very Common")).toBe("none");
+    expect(celebrationFor("Common")).toBe("none");
     expect(celebrationFor("Uncommon")).toBe("none");
     expect(celebrationFor("Rare")).toBe("burst");
     expect(celebrationFor("Elusive")).toBe("burst");

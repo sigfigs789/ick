@@ -92,6 +92,7 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const WORD_RE = /^[a-z]{2,30}$/;
 /** A displayed score: 0 to 10, one or two decimals at most. */
 const SCORE_RE = /^(?:10(?:\.0{1,2})?|\d(?:\.\d{1,2})?)$/;
+// Very Common is retired, but a client still on the old bundle can send it.
 const TIERS: ReadonlySet<string> = new Set([
   "Quotidian", "Very Common", "Common", "Uncommon", "Rare", "Extremely Rare",
   "Elusive", "Mythic", "Legend",

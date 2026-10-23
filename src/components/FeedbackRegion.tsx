@@ -20,10 +20,10 @@ interface Props {
   reserveSpace?: boolean;
   onWordRules: () => void;
   /**
-   * Whether the note stays up once the lookup answers. Off on the new play
-   * screen (see game/uiVariant.ts): the settled note ("Not found") only
-   * repeated the verdict the toast under it gives in full, so there the note
-   * shows only while it is still waiting.
+   * Whether the note stays up once the lookup answers. Off on the play screen
+   * (see App.tsx): the settled note ("Not found") only repeated the verdict
+   * the toast under it gives in full, so there the note shows only while it
+   * is still waiting.
    */
   settledNote?: boolean;
   /** How long a verdict stays up, in ms. */

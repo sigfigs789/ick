@@ -9,7 +9,6 @@ import type { Rarity } from "../game/types";
 // second channel of meaning on its own.
 const RARITY_TAG: Record<Rarity, string> = {
   Quotidian: "QUOTIDIAN",
-  "Very Common": "VERY COMMON",
   Common: "COMMON",
   Uncommon: "UNCOMMON",
   Rare: "RARE",

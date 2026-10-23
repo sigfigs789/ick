@@ -10,6 +10,7 @@ import {
   coveredThrough,
   earnFreeze,
   recordFreezes,
+  startStreak,
 } from "./streakFreeze";
 
 /**
@@ -110,6 +111,12 @@ export function loadProgress(date: string, mode?: GameMode): DailyProgress | nul
     // puzzle predating that cutover can mean the retired top rank; on a puzzle
     // that uses the retuned tiers, Elusive is exactly what the player earned and
     // promoting it would hand out a Legend nobody found.
+    // Very Common was folded into Common on every puzzle, archived ones
+    // included, so a word saved under it reads as Common now.
+    if ((word.rarity as string) === "Very Common") {
+      migrated = true;
+      return { ...word, rarity: "Common" as const };
+    }
     if ((word.rarity as string) === "Elusive" && !usesRetunedTiers(date)) {
       migrated = true;
       return { ...word, rarity: "Legend" as const };
@@ -343,6 +350,30 @@ function saveStreak(streak: StreakState): void {
 }
 
 /**
+ * The day the welcome-back card was last closed (see
+ * components/WelcomeBackCard.tsx). A date rather than a flag: closing it hides
+ * it for that day only, across reloads, and a later return greets again.
+ * Device-local, so it is not carried by a transfer.
+ */
+const WELCOME_BACK_DISMISSED_KEY = "ick:welcome-back-dismissed";
+
+export function welcomeBackDismissedOn(): string | null {
+  try {
+    return localStorage.getItem(WELCOME_BACK_DISMISSED_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function dismissWelcomeBack(date: string): void {
+  try {
+    localStorage.setItem(WELCOME_BACK_DISMISSED_KEY, date);
+  } catch {
+    // The card is still closed for this session (component state).
+  }
+}
+
+/**
  * The first valid word immediately advances today's streak. The player can
  * still keep guessing up to the day's guess limit, or lock in early, without counting
  * that streak win a second time.
@@ -423,8 +454,9 @@ function updateStreakOnValidAnswer(date: string): void {
     lastCompletedDate: date,
     crushedIt: streak.crushedIt,
     elite: streak.elite,
-    // Saved freezes belong to the streak that earned them.
-    bankedFreezes: continuesStreak ? streak.bankedFreezes : 0,
+    // Saved freezes belong to the streak that earned them; a new one starts
+    // with none, or with a welcome-back freeze for a returning player.
+    ...(continuesStreak ? { bankedFreezes: streak.bankedFreezes } : startStreak(streak, date)),
   };
   // Recorded after the day's freeze is earned, so the day shows what it ended with.
   saveStreak(recordFreezes(earnFreeze(updated), date));

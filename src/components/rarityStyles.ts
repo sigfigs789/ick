@@ -8,7 +8,6 @@ import type { Rarity } from "../game/types";
  */
 const RARITY_CLASS: Record<Rarity, string> = {
   Quotidian: "rarity--quotidian",
-  "Very Common": "rarity--very-common",
   Common: "rarity--common",
   Uncommon: "rarity--uncommon",
   Rare: "rarity--rare",

@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { isNewPlayUi } from "../game/uiVariant";
 import { trackFoundWordsOpened, trackLeaderboardOpened } from "../analytics";
 import { navigate, type Route } from "../routes";
 import { ModeToggle } from "./ModeToggle";
@@ -25,15 +24,13 @@ const BADGE_VISIBLE_MS = 10_000;
 /**
  * The pages where the switch follows the reader down (see `docked` below): the
  * boards and the finds, whose long lists are read against the mode and
- * compared across it, and the puzzle itself.
+ * compared across it.
  *
- * The puzzle was left out once, on the argument that it fits a screen. It
- * does not on a phone once the guess log fills and the results open under it,
- * and scrolled past the header, nothing above the input said which of the two
- * games was being played -- which is the one thing a player switching between
- * them most needs to see at the moment they guess.
+ * Not the puzzle. The play screen's input sits right under the drop, so the
+ * header's switch is on screen whenever a guess is typed, and a docked copy
+ * there only ever floated over the guess cards.
  */
-const DOCKED_SWITCH_ROUTES: readonly Route[] = ["game", "leaderboard", "found-words"];
+const DOCKED_SWITCH_ROUTES: readonly Route[] = ["leaderboard", "found-words"];
 
 /** One tab: where it goes and what it is called. */
 interface Tab {
@@ -162,14 +159,7 @@ export function AppHeader({
    */
   const modeNav = useRef<HTMLDivElement>(null);
   const [docked, setDocked] = useState(false);
-  // The new play screen (see game/uiVariant.ts) leaves the puzzle out again:
-  // its input sits right under the drop, so the header's switch is on screen
-  // whenever a guess is typed, and the docked copy only ever floated over the
-  // guess cards.
-  const dockable =
-    Boolean(mode && onModeChange) &&
-    DOCKED_SWITCH_ROUTES.includes(route) &&
-    !(route === "game" && isNewPlayUi());
+  const dockable = Boolean(mode && onModeChange) && DOCKED_SWITCH_ROUTES.includes(route);
   useEffect(() => {
     const target = modeNav.current;
     // No observer (jsdom, very old browsers) is no dock: the header's switch

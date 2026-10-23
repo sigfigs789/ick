@@ -42,9 +42,9 @@ interface Props {
   copying?: string | null;
   /** Submit a word to `otherMode` as well. */
   onCopyToOtherMode?: (word: string) => void;
-  /** The new play screen is on (see game/uiVariant.ts). */
+  /** The play screen's layout, which App.tsx always asks for. */
   newUi?: boolean;
-  /** Sits in the header beside the count: the new play screen's Share. */
+  /** Sits in the header beside the count: the play screen's Share. */
   headerAction?: ReactNode;
 }
 
