@@ -311,11 +311,6 @@
     "since": "2026-11-23",
     "reason": "Folded onto `clastics` (anticlastic > clastic > clastics), costing 1.83 points. Flagged by the daily fold check for the 2026-11-23 `ST` drop (saddle curvature term, unrelated to clastic rock) and confirmed on adversarial re-review (curvature term, unrelated to clastic rock)."
   },
-  "anticlimactical": {
-    "since": "2026-11-16",
-    "reason": "Folded onto `climactical` (anticlimactical > climactical), costing 0.01 points. Flagged by the daily fold check for the 2026-11-16 `ICA` drop (anticlimax meaning drifted from climactic) and confirmed on adversarial re-review (anticlimax sense, not climactic).",
-    "scope": "prefix"
-  },
   "anticline": {
     "since": "2026-09-27",
     "reason": "The geological fold (Greek anti + klinein, to lean), not anti- + `cline` -- a cline is a gradient in a population, an unrelated technical term that happens to be the residue.",
@@ -455,19 +450,9 @@
     "reason": "From `antipathy` + -etic, not anti- + `pathetic`. A word about dislike, scored 4.11 as the word for feeble.",
     "scope": "prefix"
   },
-  "antipathetical": {
-    "since": "2026-11-16",
-    "reason": "Folded onto `pathetical` (antipathetical > pathetical), costing 0.67 points. Flagged by the daily fold check for the 2026-11-16 `ICA` drop (from antipathy, not pathetic) and confirmed on adversarial re-review (from antipathy, not anti- plus pathetic).",
-    "scope": "prefix"
-  },
   "antipathetically": {
     "since": "2026-09-27",
     "reason": "Folded onto `pathetic`, costing 4.27 points. Flagged in the 2026-09-22 semantic audit (antipathetic from antipathy, not pathetic) and confirmed on adversarial re-review (from antipathy, not pathetic)."
-  },
-  "antipatheticalness": {
-    "since": "2026-11-16",
-    "reason": "Folded onto `pathetical` (antipatheticalness > patheticalness > pathetical), costing 0.77 points. Flagged by the daily fold check for the 2026-11-16 `ICA` drop (from antipathy, not pathetic) and confirmed on adversarial re-review (from antipathy, not anti- plus pathetic).",
-    "scope": "prefix"
   },
   "antipathic": {
     "since": "2026-09-27",
@@ -1231,10 +1216,6 @@
     "since": "2026-11-23",
     "reason": "Folded onto `busty` (bustiers > bustier > busty), costing 2.12 points. Flagged by the daily fold check for the 2026-11-23 `ST` drop (plural of the garment, not busty) and confirmed on adversarial re-review (garment plural, not busty comparative)."
   },
-  "bustly": {
-    "since": "2026-11-23",
-    "reason": "Folded onto `bust` (bustly > bust), costing 3.89 points. Flagged by the daily fold check for the 2026-11-23 `ST` drop (means bustling, from bustle not bust) and confirmed on adversarial re-review (from bustle, not bust)."
-  },
   "butes": {
     "since": "2026-09-27",
     "reason": "Folded onto `but`, costing 7.91 points. Flagged in the 2026-09-22 semantic audit (plural of bute/butt? not but) and confirmed on adversarial re-review (from bute/butt, not but)."
@@ -1683,10 +1664,6 @@
     "since": "2026-09-27",
     "reason": "Folded onto `chromo`, costing 0.49 points. Flagged in the 2026-09-22 semantic audit (chromoly is alloy steel) and confirmed on adversarial re-review (chromoly is chrome-molybdenum, not chromo)."
   },
-  "chuckly": {
-    "since": "2026-11-14",
-    "reason": "Folded onto `chuck` (chuckly > chuck), costing 4.08 points. Flagged by the daily fold check for the 2026-11-14 `UC` drop (from chuckle, not chuck) and confirmed on adversarial re-review (from chuckle, not chuck)."
-  },
   "cister": {
     "since": "2026-09-27",
     "reason": "Folded onto `cist`, costing 1.38 points. Flagged in the 2026-09-22 semantic audit (cister unrelated to cist) and confirmed on adversarial re-review (cist unrelated to cister)."
@@ -1823,10 +1800,6 @@
     "since": "2026-09-27",
     "reason": "Folded onto `comest`, costing 0.79 points. Flagged in the 2026-09-22 semantic audit (comest is a form of come) and confirmed on adversarial re-review (comest is from come)."
   },
-  "communise": {
-    "since": "2026-11-03",
-    "reason": "Folded onto `commune` (communise > commune), costing 2.83 points. Flagged by the daily fold check for the 2026-11-03 `COM` drop (from communism, not commune) and confirmed on adversarial re-review (communist sense, not commune community)."
-  },
   "communises": {
     "since": "2026-10-26",
     "reason": "Folded onto `commune` (communises > communise > commune), costing 2.89 points. Flagged by the daily fold check for the 2026-10-26 `SES` drop (communise relates to communism, not commune) and confirmed on adversarial re-review (make communist, not commune)."
@@ -1846,10 +1819,6 @@
   "confidentes": {
     "since": "2026-09-27",
     "reason": "Folded onto `confident`, costing 4.79 points. Flagged in the 2026-09-22 semantic audit (confidante, a person, not confident) and confirmed on adversarial re-review (confidante is a person, different word)."
-  },
-  "confirmees": {
-    "since": "2026-11-02",
-    "reason": "Folded onto `confirme` (confirmees > confirme), costing 0.27 points. Flagged by the daily fold check for the 2026-11-02 `RM` drop (plural of confirmee, -es strip overshot) and confirmed on adversarial re-review (plural of confirmee, not confirme)."
   },
   "conged": {
     "since": "2026-09-27",
@@ -2932,14 +2901,6 @@
     "reason": "Folded onto `epos`, costing up to 1.49 points, by stripping de- to `epos`. Not de- + `epos`: not de- + epos; unclear coinage. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
     "scope": "prefix"
   },
-  "deerer": {
-    "since": "2026-11-21",
-    "reason": "Folded onto `deer` (deerer > deer), costing 4.01 points. Flagged by the daily fold check for the 2026-11-21 `EE` drop (misspelling of dearer, not deer) and confirmed on adversarial re-review (misspelling of dearer)."
-  },
-  "deerest": {
-    "since": "2026-11-21",
-    "reason": "Folded onto `deer` (deerest > deer), costing 4.02 points. Flagged by the daily fold check for the 2026-11-21 `EE` drop (misspelling of dearest, not deer) and confirmed on adversarial re-review (misspelling of dearest)."
-  },
   "deeyas": {
     "since": "2026-10-04",
     "reason": "Folded onto `eyas`, costing up to 0.72 points, by stripping de- to `eyas`. Not de- + `eyas`: plural of deeya (oil lamp); unrelated to eyas. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
@@ -3307,16 +3268,6 @@
   "delayings": {
     "since": "2026-10-04",
     "reason": "Folded onto `lay`, costing up to 0.35 points, by stripping de- to `layings`. Not de- + `layings`: postponements (delay); not de- + lay. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
-    "scope": "prefix"
-  },
-  "deleave": {
-    "since": "2026-11-30",
-    "reason": "Folded onto `leave` (deleave > leave), costing 5.79 points. Flagged by the daily fold check for the 2026-11-30 `EL` drop (remove leaves, from leaf not leave) and confirmed on adversarial re-review (strip leaves; leaf, not leave depart).",
-    "scope": "prefix"
-  },
-  "deleaved": {
-    "since": "2026-11-30",
-    "reason": "Folded onto `leave` (deleaved > deleave > leave), costing 5.79 points. Flagged by the daily fold check for the 2026-11-30 `EL` drop (remove leaves, from leaf not leave) and confirmed on adversarial re-review (strip leaves; leaf, not leave depart).",
     "scope": "prefix"
   },
   "deleaves": {
@@ -4670,10 +4621,6 @@
     "since": "2026-08-24",
     "reason": "The female deer. `does` is its spelling-legal plural and also the third person of `do`, which is where all of that form's frequency comes from -- and `do` itself is two letters, so the number rules drop it and leave `doe` as the only candidate `does` can pick. Capping the deer at the auxiliary verb halved its score (5.72 -> 2.93)."
   },
-  "doees": {
-    "since": "2026-11-21",
-    "reason": "Folded onto `doe` (doees > doe), costing 3.63 points. Flagged by the daily fold check for the 2026-11-21 `EE` drop (doee from do, not doe) and confirmed on adversarial re-review (doee from do, not doe)."
-  },
   "doffings": {
     "since": "2026-09-27",
     "reason": "Folded onto `dof`, costing 2.04 points. Flagged in the 2026-09-22 semantic audit (dof not base of doffing) and confirmed on adversarial re-review (dof is not the base)."
@@ -4785,10 +4732,6 @@
   "drolest": {
     "since": "2026-09-27",
     "reason": "Folded onto `drol`, costing 1.22 points. Flagged in the 2026-09-22 semantic audit (droll lost its l) and confirmed on adversarial re-review (droll lost its l)."
-  },
-  "druggabilities": {
-    "since": "2026-11-19",
-    "reason": "Folded onto `druggy` (druggabilities > druggability > druggable > druggy), costing 1.08 points. Flagged by the daily fold check for the 2026-11-19 `IES` drop (drug-targetable, not drug-using druggy) and confirmed on adversarial re-review (drug-targetable, not drug-using druggy)."
   },
   "dualies": {
     "since": "2026-09-27",
@@ -5081,10 +5024,6 @@
   "farfetches": {
     "since": "2026-09-27",
     "reason": "Folded onto `farfetched`, costing 1.81 points. Flagged in the 2026-09-22 semantic audit (farfetches not verb of farfetched) and confirmed on adversarial re-review (farfetches not a verb form)."
-  },
-  "farmees": {
-    "since": "2026-11-02",
-    "reason": "Folded onto `farme` (farmees > farme), costing 0.37 points. Flagged by the daily fold check for the 2026-11-02 `RM` drop (plural of farmee, -es strip overshot) and confirmed on adversarial re-review (plural of farmee, not farme)."
   },
   "fascisize": {
     "since": "2026-09-27",
@@ -6524,10 +6463,6 @@
     "since": "2026-09-27",
     "reason": "Folded onto `jung`, costing 3.36 points. Flagged in the 2026-09-22 semantic audit (jungly from jungle, not Jung) and confirmed on adversarial re-review (jungle truncated to nonword jung)."
   },
-  "justed": {
-    "since": "2026-11-23",
-    "reason": "Folded onto `just` (justed > just), costing 7.01 points. Flagged by the daily fold check for the 2026-11-23 `ST` drop (archaic just means joust, not adverb just) and confirmed on adversarial re-review (joust variant, not adverb just)."
-  },
   "kaies": {
     "since": "2026-09-27",
     "reason": "Folded onto `kay`, costing 4.08 points. Flagged in the 2026-09-22 semantic audit (from kail/kale, not kay) and confirmed on adversarial re-review (from kail, not kay)."
@@ -6876,6 +6811,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `littlies`, costing 0.27 points. Flagged in the 2026-09-22 semantic audit (adverb-looking; littlies unrelated form) and confirmed on adversarial re-review (little unrelated to littlies)."
   },
+  "lively": {
+    "since": "2026-11-19",
+    "reason": "Folded onto `live` (lively > live). Means energetic, drifted from live, the same finding as `stately`, `seemly`, `likely` and `namely`. Exempted on review of sigfigs789/ick#559 so `livelier` and the other forms redirected to `lively` do not score rarer than the base word."
+  },
   "loathest": {
     "since": "2026-09-27",
     "reason": "Folded onto `loathing`, costing 2.96 points. Flagged in the 2026-09-22 semantic audit (loath the adjective, not loathing) and confirmed on adversarial re-review (Loath adjective, not loathing)."
@@ -6915,6 +6854,10 @@
   "loupes": {
     "since": "2026-09-27",
     "reason": "Folded onto `loup`, costing 1.57 points. Flagged in the 2026-09-22 semantic audit (loupe not loup) and confirmed on adversarial re-review (loupe is not loup)."
+  },
+  "lovely": {
+    "since": "2026-11-19",
+    "reason": "Folded onto `love` (lovely > love). Means beautiful, drifted from love, the same finding as `stately`, `seemly`, `likely` and `namely`. Exempted on review of sigfigs789/ick#559 so `lovelier` and the other forms redirected to `lovely` do not score rarer than the base word."
   },
   "lowes": {
     "since": "2026-09-27",
@@ -7244,6 +7187,10 @@
     "since": "2026-11-13",
     "reason": "Folded onto `ministre` (ministrings > ministring > ministre), costing 0.82 points. Flagged by the daily fold check for the 2026-11-13 `MIN` drop (ministre is French, tense strip overshot) and confirmed on adversarial re-review (plural of ministring, not ministre)."
   },
+  "minuteness": {
+    "since": "2026-11-13",
+    "reason": "Folded onto `minutes` (minuteness > minute > minutes), costing 5.48 points. Flagged by the daily fold check for the 2026-11-13 `MIN` drop (tininess, from adj minute not minutes) and confirmed on adversarial re-review (tiny sense, not time minutes). Fix changed on review of sigfigs789/ick#559: exempted rather than redirected, because minute here is the tiny adjective, and the base minute is priced on the time noun."
+  },
   "minutest": {
     "since": "2026-09-27",
     "reason": "Folded onto `minutes`, costing 4.95 points. Flagged in the 2026-09-22 semantic audit (superlative of minute, not minutes) and confirmed on adversarial re-review (minute tiny versus minutes of time)."
@@ -7267,18 +7214,6 @@
   "mislies": {
     "since": "2026-09-27",
     "reason": "Folded onto `mis`, costing 3.61 points. Flagged in the 2026-09-22 semantic audit (mis- is prefix, not word) and confirmed on adversarial re-review (mis- is a prefix, not a word)."
-  },
-  "mistested": {
-    "since": "2026-11-23",
-    "reason": "Folded onto `mist` (mistested > mistest > mist), costing 3.41 points. Flagged by the daily fold check for the 2026-11-23 `ST` drop (mis-test, not mist) and confirmed on adversarial re-review (mis-test, not mist)."
-  },
-  "mistesting": {
-    "since": "2026-11-23",
-    "reason": "Folded onto `mist` (mistesting > mistest > mist), costing 3.41 points. Flagged by the daily fold check for the 2026-11-23 `ST` drop (mis-test, not mist) and confirmed on adversarial re-review (mis-test, not mist)."
-  },
-  "mistests": {
-    "since": "2026-11-23",
-    "reason": "Folded onto `mist` (mistests > mistest > mist), costing 3.41 points. Flagged by the daily fold check for the 2026-11-23 `ST` drop (mis-test, not mist) and confirmed on adversarial re-review (mis-test, not mist)."
   },
   "mistied": {
     "since": "2026-11-23",
@@ -7712,10 +7647,6 @@
   "nonstorability": {
     "since": "2026-11-18",
     "reason": "Folded onto `nonstore` (nonstorability > nonstorable > nonstore), costing 0.98 points. Flagged by the daily fold check for the 2026-11-18 `TY` drop (not storable; nonstore is retail term) and confirmed on adversarial re-review (not storable; nonstore is retail term)."
-  },
-  "nonsuitability": {
-    "since": "2026-11-18",
-    "reason": "Folded onto `nonsuited` (nonsuitability > nonsuitable > nonsuit > nonsuited), costing 1.98 points. Flagged by the daily fold check for the 2026-11-18 `TY` drop (not suitable; nonsuit is legal term) and confirmed on adversarial re-review (not suitable; nonsuit is legal term)."
   },
   "nosering": {
     "since": "2026-09-27",
@@ -8340,6 +8271,18 @@
     "since": "2026-09-27",
     "reason": "Folded onto `over`, costing 7.21 points. Flagged in the 2026-09-22 semantic audit (from overlying, not over) and confirmed on adversarial re-review (overlie is from lie)."
   },
+  "overminute": {
+    "since": "2026-11-02",
+    "reason": "Folded onto `minutes` (overminute > minute > minutes), costing 5.74 points. Flagged by the daily fold check for the 2026-11-02 `RM` drop (minute meaning tiny, not time minutes) and confirmed on adversarial re-review (minute tiny, not time minutes). Fix changed on review of sigfigs789/ick#559: exempted rather than redirected, because minute here is the tiny adjective, and the base minute is priced on the time noun."
+  },
+  "overminutely": {
+    "since": "2026-11-02",
+    "reason": "Folded onto `minutes` (overminutely > minutely > minute > minutes), costing 5.76 points. Flagged by the daily fold check for the 2026-11-02 `RM` drop (minute meaning tiny, not time minutes) and confirmed on adversarial re-review (minute tiny, not time minutes). Fix changed on review of sigfigs789/ick#559: exempted rather than redirected, because minute here is the tiny adjective, and the base minute is priced on the time noun."
+  },
+  "overminuteness": {
+    "since": "2026-11-02",
+    "reason": "Folded onto `minutes` (overminuteness > minuteness > minute > minutes), costing 5.76 points. Flagged by the daily fold check for the 2026-11-02 `RM` drop (minute meaning tiny, not time minutes) and confirmed on adversarial re-review (minute tiny, not time minutes). Fix changed on review of sigfigs789/ick#559: exempted rather than redirected, because minute here is the tiny adjective, and the base minute is priced on the time noun."
+  },
   "overrang": {
     "since": "2026-09-27",
     "reason": "Folded onto `range`, costing 5.78 points. Flagged in the 2026-09-22 semantic audit (past of overring, not range) and confirmed on adversarial re-review (from ring, not range)."
@@ -8695,6 +8638,10 @@
   "petaflop": {
     "since": "2026-09-27",
     "reason": "Folded onto `flop`, costing 3.38 points. Flagged in the 2026-09-22 semantic audit (peta-FLOP computing unit, not flop) and confirmed on adversarial re-review (FLOPS computing unit, not flop)."
+  },
+  "petaflops": {
+    "since": "2026-11-04",
+    "reason": "Folded onto `flop` (petaflops > flops > flop), costing 2.80 points. Flagged by the daily fold check for the 2026-11-04 `OP` drop (FLOPS computing unit, not flop) and confirmed on adversarial re-review (FLOPS acronym, not flop failure). Fix changed on review of sigfigs789/ick#559: exempted rather than redirected, because FLOPS is an acronym, and flops is priced on the plural of flop; its siblings are all exempt."
   },
   "pettable": {
     "since": "2026-09-27",
@@ -10166,10 +10113,6 @@
     "since": "2026-09-27",
     "reason": "Folded onto `reif`, costing 1.29 points. Flagged in the 2026-09-22 semantic audit (reives from reive, not reif) and confirmed on adversarial re-review (reive base, reif is variant noun)."
   },
-  "relicked": {
-    "since": "2026-11-30",
-    "reason": "Folded onto `relics` (relicked > relic > relics), costing 3.12 points. Flagged by the daily fold check for the 2026-11-30 `EL` drop (past of relick, not relic) and confirmed on adversarial re-review (past of relick, not relic)."
-  },
   "relicking": {
     "since": "2026-09-27",
     "reason": "Licking again. Not `relic`, and the chain went on to the plural `relics`."
@@ -10650,10 +10593,6 @@
     "since": "2026-09-27",
     "reason": "Folded onto `semi`, costing 4.69 points. Flagged in the 2026-09-22 semantic audit (seme is a heraldic term) and confirmed on adversarial re-review (seme is heraldic, not semi)."
   },
-  "sendees": {
-    "since": "2026-11-21",
-    "reason": "Folded onto `sende` (sendees > sende), costing 0.28 points. Flagged by the daily fold check for the 2026-11-21 `EE` drop (plural of sendee; sende not a word) and confirmed on adversarial re-review (sende not a word; overshot)."
-  },
   "sents": {
     "since": "2026-09-27",
     "reason": "Folded onto `sent`, costing 5.29 points. Flagged in the 2026-09-22 semantic audit (sents not a form of sent) and confirmed on adversarial re-review (sent coin plural, not past tense)."
@@ -11078,10 +11017,6 @@
     "since": "2026-09-27",
     "reason": "Folded onto `spat`, costing 2.59 points. Flagged in the 2026-09-22 semantic audit (spates from spate, not spat) and confirmed on adversarial re-review (spate flood unrelated to spat)."
   },
-  "speakees": {
-    "since": "2026-11-21",
-    "reason": "Folded onto `speake` (speakees > speake), costing 0.81 points. Flagged by the daily fold check for the 2026-11-21 `EE` drop (plural of speakee; speake not a word) and confirmed on adversarial re-review (speake not a word; overshot)."
-  },
   "specie": {
     "since": "2026-08-24",
     "reason": "Coin money, from `in specie`. Not the singular of `species`, which is its own Latin word with no separate singular -- but the -es rules can only read `species` as `specie` + `s`, so the reverse fold scored hard currency as the biology term (7.78 -> 4.24)."
@@ -11313,10 +11248,6 @@
   "strawbeds": {
     "since": "2026-11-23",
     "reason": "Folded onto `strawbs` (strawbeds > strawbed > strawb > strawbs), costing 0.45 points. Flagged by the daily fold check for the 2026-11-23 `ST` drop (straw bed, not strawberries) and confirmed on adversarial re-review (straw beds, not strawberries)."
-  },
-  "strickly": {
-    "since": "2026-11-23",
-    "reason": "Folded onto `strick` (strickly > strick), costing 0.63 points. Flagged by the daily fold check for the 2026-11-23 `ST` drop (dialect strictly, not strick) and confirmed on adversarial re-review (dialect strictly, not strick)."
   },
   "stripes": {
     "since": "2026-09-27",
@@ -12208,6 +12139,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `bast`, costing 2.23 points. Flagged in the 2026-09-22 semantic audit (unbaste from baste, not bast) and confirmed on adversarial re-review (baste is the base, overshot)."
   },
+  "unbecoming": {
+    "since": "2026-11-03",
+    "reason": "Folded onto `become` (unbecoming > unbecome > become), costing 3.90 points. Flagged by the daily fold check for the 2026-11-03 `COM` drop (improper/unattractive, not become) and confirmed on adversarial re-review (unattractive, drifted from become). Fix changed on review of sigfigs789/ick#559: exempted rather than redirected, because improper or unattractive; becoming is priced on the participle of become."
+  },
   "unbed": {
     "since": "2026-09-27",
     "reason": "Folded onto `being`, costing 7.01 points. Flagged in the 2026-09-22 semantic audit (unbed is bed, not being) and confirmed on adversarial re-review (from bed, not being)."
@@ -12438,10 +12373,6 @@
   "underlie": {
     "since": "2026-09-27",
     "reason": "Folded onto `lied`, costing 2.13 points. Flagged in the 2026-09-22 semantic audit (underlie not from lied) and confirmed on adversarial re-review (underlie from lie, not lied)."
-  },
-  "underlyes": {
-    "since": "2026-11-05",
-    "reason": "Folded onto `under` (underlyes > underly > under), costing 6.38 points. Flagged by the daily fold check for the 2026-11-05 `YE` drop (variant of underlie, not under) and confirmed on adversarial re-review (variant of underlie, not under)."
   },
   "undermath": {
     "since": "2026-10-29",

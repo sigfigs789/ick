@@ -134,6 +134,11 @@
     "since": "2026-10-26",
     "reason": "Folded onto `alias` (antialiases > antialias > alias), costing 3.11 points; it is a form of `antialias` (Zipf 1.78). Flagged by the daily fold check for the 2026-10-26 `SES` drop (signal antialiasing, not pseudonym alias) and confirmed on adversarial re-review (signal-processing alias, not everyday pseudonym sense; prefix-only fix left it on the same base)."
   },
+  "anticlimactical": {
+    "base": "anticlimactic",
+    "since": "2026-11-16",
+    "reason": "Folded onto `climactical` (anticlimactical > climactical), costing 0.01 points; it is a form of `anticlimactic` (Zipf 2.23). Flagged by the daily fold check for the 2026-11-16 `ICA` drop (anticlimax meaning drifted from climactic) and confirmed on adversarial re-review (anticlimax sense, not climactic). Fix changed on review of sigfigs789/ick#559: variant of anticlimactic, like anticlimactically."
+  },
   "anticlimactically": {
     "base": "anticlimactic",
     "since": "2026-11-16",
@@ -143,6 +148,16 @@
     "base": "antigenic",
     "since": "2026-11-16",
     "reason": "Folded onto `genetic` (antigenetically > genetically > genetic), costing 4.31 points; it is a form of `antigenic` (Zipf 2.21). Flagged by the daily fold check for the 2026-11-16 `ICA` drop (relates to antigen, not genetic) and confirmed on adversarial re-review (antigen-related, not anti- plus genetic)."
+  },
+  "antipathetical": {
+    "base": "antipathetic",
+    "since": "2026-11-16",
+    "reason": "Folded onto `pathetical` (antipathetical > pathetical), costing 0.67 points; it is a form of `antipathetic` (Zipf 1.36). Flagged by the daily fold check for the 2026-11-16 `ICA` drop (from antipathy, not pathetic) and confirmed on adversarial re-review (from antipathy, not anti- plus pathetic). Fix changed on review of sigfigs789/ick#559: variant of antipathetic."
+  },
+  "antipatheticalness": {
+    "base": "antipathetic",
+    "since": "2026-11-16",
+    "reason": "Folded onto `pathetical` (antipatheticalness > patheticalness > pathetical), costing 0.77 points; it is a form of `antipathetic` (Zipf 1.36). Flagged by the daily fold check for the 2026-11-16 `ICA` drop (from antipathy, not pathetic) and confirmed on adversarial re-review (from antipathy, not anti- plus pathetic). Fix changed on review of sigfigs789/ick#559: from antipathetical, a variant of antipathetic."
   },
   "antitheses": {
     "base": "antithesis",
@@ -299,6 +314,11 @@
     "since": "2026-11-08",
     "reason": "Folded onto `broch` (broching > broch), costing 1.15 points; it is a form of `broach` (Zipf 2.62). Flagged by the daily fold check for the 2026-11-08 `CHI` drop (variant of broaching, not broch tower) and confirmed on adversarial re-review (variant of broaching, not broch tower)."
   },
+  "bustly": {
+    "base": "bustle",
+    "since": "2026-11-23",
+    "reason": "Folded onto `bust` (bustly > bust), costing 3.89 points; it is a form of `bustle` (Zipf 2.98). Flagged by the daily fold check for the 2026-11-23 `ST` drop (means bustling, from bustle not bust) and confirmed on adversarial re-review (from bustle, not bust). Fix changed on review of sigfigs789/ick#559: adjective from bustle, like tickly -> tickle."
+  },
   "camases": {
     "base": "camas",
     "since": "2026-10-22",
@@ -389,6 +409,11 @@
     "since": "2026-10-21",
     "reason": "Folded onto `chives` (chiving > chive > chives), costing 1.89 points; it is a form of `chiv` (Zipf 1.31). Flagged by the daily fold check for the 2026-10-21 `IVI` drop (stabbing with chiv, not herb chives) and confirmed on adversarial re-review (Chiving means stabbing, from chiv; not chives)."
   },
+  "chuckly": {
+    "base": "chuckle",
+    "since": "2026-11-14",
+    "reason": "Folded onto `chuck` (chuckly > chuck), costing 4.08 points; it is a form of `chuckle` (Zipf 3.52). Flagged by the daily fold check for the 2026-11-14 `UC` drop (from chuckle, not chuck) and confirmed on adversarial re-review (from chuckle, not chuck). Fix changed on review of sigfigs789/ick#559: adjective from chuckle, like tickly -> tickle."
+  },
   "clavises": {
     "base": "clavis",
     "since": "2026-10-26",
@@ -460,24 +485,29 @@
     "reason": "Folded onto `com` (comming > com), costing 2.27 points; it is a form of `come` (Zipf 5.78). Flagged by the daily fold check for the 2026-11-03 `COM` drop (misspelling of coming, not com) and confirmed on adversarial re-review (misspelling of coming, not com)."
   },
   "communisation": {
-    "base": "communise",
+    "base": "communist",
     "since": "2026-11-03",
-    "reason": "Folded onto `commune` (communisation > communise > commune), costing 2.77 points; it is a form of `communise` (Zipf 0.42). Flagged by the daily fold check for the 2026-11-03 `COM` drop (communise is from communism, not commune) and confirmed on adversarial re-review (communist sense, not commune community)."
+    "reason": "Folded onto `commune` (communisation > communise > commune), costing 2.77 points; it is a form of `communist` (Zipf 4.32). Flagged by the daily fold check for the 2026-11-03 `COM` drop (communise is from communism, not commune) and confirmed on adversarial re-review (communist sense, not commune community). Fix changed on review of sigfigs789/ick#559: communise means make communist."
   },
   "communisations": {
-    "base": "communise",
+    "base": "communist",
     "since": "2026-11-03",
-    "reason": "Folded onto `commune` (communisations > communisation > communise > commune), costing 2.86 points; it is a form of `communise` (Zipf 0.42). Flagged by the daily fold check for the 2026-11-03 `COM` drop (communise is from communism, not commune) and confirmed on adversarial re-review (communist sense, not commune community)."
+    "reason": "Folded onto `commune` (communisations > communisation > communise > commune), costing 2.86 points; it is a form of `communist` (Zipf 4.32). Flagged by the daily fold check for the 2026-11-03 `COM` drop (communise is from communism, not commune) and confirmed on adversarial re-review (communist sense, not commune community). Fix changed on review of sigfigs789/ick#559: communise means make communist."
+  },
+  "communise": {
+    "base": "communist",
+    "since": "2026-11-03",
+    "reason": "Folded onto `commune` (communise > commune), costing 2.83 points; it is a form of `communist` (Zipf 4.32). Flagged by the daily fold check for the 2026-11-03 `COM` drop (from communism, not commune) and confirmed on adversarial re-review (communist sense, not commune community). Fix changed on review of sigfigs789/ick#559: communise means make communist."
   },
   "communised": {
-    "base": "communise",
+    "base": "communist",
     "since": "2026-11-03",
-    "reason": "Folded onto `commune` (communised > communise > commune), costing 2.83 points; it is a form of `communise` (Zipf 0.42). Flagged by the daily fold check for the 2026-11-03 `COM` drop (communise is from communism, not commune) and confirmed on adversarial re-review (communist sense, not commune community)."
+    "reason": "Folded onto `commune` (communised > communise > commune), costing 2.83 points; it is a form of `communist` (Zipf 4.32). Flagged by the daily fold check for the 2026-11-03 `COM` drop (communise is from communism, not commune) and confirmed on adversarial re-review (communist sense, not commune community). Fix changed on review of sigfigs789/ick#559: communise means make communist."
   },
   "communising": {
-    "base": "communise",
+    "base": "communist",
     "since": "2026-11-03",
-    "reason": "Folded onto `commune` (communising > communise > commune), costing 2.83 points; it is a form of `communise` (Zipf 0.42). Flagged by the daily fold check for the 2026-11-03 `COM` drop (communise is from communism, not commune) and confirmed on adversarial re-review (communist sense, not commune community)."
+    "reason": "Folded onto `commune` (communising > communise > commune), costing 2.83 points; it is a form of `communist` (Zipf 4.32). Flagged by the daily fold check for the 2026-11-03 `COM` drop (communise is from communism, not commune) and confirmed on adversarial re-review (communist sense, not commune community). Fix changed on review of sigfigs789/ick#559: communise means make communist."
   },
   "conceptibility": {
     "base": "conceive",
@@ -498,6 +528,11 @@
     "base": "condemn",
     "since": "2026-11-13",
     "reason": "Folded onto `condem` (condemming > condem), costing 0.59 points; it is a form of `condemn` (Zipf 3.72). Flagged by the daily fold check for the 2026-11-13 `MIN` drop (misspelling of condemning, not condem) and confirmed on adversarial re-review (misspelt condemning, not condem)."
+  },
+  "confirmees": {
+    "base": "confirm",
+    "since": "2026-11-02",
+    "reason": "Folded onto `confirme` (confirmees > confirme), costing 0.27 points; it is a form of `confirm` (Zipf 4.40). Flagged by the daily fold check for the 2026-11-02 `RM` drop (plural of confirmee, -es strip overshot) and confirmed on adversarial re-review (plural of confirmee, not confirme). Fix changed on review of sigfigs789/ick#559: a plain -ee plural of the verb, like helpees and lookees."
   },
   "congested": {
     "base": "congest",
@@ -690,19 +725,19 @@
     "reason": "Folded onto `buggy` (debuggability > debuggable > buggable > buggy), costing 2.92 points; it is a form of `debug` (Zipf 2.86). Flagged by the daily fold check for the 2026-11-18 `TY` drop (from debug, not buggy) and confirmed on adversarial re-review (from debug, not buggy)."
   },
   "decommunisation": {
-    "base": "communise",
+    "base": "communist",
     "since": "2026-11-03",
-    "reason": "Folded onto `commune` (decommunisation > communisation > communise > commune), costing 2.88 points; it is a form of `communise` (Zipf 0.42). Flagged by the daily fold check for the 2026-11-03 `COM` drop (communise is from communism, not commune) and confirmed on adversarial re-review (communist sense, not commune community)."
+    "reason": "Folded onto `commune` (decommunisation > communisation > communise > commune), costing 2.88 points; it is a form of `communist` (Zipf 4.32). Flagged by the daily fold check for the 2026-11-03 `COM` drop (communise is from communism, not commune) and confirmed on adversarial re-review (communist sense, not commune community). Fix changed on review of sigfigs789/ick#559: communise means make communist."
   },
   "decommunise": {
-    "base": "communise",
+    "base": "communist",
     "since": "2026-11-03",
-    "reason": "Folded onto `commune` (decommunise > communise > commune), costing 2.91 points; it is a form of `communise` (Zipf 0.42). Flagged by the daily fold check for the 2026-11-03 `COM` drop (from communism, not commune) and confirmed on adversarial re-review (communist sense, not commune community)."
+    "reason": "Folded onto `commune` (decommunise > communise > commune), costing 2.91 points; it is a form of `communist` (Zipf 4.32). Flagged by the daily fold check for the 2026-11-03 `COM` drop (from communism, not commune) and confirmed on adversarial re-review (communist sense, not commune community). Fix changed on review of sigfigs789/ick#559: communise means make communist."
   },
   "decommunised": {
-    "base": "communise",
+    "base": "communist",
     "since": "2026-11-03",
-    "reason": "Folded onto `commune` (decommunised > decommunise > communise > commune), costing 2.88 points; it is a form of `communise` (Zipf 0.42). Flagged by the daily fold check for the 2026-11-03 `COM` drop (from communism, not commune) and confirmed on adversarial re-review (communist sense, not commune community)."
+    "reason": "Folded onto `commune` (decommunised > decommunise > communise > commune), costing 2.88 points; it is a form of `communist` (Zipf 4.32). Flagged by the daily fold check for the 2026-11-03 `COM` drop (from communism, not commune) and confirmed on adversarial re-review (communist sense, not commune community). Fix changed on review of sigfigs789/ick#559: communise means make communist."
   },
   "decommunises": {
     "base": "communise",
@@ -710,14 +745,24 @@
     "reason": "Folded onto `commune` (decommunises > decommunise > communise > commune), costing 2.90 points; it is a form of `communise` (Zipf 0.42). Flagged by the daily fold check for the 2026-10-26 `SES` drop (communise is not commune) and confirmed on adversarial re-review (communise is not commune)."
   },
   "decommunising": {
-    "base": "communise",
+    "base": "communist",
     "since": "2026-11-03",
-    "reason": "Folded onto `commune` (decommunising > decommunise > communise > commune), costing 2.91 points; it is a form of `communise` (Zipf 0.42). Flagged by the daily fold check for the 2026-11-03 `COM` drop (from communism, not commune) and confirmed on adversarial re-review (communist sense, not commune community)."
+    "reason": "Folded onto `commune` (decommunising > decommunise > communise > commune), costing 2.91 points; it is a form of `communist` (Zipf 4.32). Flagged by the daily fold check for the 2026-11-03 `COM` drop (from communism, not commune) and confirmed on adversarial re-review (communist sense, not commune community). Fix changed on review of sigfigs789/ick#559: communise means make communist."
   },
   "deconstructional": {
     "base": "deconstruction",
     "since": "2026-11-14",
     "reason": "Folded onto `constructional` (deconstructional > constructional), costing 1.02 points; it is a form of `deconstruction` (Zipf 2.86). Flagged by the daily fold check for the 2026-11-14 `UC` drop (deconstruction sense, not constructional) and confirmed on adversarial re-review (critical-theory deconstruction, not constructional)."
+  },
+  "deerer": {
+    "base": "dear",
+    "since": "2026-11-21",
+    "reason": "Folded onto `deer` (deerer > deer), costing 4.01 points; it is a form of `dear` (Zipf 4.77). Flagged by the daily fold check for the 2026-11-21 `EE` drop (misspelling of dearer, not deer) and confirmed on adversarial re-review (misspelling of dearer). Fix changed on review of sigfigs789/ick#559: a misspelling of dearer, like comming -> come."
+  },
+  "deerest": {
+    "base": "dear",
+    "since": "2026-11-21",
+    "reason": "Folded onto `deer` (deerest > deer), costing 4.02 points; it is a form of `dear` (Zipf 4.77). Flagged by the daily fold check for the 2026-11-21 `EE` drop (misspelling of dearest, not deer) and confirmed on adversarial re-review (misspelling of dearest). Fix changed on review of sigfigs789/ick#559: a misspelling of dearest, like comming -> come."
   },
   "deformednesses": {
     "base": "deformed",
@@ -728,6 +773,16 @@
     "base": "degrade",
     "since": "2026-10-26",
     "reason": "Folded onto `grade` (degradednesses > degradedness > degraded > degrade > degradees > gradees > grade), costing 5.02 points; it is a form of `degrade` (Zipf 3.28). Flagged by the daily fold check for the 2026-10-26 `SES` drop (from degrade, not grade) and confirmed on adversarial re-review (degrade means deteriorate, not grade; prefix-only fix left it on the same base)."
+  },
+  "deleave": {
+    "base": "leaf",
+    "since": "2026-11-30",
+    "reason": "Folded onto `leave` (deleave > leave), costing 5.79 points; it is a form of `leaf` (Zipf 4.22). Flagged by the daily fold check for the 2026-11-30 `EL` drop (remove leaves, from leaf not leave) and confirmed on adversarial re-review (strip leaves; leaf, not leave depart). Fix changed on review of sigfigs789/ick#559: remove leaves, the same verb as deleaf; deleaves scores as leaf."
+  },
+  "deleaved": {
+    "base": "leaf",
+    "since": "2026-11-30",
+    "reason": "Folded onto `leave` (deleaved > deleave > leave), costing 5.79 points; it is a form of `leaf` (Zipf 4.22). Flagged by the daily fold check for the 2026-11-30 `EL` drop (remove leaves, from leaf not leave) and confirmed on adversarial re-review (strip leaves; leaf, not leave depart). Fix changed on review of sigfigs789/ick#559: remove leaves, the same verb as deleaf; deleaves scores as leaf."
   },
   "deleaving": {
     "base": "leaf",
@@ -829,6 +884,11 @@
     "since": "2026-11-27",
     "reason": "Folded onto `disunity` (disunitable > disunity), costing 1.74 points; it is a form of `disunite` (Zipf 1.07). Flagged by the daily fold check for the 2026-11-27 `TA` drop (able to be disunited, not disunity noun) and confirmed on adversarial re-review (from verb disunite, not disunity)."
   },
+  "doees": {
+    "base": "do",
+    "since": "2026-11-21",
+    "reason": "Folded onto `doe` (doees > doe), costing 3.63 points; it is a form of `do` (Zipf 6.35). Flagged by the daily fold check for the 2026-11-21 `EE` drop (doee from do, not doe) and confirmed on adversarial re-review (doee from do, not doe). Fix changed on review of sigfigs789/ick#559: a plain -ee plural of the verb, like helpees and lookees."
+  },
   "doilies": {
     "base": "doily",
     "since": "2026-11-19",
@@ -848,6 +908,11 @@
     "base": "dream",
     "since": "2026-10-22",
     "reason": "Folded onto `dreame` (dreamees > dreame), costing 0.23 points; it is a form of `dream` (Zipf 4.91). Flagged by the daily fold check for the 2026-10-22 `AM` drop (dreame is not a word) and confirmed on adversarial re-review (dreame is not a word)."
+  },
+  "druggabilities": {
+    "base": "drug",
+    "since": "2026-11-19",
+    "reason": "Folded onto `druggy` (druggabilities > druggability > druggable > druggy), costing 1.08 points; it is a form of `drug` (Zipf 4.87). Flagged by the daily fold check for the 2026-11-19 `IES` drop (drug-targetable, not drug-using druggy) and confirmed on adversarial re-review (drug-targetable, not drug-using druggy). Fix changed on review of sigfigs789/ick#559: plural of druggability, which scores as drug."
   },
   "druggability": {
     "base": "drug",
@@ -953,6 +1018,11 @@
     "base": "farcy",
     "since": "2026-11-19",
     "reason": "Folded onto `farci` (farcies > farci), costing 0.17 points; it is a form of `farcy` (Zipf 1.09). Flagged by the daily fold check for the 2026-11-19 `IES` drop (plural of farcy disease, not farci) and confirmed on adversarial re-review (plural of farcy, not farci)."
+  },
+  "farmees": {
+    "base": "farm",
+    "since": "2026-11-02",
+    "reason": "Folded onto `farme` (farmees > farme), costing 0.37 points; it is a form of `farm` (Zipf 4.75). Flagged by the daily fold check for the 2026-11-02 `RM` drop (plural of farmee, -es strip overshot) and confirmed on adversarial re-review (plural of farmee, not farme). Fix changed on review of sigfigs789/ick#559: a plain -ee plural of the verb, like helpees and lookees."
   },
   "fattable": {
     "base": "fatten",
@@ -1314,6 +1384,11 @@
     "since": "2026-10-26",
     "reason": "Folded onto `jetty` (jettinesses > jettiness > jetty), costing 2.55 points; it is a form of `jet` (Zipf 4.29). Flagged by the daily fold check for the 2026-10-26 `SES` drop (jet-black jetty, not pier jetty) and confirmed on adversarial re-review (jet-black jetty, not pier)."
   },
+  "justed": {
+    "base": "joust",
+    "since": "2026-11-23",
+    "reason": "Folded onto `just` (justed > just), costing 7.01 points; it is a form of `joust` (Zipf 2.47). Flagged by the daily fold check for the 2026-11-23 `ST` drop (archaic just means joust, not adverb just) and confirmed on adversarial re-review (joust variant, not adverb just). Fix changed on review of sigfigs789/ick#559: past of just (joust), like justing, justings and justs."
+  },
   "justing": {
     "base": "joust",
     "since": "2026-11-23",
@@ -1549,11 +1624,6 @@
     "since": "2026-11-13",
     "reason": "Folded onto `mink` (minkes > mink), costing 2.50 points; it is a form of `minke` (Zipf 2.27). Flagged by the daily fold check for the 2026-11-13 `MIN` drop (plural of minke whale, not mink) and confirmed on adversarial re-review (minke whale, not mink)."
   },
-  "minuteness": {
-    "base": "minute",
-    "since": "2026-11-13",
-    "reason": "Folded onto `minutes` (minuteness > minute > minutes), costing 5.48 points; it is a form of `minute` (Zipf 4.98). Flagged by the daily fold check for the 2026-11-13 `MIN` drop (tininess, from adj minute not minutes) and confirmed on adversarial re-review (tiny sense, not time minutes)."
-  },
   "minutenesses": {
     "base": "minute",
     "since": "2026-10-26",
@@ -1578,6 +1648,21 @@
     "base": "test",
     "since": "2026-11-23",
     "reason": "Folded onto `mist` (mistest > mist), costing 3.41 points; it is a form of `test` (Zipf 5.19). Flagged by the daily fold check for the 2026-11-23 `ST` drop (mis-test, not superlative of mist) and confirmed on adversarial re-review (mis-test, not mist superlative)."
+  },
+  "mistested": {
+    "base": "test",
+    "since": "2026-11-23",
+    "reason": "Folded onto `mist` (mistested > mistest > mist), costing 3.41 points; it is a form of `test` (Zipf 5.19). Flagged by the daily fold check for the 2026-11-23 `ST` drop (mis-test, not mist) and confirmed on adversarial re-review (mis-test, not mist). Fix changed on review of sigfigs789/ick#559: an inflection of mistest, which scores as test."
+  },
+  "mistesting": {
+    "base": "test",
+    "since": "2026-11-23",
+    "reason": "Folded onto `mist` (mistesting > mistest > mist), costing 3.41 points; it is a form of `test` (Zipf 5.19). Flagged by the daily fold check for the 2026-11-23 `ST` drop (mis-test, not mist) and confirmed on adversarial re-review (mis-test, not mist). Fix changed on review of sigfigs789/ick#559: an inflection of mistest, which scores as test."
+  },
+  "mistests": {
+    "base": "test",
+    "since": "2026-11-23",
+    "reason": "Folded onto `mist` (mistests > mistest > mist), costing 3.41 points; it is a form of `test` (Zipf 5.19). Flagged by the daily fold check for the 2026-11-23 `ST` drop (mis-test, not mist) and confirmed on adversarial re-review (mis-test, not mist). Fix changed on review of sigfigs789/ick#559: an inflection of mistest, which scores as test."
   },
   "modulabilities": {
     "base": "modulate",
@@ -1693,6 +1778,11 @@
     "base": "practicable",
     "since": "2026-11-16",
     "reason": "Folded onto `nonpracticing` (nonpracticable > nonpractice > nonpracticing), costing 0.60 points; it is a form of `practicable` (Zipf 2.84). Flagged by the daily fold check for the 2026-11-16 `ICA` drop (practicable means feasible, not nonpracticing) and confirmed on adversarial re-review (practicable means feasible, not practicing)."
+  },
+  "nonsuitability": {
+    "base": "suitable",
+    "since": "2026-11-18",
+    "reason": "Folded onto `nonsuited` (nonsuitability > nonsuitable > nonsuit > nonsuited), costing 1.98 points; it is a form of `suitable` (Zipf 4.38). Flagged by the daily fold check for the 2026-11-18 `TY` drop (not suitable; nonsuit is legal term) and confirmed on adversarial re-review (not suitable; nonsuit is legal term). Fix changed on review of sigfigs789/ick#559: from nonsuitable, which scores as suitable."
   },
   "nonsuitable": {
     "base": "suitable",
@@ -1884,21 +1974,6 @@
     "since": "2026-10-21",
     "reason": "Folded onto `life` (overliving > overlive > overlives > lives > life), costing 6.53 points; it is a form of `live` (Zipf 5.54). Flagged by the daily fold check for the 2026-10-21 `IVI` drop (verb live, not noun life) and confirmed on adversarial re-review (Verb overlive comes from live, not noun life)."
   },
-  "overminute": {
-    "base": "minute",
-    "since": "2026-11-02",
-    "reason": "Folded onto `minutes` (overminute > minute > minutes), costing 5.74 points; it is a form of `minute` (Zipf 4.98). Flagged by the daily fold check for the 2026-11-02 `RM` drop (minute meaning tiny, not time minutes) and confirmed on adversarial re-review (minute tiny, not time minutes)."
-  },
-  "overminutely": {
-    "base": "minute",
-    "since": "2026-11-02",
-    "reason": "Folded onto `minutes` (overminutely > minutely > minute > minutes), costing 5.76 points; it is a form of `minute` (Zipf 4.98). Flagged by the daily fold check for the 2026-11-02 `RM` drop (minute meaning tiny, not time minutes) and confirmed on adversarial re-review (minute tiny, not time minutes)."
-  },
-  "overminuteness": {
-    "base": "minute",
-    "since": "2026-11-02",
-    "reason": "Folded onto `minutes` (overminuteness > minuteness > minute > minutes), costing 5.76 points; it is a form of `minute` (Zipf 4.98). Flagged by the daily fold check for the 2026-11-02 `RM` drop (minute meaning tiny, not time minutes) and confirmed on adversarial re-review (minute tiny, not time minutes)."
-  },
   "overplumb": {
     "base": "plumb",
     "since": "2026-11-09",
@@ -2023,11 +2098,6 @@
     "base": "peptise",
     "since": "2026-10-24",
     "reason": "Folded onto `pept` (peptising > peptise > pept), costing 0.67 points; it is a form of `peptise` (Zipf 0.43). Flagged by the daily fold check for the 2026-10-24 `EP` drop (pept is not a word) and confirmed on adversarial re-review (pept is not a word)."
-  },
-  "petaflops": {
-    "base": "flops",
-    "since": "2026-11-04",
-    "reason": "Folded onto `flop` (petaflops > flops > flop), costing 2.80 points; it is a form of `flops` (Zipf 3.30). Flagged by the daily fold check for the 2026-11-04 `OP` drop (FLOPS computing unit, not flop) and confirmed on adversarial re-review (FLOPS acronym, not flop failure)."
   },
   "pipinesses": {
     "base": "pipy",
@@ -2520,14 +2590,14 @@
     "reason": "Folded onto `redig` (redigest > redig), costing 0.46 points; it is a form of `digest` (Zipf 3.71). Flagged by the daily fold check for the 2026-11-23 `ST` drop (digest again, not redig) and confirmed on adversarial re-review (digest again, not redig)."
   },
   "redigested": {
-    "base": "redigest",
+    "base": "digest",
     "since": "2026-11-23",
-    "reason": "Folded onto `redig` (redigested > redigest > redig), costing 0.43 points; it is a form of `redigest` (Zipf 0.30). Flagged by the daily fold check for the 2026-11-23 `ST` drop (form of redigest, not redig) and confirmed on adversarial re-review (form of redigest, not redig)."
+    "reason": "Folded onto `redig` (redigested > redigest > redig), costing 0.43 points; it is a form of `digest` (Zipf 3.71). Flagged by the daily fold check for the 2026-11-23 `ST` drop (form of redigest, not redig) and confirmed on adversarial re-review (form of redigest, not redig). Fix changed on review of sigfigs789/ick#559: an inflection of redigest, which scores as digest."
   },
   "redigesting": {
-    "base": "redigest",
+    "base": "digest",
     "since": "2026-11-23",
-    "reason": "Folded onto `redig` (redigesting > redigest > redig), costing 0.46 points; it is a form of `redigest` (Zipf 0.30). Flagged by the daily fold check for the 2026-11-23 `ST` drop (form of redigest, not redig) and confirmed on adversarial re-review (form of redigest, not redig)."
+    "reason": "Folded onto `redig` (redigesting > redigest > redig), costing 0.46 points; it is a form of `digest` (Zipf 3.71). Flagged by the daily fold check for the 2026-11-23 `ST` drop (form of redigest, not redig) and confirmed on adversarial re-review (form of redigest, not redig). Fix changed on review of sigfigs789/ick#559: an inflection of redigest, which scores as digest."
   },
   "refling": {
     "base": "fling",
@@ -2558,6 +2628,11 @@
     "base": "lick",
     "since": "2026-11-30",
     "reason": "Folded onto `relics` (relick > relicked > relic > relics), costing 3.08 points; it is a form of `lick` (Zipf 3.77). Flagged by the daily fold check for the 2026-11-30 `EL` drop (lick again, not relic) and confirmed on adversarial re-review (lick again, not relic)."
+  },
+  "relicked": {
+    "base": "lick",
+    "since": "2026-11-30",
+    "reason": "Folded onto `relics` (relicked > relic > relics), costing 3.12 points; it is a form of `lick` (Zipf 3.77). Flagged by the daily fold check for the 2026-11-30 `EL` drop (past of relick, not relic) and confirmed on adversarial re-review (past of relick, not relic). Fix changed on review of sigfigs789/ick#559: past of relick, which scores as lick."
   },
   "relicks": {
     "base": "lick",
@@ -2690,19 +2765,19 @@
     "reason": "Folded onto `rest` (restable > rest), costing 5.57 points; it is a form of `stable` (Zipf 4.48). Flagged by the daily fold check for the 2026-11-23 `ST` drop (stable again, not rest) and confirmed on adversarial re-review (re- plus stable, not rest)."
   },
   "restabled": {
-    "base": "restable",
+    "base": "stable",
     "since": "2026-11-23",
-    "reason": "Folded onto `rest` (restabled > restable > rest), costing 5.60 points; it is a form of `restable` (Zipf 0.17). Flagged by the daily fold check for the 2026-11-23 `ST` drop (stable again, not rest) and confirmed on adversarial re-review (re- plus stable, not rest)."
+    "reason": "Folded onto `rest` (restabled > restable > rest), costing 5.60 points; it is a form of `stable` (Zipf 4.48). Flagged by the daily fold check for the 2026-11-23 `ST` drop (stable again, not rest) and confirmed on adversarial re-review (re- plus stable, not rest). Fix changed on review of sigfigs789/ick#559: an inflection of restable, which scores as stable."
   },
   "restables": {
-    "base": "restable",
+    "base": "stable",
     "since": "2026-11-23",
-    "reason": "Folded onto `rest` (restables > restable > rest), costing 5.63 points; it is a form of `restable` (Zipf 0.17). Flagged by the daily fold check for the 2026-11-23 `ST` drop (stable again, not rest) and confirmed on adversarial re-review (re- plus stable, not rest)."
+    "reason": "Folded onto `rest` (restables > restable > rest), costing 5.63 points; it is a form of `stable` (Zipf 4.48). Flagged by the daily fold check for the 2026-11-23 `ST` drop (stable again, not rest) and confirmed on adversarial re-review (re- plus stable, not rest). Fix changed on review of sigfigs789/ick#559: an inflection of restable, which scores as stable."
   },
   "restabling": {
-    "base": "restable",
+    "base": "stable",
     "since": "2026-11-23",
-    "reason": "Folded onto `rest` (restabling > restable > rest), costing 5.63 points; it is a form of `restable` (Zipf 0.17). Flagged by the daily fold check for the 2026-11-23 `ST` drop (stable again, not rest) and confirmed on adversarial re-review (re- plus stable, not rest)."
+    "reason": "Folded onto `rest` (restabling > restable > rest), costing 5.63 points; it is a form of `stable` (Zipf 4.48). Flagged by the daily fold check for the 2026-11-23 `ST` drop (stable again, not rest) and confirmed on adversarial re-review (re- plus stable, not rest). Fix changed on review of sigfigs789/ick#559: an inflection of restable, which scores as stable."
   },
   "retabled": {
     "base": "table",
@@ -2849,6 +2924,11 @@
     "since": "2026-11-13",
     "reason": "Folded onto `seme` (seming > seme), costing 1.13 points; it is a form of `seem` (Zipf 5.08). Flagged by the daily fold check for the 2026-11-13 `MIN` drop (archaic seeming, not linguistic seme) and confirmed on adversarial re-review (archaic seeming, not seme)."
   },
+  "sendees": {
+    "base": "send",
+    "since": "2026-11-21",
+    "reason": "Folded onto `sende` (sendees > sende), costing 0.28 points; it is a form of `send` (Zipf 5.11). Flagged by the daily fold check for the 2026-11-21 `EE` drop (plural of sendee; sende not a word) and confirmed on adversarial re-review (sende not a word; overshot). Fix changed on review of sigfigs789/ick#559: a plain -ee plural of the verb, like helpees and lookees."
+  },
   "sessed": {
     "base": "sess",
     "since": "2026-10-26",
@@ -2954,6 +3034,11 @@
     "since": "2026-10-22",
     "reason": "Folded onto `spammy` (spammable > spammy), costing 1.40 points; it is a form of `spam` (Zipf 4.05). Flagged by the daily fold check for the 2026-10-22 `AM` drop (able to be spammed, not spammy) and confirmed on adversarial re-review (from verb spam; spammy is different)."
   },
+  "speakees": {
+    "base": "speak",
+    "since": "2026-11-21",
+    "reason": "Folded onto `speake` (speakees > speake), costing 0.81 points; it is a form of `speak` (Zipf 5.03). Flagged by the daily fold check for the 2026-11-21 `EE` drop (plural of speakee; speake not a word) and confirmed on adversarial re-review (speake not a word; overshot). Fix changed on review of sigfigs789/ick#559: a plain -ee plural of the verb, like helpees and lookees."
+  },
   "spirochaetales": {
     "base": "spirochaete",
     "since": "2026-10-18",
@@ -2978,6 +3063,11 @@
     "base": "squame",
     "since": "2026-10-22",
     "reason": "Folded onto `squam` (squames > squam), costing 0.35 points; it is a form of `squame` (Zipf 1.19). Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of squame, not squam) and confirmed on adversarial re-review (plural of squame; squam unrelated)."
+  },
+  "stabbable": {
+    "base": "stab",
+    "since": "2026-11-23",
+    "reason": "Folded onto `stabby` (stabbable > stabby); it is a form of `stab` (Zipf 3.78). Flagged by the daily fold check for the 2026-11-23 `ST` drop (able to be stabbed, not stabby) but defended on re-review. Fix changed on review of sigfigs789/ick#559: able to be stabbed, like unstabbable -> stab."
   },
   "stampedable": {
     "base": "stampede",
@@ -3063,6 +3153,11 @@
     "base": "strapping",
     "since": "2026-11-23",
     "reason": "Folded onto `strap` (strappingly > strapping > strap), costing 3.58 points; it is a form of `strapping` (Zipf 2.89). Flagged by the daily fold check for the 2026-11-23 `ST` drop (robustly; drifted from strap) and confirmed on adversarial re-review (robust sense drifted from strap)."
+  },
+  "strickly": {
+    "base": "strict",
+    "since": "2026-11-23",
+    "reason": "Folded onto `strick` (strickly > strick), costing 0.63 points; it is a form of `strict` (Zipf 4.23). Flagged by the daily fold check for the 2026-11-23 `ST` drop (dialect strictly, not strick) and confirmed on adversarial re-review (dialect strictly, not strick). Fix changed on review of sigfigs789/ick#559: dialect spelling of strictly."
   },
   "strikingnesses": {
     "base": "striking",
@@ -3329,11 +3424,6 @@
     "since": "2026-10-26",
     "reason": "Folded onto `ass` (unassessed > unasses > asses > ass), costing 5.23 points; it is a form of `assess` (Zipf 4.07). Flagged by the daily fold check for the 2026-10-26 `SES` drop (un- plus assessed, not asses) and confirmed on adversarial re-review (assessed overshot to asses, ass)."
   },
-  "unbecoming": {
-    "base": "becoming",
-    "since": "2026-11-03",
-    "reason": "Folded onto `become` (unbecoming > unbecome > become), costing 3.90 points; it is a form of `becoming` (Zipf 4.81). Flagged by the daily fold check for the 2026-11-03 `COM` drop (improper/unattractive, not become) and confirmed on adversarial re-review (unattractive, drifted from become)."
-  },
   "unbecomingly": {
     "base": "unbecoming",
     "since": "2026-11-03",
@@ -3418,6 +3508,11 @@
     "base": "live",
     "since": "2026-10-21",
     "reason": "Folded onto `life` (underliving > underlive > underlives > lives > life), costing 6.62 points; it is a form of `live` (Zipf 5.54). Flagged by the daily fold check for the 2026-10-21 `IVI` drop (verb live, not noun life) and confirmed on adversarial re-review (Verb underlive comes from live, not noun life)."
+  },
+  "underlyes": {
+    "base": "underlie",
+    "since": "2026-11-05",
+    "reason": "Folded onto `under` (underlyes > underly > under), costing 6.38 points; it is a form of `underlie` (Zipf 2.68). Flagged by the daily fold check for the 2026-11-05 `YE` drop (variant of underlie, not under) and confirmed on adversarial re-review (variant of underlie, not under). Fix changed on review of sigfigs789/ick#559: variant of underlies, which scores as underlie."
   },
   "underream": {
     "base": "ream",
@@ -3510,9 +3605,9 @@
     "reason": "Folded onto `love` (unlovely > unlove > unloves > loves > love), costing 5.66 points; it is a form of `lovely` (Zipf 4.74). Flagged by the daily fold check for the 2026-11-30 `EL` drop (unattractive; not unlove (stop loving)) and confirmed on adversarial re-review (unattractive, not stop loving)."
   },
   "unmedicable": {
-    "base": "medicable",
+    "base": "medicate",
     "since": "2026-11-16",
-    "reason": "Folded onto `medic` (unmedicable > medicable > medic), costing 3.05 points; it is a form of `medicable` (Zipf 0.69). Flagged by the daily fold check for the 2026-11-16 `ICA` drop (means incurable, not about medics) and confirmed on adversarial re-review (incurable, not about medics)."
+    "reason": "Folded onto `medic` (unmedicable > medicable > medic), costing 3.05 points; it is a form of `medicate` (Zipf 2.48). Flagged by the daily fold check for the 2026-11-16 `ICA` drop (means incurable, not about medics) and confirmed on adversarial re-review (incurable, not about medics). Fix changed on review of sigfigs789/ick#559: negation of medicable, which scores as medicate."
   },
   "unplacably": {
     "base": "placate",
