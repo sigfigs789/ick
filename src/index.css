@@ -5962,3 +5962,25 @@ h2 {
   border-radius: 3px 3px 0 0;
   background: var(--accent);
 }
+
+/* The come-back card (components/ComeBackCard.tsx): under today's banked word,
+   what playing tomorrow does for the streak. Quieter than the share panel above
+   it -- no shadow, a muted border -- since it is the last thing on the page,
+   not the main event. */
+.come-back {
+  margin-top: 1rem;
+  padding: 1rem 1.2rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: 1rem;
+  text-align: center;
+  animation: panel-in 0.4s var(--ease-standard);
+}
+.come-back__goal {
+  margin: 0;
+  font-weight: 700;
+}
+.come-back__detail {
+  margin: 0.2rem 0 0;
+  color: var(--fg-muted);
+  font-size: 0.85rem;
+}

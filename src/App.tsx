@@ -13,6 +13,7 @@ import { ConfettiBurst } from "./components/ConfettiBurst";
 import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
 import { ImprovementCelebration } from "./components/ImprovementCelebration";
 import { QuickShareButton } from "./components/QuickShareButton";
+import { ComeBackCard } from "./components/ComeBackCard";
 import { WelcomeBackCard } from "./components/WelcomeBackCard";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
@@ -386,6 +387,12 @@ export default function App() {
             scrollSignal={shareRequests}
           />
         )}
+
+        {/* Once today's word is banked -- which is when the streak counts the
+            day, whether or not the puzzle is locked in -- say what coming
+            back tomorrow is worth (see game/comeBack.ts). Last on the page,
+            so it never sits between a player and the guesses they have left. */}
+        {isToday && progress.acceptedWords.length > 0 && <ComeBackCard streak={streak} />}
       </main>
 
       {/* Dev only, and pinned beside the dev date bar rather than in the
