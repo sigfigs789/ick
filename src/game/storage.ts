@@ -350,6 +350,30 @@ function saveStreak(streak: StreakState): void {
 }
 
 /**
+ * The day the welcome-back card was last closed (see
+ * components/WelcomeBackCard.tsx). A date rather than a flag: closing it hides
+ * it for that day only, across reloads, and a later return greets again.
+ * Device-local, so it is not carried by a transfer.
+ */
+const WELCOME_BACK_DISMISSED_KEY = "ick:welcome-back-dismissed";
+
+export function welcomeBackDismissedOn(): string | null {
+  try {
+    return localStorage.getItem(WELCOME_BACK_DISMISSED_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function dismissWelcomeBack(date: string): void {
+  try {
+    localStorage.setItem(WELCOME_BACK_DISMISSED_KEY, date);
+  } catch {
+    // The card is still closed for this session (component state).
+  }
+}
+
+/**
  * The first valid word immediately advances today's streak. The player can
  * still keep guessing up to the day's guess limit, or lock in early, without counting
  * that streak win a second time.

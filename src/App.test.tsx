@@ -279,7 +279,7 @@ describe("the welcome-back card", () => {
     vi.mocked(useDailyPuzzle).mockReturnValue(
       puzzle({ streak: lapsed }) as ReturnType<typeof useDailyPuzzle>
     );
-    render(<App />);
+    const { unmount } = render(<App />);
 
     expect(screen.getByText(/welcome back/i)).toBeInTheDocument();
     expect(screen.getByText("12 days")).toBeInTheDocument();
@@ -287,6 +287,17 @@ describe("the welcome-back card", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Dismiss" }));
     expect(screen.queryByText(/welcome back/i)).not.toBeInTheDocument();
+
+    // Closed for the day: a reload does not bring it back, but another day does.
+    unmount();
+    const second = render(<App />);
+    expect(screen.queryByText(/welcome back/i)).not.toBeInTheDocument();
+    second.unmount();
+    vi.mocked(useDailyPuzzle).mockReturnValue(
+      puzzle({ streak: lapsed, date: "2026-08-14" }) as ReturnType<typeof useDailyPuzzle>
+    );
+    render(<App />);
+    expect(screen.getByText(/welcome back/i)).toBeInTheDocument();
   });
 
   it("is not shown on an archived puzzle, once a word is played, or to a player who never reached 3 days", () => {

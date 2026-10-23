@@ -6,7 +6,7 @@ import type { StreakState } from "../game/types";
 const FREEZE_RULES =
   "🧊 keeps your streak alive for one more day. Earn your first 🧊 on day 3, then one every 7 days played. " +
   "You can hold 1 🧊 after a 3 day streak, 2 🧊 after 14 days and 3 🧊 after 28 days. " +
-  "Come back after losing a streak and your new one starts with a 🧊.";
+  "Lose a streak after reaching 3 days and your next one starts with a 🧊 (once every 30 days).";
 
 function freezeSummary(banked: number, cap: number): string {
   if (banked === 0) return "No 🧊 acquired";
