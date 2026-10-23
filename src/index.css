@@ -5566,21 +5566,20 @@ h2 {
 }
 
 /* ------------------------------------------------------------------------
-   The new play screen (see src/game/uiVariant.ts). Half of new and half of
-   returning players get it, by `data-ui="v2"` on the root element, so every rule here is scoped to
-   that and the current screen is left exactly as it was.
+   The play screen's layout (v2), over the rules above. Once a test against
+   the screen before it, now the only one.
    ------------------------------------------------------------------------ */
 
 /* Room under the last card for the chat button, which floats over the bottom
    right corner of every page. */
-:root[data-ui="v2"] .app {
+.app {
   padding-bottom: 6rem;
 }
 
 /* The tiles are there from the first frame and settle into place, rather than
    fading up from nothing: a throttled or paused animation (a background tab, a
    slow phone) left the drop blank under its label. */
-:root[data-ui="v2"] .drop-display__letter {
+.drop-display__letter {
   opacity: 1;
   transform: scale(0.92);
   animation-name: tile-settle;
@@ -5592,34 +5591,34 @@ h2 {
 }
 
 /* The input now sits right under the drop, and the guess log under it. */
-:root[data-ui="v2"] .play .submit-form {
+.play .submit-form {
   margin-bottom: 0.25rem;
 }
-:root[data-ui="v2"] .play .feedback:not(.feedback--collapsed) {
+.play .feedback:not(.feedback--collapsed) {
   margin-bottom: 1rem;
 }
 
 /* Arrows on the drop row read as quiet links rather than buttons: on today's
    puzzle Previous is the only one live, and it leads into the archive, which
    is not where most players are headed. */
-:root[data-ui="v2"] .puzzle-nav--drop > .puzzle-nav__arrow {
+.puzzle-nav--drop > .puzzle-nav__arrow {
   border-color: transparent;
   background: transparent;
   color: var(--fg-muted);
 }
-:root[data-ui="v2"] .puzzle-nav--drop > .puzzle-nav__arrow:not(:disabled):hover {
+.puzzle-nav--drop > .puzzle-nav__arrow:not(:disabled):hover {
   background: var(--bg-inset);
   color: var(--fg);
 }
-:root[data-ui="v2"] .puzzle-nav--drop > .puzzle-nav__arrow:disabled {
+.puzzle-nav--drop > .puzzle-nav__arrow:disabled {
   visibility: hidden;
 }
 
 /* Share, beside the guess count. */
-:root[data-ui="v2"] .guess-log__header {
+.guess-log__header {
   align-items: center;
 }
-:root[data-ui="v2"] .guess-log__count {
+.guess-log__count {
   margin-left: auto;
 }
 .quick-share {
@@ -5641,8 +5640,7 @@ h2 {
 /* Freeform's rainbow stays on the input, where it says which game is being
    typed into; the cards go back to the neutral border, so the gold best word
    is the one card that stands out. */
-:root[data-ui="v2"]
-  .play--freeform
+.play--freeform
   .guess-log__entry:not(.guess-log__entry--best):not(.guess-log__entry--picking) {
   border-color: var(--border-strong);
   background: var(--card-bg);
@@ -5690,7 +5688,7 @@ h2 {
 
 /* An empty box means "type something", not "finished": an outline, so it does
    not read as the dead grey of a disabled control. */
-:root[data-ui="v2"] .submit-form button:disabled {
+.submit-form button:disabled {
   opacity: 1;
   background: transparent;
   color: var(--fg-faint);
@@ -5699,22 +5697,22 @@ h2 {
 
 /* A little more room on a wide screen, where the cards read as thin strips. */
 @media (min-width: 600px) {
-  :root[data-ui="v2"] .app:not(.app--wide) {
+  .app:not(.app--wide) {
     max-width: 34rem;
   }
-  :root[data-ui="v2"] .guess-log__entry-button {
+  .guess-log__entry-button {
     min-height: 3.9rem;
   }
-  :root[data-ui="v2"] .guess-log__word {
+  .guess-log__word {
     font-size: 1.3rem;
   }
-  :root[data-ui="v2"] .guess-log__entry .rarity-badge {
+  .guess-log__entry .rarity-badge {
     font-size: 0.76rem;
   }
 }
 
 /* "Share options", folding the answer and username choices and the preview on
-   the new play screen (see ResultsPanel's `collapsible`). */
+   the play screen (see ResultsPanel's `collapsible`). */
 .results-panel__options-toggle {
   display: block;
   margin: 0.75rem auto 0;
@@ -5731,7 +5729,7 @@ h2 {
   color: var(--fg);
 }
 
-/* The new play screen's share panel: the preview of what Share copies on top,
+/* The play screen's share panel: the preview of what Share copies on top,
    the choices folded under it, and Share across the bottom, where the
    leaderboard link used to sit. It arrives from the Share beside the guess
    count, so it rises a little further than the plain panel and stops clear of
@@ -5763,14 +5761,14 @@ h2 {
   width: 100%;
 }
 
-/* The new play screen puts the input right under the drop, so a notice over
+/* The play screen puts the input right under the drop, so a notice over
    the input would cover the letters being played. It hangs below the input
    instead, pointing up at it. */
-:root[data-ui="v2"] .de-prefix-hint:not(.folded-live-notice) {
+.de-prefix-hint:not(.folded-live-notice) {
   top: calc(100% + 0.6rem);
   bottom: auto;
 }
-:root[data-ui="v2"] .de-prefix-hint:not(.folded-live-notice)::after {
+.de-prefix-hint:not(.folded-live-notice)::after {
   top: auto;
   bottom: 100%;
   border-top-color: transparent;

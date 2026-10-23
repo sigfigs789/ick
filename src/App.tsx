@@ -13,7 +13,6 @@ import { ConfettiBurst } from "./components/ConfettiBurst";
 import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
 import { ImprovementCelebration } from "./components/ImprovementCelebration";
 import { QuickShareButton } from "./components/QuickShareButton";
-import { isNewPlayUi } from "./game/uiVariant";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { useForceUpdate } from "./hooks/useForceUpdate";
@@ -89,13 +88,10 @@ export default function App() {
   const [improvement, setImprovement] = useState<Improvement | null>(null);
   const endImprovement = useCallback(() => setImprovement(null), []);
   const sound = useSound();
-  // The play-screen experiment (see game/uiVariant.ts): settled before the
-  // first render and fixed for the browser, so it never changes under a player.
-  const newUi = isNewPlayUi();
-  // New play screen: the share panel stays out of the way until the Share
-  // beside the guess count is pressed, which opens it and scrolls to it. Each
-  // press bumps the count, so a second press scrolls back to it again. A new
-  // puzzle starts closed.
+  // The share panel stays out of the way until the Share beside the guess
+  // count is pressed, which opens it and scrolls to it. Each press bumps the
+  // count, so a second press scrolls back to it again. A new puzzle starts
+  // closed.
   const [shareRequests, setShareRequests] = useState(0);
   useEffect(() => setShareRequests(0), [date]);
 
@@ -223,7 +219,7 @@ export default function App() {
           date={date}
           mode={playMode}
           acceptedWords={progress.acceptedWords}
-          submitLabel={newUi ? "Play" : undefined}
+          submitLabel="Play"
         />
       )}
       <FeedbackRegion
@@ -231,8 +227,8 @@ export default function App() {
         note={liveNote}
         reserveSpace={!progress.completed}
         onWordRules={() => setShowWordRules(true)}
-        settledNote={!newUi}
-        visibleMs={newUi ? (feedback?.kind === "accepted" ? 4000 : 8000) : undefined}
+        settledNote={false}
+        visibleMs={feedback?.kind === "accepted" ? 4000 : 8000}
       />
     </>
   );
@@ -292,10 +288,10 @@ export default function App() {
           notices={foldNotices}
           onDismiss={dismissFoldNotices}
         />
-        {/* The new play screen puts the input straight under the drop, so it
-            stays where it is as words land below it rather than being pushed
-            down the page by each one. */}
-        {newUi && guessEntry}
+        {/* The input sits straight under the drop, so it stays where it is
+            as words land below it rather than being pushed down the page by
+            each one. */}
+        {guessEntry}
         <GuessLog
           acceptedWords={progress.acceptedWords}
           completed={progress.completed}
@@ -309,9 +305,9 @@ export default function App() {
           crossMode={crossMode}
           copying={copying}
           onCopyToOtherMode={copyToOtherMode}
-          newUi={newUi}
+          newUi
           headerAction={
-            newUi && progress.acceptedWords.length > 0 ? (
+            progress.acceptedWords.length > 0 ? (
               <QuickShareButton
                 date={date}
                 drop={drop}
@@ -324,8 +320,6 @@ export default function App() {
             ) : undefined
           }
         />
-
-        {!newUi && guessEntry}
 
         {!progress.completed && !isToday && (
           <p className="archive-note">
@@ -340,7 +334,7 @@ export default function App() {
             totalRarity={totalRarityScore(progress.acceptedWords, date)}
             date={date}
             isToday={isToday}
-            hideEmpty={newUi}
+            hideEmpty
             hasWords={progress.acceptedWords.length > 0}
           />
         )}
@@ -357,9 +351,9 @@ export default function App() {
 
             The panel reads the live word list, so a share taken now and a
             share taken three words later are both current. */}
-        {/* On the new play screen, only once asked for by the Share beside the
-            guess count, which stays on a finished puzzle too. */}
-        {progress.acceptedWords.length > 0 && (!newUi || shareRequests > 0) && (
+        {/* Only once asked for by the Share beside the guess count, which
+            stays on a finished puzzle too. */}
+        {progress.acceptedWords.length > 0 && shareRequests > 0 && (
           <ResultsPanel
             date={date}
             drop={drop}
@@ -367,7 +361,7 @@ export default function App() {
             streak={streak}
             isToday={isToday}
             mode={progress.mode}
-            collapsible={newUi}
+            collapsible
             scrollSignal={shareRequests}
           />
         )}

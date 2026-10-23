@@ -31,8 +31,8 @@ interface Props {
    */
   acceptedWords?: readonly AcceptedWord[];
   /**
-   * The button's word. The new play screen (see game/uiVariant.ts) says
-   * "Play": a guess is a move in the game, not a form being sent.
+   * The button's word. The play screen (see App.tsx) says "Play": a guess is
+   * a move in the game, not a form being sent.
    */
   submitLabel?: string;
 }
