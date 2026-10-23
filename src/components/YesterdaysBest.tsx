@@ -3,10 +3,10 @@ import { fetchFoundWords, repriceFoundWords, type FoundWord } from "../game/lead
 import { pageCache } from "../game/pageCache";
 import { addDays } from "../game/date";
 import { dropForDate } from "../game/drop";
-import { learnableWordForDrop } from "../game/dictionary";
+import { formatRarityScore, learnableWordForDrop } from "../game/dictionary";
 import { bestFind } from "../game/yesterdaysBest";
 import { useGameMode } from "../hooks/useGameMode";
-import { RarityBadge } from "./RarityBadge";
+import { rarityClassName } from "./rarityStyles";
 
 interface Props {
   /** Today's puzzle date; the line reports the day before it. */
@@ -21,19 +21,20 @@ interface Props {
 const yesterdayCache = pageCache<readonly FoundWord[]>();
 
 /**
- * The rarest word anybody found on yesterday's drop, under today's drop.
+ * The rarest word anybody found on yesterday's drop, behind a button under
+ * today's drop.
  *
- * Yesterday's drop is not today's, so naming its best word spoils nothing here
- * -- it shows the ceiling players actually reached, which is the thing to beat.
- * Priced by the reader's own mode like the finds page, so the badge here and
- * the one on /found-words agree.
+ * Yesterday's drop is not today's, so the word spoils nothing here and costs
+ * nothing to see -- the button is there so the word is something to open, the
+ * way the word of the day was, rather than a line read in passing. Opened, it
+ * shows the word, its score and who found it first. Priced by the reader's own
+ * mode like the finds page, so the score here and the one on /found-words agree.
  *
- * Always says something. While the feed loads, on a failed read, or for a day
- * nobody found anything, it names the word yesterday's drop offered instead
- * (the one its finished puzzle revealed, see dictionary.learnableWordForDrop),
- * without a finder count. That word is known before any request, so the line
- * is on screen from the first paint and never pushes the input down when the
- * feed lands -- at most the word in it changes.
+ * The button needs no request, so it is on screen from the first paint and
+ * never pushes the input down when the feed lands. Opened while the feed loads,
+ * on a failed read, or for a day nobody found anything, it names the word
+ * yesterday's drop offered instead (the one its finished puzzle revealed, see
+ * dictionary.learnableWordForDrop), with no finder.
  */
 export function YesterdaysBest({ date }: Props) {
   const yesterday = addDays(date, -1);
@@ -41,6 +42,10 @@ export function YesterdaysBest({ date }: Props) {
     yesterdayCache.get(yesterday),
   );
   const [mode] = useGameMode();
+  const [open, setOpen] = useState(false);
+
+  // A new day is a new word, and it starts behind the button like the last one.
+  useEffect(() => setOpen(false), [yesterday]);
 
   useEffect(() => {
     let current = true;
@@ -73,20 +78,48 @@ export function YesterdaysBest({ date }: Props) {
   const best = found ?? offered;
   if (!best) return null;
 
+  if (!open) {
+    return (
+      <div className="yesterdays-best">
+        <button
+          type="button"
+          className="yesterdays-best__button"
+          aria-expanded={false}
+          onClick={() => setOpen(true)}
+        >
+          Yesterday's Best Word
+        </button>
+      </div>
+    );
+  }
+
+  const scoredOn = found?.foundOn || yesterday;
   return (
-    <p className="yesterdays-best">
-      <span className="yesterdays-best__label">
-        Yesterday's best for {"“"}
+    <div className="yesterdays-best">
+      <p className="yesterdays-best__label">
+        Yesterday's best on {"“"}
         {yesterdayDrop}
         {"”"}
-      </span>{" "}
-      <span className="yesterdays-best__word">{best.word}</span>{" "}
-      <RarityBadge rarity={best.rarity} zipf={best.zipf} date={found?.foundOn || yesterday} />
-      {found && (
-        <span className="yesterdays-best__finders">
-          {found.finders === 1 ? "found by 1 player" : `found by ${found.finders} players`}
+      </p>
+      <p className="yesterdays-best__word">
+        {best.word}
+        {/* The score alone, wearing its tier's colours, as the word of the day
+            showed it. The tier is named for a screen reader, so nothing rests
+            on the colour by itself. */}
+        <span className={`yesterdays-best__score ${rarityClassName(best.rarity, scoredOn)}`}>
+          {formatRarityScore(best.zipf, scoredOn)}
+          <span className="sr-only"> {best.rarity}</span>
         </span>
-      )}
-    </p>
+      </p>
+      <p className="yesterdays-best__finder">{finderLine(found)}</p>
+    </div>
   );
+}
+
+/** Who got there first, or what the word is when nobody's finds can be read. */
+function finderLine(found: FoundWord | undefined): string {
+  if (!found) return "The best word the drop offered";
+  const others = found.finders > 1 ? ` · ${found.finders} players found it` : "";
+  if (found.firstFinder) return `First found by ${found.firstFinder}${others}`;
+  return found.finders === 1 ? "Found by 1 player" : `Found by ${found.finders} players`;
 }

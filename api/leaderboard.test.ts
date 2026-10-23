@@ -1048,6 +1048,22 @@ describe("api/leaderboard find modes", () => {
   });
 });
 
+describe("api/leaderboard first finders", () => {
+  it("passes on who found each word first, when the database says", async () => {
+    withEnv();
+    stubFetch([
+      [
+        { word: "aforetime", zipf: "1.2", finders: 2, found_on: "2026-09-20", first_player: "p1" },
+        { word: "inkling", zipf: "2.9", finders: 1, found_on: "2026-09-20", first_player: null },
+        { word: "wrinkle", zipf: "3.6", finders: 1, found_on: "2026-09-20" },
+      ],
+    ]);
+    const response = await handler(get("?words=1&today=2026-09-20"));
+    const body = (await response.json()) as { words: Record<string, unknown>[] };
+    expect(body.words.map((word) => word.firstPlayer)).toEqual(["p1", undefined, undefined]);
+  });
+});
+
 describe("api/leaderboard client versions", () => {
   it("can never set a floor the current release is below", () => {
     // Above APP_VERSION, nobody -- not even the website -- would rank.

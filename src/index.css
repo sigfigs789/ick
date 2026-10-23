@@ -858,28 +858,74 @@ h2 {
 /* One quiet line under the guesses: yesterday's rarest find. */
 .yesterdays-best {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 0.2rem 0.4rem;
-  margin: 0 0 1rem;
-  font-size: 0.82rem;
-  color: var(--fg-muted);
+  margin: 0 0 1.25rem;
   text-align: center;
 }
-.yesterdays-best__word {
+/* The word of the day's button, back in the same place: it takes the room a
+   line would, so opening it is the only thing that moves the page. */
+.yesterdays-best__button {
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-inset);
+  color: var(--fg);
+  cursor: pointer;
   font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+.yesterdays-best__button:hover {
+  background: var(--card-bg);
+}
+.yesterdays-best__label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--fg-muted);
+}
+.yesterdays-best__word,
+.yesterdays-best__finder {
+  opacity: 0;
+  transform: translateY(-6px);
+  animation: yesterdays-best-in 0.4s var(--ease-standard) forwards;
+}
+.yesterdays-best__word {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.25rem 0 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
   font-weight: 800;
   text-transform: lowercase;
   color: var(--fg);
 }
-.yesterdays-best__finders {
+/* The tier's colours without the badge's tag or dot; the palette comes from the
+   shared .rarity--* class, so it tracks the badges in both themes. */
+.yesterdays-best__score {
+  padding: 0.12rem 0.42rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.yesterdays-best__finder {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
   color: var(--fg-faint);
+  animation-delay: 0.12s;
 }
 /* Under the drop: pulled up into the drop's own bottom margin, so it reads as
    a caption to the letters rather than a row of its own. */
 .puzzle-nav--drop + .yesterdays-best {
   margin-top: -0.75rem;
+}
+@keyframes yesterdays-best-in {
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* Drop display */

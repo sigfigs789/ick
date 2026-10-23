@@ -13,7 +13,7 @@
  * because the drop rotates daily and today's puzzle is whatever the calendar
  * says it is.
  */
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
@@ -239,13 +239,17 @@ describe("gameplay end to end", () => {
     expect(savedProgress(TODAY)?.completed).toBe(false);
   });
 
-  it("shows yesterday's best word under the drop before any answer", () => {
+  it("offers yesterday's best word under the drop before any answer", () => {
     render(<App />);
 
     // Straight after the drop, not down under the guesses, and with nothing
     // banked yet: it never waits on the player.
     expect(document.querySelector(".puzzle-nav--drop + .yesterdays-best")).toHaveTextContent(
-      `Yesterday's best for “${dropForDate(YESTERDAY)}”`,
+      "Yesterday's Best Word",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Yesterday's Best Word" }));
+    expect(document.querySelector(".yesterdays-best")).toHaveTextContent(
+      `Yesterday's best on “${dropForDate(YESTERDAY)}”`,
     );
     expect(document.querySelectorAll(".yesterdays-best")).toHaveLength(1);
     expect(loggedWords()).toEqual([]);

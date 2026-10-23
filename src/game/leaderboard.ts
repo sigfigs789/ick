@@ -125,6 +125,8 @@ export interface FoundWord {
    * feed read before finds carried a mode. See `repriceFoundWords`.
    */
   standard?: false;
+  /** What to call whoever found it first. Absent on a feed from before the server sent it. */
+  firstFinder?: string;
 }
 
 export interface Boards {
@@ -441,7 +443,7 @@ function parseWords(raw: unknown, today: string): FoundWord[] {
   const words: FoundWord[] = [];
   for (const item of raw as Record<string, unknown>[]) {
     if (!item || typeof item !== "object") continue;
-    const { word, zipf, finders, foundOn, standard } = item;
+    const { word, zipf, finders, foundOn, standard, firstPlayer } = item;
     if (typeof word !== "string" || !word) continue;
     // An absent or malformed date has to read as "no date", not as the empty
     // string: every cutover here is a string comparison, and "" sorts below all
@@ -462,6 +464,9 @@ function parseWords(raw: unknown, today: string): FoundWord[] {
       today: foundOn === today,
       ...(stored !== undefined ? { stored } : {}),
       ...(standard === false ? { standard: false as const } : {}),
+      ...(typeof firstPlayer === "string" && firstPlayer
+        ? { firstFinder: nameFor(firstPlayer, item.source) }
+        : {}),
     });
   }
   return words;

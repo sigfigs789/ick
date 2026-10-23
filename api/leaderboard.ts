@@ -317,6 +317,8 @@ interface WordRow {
   found_on: string;
   /** Whether any finder banked it in Standard. Absent before the 20260925 migration. */
   standard?: boolean | null;
+  /** Whoever found it first. Absent before the 20261031 migration. */
+  first_player?: string | null;
 }
 
 /** One word as the client wants it. */
@@ -334,6 +336,8 @@ interface WordEntry {
    * nothing.
    */
   standard?: false;
+  /** The player who found it first, for the client to name the way the boards do. */
+  firstPlayer?: string;
 }
 
 /** What `leaderboard_boards` answers with. */
@@ -507,6 +511,9 @@ function toWords(rows: WordRow[] | null): WordEntry[] {
     finders: Number(row.finders) || 0,
     foundOn: String(row.found_on),
     ...(row.standard === false ? { standard: false as const } : {}),
+    ...(typeof row.first_player === "string" && row.first_player
+      ? { firstPlayer: row.first_player }
+      : {}),
   }));
 }
 
