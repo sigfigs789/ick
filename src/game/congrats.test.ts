@@ -6,6 +6,7 @@ import {
   markCongratsPopped,
   pendingCongratsSpot,
   pendingCongratsSpots,
+  selfCongratsMessage,
   wanderPath,
 } from "./congrats";
 
@@ -153,6 +154,17 @@ describe("what the bubble says", () => {
     expect(
       congratsMessage("StormyFox47", { window: "month", start: "2026-09-01", mode: "freeform" }),
     ).toBe("Congrats StormyFox47 on September's Freeform win");
+  });
+
+  it("speaks to the winner directly when the winner is reading", () => {
+    expect(selfCongratsMessage({ window: "week", start: "2026-09-06", mode: "standard" })).toEqual({
+      headline: "You won!",
+      detail: "Top of last week's Standard board",
+    });
+    expect(selfCongratsMessage({ window: "month", start: "2026-09-01", mode: "freeform" })).toEqual({
+      headline: "You won!",
+      detail: "Top of September's Freeform board",
+    });
   });
 });
 

@@ -5,9 +5,13 @@ import {
   congratsMessage,
   markCongratsPopped,
   pendingCongratsSpots,
+  selfCongratsMessage,
   wanderPath,
 } from "../game/congrats";
+import { loadPlayerId } from "../game/player";
+import { vibrate } from "../audio/sound";
 import { useSound } from "../hooks/useSound";
+import { ConfettiBurst } from "./ConfettiBurst";
 
 /**
  * How long the splat is on screen before it is taken off the page.
@@ -30,6 +34,22 @@ const SPLAT_MS = 900;
  * index.css), which is what keeps an even fan from looking like a clock face.
  */
 const DROPLETS = 7;
+
+/**
+ * How long the reader's own win holds the screen after it is popped: the stamp
+ * slams in, sits, and lifts away (see `.jackpot__stamp` in index.css), and the
+ * gold ink soaks away under it. Long enough for the stamp's whole run.
+ */
+const OWN_SPLAT_MS = 2400;
+
+/**
+ * How long the gold confetti that greets the reader's own win stays mounted --
+ * the grand burst's fall plus the stagger across its pieces, with room to spare.
+ */
+const OWN_ARRIVAL_MS = 4000;
+
+/** A drum roll in the hand, for a phone that has one, as the reader's own ink lands. */
+const OWN_HAPTICS = [30, 40, 30, 40, 30, 40, 60, 60, 160];
 
 /**
  * A bubble drifting around the boards, naming the player who won the window
@@ -58,6 +78,13 @@ const DROPLETS = 7;
  * request for a window nothing else on the page is showing, and if it fails or
  * comes back empty the bubble simply never appears. Nothing here can keep the
  * boards from rendering.
+ *
+ * When the winner is the reader, it is not news about somebody else -- it is
+ * the biggest thing the game can tell them, so it says it like that. The bubble
+ * is addressed to them ("You won!") and dressed up: bigger, a crown, a gold
+ * shimmer and a glow that breathes. It arrives under falling gold confetti, and
+ * popping it stamps CHAMPION across the screen over gold ink, to the month's
+ * full applause and fanfare whichever window it was.
  */
 export function CongratsBubble({ today }: { today: string }) {
   /**
@@ -92,7 +119,7 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
     });
     return style as CSSProperties;
   });
-  const [winner, setWinner] = useState<string | null>(null);
+  const [winner, setWinner] = useState<{ name: string; you: boolean } | null>(null);
   /** Hit: the bubble is gone and the ink is landing where it was. */
   const [splatting, setSplatting] = useState(false);
   /** Taken off the page, once the ink has soaked away. */
@@ -119,7 +146,10 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
         // A window nobody scored in has no winner to name, and a bubble reading
         // "Congrats undefined" is worse than no bubble.
         const champion = board.find((entry) => entry.rank === 1) ?? board[0];
-        if (champion) setWinner(champion.name);
+        // Matched on the id rather than the name, the way the boards find the
+        // reader's own row: a handle is not unique, and a stranger who happens
+        // to share one should not be told it is them.
+        if (champion) setWinner({ name: champion.name, you: champion.playerId === loadPlayerId() });
       })
       // A congratulation that couldn't load is not something to tell anybody
       // about -- it is a nicety, and the boards under it are the page.
@@ -134,23 +164,43 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
   // one plenty of screen readers never announce.
   if (gone) return null;
 
+  /** Whether the reader is the one being congratulated. */
+  const own = winner?.you ?? false;
+  const yours = own ? selfCongratsMessage(spot) : null;
+
   function splat() {
     if (splatting) return;
     // Remembered on the hit rather than when the ink clears, so a reader who
     // navigates away mid-splat has still popped it.
     markCongratsPopped(spot);
     // Applause as the ink lands -- inside the press, which is the gesture the
-    // browser needs before it will play anything. A month's is the bigger one.
-    sound.applause(spot.window);
+    // browser needs before it will play anything. A month's is the bigger one,
+    // and the reader's own win always gets the bigger one: it is their crowd.
+    sound.applause(own ? "month" : spot.window);
+    if (own) vibrate(OWN_HAPTICS);
     setSplatting(true);
-    window.setTimeout(() => setGone(true), SPLAT_MS);
+    window.setTimeout(() => setGone(true), own ? OWN_SPLAT_MS : SPLAT_MS);
   }
 
   return (
     // Over the boards rather than in the flow beside them -- the layer the
     // bubble wanders across. It catches nothing itself: the page underneath is
     // still the page, and only the bubble takes a press.
-    <div className="congrats-bubble" aria-live="polite">
+    <div
+      className={`congrats-bubble${own ? " congrats-bubble--you" : ""}`}
+      aria-live="polite"
+    >
+      {/* Out here rather than on the drifting layer: the confetti and the stamp
+          are fixed to the screen, and a transformed ancestor would pin them to
+          the bubble instead. */}
+      {own && !splatting && <OwnArrival />}
+      {own && splatting && (
+        <div className="jackpot" aria-hidden="true">
+          <div className="jackpot__flash" />
+          <ConfettiBurst grand />
+          <div className="jackpot__stamp congrats-bubble__stamp">Champion!</div>
+        </div>
+      )}
       {winner && (
         // The wandering happens here, on the layer the bubble and its ink share,
         // so the blot lands exactly where the bubble was standing when it was
@@ -161,7 +211,10 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
           data-splatting={splatting ? "" : undefined}
         >
           {splatting ? (
-            <span className="congrats-bubble__splat" aria-hidden="true">
+            <span
+              className={`congrats-bubble__splat${own ? " congrats-bubble__splat--you" : ""}`}
+              aria-hidden="true"
+            >
               {Array.from({ length: DROPLETS }, (_, index) => (
                 <span key={index} className="congrats-bubble__drop" />
               ))}
@@ -169,7 +222,7 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
           ) : (
             <button
               type="button"
-              className="congrats-bubble__pop"
+              className={`congrats-bubble__pop${own ? " congrats-bubble__pop--you" : ""}`}
               onClick={splat}
               // What hitting it does, for a reader who cannot see that it is a
               // bubble. The message itself is the label, so this is the only
@@ -177,15 +230,36 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
               title="Pop"
             >
               <span className="congrats-bubble__emoji" aria-hidden="true">
-                🎉
+                {yours ? "👑" : "🎉"}
               </span>
-              <span className="congrats-bubble__text">
-                {congratsMessage(winner, spot)}
-              </span>
+              {yours ? (
+                <span className="congrats-bubble__text">
+                  <span className="congrats-bubble__headline">{yours.headline}</span>{" "}
+                  <span className="congrats-bubble__detail">{yours.detail}</span>
+                </span>
+              ) : (
+                <span className="congrats-bubble__text">
+                  {congratsMessage(winner.name, spot)}
+                </span>
+              )}
             </button>
           )}
         </div>
       )}
     </div>
   );
+}
+
+/**
+ * The gold confetti that greets the reader's own win, once, as the bubble
+ * arrives -- before anything has been pressed, so it is silent: a browser plays
+ * nothing until it has been touched. Taken off the page once it has fallen.
+ */
+function OwnArrival() {
+  const [falling, setFalling] = useState(true);
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setFalling(false), OWN_ARRIVAL_MS);
+    return () => window.clearTimeout(timeout);
+  }, []);
+  return falling ? <ConfettiBurst grand /> : null;
 }

@@ -13,9 +13,13 @@ import {
   congratsMessage,
   markCongratsPopped,
   pendingCongratsSpots,
+  selfCongratsMessage,
   wanderPath,
 } from '../../../src/game/congrats';
 import { fetchBoards } from '../../../src/game/leaderboard';
+import { loadPlayerId } from '../../../src/game/player';
+import { signalCelebrate } from '../host/feedback';
+import { ConfettiBurst } from './ConfettiBurst';
 import { radius, space } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 
@@ -23,6 +27,13 @@ import { useTheme } from '../theme/useTheme';
 const SPLAT_MS = 900;
 /** One leg of the wander: the bubble drifts to a new spot about this often. */
 const DRIFT_MS = 5200;
+/**
+ * How long the reader's own win holds the screen after a tap: the stamp slams
+ * in, sits and lifts away, and the gold ink soaks away under it.
+ */
+const OWN_SPLAT_MS = 2400;
+/** One breath of the glow around the reader's own bubble, in and out. */
+const GLOW_MS = 1100;
 
 /**
  * The spray thrown off the blot, as offsets in points from where it landed.
@@ -67,6 +78,11 @@ const DROPS = [
  * Each window has a Standard and a Freeform winner, both named whichever mode
  * the reader is playing. When more than one is owed they all float at once,
  * each spawning somewhere different on a wander of its own.
+ *
+ * When the winner is the reader, it is said to them -- "You won!" -- and made a
+ * fuss of, as on the website: a bigger gold bubble with a crown and a glow that
+ * breathes, confetti as it arrives, and a tap that stamps CHAMPION over gold
+ * ink with the phone's success buzz.
  */
 export function CongratsBubble({ today }: { today: string }) {
   /*
@@ -95,7 +111,7 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
    */
   const [path] = useState(() => wanderPath());
   const [legMs] = useState(() => DRIFT_MS * (0.85 + Math.random() * 0.3));
-  const [winner, setWinner] = useState<string | null>(null);
+  const [winner, setWinner] = useState<{ name: string; you: boolean } | null>(null);
   /** Hit: the bubble is gone and the ink is landing where it was. */
   const [splatting, setSplatting] = useState(false);
   /** Dropped, once the ink has soaked away. */
@@ -113,6 +129,8 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
   /** How far along the path the bubble is: leg `n` runs from n to n+1. */
   const leg = useRef(new Animated.Value(0)).current;
   const splat = useRef(new Animated.Value(0)).current;
+  /** The reader's own bubble breathing: 0 at rest, 1 at the top of the glow. */
+  const glow = useRef(new Animated.Value(0)).current;
   /** The size of the board, so the path can be a share of it rather than points. */
   const [area, setArea] = useState({ width: 0, height: 0 });
   /**
@@ -155,7 +173,9 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
         const board = spot.window === 'week' ? boards.weekly : boards.monthly;
         // A window nobody scored in has no winner to name.
         const champion = board.find((entry) => entry.rank === 1) ?? board[0];
-        if (champion) setWinner(champion.name);
+        // Matched on the id, the way the board finds the reader's own row: a
+        // handle is not unique, and a namesake should not be told it is them.
+        if (champion) setWinner({ name: champion.name, you: champion.playerId === loadPlayerId() });
       } catch {
         // A congratulation that would not load is not worth telling anybody
         // about: the board under it is the screen.
@@ -195,29 +215,58 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
       ),
     );
     walk.start();
-    return () => walk.stop();
-  }, [winner, stillness, enter, leg, path, legMs]);
+    // The reader's own bubble breathes as it goes -- its scale only, on the
+    // native driver with everything else.
+    const breathe = winner.you
+      ? Animated.loop(
+          Animated.sequence([
+            Animated.timing(glow, {
+              toValue: 1,
+              duration: GLOW_MS,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+            Animated.timing(glow, {
+              toValue: 0,
+              duration: GLOW_MS,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+          ]),
+        )
+      : null;
+    breathe?.start();
+    return () => {
+      walk.stop();
+      breathe?.stop();
+    };
+  }, [winner, stillness, enter, leg, glow, path, legMs]);
 
   if (!winner || gone) return null;
+
+  /** Whether the reader is the one being congratulated. */
+  const own = winner.you;
+  const yours = own ? selfCongratsMessage(spot) : null;
 
   function hit() {
     if (splatting) return;
     // Remembered on the tap rather than when the ink clears, so leaving the
     // screen mid-splat has still popped it.
     markCongratsPopped(spot);
+    if (own) signalCelebrate();
     setSplatting(true);
     // The wander stops where it was hit: the blot below lands on that spot,
     // because it rides the same drifting layer.
     leg.stopAnimation();
     Animated.timing(splat, {
       toValue: 1,
-      duration: stillness ? 0 : SPLAT_MS,
+      duration: stillness ? 0 : own ? OWN_SPLAT_MS : SPLAT_MS,
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
     }).start(() => setGone(true));
   }
 
-  const message = congratsMessage(winner, spot);
+  const message = yours ? `${yours.headline} ${yours.detail}` : congratsMessage(winner.name, spot);
   /*
    * The path, in points, once both boxes have been measured.
    *
@@ -250,10 +299,15 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
     // of the board. `box-none` so it places the bubble without swallowing taps
     // meant for the rows underneath.
     <View
-      style={styles.layer}
+      style={[styles.layer, own && styles.layerYou]}
       pointerEvents="box-none"
       onLayout={(event) => setArea(event.nativeEvent.layout)}
     >
+      {/* Over the whole board rather than riding the bubble: confetti as the
+          reader's own win arrives, and the stamp once it is tapped. Skipped for
+          a phone that asked for stillness -- the bubble itself still says it. */}
+      {own && stillness === false && !splatting && <ConfettiBurst />}
+      {own && splatting && <ChampionStamp progress={splat} accent={theme.bestWordAccent} />}
       <Animated.View
         style={[
           styles.travelling,
@@ -273,13 +327,18 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
         pointerEvents="box-none"
       >
         {splatting ? (
-          <InkSplat progress={splat} ink={theme.fg} />
+          <InkSplat
+            progress={splat}
+            ink={own ? theme.bestWordAccent : theme.fg}
+            large={own}
+          />
         ) : (
           <Animated.View
             style={{
               opacity: enter,
               transform: [
                 { scale: enter.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] }) },
+                { scale: glow.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] }) },
               ],
             }}
           >
@@ -291,11 +350,22 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
               accessibilityHint="Pops the bubble"
               style={[
                 styles.bubble,
+                own && styles.bubbleYou,
                 { backgroundColor: theme.bestWordBg, borderColor: theme.bestWordAccent },
+                own && { shadowColor: theme.bestWordAccent },
               ]}
             >
-              <Text style={styles.emoji}>{'\u{1F389}'}</Text>
-              <Text style={[styles.text, { color: theme.fg }]}>{message}</Text>
+              <Text style={[styles.emoji, own && styles.emojiYou]}>
+                {own ? '\u{1F451}' : '\u{1F389}'}
+              </Text>
+              {yours ? (
+                <Text style={[styles.text, styles.textYou, { color: theme.fg }]}>
+                  <Text style={styles.headline}>{yours.headline}</Text>{' '}
+                  <Text style={{ color: theme.fgMuted }}>{yours.detail}</Text>
+                </Text>
+              ) : (
+                <Text style={[styles.text, { color: theme.fg }]}>{message}</Text>
+              )}
             </Pressable>
           </Animated.View>
         )}
@@ -316,12 +386,22 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
  * when the bubble arrived, and a screen reader has nothing to gain from being
  * told about a stain.
  */
-function InkSplat({ progress, ink }: { progress: Animated.Value; ink: string }) {
+function InkSplat({
+  progress,
+  ink,
+  large = false,
+}: {
+  progress: Animated.Value;
+  ink: string;
+  /** The reader's own win: more of it, the way the website's gold blot is. */
+  large?: boolean;
+}) {
   // Struck on hard and flattened, then soaking away: the overshoot in the first
   // fifth is the whole of what makes it read as landing rather than growing.
+  const size = large ? 1.5 : 1;
   const scale = progress.interpolate({
     inputRange: [0, 0.18, 0.36, 0.6, 1],
-    outputRange: [0.15, 1.12, 0.94, 1, 1.06],
+    outputRange: [0.15, 1.12, 0.94, 1, 1.06].map((step) => step * size),
   });
   const opacity = progress.interpolate({
     inputRange: [0, 0.18, 0.6, 1],
@@ -377,6 +457,53 @@ function InkSplat({ progress, ink }: { progress: Animated.Value; ink: string }) 
   );
 }
 
+/**
+ * CHAMPION, stamped across the board when the reader pops their own win: it
+ * slams in tilted and oversized, settles, holds, and lifts away -- the website's
+ * jackpot stamp, in the winning row's gold. Decoration only, hidden from
+ * assistive technology: the bubble already said "You won!".
+ */
+function ChampionStamp({ progress, accent }: { progress: Animated.Value; accent: string }) {
+  return (
+    <View
+      style={styles.stampLayer}
+      pointerEvents="none"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <Animated.View
+        style={[
+          styles.stamp,
+          { backgroundColor: accent, shadowColor: accent },
+          {
+            opacity: progress.interpolate({
+              inputRange: [0, 0.12, 0.75, 1],
+              outputRange: [0, 1, 1, 0],
+            }),
+            transform: [
+              {
+                scale: progress.interpolate({
+                  inputRange: [0, 0.12, 0.2, 0.28, 0.75, 1],
+                  outputRange: [2.6, 0.92, 1.06, 1, 1, 1.15],
+                }),
+              },
+              { rotate: '-6deg' },
+              {
+                translateY: progress.interpolate({
+                  inputRange: [0, 0.75, 1],
+                  outputRange: [0, 0, -24],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
+        <Text style={styles.stampText}>CHAMPION!</Text>
+      </Animated.View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   /* Over the board, filling it: the area the path is a share of. */
   layer: {
@@ -389,6 +516,10 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     paddingTop: space.lg,
     zIndex: 20,
+  },
+  /* The reader's own layer sits over any other bubble owed at the same time. */
+  layerYou: {
+    zIndex: 30,
   },
   travelling: {
     alignItems: 'center',
@@ -403,8 +534,56 @@ const styles = StyleSheet.create({
     paddingVertical: space.sm,
     paddingHorizontal: space.lg,
   },
+  /* Bigger and bolder, and lit from behind in gold. */
+  bubbleYou: {
+    maxWidth: 340,
+    borderWidth: 2.5,
+    paddingVertical: space.md,
+    paddingHorizontal: space.xl,
+    shadowOpacity: 0.6,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 8,
+  },
   emoji: {
     fontSize: 16,
+  },
+  emojiYou: {
+    fontSize: 24,
+  },
+  textYou: {
+    fontSize: 15,
+  },
+  headline: {
+    fontSize: 17,
+    fontWeight: '900',
+  },
+  stampLayer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 40,
+  },
+  stamp: {
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#fff7d6',
+    paddingVertical: space.sm,
+    paddingHorizontal: space.xl,
+    shadowOpacity: 0.8,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 12,
+  },
+  stampText: {
+    color: '#1a1300',
+    fontSize: 40,
+    fontWeight: '900',
+    letterSpacing: 1.5,
   },
   text: {
     flexShrink: 1,
