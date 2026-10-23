@@ -23,3 +23,29 @@ export function bestFind(words: readonly FoundWord[]): FoundWord | undefined {
   }
   return best;
 }
+
+/**
+ * Who to name on the line, and how many others found it too.
+ *
+ * The reader, when they were one of the finders -- it is their find to be told
+ * about -- and otherwise the first player to find it. `count` is the feed's own
+ * finder count, which can run ahead of the ids read a moment later; it is never
+ * allowed to put the named finder's "others" below zero. Undefined when nobody
+ * can be named, so the line falls back to the count alone.
+ */
+export function namedFinder(
+  finderIds: readonly string[],
+  count: number,
+  selfId: string | null
+): { id: string; self: boolean; others: number } | undefined {
+  if (finderIds.length === 0) return undefined;
+  const self = selfId !== null && finderIds.includes(selfId);
+  const id = self ? selfId : finderIds[0];
+  return { id, self, others: Math.max(count, finderIds.length) - 1 };
+}
+
+/** "Found by X", "Found by X and 1 other player", "Found by X and 3 other players". */
+export function foundByLabel(name: string, others: number): string {
+  if (others <= 0) return `Found by ${name}`;
+  return `Found by ${name} and ${others} other ${others === 1 ? "player" : "players"}`;
+}

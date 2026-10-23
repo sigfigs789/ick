@@ -882,6 +882,18 @@ h2 {
   text-transform: lowercase;
   color: var(--fg);
 }
+/* The score beside its tier's dot, without the badge's pill. The rarity class
+   is there for the dot's colour, so its background and text colour are undone
+   -- hence the doubled class, to outrank the .rarity--* rules further down. */
+.yesterdays-best .yesterdays-best__score {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: none;
+  color: var(--fg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
 .yesterdays-best__finders {
   color: var(--fg-faint);
 }

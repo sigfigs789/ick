@@ -1,11 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchFoundWords, repriceFoundWords, type FoundWord } from "../game/leaderboard";
+import {
+  fetchFoundWords,
+  fetchWordFinders,
+  repriceFoundWords,
+  type FoundWord,
+} from "../game/leaderboard";
 import { pageCache } from "../game/pageCache";
 import { addDays } from "../game/date";
 import { dropForDate } from "../game/drop";
-import { bestFind } from "../game/yesterdaysBest";
+import { formatRarityScore } from "../game/dictionary";
+import { handleFor } from "../game/handle";
+import { loadPlayerId, selfName } from "../game/player";
+import { bestFind, foundByLabel, namedFinder } from "../game/yesterdaysBest";
 import { useGameMode } from "../hooks/useGameMode";
-import { RarityBadge } from "./RarityBadge";
+import { rarityClassName } from "./rarityStyles";
 
 interface Props {
   /** Today's puzzle date; the line reports the day before it. */
@@ -19,13 +27,19 @@ interface Props {
  */
 const yesterdayCache = pageCache<readonly FoundWord[]>();
 
+/** The best word's finders, keyed by day and word, kept the same way. */
+const findersCache = pageCache<readonly string[]>();
+
 /**
  * The rarest word anybody found on yesterday's drop, under today's puzzle.
  *
  * Yesterday's drop is not today's, so naming its best word spoils nothing here
  * -- it shows the ceiling players actually reached, which is the thing to beat.
- * Priced by the reader's own mode like the finds page, so the badge here and
- * the one on /found-words agree.
+ * Priced by the reader's own mode like the finds page, so the score here and
+ * the badge on /found-words agree.
+ *
+ * Names a finder -- the reader first, when they were one -- once the word's
+ * finders arrive, and falls back to a bare count if they can't be read.
  *
  * Says nothing at all while loading, on a failed read, or for a day nobody
  * found anything: it is a footnote to the puzzle, and a spinner or an error
@@ -59,8 +73,40 @@ export function YesterdaysBest({ date }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `mode` is the trigger
     [words, mode],
   );
+  const findersKey = best ? `${yesterday}:${best.word}` : undefined;
+  // Undefined while the finders are on their way, null when they couldn't be read.
+  const [finders, setFinders] = useState<readonly string[] | null | undefined>(() =>
+    findersKey ? findersCache.get(findersKey) : undefined,
+  );
+
+  useEffect(() => {
+    if (!best || !findersKey) return;
+    let current = true;
+    setFinders(findersCache.get(findersKey));
+    fetchWordFinders(best.word, yesterday)
+      .then((ids) => {
+        findersCache.set(findersKey, ids);
+        if (current) setFinders(ids);
+      })
+      .catch(() => {
+        if (current) setFinders((cached) => cached ?? null);
+      });
+    return () => {
+      current = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the key names the word
+  }, [findersKey]);
+
   if (!best) return null;
 
+  const selfId = loadPlayerId()?.toLowerCase() ?? null;
+  const named = finders ? namedFinder(finders, best.finders, selfId) : undefined;
+  let foundBy: string | undefined;
+  if (named) foundBy = foundByLabel(named.self ? selfName(named.id) : handleFor(named.id), named.others);
+  else if (finders !== undefined)
+    foundBy = `Found by ${best.finders} ${best.finders === 1 ? "player" : "players"}`;
+
+  const scoreDate = best.foundOn || yesterday;
   return (
     <p className="yesterdays-best">
       <span className="yesterdays-best__label">
@@ -69,10 +115,14 @@ export function YesterdaysBest({ date }: Props) {
         {"”"}
       </span>{" "}
       <span className="yesterdays-best__word">{best.word}</span>{" "}
-      <RarityBadge rarity={best.rarity} zipf={best.zipf} date={best.foundOn || yesterday} />
-      <span className="yesterdays-best__finders">
-        {best.finders === 1 ? "found by 1 player" : `found by ${best.finders} players`}
+      {/* The score beside its tier's dot, without the badge; the tier is
+          named for a screen reader. */}
+      <span className={`yesterdays-best__score ${rarityClassName(best.rarity, scoreDate)}`}>
+        <span className="rarity-badge__dot" aria-hidden="true" />
+        {formatRarityScore(best.zipf, scoreDate)}
+        <span className="sr-only"> {best.rarity}</span>
       </span>
+      {foundBy && <span className="yesterdays-best__finders">{foundBy}</span>}
     </p>
   );
 }
