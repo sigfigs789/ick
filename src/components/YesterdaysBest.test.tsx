@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { YesterdaysBest } from "./YesterdaysBest";
-import { bestFind, foundByLabel, namedFinder } from "../game/yesterdaysBest";
+import { bestFind, finderTotal, orderedFinders, otherPlayers } from "../game/yesterdaysBest";
 import { handleFor } from "../game/handle";
 import { PLAYER_KEY } from "../game/player";
 import { forgetPageCaches } from "../game/pageCache";
 import { dropForDate } from "../game/drop";
+import { formatDateLabel } from "../game/date";
 import type { FoundWord } from "../game/leaderboard";
 
 const TODAY = "2026-10-23";
@@ -61,23 +62,24 @@ describe("bestFind", () => {
   });
 });
 
-describe("namedFinder", () => {
-  it("names the first finder, or the reader when they were one", () => {
-    expect(namedFinder([OTHER, SELF], 2, null)).toEqual({ id: OTHER, self: false, others: 1 });
-    expect(namedFinder([OTHER, SELF], 2, SELF)).toEqual({ id: SELF, self: true, others: 1 });
-  });
-
-  it("never counts fewer others than the ids it was given", () => {
-    expect(namedFinder([OTHER, SELF], 1, null)?.others).toBe(1);
-    expect(namedFinder([], 3, null)).toBeUndefined();
+describe("orderedFinders", () => {
+  it("keeps first finder first, or puts the reader first when they were one", () => {
+    expect(orderedFinders([OTHER, SELF], null)).toEqual([OTHER, SELF]);
+    expect(orderedFinders([OTHER, SELF], SELF)).toEqual([SELF, OTHER]);
   });
 });
 
-describe("foundByLabel", () => {
+describe("finderTotal", () => {
+  it("never counts fewer finders than the ids it was given", () => {
+    expect(finderTotal([OTHER, SELF], 1)).toBe(2);
+    expect(finderTotal([OTHER], 3)).toBe(3);
+  });
+});
+
+describe("otherPlayers", () => {
   it("counts the others in words", () => {
-    expect(foundByLabel("CalmOtter3", 0)).toBe("Found by CalmOtter3");
-    expect(foundByLabel("CalmOtter3", 1)).toBe("Found by CalmOtter3 and 1 other player");
-    expect(foundByLabel("CalmOtter3", 4)).toBe("Found by CalmOtter3 and 4 other players");
+    expect(otherPlayers(1)).toBe("1 other player");
+    expect(otherPlayers(4)).toBe("4 other players");
   });
 });
 
@@ -90,7 +92,7 @@ describe("the yesterday's best line", () => {
       ],
       [OTHER],
     );
-    render(<YesterdaysBest date={TODAY} />);
+    render(<YesterdaysBest date={TODAY} isToday />);
 
     expect(await screen.findByText("asphyxiate")).toBeInTheDocument();
     expect(await screen.findByText(`Found by ${handleFor(OTHER)}`)).toBeInTheDocument();
@@ -102,26 +104,62 @@ describe("the yesterday's best line", () => {
     expect(String((fetchMock.mock.calls[0] as unknown[])[0])).toContain(`today=${YESTERDAY}`);
   });
 
-  it("names the reader first when they found it too", async () => {
+  it("names the day before an archived puzzle by its date", async () => {
+    const fetchMock = stubFetch([{ word: "asphyxiate", zipf: 2.09, finders: 1, foundOn: "2026-10-21" }]);
+    render(<YesterdaysBest date={YESTERDAY} isToday={false} />);
+
+    expect(await screen.findByText("asphyxiate")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        new RegExp(`${formatDateLabel("2026-10-21")}'s best for .${dropForDate("2026-10-21")}.`),
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Yesterday's best/)).toBeNull();
+    expect(String((fetchMock.mock.calls[0] as unknown[])[0])).toContain("today=2026-10-21");
+  });
+
+  it("names both finders when there are two, the reader first", async () => {
     localStorage.setItem(PLAYER_KEY, JSON.stringify({ id: SELF }));
-    stubFetch([{ word: "asphyxiate", zipf: 2.09, finders: 3, foundOn: YESTERDAY }], [OTHER, SELF]);
-    render(<YesterdaysBest date={TODAY} />);
+    stubFetch([{ word: "asphyxiate", zipf: 2.09, finders: 2, foundOn: YESTERDAY }], [OTHER, SELF]);
+    render(<YesterdaysBest date={TODAY} isToday />);
 
     expect(
-      await screen.findByText(`Found by ${handleFor(SELF)} and 2 other players`),
+      await screen.findByText(`Found by ${handleFor(SELF)} and ${handleFor(OTHER)}`),
     ).toBeInTheDocument();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("opens the other finders as a list when there are three or more", async () => {
+    const THIRD = "33333333-3333-4333-8333-333333333333";
+    stubFetch([{ word: "asphyxiate", zipf: 2.09, finders: 4, foundOn: YESTERDAY }], [OTHER, SELF, THIRD]);
+    render(<YesterdaysBest date={TODAY} isToday />);
+
+    const others = await screen.findByRole("button", { name: "3 other players" });
+    expect(others.closest(".yesterdays-best__finders")).toHaveTextContent(
+      `Found by ${handleFor(OTHER)} and 3 other players`,
+    );
+    expect(screen.queryByRole("list")).toBeNull();
+
+    fireEvent.click(others);
+    expect(others).toHaveAttribute("aria-expanded", "true");
+    const items = screen.getAllByRole("listitem").map((li) => li.textContent);
+    // The fourth finder's id never arrived, so it is counted rather than named.
+    expect(items).toEqual([handleFor(SELF), handleFor(THIRD), "and 1 more"]);
+
+    fireEvent.click(others);
+    expect(screen.queryByRole("list")).toBeNull();
   });
 
   it("falls back to the count when the finders can't be read", async () => {
     stubFetch([{ word: "asphyxiate", zipf: 2.09, finders: 2, foundOn: YESTERDAY }], null);
-    render(<YesterdaysBest date={TODAY} />);
+    render(<YesterdaysBest date={TODAY} isToday />);
 
     expect(await screen.findByText("Found by 2 players")).toBeInTheDocument();
   });
 
   it("stays silent when yesterday's finds can't be read", async () => {
     const fetchMock = stubFetch(null);
-    const { container } = render(<YesterdaysBest date={TODAY} />);
+    const { container } = render(<YesterdaysBest date={TODAY} isToday />);
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     expect(container).toBeEmptyDOMElement();
@@ -129,7 +167,7 @@ describe("the yesterday's best line", () => {
 
   it("stays silent for a day nobody found anything", async () => {
     const fetchMock = stubFetch([]);
-    const { container } = render(<YesterdaysBest date={TODAY} />);
+    const { container } = render(<YesterdaysBest date={TODAY} isToday />);
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     expect(container).toBeEmptyDOMElement();
