@@ -14,11 +14,13 @@
 //   (every date optional: no `from` is all time, no `to` the latest day)
 //   -> { report: { today, firstDay, from, to, groups, modes, chat, chatSince,
 //                  idleHint, idleHintSince, botsFiltered, daily } }
-// GET /api/review?list=analytics-v2&today=YYYY-MM-DD
+// GET /api/review?list=analytics-v2&today=YYYY-MM-DD[&arm=show|hide]
 //   -> { report: { today, trackedSince, daily, retention, cohorts, weekly,
-//                  sources, window, scores } }, for /analyticsV2: its own
-//   report, from its own function (see the 2026-10-30 migration).
-//   400 bad-list / bad-limit / bad-date, 401 unauthorised, 405 wrong method,
+//                  sources, window, scores, variant, assigned } }, for
+//   /analyticsV2: its own report, from its own function (see the 2026-10-30
+//   migration). `arm` narrows it to one arm of the come-back test (see the
+//   2026-10-31 come-back migration).
+//   400 bad-list / bad-limit / bad-date / bad-arm, 401 unauthorised, 405 wrong method,
 //   503 no credentials, 502 upstream unavailable.
 //
 // POST /api/review
@@ -360,7 +362,12 @@ async function handleGet(request: Request): Promise<Response> {
       // One date: the puzzle the reader is on, which every window ends at.
       const today = params.get("today");
       if (today === null || !isCalendarDate(today)) return reply(400, { ok: false, reason: "bad-date" });
-      const report = await rpc<Record<string, unknown> | null>("analytics_v2", { p_today: today });
+      const arm = params.get("arm");
+      if (arm !== null && arm !== "show" && arm !== "hide") return reply(400, { ok: false, reason: "bad-arm" });
+      const report = await rpc<Record<string, unknown> | null>("analytics_v2", {
+        p_today: today,
+        ...(arm ? { p_variant: arm } : {}),
+      });
       return reply(200, { report: report ?? {} });
     }
     if (list === "analytics") {

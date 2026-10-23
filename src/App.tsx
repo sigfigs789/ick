@@ -388,7 +388,7 @@ export default function App() {
             the two read as one block rather than a second card restating it.
             Below the guesses, so it never sits between a player and the
             guesses they have left. */}
-        {isToday && progress.acceptedWords.length > 0 && <ComeBackCard streak={streak} />}
+        {isToday && progress.acceptedWords.length > 0 && <ComeBackCard streak={streak} date={date} />}
 
         {/* From the first banked word, not from the end of the puzzle.
             Sharing used to be the reward for pressing "I'm done guessing",

@@ -96,6 +96,8 @@ export interface Report {
   sources: Source[];
   window: Window;
   scores: { tiers: Tier[]; buckets: Record<number, number> };
+  /** For one arm of the come-back test: how many players it has drawn. Zero on the whole report. */
+  assigned: number;
 }
 
 type Json = Record<string, unknown>;
@@ -196,12 +198,16 @@ export function parseReport(raw: unknown): Report {
         .map((t) => ({ tier: t.tier as string, finished: num(t.finished), shared: num(t.shared), ...rate(t) })),
       buckets: counts(scores.buckets),
     },
+    assigned: num(r.assigned),
   };
 }
 
-/** The report for the puzzle the reader is on. */
-export async function fetchReport(today: string): Promise<Report> {
-  const response = await fetch(`/api/review?list=analytics-v2&today=${today}`, {
+/** An arm of the come-back test (see game/comeBackTest.ts). */
+export type Arm = "show" | "hide";
+
+/** The report for the puzzle the reader is on, over everybody or over one arm of the come-back test. */
+export async function fetchReport(today: string, arm?: Arm): Promise<Report> {
+  const response = await fetch(`/api/review?list=analytics-v2&today=${today}${arm ? `&arm=${arm}` : ""}`, {
     signal: AbortSignal.timeout(15_000),
     cache: "no-store",
   });

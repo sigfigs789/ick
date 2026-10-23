@@ -22,6 +22,7 @@ import { markLook, markShare, type SessionTimeReport } from "./game/sessionTime"
 import { todayDateString } from "./game/date";
 import { parseSourceCode, type ModeAssignment } from "./game/onboarding";
 import { IDLE_HINT_DELAY_MS, currentIdleHintArm, type IdleHintArm } from "./game/idleHint";
+import type { ComeBackVariant } from "./game/comeBackTest";
 import { APP_VERSION } from "./version";
 import { isBotUserAgent } from "./game/botUa";
 import { visitorTag } from "./game/visitor";
@@ -928,6 +929,15 @@ function idleHintArmProps(): EventProps {
     idle_hint_experiment: arm?.experiment ?? null,
     idle_hint_variant: arm?.variant ?? null,
   };
+}
+
+/**
+ * The come-back test's draw (see game/comeBackTest.ts), once per player, to
+ * both sinks. `player_id` rides along from `mirror`, which is what the
+ * analytics_v2 report finds each arm's players by.
+ */
+export function trackComeBackAssigned(variant: ComeBackVariant, date: string) {
+  send("come_back_assigned", { variant, puzzle_date: date, puzzle_number: puzzleNumber(date), mode: modeOf(date) });
 }
 
 export function trackIdleHintAssigned(arm: IdleHintArm, date: string) {

@@ -48,7 +48,7 @@ describe("AnalyticsV2Page", () => {
       expect(screen.getByRole("heading", { name })).toBeTruthy();
     }
     // D7: 20 of 250 is 8%, in the gap between going nowhere (under 5%) and promising (10%).
-    const d7 = screen.getByRole("rowheader", { name: "D7 retention" }).closest("tr")!;
+    const d7 = screen.getAllByRole("rowheader", { name: "D7 retention" })[0].closest("tr")!;
     expect(d7.textContent).toContain("8%");
     expect(d7.textContent).toContain("In between");
     // Activation: 253 of 978 first-time visitors banked a word.
@@ -77,7 +77,7 @@ describe("AnalyticsV2Page", () => {
     render(<AnalyticsV2Page />);
 
     expect(await screen.findByLabelText("up 1 pt since yesterday")).toBeTruthy();
-    const d7 = screen.getByRole("rowheader", { name: "D7 retention" }).closest("tr")!;
+    const d7 = screen.getAllByRole("rowheader", { name: "D7 retention" })[0].closest("tr")!;
     expect(d7.querySelector('[aria-label="no change since yesterday"]')).toBeTruthy();
   });
 
@@ -94,5 +94,45 @@ describe("AnalyticsV2Page", () => {
 
     await screen.findByRole("heading", { name: "Scorecard" });
     expect(screen.queryByLabelText(/since yesterday/)).toBeNull();
+  });
+
+  it("runs the scorecard once per arm of the come-back test", async () => {
+    // Tips shown: D1 12 of 40 (30%, promising); no tips: 2 of 14, too few to judge.
+    const arm = (returned: number, cohort: number, assigned: number) => ({
+      ...REPORT,
+      assigned,
+      retention: { ...REPORT.retention, d1: { ...REPORT.retention.d1, players: { cohort, returned } } },
+    });
+    const fetchMock = vi.fn(async (url: string) => {
+      const report = url.includes("arm=show") ? arm(12, 40, 60) : url.includes("arm=hide") ? arm(2, 14, 20) : REPORT;
+      return new Response(JSON.stringify({ report }), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<AnalyticsV2Page />);
+
+    await screen.findByRole("heading", { name: "Come-back test" });
+    const urls = fetchMock.mock.calls.map((c) => String(c[0]));
+    expect(urls.some((u) => u.includes("today=2026-10-22&arm=show"))).toBe(true);
+    expect(urls.some((u) => u.includes("today=2026-10-22&arm=hide"))).toBe(true);
+    const d1 = screen.getAllByRole("rowheader", { name: "D1 retention" })[1].closest("tr")!;
+    expect(d1.textContent).toContain("30%");
+    expect(d1.textContent).toContain("Promising");
+    expect(d1.textContent).toContain("Too early");
+    expect(screen.getByText(/60 players drawn/)).toBeTruthy();
+  });
+
+  it("still draws the dashboard when an arm fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url.includes("arm=hide")
+          ? new Response("", { status: 502 })
+          : new Response(JSON.stringify({ report: REPORT }), { status: 200 }),
+      ),
+    );
+    render(<AnalyticsV2Page />);
+
+    expect(await screen.findByText("The arms could not be loaded.")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Scorecard" })).toBeTruthy();
   });
 });

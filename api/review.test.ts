@@ -468,6 +468,16 @@ describe("api/review", () => {
     expect((await handler(get("?list=analytics-v2&today=2026-13-40"))).status).toBe(400);
   });
 
+  it("narrows the v2 report to one arm of the come-back test", async () => {
+    withEnv(CONFIGURED);
+    const fetchMock = stubFetch({ today: "2026-10-22" });
+
+    expect((await handler(get("?list=analytics-v2&today=2026-10-22&arm=hide"))).status).toBe(200);
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+    expect(JSON.parse(String(calls[0][1].body))).toEqual({ p_today: "2026-10-22", p_variant: "hide" });
+    expect((await handler(get("?list=analytics-v2&today=2026-10-22&arm=other"))).status).toBe(400);
+  });
+
   it("no longer serves the idle hint report on its own", async () => {
     withEnv(CONFIGURED);
     stubFetch({});
