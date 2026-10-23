@@ -29,8 +29,11 @@ import { playedOnItsDay } from "./storage";
 
 /** Played days on each side of the comparison, at most. */
 export const IMPROVEMENT_WINDOW = 5;
-/** Played days on each side before a trend is worth announcing. */
-export const MIN_WINDOW = 3;
+/**
+ * Played days on each side before a trend is worth announcing: two, so a new
+ * player can hear it first on their fourth day.
+ */
+export const MIN_WINDOW = 2;
 /**
  * How much higher the recent average has to be, as a fraction of the older one.
  * Enough that a few hundredths of drift does not throw a party.

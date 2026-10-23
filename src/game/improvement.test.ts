@@ -66,13 +66,16 @@ describe("averageImprovement", () => {
     expect(improvementPercent(rise!)).toBeGreaterThan(0);
   });
 
-  it("shrinks both halves for a shorter history, down to three days each", () => {
+  it("shrinks both halves for a shorter history, down to two days each", () => {
     history([5, 5, 5, 3, 3, 3]);
     expect(averageImprovement(TODAY)?.days).toBe(3);
+    localStorage.clear();
+    history([5, 5, 3, 3]);
+    expect(averageImprovement(TODAY)?.days).toBe(2);
   });
 
-  it("says nothing before there are three days on each side", () => {
-    history([5, 5, 3, 3, 3]);
+  it("says nothing before there are two days on each side", () => {
+    history([5, 3, 3]);
     expect(averageImprovement(TODAY)).toBeNull();
   });
 
@@ -99,8 +102,8 @@ describe("averageImprovement", () => {
   });
 
   it("leaves out days played from the archive", () => {
-    history([5, 5, 5, 3, 3, 3]);
-    const late = addDays(TODAY, -5);
+    history([5, 5, 3, 3]);
+    const late = addDays(TODAY, -3);
     const progress = JSON.parse(localStorage.getItem(`ick:progress:${late}`)!);
     progress.firstWordAt = `${TODAY}T09:00:00`;
     localStorage.setItem(`ick:progress:${late}`, JSON.stringify(progress));
