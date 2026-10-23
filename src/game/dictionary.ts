@@ -2062,18 +2062,6 @@ const SPREAD_TAIL_FREEFORM_SCORING: Scoring = spreadTail(LIFTED_FREEFORM_SCORING
  */
 export const DE_PREFIX_START = "2026-10-04";
 
-
-
-/**
- * Whether a word opening "de" can be scored through that prefix on `date`'s
- * puzzle in `mode` -- the question the input's "de-" notice asks before it
- * says so. False in Freeform, which folds nothing. See DE_PREFIX_START.
- */
-export function dePrefixFolds(date?: string, mode?: GameMode): boolean {
-  const scoring = scoringFor(date, mode);
-  return scoring.folds && scoring.dePrefixBases;
-}
-
 const LEGACY_SCORING: Scoring = {
   folds: true,
   corpusLexicon: false,

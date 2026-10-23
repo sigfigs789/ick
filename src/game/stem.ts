@@ -736,11 +736,6 @@ export function ungatedPrefixBaseCandidates(word: string): string[] {
   return [];
 }
 
-/** The prefixes `ungatedPrefixBaseCandidates` reads, for the player-facing list. */
-export function ungatedPrefixes(): string[] {
-  return [...UNGATED_PREFIXES].sort();
-}
-
 /**
  * The measurement modifiers: the SI decimal prefixes and their binary (IEC)
  * counterparts, the affixes whose whole job is to say how many of the thing
