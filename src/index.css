@@ -909,6 +909,35 @@ h2 {
 .yesterdays-best__finders {
   color: var(--fg-faint);
 }
+/* "N other players", opening the rest of the finders. Reads as part of the
+   sentence, underlined to say it can be pressed. */
+.yesterdays-best__others {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--fg-muted);
+  text-decoration: underline dotted;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+.yesterdays-best__others:hover,
+.yesterdays-best__others[aria-expanded="true"] {
+  color: var(--fg);
+}
+/* The rest of the finders, on a row of their own under the line. */
+.yesterdays-best__list {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.2rem 0.75rem;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--fg-faint);
+  animation: yesterdays-best-in 0.3s var(--ease-standard) both;
+}
 
 /* Drop display */
 .drop-display {

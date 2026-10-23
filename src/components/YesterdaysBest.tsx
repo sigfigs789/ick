@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   fetchFoundWords,
   fetchWordFinders,
@@ -11,7 +11,7 @@ import { dropForDate } from "../game/drop";
 import { formatRarityScore } from "../game/dictionary";
 import { handleFor } from "../game/handle";
 import { loadPlayerId, selfName } from "../game/player";
-import { bestFind, foundByLabel, namedFinder } from "../game/yesterdaysBest";
+import { bestFind, finderTotal, orderedFinders, otherPlayers } from "../game/yesterdaysBest";
 import { useGameMode } from "../hooks/useGameMode";
 import { rarityClassName } from "./rarityStyles";
 
@@ -44,8 +44,10 @@ const findersCache = pageCache<readonly string[]>();
  * Priced by the reader's own mode like the finds page, so the score here and
  * the badge on /found-words agree.
  *
- * Names a finder -- the reader first, when they were one -- once the word's
- * finders arrive, and falls back to a bare count if they can't be read.
+ * Names the finders once they arrive -- the reader first, when they were one:
+ * one or two by name, and for three or more the first and "N other players",
+ * which opens the rest as a list. Falls back to a bare count if they can't be
+ * read.
  *
  * Says nothing at all while loading, on a failed read, or for a day nobody
  * found anything: it is a footnote to the puzzle, and a spinner or an error
@@ -112,18 +114,48 @@ export function YesterdaysBest({ date, isToday }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the key names the word
   }, [findersKey]);
 
+  // Which word's list of other finders is open, so another day's starts shut.
+  const [openFor, setOpenFor] = useState<string | undefined>();
+
   if (!best || !finders || finders.key !== findersKey) return null;
 
   const selfId = loadPlayerId()?.toLowerCase() ?? null;
-  const named = finders.ids ? namedFinder(finders.ids, best.finders, selfId) : undefined;
-  const foundBy = named
-    ? foundByLabel(named.self ? selfName(named.id) : handleFor(named.id), named.others)
-    : `Found by ${best.finders} ${best.finders === 1 ? "player" : "players"}`;
+  const ids = finders.ids ? orderedFinders(finders.ids, selfId) : [];
+  const total = finders.ids ? finderTotal(finders.ids, best.finders) : best.finders;
+  const nameOf = (id: string) => (id === selfId ? selfName(id) : handleFor(id));
+  const open = openFor === findersKey;
+  // Ids past the server's cap, or not yet read when the count was taken.
+  const unlisted = total - ids.length;
+
+  let foundBy: ReactNode;
+  if (ids.length === 0) {
+    foundBy = `Found by ${total} ${total === 1 ? "player" : "players"}`;
+  } else if (total === 1) {
+    foundBy = `Found by ${nameOf(ids[0])}`;
+  } else if (total === 2 && ids.length === 2) {
+    foundBy = `Found by ${nameOf(ids[0])} and ${nameOf(ids[1])}`;
+  } else if (total === 2) {
+    foundBy = `Found by ${nameOf(ids[0])} and ${otherPlayers(1)}`;
+  } else {
+    foundBy = (
+      <>
+        Found by {nameOf(ids[0])} and{" "}
+        <button
+          type="button"
+          className="yesterdays-best__others"
+          aria-expanded={open}
+          onClick={() => setOpenFor(open ? undefined : findersKey)}
+        >
+          {otherPlayers(total - 1)}
+        </button>
+      </>
+    );
+  }
 
   const scoreDate = best.foundOn || yesterday;
   return (
     // Keyed by day, so stepping to another puzzle fades the new line in afresh.
-    <p className="yesterdays-best" key={yesterday}>
+    <div className="yesterdays-best" key={yesterday}>
       <span className="yesterdays-best__label">
         {isToday ? "Yesterday" : formatDateLabel(yesterday)}'s best for {"“"}
         {dropForDate(yesterday)}
@@ -138,6 +170,14 @@ export function YesterdaysBest({ date, isToday }: Props) {
         <span className="sr-only"> {best.rarity}</span>
       </span>
       <span className="yesterdays-best__finders">{foundBy}</span>
-    </p>
+      {open && (
+        <ul className="yesterdays-best__list">
+          {ids.slice(1).map((id) => (
+            <li key={id}>{nameOf(id)}</li>
+          ))}
+          {unlisted > 0 && <li>and {unlisted} more</li>}
+        </ul>
+      )}
+    </div>
   );
 }
