@@ -6,6 +6,7 @@ import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { markSeen } from "./game/whatsNew";
 import { setUiVariantForTest } from "./game/uiVariant";
+import { addDays } from "./game/date";
 
 vi.mock("./hooks/useDailyPuzzle", () => ({ useDailyPuzzle: vi.fn() }));
 vi.mock("./hooks/useSound", () => ({ useSound: vi.fn() }));
@@ -72,6 +73,7 @@ describe("App", () => {
       reject: vi.fn(),
       complete: vi.fn(),
       applause: vi.fn(),
+      rising: vi.fn(),
     });
   });
 
@@ -132,6 +134,59 @@ describe("App", () => {
     expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /lock in/i })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument();
+  });
+
+  describe("an improving average", () => {
+    const today = "2026-08-13";
+
+    /** Three common days, then three rarer ones -- today's the last. */
+    function storeRisingWeek() {
+      [5, 5, 5, 3, 3, 3].forEach((zipf, i) => {
+        const date = addDays(today, i - 5);
+        localStorage.setItem(
+          `ick:progress:${date}`,
+          JSON.stringify({
+            date,
+            drop: "str",
+            acceptedWords: [{ word: `w${i}`, rarity: "Common", zipf }],
+            rejectedAttempts: [],
+            completed: true,
+            firstWordAt: `${date}T12:00:00`,
+          })
+        );
+      });
+    }
+
+    function day(completed: boolean) {
+      return puzzle({
+        progress: {
+          date: today,
+          drop: "str",
+          acceptedWords: [{ word: "w5", rarity: "Common", zipf: 3 }],
+          rejectedAttempts: [],
+          completed,
+        },
+      }) as ReturnType<typeof useDailyPuzzle>;
+    }
+
+    it("is celebrated on the guess that finishes today's puzzle", () => {
+      storeRisingWeek();
+      vi.mocked(useDailyPuzzle).mockReturnValue(day(false));
+      const { rerender } = render(<App />);
+      expect(screen.queryByText("You're on the rise!")).not.toBeInTheDocument();
+
+      vi.mocked(useDailyPuzzle).mockReturnValue(day(true));
+      rerender(<App />);
+      expect(screen.getByText("You're on the rise!")).toBeInTheDocument();
+      expect(vi.mocked(useSound).mock.results[0].value.rising).toHaveBeenCalledTimes(1);
+    });
+
+    it("is not celebrated on a puzzle that mounts already finished", () => {
+      storeRisingWeek();
+      vi.mocked(useDailyPuzzle).mockReturnValue(day(true));
+      render(<App />);
+      expect(screen.queryByText("You're on the rise!")).not.toBeInTheDocument();
+    });
   });
 });
 
