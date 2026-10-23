@@ -5,7 +5,7 @@
  * worth showing.
  *
  * Run after `estimate-zipf.py record` has written the batch to
- * src/data/estimated-zipf.json: every asked word goes back through the game's
+ * src/data/estimated-zipf/: every asked word goes back through the game's
  * own `evaluateSubmission` on the batch's puzzle, in both modes, against the
  * drop unattested-candidates.mts found it under, so Standard's fold is applied
  * exactly as it will be in play.

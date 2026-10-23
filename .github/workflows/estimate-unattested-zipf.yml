@@ -3,7 +3,7 @@ name: Estimate unattested Zipf
 # Every day, Claude guesses a frequency for the words the next unswept puzzle
 # can accept that no frequency corpus measures -- the words that would otherwise
 # score the unattested sentinel, a flat 10.00 Legend -- and opens ONE pull
-# request recording the guesses in src/data/estimated-zipf.json.
+# request recording the guesses in src/data/estimated-zipf/.
 #
 #   1. scripts/unattested-candidates.mts runs every curated and corpus word that
 #      contains the drop through the game's own evaluateSubmission, in both
@@ -308,7 +308,7 @@ jobs:
           title: "Estimate Zipf for unattested words from ${{ steps.puzzle.outputs.date }} (${{ steps.find.outputs.drop }})"
           body: ${{ steps.summary.outputs.body }}
           add-paths: |
-            src/data/estimated-zipf.json
+            src/data/estimated-zipf/
             src/data/zipf-coverage.json
 
       - name: Report the result

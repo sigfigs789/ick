@@ -208,6 +208,11 @@ function emitVersionJson(): Plugin {
  * picker out of the first load.
  */
 function chunkFor(id: string): string | undefined {
+  // Claude's Zipf estimates are one file per batch for the same reason, one
+  // level further down: the daily run only ever adds a batch, so it adds one
+  // small chunk and leaves the megabytes of earlier batches cached.
+  const batch = id.match(/\/src\/data\/estimated-zipf\/([^/]+)\.json$/)
+  if (batch) return `data-estimated-zipf-${batch[1]}`
   const data = id.match(/\/src\/data\/([^/]+)\.json$/)
   if (data) return `data-${data[1]}`
   if (/\/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'react'
@@ -219,7 +224,7 @@ export default defineConfig({
   plugins: [react(), emitVersionJson(), serveApiFunctions()],
   // Emit each JSON import as `JSON.parse("...")` rather than an object literal.
   // Engines parse a JSON string faster than the same data as JavaScript (about
-  // a fifth faster for estimated-zipf.json, measured cold in Node), and with
+  // a fifth faster for the estimated-Zipf data, measured cold in Node), and with
   // megabytes of word data that is time a phone spends before the puzzle can
   // appear. Every data
   // import in src/ is a default import, which is all this mode supports.

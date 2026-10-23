@@ -51,7 +51,7 @@ How it works:
   - Some days have already been reviewed for the drop they hold: the daily
     fold check has judged every puzzle through
     scripts/fold-audit/checked-through.txt, and each estimate batch in
-    src/data/estimated-zipf.json covers the drops of the dates it names. A
+    src/data/estimated-zipf/ covers the drops of the dates it names. A
     drop only swaps with another drop reviewed the same way, so no unreviewed
     drop moves into a reviewed day and no swept drop loses its estimates. A
     one-day estimate batch pins its drop. The reviewed fold fixes and the
@@ -282,8 +282,10 @@ def main() -> None:
     print(f"pinned: {sum(1 for d in tail if d in pinned)} re-seeded days held in place")
 
     # A drop swaps only within its length and its stretch of reviewed days.
-    estimates_path = DATA / "estimated-zipf.json"
-    estimates = json.loads(estimates_path.read_text())
+    # One file per batch, in the order the game reads them (see batch_file_name
+    # in scripts/estimate-zipf.py).
+    estimate_paths = sorted((DATA / "estimated-zipf").glob("*.json"))
+    estimates = {"batches": [json.loads(path.read_text()) for path in estimate_paths]}
     checked_path = ROOT / "scripts" / "fold-audit" / "checked-through.txt"
     checked_through = date.fromisoformat(checked_path.read_text().strip())
     edges = {checked_through + timedelta(days=1)}
@@ -374,8 +376,13 @@ def main() -> None:
 
     redate_fold_fixes(new_full, epoch, day(0), checked_through)
     relabel_estimate_batches(estimates, new_full, epoch, day(0))
-    estimates_path.write_text(json.dumps(estimates, indent=2) + "\n")
-    print(f"Wrote {estimates_path}")
+    # Only the batches whose labels moved: each is its own cached chunk, and an
+    # untouched file keeps its hash.
+    for path, batch in zip(estimate_paths, estimates["batches"]):
+        text = json.dumps(batch, indent=2, ensure_ascii=False) + "\n"
+        if text != path.read_text():
+            path.write_text(text)
+            print(f"Wrote {path}")
 
 
 def batch_drops(batch: dict) -> list[str]:

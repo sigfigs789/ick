@@ -1,0 +1,16 @@
+{
+  "since": "2026-11-22",
+  "drop": "ESP",
+  "model": "claude-opus-5-5",
+  "source": "claude",
+  "estimatedAt": "2026-10-23T23:06:29Z",
+  "note": "Words the ESP drop still had unestimated; #567 moved ESP earlier, to 2026-11-22. Done by hand ahead of the daily job",
+  "zipf": {
+    "cardiorespirographic": -1.2,
+    "corticoresponsiveness": -1.1,
+    "deresponsibilisations": -1.4,
+    "deresponsibilizations": -1.3,
+    "electroresponsiveness": -1.0,
+    "interresponsibilities": -1.4
+  }
+}

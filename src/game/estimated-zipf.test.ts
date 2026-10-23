@@ -1,3 +1,6 @@
+// @ts-expect-error -- Node builtin; this app has no @types/node, but the module
+// is available at runtime under vitest (Node).
+import { readdirSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   estimatedZipfEntry,
@@ -9,7 +12,7 @@ import {
   unattestedZipf,
 } from "./dictionary";
 import { scoreSource } from "../analytics";
-import estimatedZipfData from "../data/estimated-zipf.json";
+import estimatedZipfData from "../data/estimated-zipf";
 
 const SINCE = "2026-10-20";
 const BEFORE = "2026-10-19";
@@ -100,6 +103,19 @@ describe("the shipped estimates", () => {
       expect(b.drop).toMatch(/^[A-Z]+(, [A-Z]+)*$/);
       expect(b.model).toMatch(/^claude-/);
     }
+  });
+
+  // index.ts is generated (write_index in scripts/estimate-zipf.py). A batch
+  // file it does not list would sit in the repo and never reach the game.
+  it("are every batch file, in name order", () => {
+    const files = (readdirSync("src/data/estimated-zipf") as string[])
+      .filter((name) => name.endsWith(".json"))
+      .sort();
+    const names = batches.map((b) => {
+      const stamp = (b as { estimatedAt?: string }).estimatedAt?.replace(/[^0-9TZ]/g, "");
+      return `${b.since}_${stamp}.json`;
+    });
+    expect(names).toEqual(files);
   });
 
   // Not "containing the drop": a sweep also estimates words players have

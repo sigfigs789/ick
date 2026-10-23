@@ -1,0 +1,24 @@
+{
+  "since": "2026-12-03",
+  "drop": "NAT",
+  "model": "claude-opus-5-5",
+  "source": "claude",
+  "estimatedAt": "2026-10-23T22:56:05Z",
+  "note": "Words the NAT drop still had unestimated; #567 moved NAT earlier, to 2026-12-03. Done by hand ahead of the daily job",
+  "zipf": {
+    "antimiscegenationists": -0.6,
+    "autohemagglutinations": -1.3,
+    "cyclodehydrogenations": -1.0,
+    "electrofluorinations": -1.0,
+    "erythroagglutinations": -1.4,
+    "hexachloroantimonates": -0.9,
+    "hexafluoroantimonates": -0.7,
+    "hexahydroxoantimonate": -0.9,
+    "magnesiocarbonatites": -1.3,
+    "oxyhydrochlorination": -0.8,
+    "pectinatodenticulate": -1.4,
+    "physiologicoanatomic": -1.3,
+    "sulfonatoisoindoles": -1.4,
+    "thromboagglutination": -1.1
+  }
+}

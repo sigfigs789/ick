@@ -185,7 +185,7 @@ export function trackAcceptedAnswer(
 
 /**
  * Where an accepted word's score came from: a corpus measurement, Claude's
- * estimate (src/data/estimated-zipf.json), or the unattested sentinel's flat
+ * estimate (src/data/estimated-zipf/), or the unattested sentinel's flat
  * 10.00. Rides on `answer_accepted` so every play number the report already
  * draws from that event can be split by it -- the estimates are a guess, and
  * the point of recording this is to see what the guesses did to the game.
