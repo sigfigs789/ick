@@ -78,6 +78,20 @@ describe("newProgress / loadOrCreateProgress", () => {
     expect(loadProgress("2024-01-01")?.acceptedWords[0].rarity).toBe("Legend");
   });
 
+  it("migrates the retired Very Common rank to Common in saved progress", () => {
+    for (const date of ["2024-01-01", "2026-10-20"]) {
+      localStorage.setItem(
+        `ick:progress:${date}`,
+        JSON.stringify({
+          ...newProgress(date, "str"),
+          acceptedWords: [{ word: "strange", rarity: "Very Common", zipf: 4.6 }],
+        })
+      );
+
+      expect(loadProgress(date)?.acceptedWords[0].rarity).toBe("Common");
+    }
+  });
+
   it("leaves Elusive alone on a puzzle that uses it as a live tier", () => {
     // Elusive is the rank between Extremely Rare and Mythic from the retuned
     // tiers on, so promoting it there would hand out a Legend nobody earned.
@@ -230,7 +244,7 @@ describe("recordAcceptedWord", () => {
   it("keeps the puzzle active and updates the streak immediately after any valid word", () => {
     const p = recordAcceptedWord(
       newProgress("2024-01-01", "str"),
-      word("the", 7.7, "Very Common")
+      word("the", 7.7, "Common")
     );
     expect(p.completed).toBe(false);
     expect(p.won).toBeUndefined();

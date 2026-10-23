@@ -68,7 +68,7 @@ describe("reportBankedWord", () => {
       reportBankedWord({
         date: "2026-10-13",
         isToday: true,
-        word: { word: "cat", rarity: "Very Common", zipf: 6 },
+        word: { word: "cat", rarity: "Common", zipf: 6 },
         playerId: PLAYER,
       })
     ).toBe(false);

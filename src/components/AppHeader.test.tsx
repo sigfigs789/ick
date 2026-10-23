@@ -296,6 +296,7 @@ describe("the docked mode switch", () => {
    * switch leaving the screen. */
   let report: (visible: boolean) => void = () => {};
   beforeEach(() => {
+    report = () => {};
     vi.stubGlobal(
       "IntersectionObserver",
       class {
@@ -332,7 +333,7 @@ describe("the docked mode switch", () => {
     expect(switches()).toHaveLength(1);
   });
 
-  it("follows the reader down the puzzle too", () => {
+  it("stays in the header on the puzzle, whose input sits under it", () => {
     render(
       <AppHeader
         route="game"
@@ -343,6 +344,6 @@ describe("the docked mode switch", () => {
     );
     expect(switches()).toHaveLength(1);
     act(() => report(false));
-    expect(switches()).toHaveLength(2);
+    expect(switches()).toHaveLength(1);
   });
 });

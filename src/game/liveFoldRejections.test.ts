@@ -55,8 +55,8 @@ describe("the rows /folded-live shows", () => {
 describe("rescoring a played game", () => {
   function played() {
     let progress: DailyProgress = { ...newProgress(DATE, "TIM"), mode: "standard" };
-    progress = recordAcceptedWord(progress, { word: "timelessly", rarity: "Very Common", zipf: 6.29 });
-    progress = recordAcceptedWord(progress, { word: "kindnesses", rarity: "Very Common", zipf: 5.45 });
+    progress = recordAcceptedWord(progress, { word: "timelessly", rarity: "Common", zipf: 6.29 });
+    progress = recordAcceptedWord(progress, { word: "kindnesses", rarity: "Common", zipf: 5.45 });
     return progress;
   }
 

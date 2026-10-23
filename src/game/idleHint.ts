@@ -12,7 +12,7 @@ import type { AcceptedWord, Rarity } from "./types";
  * When the word box stays empty for a while, the treatment arm sees a word
  * typed into the box's placeholder, a letter at a time behind "...", held,
  * then erased a letter at a time -- and a second later another, three in all:
- * Common or Very Common words that contain the drop and that the puzzle would
+ * Common words that contain the drop and that the puzzle would
  * accept (see `useIdleHint` for the rhythm). They are a way in, not a
  * giveaway: those are the bottom of the scale, and the player still has to
  * find something rarer to do well. The first keystroke ends the loop.
@@ -49,7 +49,7 @@ export const IDLE_HINT_DELAY_MS: Record<IdleHintExperiment, number> = {
 };
 
 /** The tiers a hint is drawn from. */
-export const IDLE_HINT_TIERS: readonly Rarity[] = ["Very Common", "Common"];
+export const IDLE_HINT_TIERS: readonly Rarity[] = ["Common"];
 
 /** How many hints a puzzle gets, each a different word where the drop has enough. */
 export const IDLE_HINT_ROUNDS = 3;
@@ -156,7 +156,7 @@ const pools = new Map<string, AcceptedWord[]>();
 
 /**
  * Every word a hint for this puzzle could be, in a stable per-puzzle order and
- * before the words already banked are checked: Common or Very Common,
+ * before the words already banked are checked: Common,
  * containing the drop, 5 to 10 letters, scored as itself rather than folded onto a base, and
  * clear of the sensitive stems.
  *

@@ -3,7 +3,6 @@ import type { GameMode } from "./mode";
 export type Rarity =
   /** Retired at NARROW_BANDS_START -- reachable only on archived puzzles. */
   | "Quotidian"
-  | "Very Common"
   | "Common"
   | "Uncommon"
   | "Rare"

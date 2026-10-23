@@ -422426,6 +422426,51 @@
         "semiantiministerial": -1.2,
         "sonochemiluminescent": -0.6
       }
+    },
+    {
+      "since": "2026-11-14",
+      "drop": "UC",
+      "model": "claude-opus-5-5",
+      "source": "claude",
+      "run": "https://github.com/sigfigs789/ick/actions/runs/39832878917",
+      "estimatedAt": "2026-10-22T18:37:47Z",
+      "zipf": {
+        "cyclodeoxynucleosides": -1.1,
+        "deoxyribonucleotidase": -0.7,
+        "deoxyribonucleotidic": -1.0,
+        "desoxyoligonucleotide": -1.3,
+        "desoxyribonucleolytic": -1.4,
+        "desoxyribonucleosides": -1.0,
+        "desoxyribonucleotides": -0.9,
+        "dideoxyribonucleoside": -0.8,
+        "dideoxyribonucleotide": -0.6,
+        "digifucocellobioside": -1.3,
+        "electroconductibility": -1.2,
+        "glucocoroglaucigenin": -1.3,
+        "glucostereochemistry": -1.3,
+        "glucosyldivaricoside": -1.35,
+        "glucosyldivostroside": -1.35,
+        "glucuronoconjugation": -0.6,
+        "glucuronoconjugations": -1.3,
+        "heterooligonucleotide": -1.2,
+        "hexadeoxynucleotides": -0.7,
+        "mannoglucuronofucans": -1.2,
+        "monodeoxynucleosides": -1.1,
+        "monodeoxynucleotides": -1.0,
+        "neoglucodigifucoside": -1.4,
+        "palaeoreconstruction": -0.5,
+        "paleoreconstructions": -0.2,
+        "pentaribonucleotides": -1.0,
+        "philodestructiveness": -1.2,
+        "polydeoxynucleotides": -0.3,
+        "posttransductionally": -1.3,
+        "ribooligonucleotides": -0.5,
+        "tetraribonucleotides": -1.0,
+        "transfructosylations": -1.1,
+        "trideoxynucleotides": -0.4,
+        "trisoligonucleotide": -1.1,
+        "trisoligonucleotides": -1.2
+      }
     }
   ]
 }

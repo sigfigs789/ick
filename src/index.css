@@ -49,13 +49,9 @@
   --rarity-quotidian-fg: #fff;
   --rarity-quotidian-dot: #fff;
 
-  --rarity-very-common-bg: #eceef1;
-  --rarity-very-common-fg: #4b4f57;
-  --rarity-very-common-dot: #9aa0a8;
-
-  --rarity-common-bg: #ece1d4;
-  --rarity-common-fg: #6b4423;
-  --rarity-common-dot: #8b5a2b;
+  --rarity-common-bg: #eceef1;
+  --rarity-common-fg: #4b4f57;
+  --rarity-common-dot: #9aa0a8;
 
   --rarity-uncommon-bg: #e3f6e8;
   --rarity-uncommon-fg: #1c7a3d;
@@ -70,7 +66,7 @@
   --rarity-extremely-rare-dot: #9b4fe0;
 
   /* Elusive sits between Extremely Rare and Mythic, and wears gold: the one
-     share square no other rank uses, as far from Common's brown as a warm hue
+     share square no other rank uses, as far from Common's grey as a warm hue
      gets, and the colour games use for "you found treasure". The text is a dark
      amber because yellow on cream is unreadable; the dot carries the gold.
      Backed by the yellow square in shared results. */
@@ -151,13 +147,9 @@
     --rarity-quotidian-fg: #fff;
     --rarity-quotidian-dot: #fff;
 
-    --rarity-very-common-bg: #232326;
-    --rarity-very-common-fg: #c2c5cb;
-    --rarity-very-common-dot: #8a8d93;
-
-    --rarity-common-bg: #291c10;
-    --rarity-common-fg: #d8b98f;
-    --rarity-common-dot: #a9784b;
+    --rarity-common-bg: #232326;
+    --rarity-common-fg: #c2c5cb;
+    --rarity-common-dot: #8a8d93;
 
     --rarity-uncommon-bg: #0f2b19;
     --rarity-uncommon-fg: #7fe0a3;
@@ -261,6 +253,16 @@ h2 {
   max-width: 30rem;
   margin: 0 auto;
   padding: 0 1.1rem 3rem;
+}
+
+/* Where a page sits while its chunk is fetched (see the lazy pages in
+   Root.tsx), and where it says so if the chunk never comes
+   (PageErrorBoundary). Quiet and centred: it is usually up for a fraction of
+   a second. */
+.app__page-loading {
+  margin: 3rem 0;
+  text-align: center;
+  color: var(--fg-muted);
 }
 
 /* Header */
@@ -1456,13 +1458,6 @@ h2 {
 .rarity--quotidian .rarity-badge__dot {
   background: var(--rarity-quotidian-dot);
 }
-.rarity--very-common {
-  background: var(--rarity-very-common-bg);
-  color: var(--rarity-very-common-fg);
-}
-.rarity--very-common .rarity-badge__dot {
-  background: var(--rarity-very-common-dot);
-}
 .rarity--common {
   background: var(--rarity-common-bg);
   color: var(--rarity-common-fg);
@@ -2184,6 +2179,119 @@ h2 {
   }
 }
 
+/* The improving-average burst (see components/ImprovementCelebration.tsx): it
+   goes up, like the average did. Pieces launch from the bottom edge in greens
+   and golds, a third of them on each of three heights so the spray is ragged
+   rather than a straight line. */
+.confetti--rising .confetti__piece {
+  top: auto;
+  bottom: -1.2rem;
+  left: calc((var(--confetti-index) + 1) * 2%);
+  background: hsl(calc(95deg + var(--confetti-index) * 1.5deg) 68% 46%);
+  animation-name: confetti-rise-high;
+  animation-duration: 2.2s;
+  animation-timing-function: cubic-bezier(0.15, 0.8, 0.35, 1);
+  animation-delay: calc(var(--confetti-index) * 14ms);
+}
+.confetti--rising .confetti__piece:nth-child(3n) {
+  animation-name: confetti-rise-low;
+  background: hsl(44 92% 54%);
+}
+.confetti--rising .confetti__piece:nth-child(3n + 1) {
+  animation-name: confetti-rise-mid;
+}
+@keyframes confetti-rise-high {
+  70% {
+    opacity: 1;
+  }
+  to {
+    transform: translate(calc((var(--confetti-index) - 24) * 0.5vw), -88vh)
+      rotate(-540deg);
+    opacity: 0;
+  }
+}
+@keyframes confetti-rise-mid {
+  70% {
+    opacity: 1;
+  }
+  to {
+    transform: translate(calc((24 - var(--confetti-index)) * 0.6vw), -70vh)
+      rotate(480deg);
+    opacity: 0;
+  }
+}
+@keyframes confetti-rise-low {
+  70% {
+    opacity: 1;
+  }
+  to {
+    transform: translate(calc((var(--confetti-index) - 24) * 0.8vw), -52vh)
+      rotate(-600deg);
+    opacity: 0;
+  }
+}
+
+.improvement {
+  position: fixed;
+  top: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 21;
+  width: min(22rem, calc(100vw - 2rem));
+}
+.improvement__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 1rem 1.25rem;
+  border: 2px solid hsl(140 58% 42%);
+  border-radius: 1rem;
+  background: var(--card-bg);
+  color: var(--fg);
+  box-shadow: var(--card-shadow), 0 0 0 6px hsl(140 58% 42% / 0.18);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  animation: improvement-in 520ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.improvement__icon {
+  font-size: 2.25rem;
+  line-height: 1;
+  animation: improvement-hop 900ms ease-in-out 420ms 2;
+}
+.improvement__title {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+.improvement__body {
+  color: var(--fg-muted);
+  font-size: 0.95rem;
+  text-wrap: balance;
+}
+.improvement__gain {
+  font-weight: 800;
+  color: hsl(140 58% 38%);
+}
+.improvement__tally {
+  white-space: nowrap;
+  font-weight: 700;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+@keyframes improvement-in {
+  from {
+    transform: translateY(1.5rem) scale(0.85);
+    opacity: 0;
+  }
+}
+@keyframes improvement-hop {
+  50% {
+    transform: translateY(-0.4rem) rotate(-8deg) scale(1.15);
+  }
+}
 .perfect-month {
   position: fixed;
   top: 1.25rem;
@@ -5453,21 +5561,20 @@ h2 {
 }
 
 /* ------------------------------------------------------------------------
-   The new play screen (see src/game/uiVariant.ts). Half of new and half of
-   returning players get it, by `data-ui="v2"` on the root element, so every rule here is scoped to
-   that and the current screen is left exactly as it was.
+   The play screen's layout (v2), over the rules above. Once a test against
+   the screen before it, now the only one.
    ------------------------------------------------------------------------ */
 
 /* Room under the last card for the chat button, which floats over the bottom
    right corner of every page. */
-:root[data-ui="v2"] .app {
+.app {
   padding-bottom: 6rem;
 }
 
 /* The tiles are there from the first frame and settle into place, rather than
    fading up from nothing: a throttled or paused animation (a background tab, a
    slow phone) left the drop blank under its label. */
-:root[data-ui="v2"] .drop-display__letter {
+.drop-display__letter {
   opacity: 1;
   transform: scale(0.92);
   animation-name: tile-settle;
@@ -5479,34 +5586,34 @@ h2 {
 }
 
 /* The input now sits right under the drop, and the guess log under it. */
-:root[data-ui="v2"] .play .submit-form {
+.play .submit-form {
   margin-bottom: 0.25rem;
 }
-:root[data-ui="v2"] .play .feedback:not(.feedback--collapsed) {
+.play .feedback:not(.feedback--collapsed) {
   margin-bottom: 1rem;
 }
 
 /* Arrows on the drop row read as quiet links rather than buttons: on today's
    puzzle Previous is the only one live, and it leads into the archive, which
    is not where most players are headed. */
-:root[data-ui="v2"] .puzzle-nav--drop > .puzzle-nav__arrow {
+.puzzle-nav--drop > .puzzle-nav__arrow {
   border-color: transparent;
   background: transparent;
   color: var(--fg-muted);
 }
-:root[data-ui="v2"] .puzzle-nav--drop > .puzzle-nav__arrow:not(:disabled):hover {
+.puzzle-nav--drop > .puzzle-nav__arrow:not(:disabled):hover {
   background: var(--bg-inset);
   color: var(--fg);
 }
-:root[data-ui="v2"] .puzzle-nav--drop > .puzzle-nav__arrow:disabled {
+.puzzle-nav--drop > .puzzle-nav__arrow:disabled {
   visibility: hidden;
 }
 
 /* Share, beside the guess count. */
-:root[data-ui="v2"] .guess-log__header {
+.guess-log__header {
   align-items: center;
 }
-:root[data-ui="v2"] .guess-log__count {
+.guess-log__count {
   margin-left: auto;
 }
 .quick-share {
@@ -5528,8 +5635,7 @@ h2 {
 /* Freeform's rainbow stays on the input, where it says which game is being
    typed into; the cards go back to the neutral border, so the gold best word
    is the one card that stands out. */
-:root[data-ui="v2"]
-  .play--freeform
+.play--freeform
   .guess-log__entry:not(.guess-log__entry--best):not(.guess-log__entry--picking) {
   border-color: var(--border-strong);
   background: var(--card-bg);
@@ -5577,7 +5683,7 @@ h2 {
 
 /* An empty box means "type something", not "finished": an outline, so it does
    not read as the dead grey of a disabled control. */
-:root[data-ui="v2"] .submit-form button:disabled {
+.submit-form button:disabled {
   opacity: 1;
   background: transparent;
   color: var(--fg-faint);
@@ -5586,22 +5692,22 @@ h2 {
 
 /* A little more room on a wide screen, where the cards read as thin strips. */
 @media (min-width: 600px) {
-  :root[data-ui="v2"] .app:not(.app--wide) {
+  .app:not(.app--wide) {
     max-width: 34rem;
   }
-  :root[data-ui="v2"] .guess-log__entry-button {
+  .guess-log__entry-button {
     min-height: 3.9rem;
   }
-  :root[data-ui="v2"] .guess-log__word {
+  .guess-log__word {
     font-size: 1.3rem;
   }
-  :root[data-ui="v2"] .guess-log__entry .rarity-badge {
+  .guess-log__entry .rarity-badge {
     font-size: 0.76rem;
   }
 }
 
 /* "Share options", folding the answer and username choices and the preview on
-   the new play screen (see ResultsPanel's `collapsible`). */
+   the play screen (see ResultsPanel's `collapsible`). */
 .results-panel__options-toggle {
   display: block;
   margin: 0.75rem auto 0;
@@ -5618,7 +5724,7 @@ h2 {
   color: var(--fg);
 }
 
-/* The new play screen's share panel: the preview of what Share copies on top,
+/* The play screen's share panel: the preview of what Share copies on top,
    the choices folded under it, and Share across the bottom, where the
    leaderboard link used to sit. It arrives from the Share beside the guess
    count, so it rises a little further than the plain panel and stops clear of
@@ -5650,14 +5756,14 @@ h2 {
   width: 100%;
 }
 
-/* The new play screen puts the input right under the drop, so a notice over
+/* The play screen puts the input right under the drop, so a notice over
    the input would cover the letters being played. It hangs below the input
    instead, pointing up at it. */
-:root[data-ui="v2"] .de-prefix-hint:not(.folded-live-notice) {
+.de-prefix-hint:not(.folded-live-notice) {
   top: calc(100% + 0.6rem);
   bottom: auto;
 }
-:root[data-ui="v2"] .de-prefix-hint:not(.folded-live-notice)::after {
+.de-prefix-hint:not(.folded-live-notice)::after {
   top: auto;
   bottom: 100%;
   border-top-color: transparent;
@@ -5815,9 +5921,9 @@ h2 {
 }
 
 /* The come-back card (components/ComeBackCard.tsx): under today's banked word,
-   when the next drop lands, what playing it does for the streak, and the daily
-   reminder. Quieter than the share panel above it -- no shadow, a muted
-   border -- since it is the last thing on the page, not the main event. */
+   what playing tomorrow does for the streak. Quieter than the share panel above
+   it -- no shadow, a muted border -- since it is the last thing on the page,
+   not the main event. */
 .come-back {
   margin-top: 1rem;
   padding: 1rem 1.2rem;
@@ -5826,52 +5932,12 @@ h2 {
   text-align: center;
   animation: panel-in 0.4s var(--ease-standard);
 }
-.come-back__countdown {
-  margin: 0;
-  color: var(--fg-muted);
-  font-size: 0.9rem;
-}
-.come-back__countdown strong {
-  color: var(--fg);
-  font-variant-numeric: tabular-nums;
-}
 .come-back__goal {
-  margin: 0.35rem 0 0;
+  margin: 0;
   font-weight: 700;
 }
-.come-back__detail,
-.come-back__added {
+.come-back__detail {
   margin: 0.2rem 0 0;
   color: var(--fg-muted);
   font-size: 0.85rem;
-}
-.come-back__added {
-  margin-top: 0.6rem;
-}
-.come-back__reminder-options {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-}
-.come-back__reminder {
-  display: inline-block;
-  margin-top: 0.75rem;
-  padding: 0.4rem 0.9rem;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--card-bg);
-  color: var(--fg);
-  font-family: var(--font-body);
-  font-size: 0.85rem;
-  font-weight: 700;
-  text-decoration: none;
-  cursor: pointer;
-}
-.come-back__reminder-options .come-back__reminder {
-  margin-top: 0;
-}
-.come-back__reminder:hover {
-  border-color: var(--border-strong);
 }

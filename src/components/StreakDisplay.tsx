@@ -70,7 +70,7 @@ interface Props {
   /** Whether `date` is today's puzzle, which is when a freeze spent yesterday is news. */
   isToday?: boolean;
   /**
-   * The new play screen (see game/uiVariant.ts): leave out what would only be
+   * The play screen (see App.tsx): leave out what would only be
    * zeros -- the freeze badge until the player can hold a freeze, the total until a word
    * is banked, and the whole strip for a player with neither a streak, a
    * freeze cap, nor a word yet.

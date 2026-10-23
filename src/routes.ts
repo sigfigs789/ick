@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 
 /**
  * The whole router.
@@ -208,7 +208,10 @@ export function useRoute(): Route {
   const [route, setRoute] = useState<Route>(() => currentRoute());
 
   useEffect(() => {
-    const sync = () => setRoute(currentRoute());
+    // A transition, so a page whose chunk has not arrived yet keeps the one
+    // being left on screen until it has, rather than blanking it to a
+    // "Loading…" for the length of the download (see the lazy pages in Root).
+    const sync = () => startTransition(() => setRoute(currentRoute()));
     window.addEventListener("popstate", sync);
     // Re-read on mount as well: the address bar is the source of truth, and it
     // can have moved between the initial state above and this effect running.

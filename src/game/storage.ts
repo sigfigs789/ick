@@ -110,6 +110,12 @@ export function loadProgress(date: string, mode?: GameMode): DailyProgress | nul
     // puzzle predating that cutover can mean the retired top rank; on a puzzle
     // that uses the retuned tiers, Elusive is exactly what the player earned and
     // promoting it would hand out a Legend nobody found.
+    // Very Common was folded into Common on every puzzle, archived ones
+    // included, so a word saved under it reads as Common now.
+    if ((word.rarity as string) === "Very Common") {
+      migrated = true;
+      return { ...word, rarity: "Common" as const };
+    }
     if ((word.rarity as string) === "Elusive" && !usesRetunedTiers(date)) {
       migrated = true;
       return { ...word, rarity: "Legend" as const };

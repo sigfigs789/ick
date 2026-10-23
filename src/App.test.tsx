@@ -1,11 +1,11 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { markSeen } from "./game/whatsNew";
-import { setUiVariantForTest } from "./game/uiVariant";
+import { addDays } from "./game/date";
 
 vi.mock("./hooks/useDailyPuzzle", () => ({ useDailyPuzzle: vi.fn() }));
 vi.mock("./hooks/useSound", () => ({ useSound: vi.fn() }));
@@ -72,6 +72,7 @@ describe("App", () => {
       reject: vi.fn(),
       complete: vi.fn(),
       applause: vi.fn(),
+      rising: vi.fn(),
     });
   });
 
@@ -81,11 +82,11 @@ describe("App", () => {
 
     const input = screen.getByLabelText(/enter a word containing "STR"/i);
     await userEvent.type(input, "strange");
-    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+    await userEvent.click(screen.getByRole("button", { name: "Play" }));
     expect(submitWord).toHaveBeenCalledWith("strange");
   });
 
-  it("notes an archived puzzle and offers the share panel from the first word", async () => {
+  it("notes an archived puzzle and offers Share from the first word", async () => {
     vi.mocked(useDailyPuzzle).mockReturnValue(
       puzzle({
         date: "2026-08-12",
@@ -103,8 +104,8 @@ describe("App", () => {
     render(<App />);
 
     expect(screen.getByText(/playing an old puzzle/i)).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Submit" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^share$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Play" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /done guessing/i })).not.toBeInTheDocument();
   });
 
@@ -115,7 +116,7 @@ describe("App", () => {
     expect(screen.queryByRole("region", { name: /share result/i })).not.toBeInTheDocument();
   });
 
-  it("replaces input controls with sharing results after completion", () => {
+  it("replaces input controls with Share after completion", () => {
     vi.mocked(useDailyPuzzle).mockReturnValue(
       puzzle({
         progress: {
@@ -129,9 +130,62 @@ describe("App", () => {
     );
     render(<App />);
 
-    expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Play" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /lock in/i })).not.toBeInTheDocument();
-    expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^share$/i })).toBeInTheDocument();
+  });
+
+  describe("an improving average", () => {
+    const today = "2026-08-13";
+
+    /** Three common days, then three rarer ones -- today's the last. */
+    function storeRisingWeek() {
+      [5, 5, 5, 3, 3, 3].forEach((zipf, i) => {
+        const date = addDays(today, i - 5);
+        localStorage.setItem(
+          `ick:progress:${date}`,
+          JSON.stringify({
+            date,
+            drop: "str",
+            acceptedWords: [{ word: `w${i}`, rarity: "Common", zipf }],
+            rejectedAttempts: [],
+            completed: true,
+            firstWordAt: `${date}T12:00:00`,
+          })
+        );
+      });
+    }
+
+    function day(completed: boolean) {
+      return puzzle({
+        progress: {
+          date: today,
+          drop: "str",
+          acceptedWords: [{ word: "w5", rarity: "Common", zipf: 3 }],
+          rejectedAttempts: [],
+          completed,
+        },
+      }) as ReturnType<typeof useDailyPuzzle>;
+    }
+
+    it("is celebrated on the guess that finishes today's puzzle", () => {
+      storeRisingWeek();
+      vi.mocked(useDailyPuzzle).mockReturnValue(day(false));
+      const { rerender } = render(<App />);
+      expect(screen.queryByText("You're on the rise!")).not.toBeInTheDocument();
+
+      vi.mocked(useDailyPuzzle).mockReturnValue(day(true));
+      rerender(<App />);
+      expect(screen.getByText("You're on the rise!")).toBeInTheDocument();
+      expect(vi.mocked(useSound).mock.results[0].value.rising).toHaveBeenCalledTimes(1);
+    });
+
+    it("is not celebrated on a puzzle that mounts already finished", () => {
+      storeRisingWeek();
+      vi.mocked(useDailyPuzzle).mockReturnValue(day(true));
+      render(<App />);
+      expect(screen.queryByText("You're on the rise!")).not.toBeInTheDocument();
+    });
   });
 });
 
@@ -155,7 +209,7 @@ describe("the results on a finished puzzle", () => {
   });
 });
 
-describe("the new play screen's share panel", () => {
+describe("the share panel", () => {
   const inPlay = {
     progress: {
       date: "2026-08-13",
@@ -168,11 +222,9 @@ describe("the new play screen's share panel", () => {
 
   beforeEach(() => {
     localStorage.clear();
-    setUiVariantForTest("v2");
     Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
     Element.prototype.scrollIntoView = vi.fn();
   });
-  afterEach(() => setUiVariantForTest("control"));
 
   it("stays hidden until the Share beside the guesses is pressed, then opens and scrolls to it", async () => {
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle(inPlay) as ReturnType<typeof useDailyPuzzle>);

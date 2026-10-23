@@ -29,7 +29,7 @@ interface Props {
    */
   mode?: GameMode;
   /**
-   * The new play screen's layout (see game/uiVariant.ts): the preview of what
+   * The play screen's layout (see App.tsx): the preview of what
    * Share copies first, the answer and username choices folded behind a
    * "Share options" toggle under it, and Share itself at the bottom. Most
    * players share with the choices they already have, so the choices stay out
