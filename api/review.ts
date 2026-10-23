@@ -360,8 +360,15 @@ async function handleGet(request: Request): Promise<Response> {
       // One date: the puzzle the reader is on, which every window ends at.
       const today = params.get("today");
       if (today === null || !isCalendarDate(today)) return reply(400, { ok: false, reason: "bad-date" });
-      const report = await rpc<Record<string, unknown> | null>("analytics_v2", { p_today: today });
-      return reply(200, { report: report ?? {} });
+      // The experiments ride along only when asked for: the page's second
+      // fetch, yesterday's report for the scorecard's change, has no use for them.
+      const [report, wordOfDay] = await Promise.all([
+        rpc<Record<string, unknown> | null>("analytics_v2", { p_today: today }),
+        params.get("experiments") === "1"
+          ? rpc<Record<string, unknown> | null>("analytics_v2_word_of_day", { p_today: today })
+          : null,
+      ]);
+      return reply(200, wordOfDay === null ? { report: report ?? {} } : { report: report ?? {}, wordOfDay });
     }
     if (list === "analytics") {
       // The window's ends and the viewer's own puzzle, sent as-is rather than

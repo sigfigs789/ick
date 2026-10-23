@@ -138,6 +138,9 @@ beforeEach(() => {
   // These cover gameplay, not the welcome: without this the cleared storage
   // makes every render a first visit, and the rules open over the puzzle.
   markSeen("instructions");
+  // Reporting is on here, so finishing a puzzle would draw the word of the day
+  // experiment at random; these tests are about the word itself.
+  localStorage.setItem("ick:word-of-day", "shown");
   resetLiveCheckSession();
   track.mockClear();
   stubFetch();

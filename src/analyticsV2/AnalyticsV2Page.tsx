@@ -3,6 +3,7 @@ import { ReviewPage } from "../components/ReviewPage";
 import { useReviewList } from "../components/reviewList";
 import { todayDateString } from "../game/date";
 import { fetchReport, type Rate, type Report, type Source } from "./report";
+import { WordOfDayExperiment } from "./WordOfDayExperiment";
 import {
   addDays,
   average,
@@ -39,7 +40,7 @@ export function AnalyticsV2Page() {
   // Yesterday's report is only for the scorecard's day-on-day change, so a
   // failure there leaves the changes blank rather than the page.
   const load = useCallback(async () => {
-    const [report, before] = await Promise.all([fetchReport(today), fetchReport(addDays(today, -1)).catch(() => null)]);
+    const [report, before] = await Promise.all([fetchReport(today, true), fetchReport(addDays(today, -1)).catch(() => null)]);
     return [{ report, before }];
   }, [today]);
   const { rows, state, refreshing, refresh, retry } = useReviewList(load);
@@ -99,6 +100,15 @@ function Dashboard({ report, before }: { report: Report; before: Report | null }
       >
         <Scorecard rows={scorecard(report)} before={before ? scorecard(before) : []} />
       </Section>
+
+      {report.wordOfDay && (
+        <Section
+          title="Experiment: word of the day"
+          note="Whether showing the word of the day under a finished puzzle moves the scorecard. Over players."
+        >
+          <WordOfDayExperiment experiment={report.wordOfDay} />
+        </Section>
+      )}
 
       <Section title="Acquisition" note="Last 28 days.">
         <Tiles

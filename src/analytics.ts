@@ -22,6 +22,7 @@ import { markLook, markShare, type SessionTimeReport } from "./game/sessionTime"
 import { todayDateString } from "./game/date";
 import { parseSourceCode, type ModeAssignment } from "./game/onboarding";
 import { IDLE_HINT_DELAY_MS, currentIdleHintArm, type IdleHintArm } from "./game/idleHint";
+import type { WordOfDayVariant } from "./game/wordOfDay";
 import { APP_VERSION } from "./version";
 import { isBotUserAgent } from "./game/botUa";
 import { visitorTag } from "./game/visitor";
@@ -928,6 +929,21 @@ function idleHintArmProps(): EventProps {
     idle_hint_experiment: arm?.experiment ?? null,
     idle_hint_variant: arm?.variant ?? null,
   };
+}
+
+/**
+ * The word of the day experiment's draw (see game/wordOfDay.ts), once per
+ * player, on the puzzle they first finished. `live_date` is the day it counts
+ * on in `analytics_v2_word_of_day`: the finished puzzle can be an archived one.
+ */
+export function trackWordOfDayAssigned(variant: WordOfDayVariant, date: string) {
+  send("word_of_day_assigned", {
+    variant,
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
+    live_date: todayDateString(),
+    mode: modeOf(date),
+  });
 }
 
 export function trackIdleHintAssigned(arm: IdleHintArm, date: string) {
