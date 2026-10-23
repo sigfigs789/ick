@@ -1,6 +1,15 @@
 {
   "headers": [
     {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
       "source": "/version.json",
       "headers": [
         {
@@ -48,7 +57,7 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!api/|privacy\\.html|terms\\.html).*)",
+      "source": "/((?!api/|assets/|privacy\\.html|terms\\.html).*)",
       "destination": "/index.html"
     }
   ]

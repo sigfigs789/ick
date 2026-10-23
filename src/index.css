@@ -263,6 +263,14 @@ h2 {
   padding: 0 1.1rem 3rem;
 }
 
+/* Where a page sits while its chunk is fetched (see the lazy pages in
+   Root.tsx). Quiet and centred: it is usually up for a fraction of a second. */
+.app__page-loading {
+  margin: 3rem 0;
+  text-align: center;
+  color: var(--fg-muted);
+}
+
 /* Header */
 /* Two rows: the wordmark and the rules on top, the three pages under them. A
    row of its own for the tabs because three labelled destinations do not fit a

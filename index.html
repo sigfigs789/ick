@@ -47,10 +47,56 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!--
+      Loaded without blocking the first paint: a stylesheet <link> holds up
+      rendering until a third-party server answers, and the fonts already swap
+      in when they arrive (display=swap). `media="print"` fetches it at low
+      priority without applying it; onload flips it on.
+    -->
     <link
       href="https://fonts.googleapis.com/css2?family=Karla:ital,wght@0,400;0,500;0,700;0,800;1,400&family=Libre+Franklin:wght@600;700;800;900&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Karla:ital,wght@0,400;0,500;0,700;0,800;1,400&family=Libre+Franklin:wght@600;700;800;900&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <!--
+      The loading screen's styles, inline so it paints from the HTML alone --
+      before the stylesheet or any script has arrived. The colours are
+      index.css's --bg, --fg, --fg-muted and --rarity-mythic-dot.
+    -->
+    <style>
+      body { margin: 0; background: #fafafa; color: #1a1a1b; }
+      .boot {
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: center; gap: 0.75rem; min-height: 80vh;
+        font-family: "Libre Franklin", -apple-system, "Segoe UI", sans-serif;
+      }
+      .boot__wordmark {
+        margin: 0; font-size: 1.9rem; font-weight: 900;
+        letter-spacing: 0.06em; text-transform: uppercase;
+      }
+      .boot__wordmark span { color: #e5484d; }
+      .boot__status {
+        margin: 0; color: #5d6066; font-size: 0.95rem;
+        font-family: "Karla", -apple-system, "Segoe UI", Roboto, sans-serif;
+        animation: boot-pulse 1.4s ease-in-out infinite;
+      }
+      @keyframes boot-pulse { 50% { opacity: 0.4; } }
+      @media (prefers-reduced-motion: reduce) {
+        .boot__status { animation: none; }
+      }
+      @media (prefers-color-scheme: dark) {
+        body { background: #121213; color: #f4f4f5; }
+        .boot__status { color: #a7aab0; }
+      }
+    </style>
 
     <script type="application/ld+json">
       {
@@ -72,6 +118,17 @@
   </head>
   <body>
     <div id="root">
+      <!--
+        What a player sees while the app downloads, which on a slow phone
+        connection is several seconds of word data. Before this the page was
+        blank until React mounted, which reads as broken rather than loading.
+        React's createRoot() replaces everything in #root on its first render,
+        so this needs no code to take down.
+      -->
+      <div class="boot" aria-hidden="true">
+        <p class="boot__wordmark">Word<span>Ink</span></p>
+        <p class="boot__status">Loading today's drop…</p>
+      </div>
       <!--
         Static fallback for crawlers/clients that don't run JS. React's
         createRoot() replaces this on mount, but that happens after the
