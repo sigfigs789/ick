@@ -1,7 +1,7 @@
 -- The come-back test on /analyticsV2: analytics_v2 takes an arm.
 --
 -- The line under the streak strip that says what tomorrow is worth (see
--- src/game/comeBackTest.ts) is shown to 75% of players and hidden from 25%.
+-- src/game/comeBackTest.ts) is shown to half of players and hidden from the other half.
 -- A player is drawn the first time the line would appear, and the draw is the
 -- `come_back_assigned` event, with `variant` 'show' or 'hide'.
 --

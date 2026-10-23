@@ -4,10 +4,10 @@ import { assignComeBackArm, forcedComeBackVariant } from "./comeBackTest";
 afterEach(() => localStorage.clear());
 
 describe("assignComeBackArm", () => {
-  it("shows the line to 75% and hides it from 25%", () => {
-    expect(assignComeBackArm(() => 0.74)).toEqual({ variant: "show", fresh: true });
+  it("shows the line to half and hides it from the other half", () => {
+    expect(assignComeBackArm(() => 0.49)).toEqual({ variant: "show", fresh: true });
     localStorage.clear();
-    expect(assignComeBackArm(() => 0.75)).toEqual({ variant: "hide", fresh: true });
+    expect(assignComeBackArm(() => 0.5)).toEqual({ variant: "hide", fresh: true });
   });
 
   it("keeps the first draw for good", () => {

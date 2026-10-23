@@ -4,7 +4,7 @@ import { isTester } from "./testers";
  * The come-back test: whether the line under the streak strip that says what
  * tomorrow is worth (see comeBack.ts) brings players back.
  *
- * Split 75/25: `show` sees the line, `hide` sees nothing in its place. A
+ * Split 50/50: `show` sees the line, `hide` sees nothing in its place. A
  * player is drawn the first time the line would appear -- today's puzzle, a
  * word banked -- which is the moment the two arms start to differ, and keeps
  * the arm for good. The /analyticsV2 scorecard is read per arm from that day
@@ -15,7 +15,7 @@ import { isTester } from "./testers";
 export type ComeBackVariant = "show" | "hide";
 
 /** The share of players who see the line. */
-export const COME_BACK_SHOW_SHARE = 0.75;
+export const COME_BACK_SHOW_SHARE = 0.5;
 
 const ASSIGNMENT_KEY = "ick:come-back-test";
 

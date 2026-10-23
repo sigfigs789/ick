@@ -118,7 +118,7 @@ function Dashboard({
       <Section
         title="Come-back test"
         note={
-          "The line under the streak that says what tomorrow is worth, shown to 75% of players and hidden from 25%. " +
+          "The line under the streak that says what tomorrow is worth, shown to half of players and hidden from the other half. " +
           "Each arm is the scorecard over its own players, counted from the day they were drawn: the first time " +
           "they banked a word on today's puzzle."
         }
@@ -334,8 +334,8 @@ function Scorecard({ rows, before }: { rows: Row[]; before: Row[] }) {
 }
 
 const ARMS: { arm: Arm; name: string }[] = [
-  { arm: "show", name: "Tips shown (75%)" },
-  { arm: "hide", name: "No tips (25%)" },
+  { arm: "show", name: "Tips shown (50%)" },
+  { arm: "hide", name: "No tips (50%)" },
 ];
 
 /** The scorecard once per arm of the come-back test, side by side. */
