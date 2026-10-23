@@ -21,7 +21,9 @@ name: Daily fold check
 #   4. A second job hands the PR to claude-review-fold-pr.yml, which comments
 #      "approve" or "decline" and labels the PR to match. It does not merge.
 #
-# No confirmed folds, no PR. Run it by hand for another date with:
+# No confirmed folds, no PR. scripts/fold-audit/checked-through.txt holds the
+# last puzzle date whose folds were checked by hand, several drops at once; the
+# schedule skips any date up to it. Run it by hand for another date with:
 #
 #   gh workflow run daily-fold-check.yml --repo sigfigs789/ick -f date=2026-10-08
 #
@@ -105,13 +107,25 @@ jobs:
             exit 1
           fi
           echo "date=$date" >> "$GITHUB_OUTPUT"
+          # A run by hand always checks its date. A scheduled one skips a date
+          # already checked by hand, as recorded in checked-through.txt.
+          through="$(tr -d '[:space:]' < scripts/fold-audit/checked-through.txt)"
+          if [ -z "$INPUT_DATE" ] && [[ ! "$date" > "$through" ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "$date was already checked by hand (through $through); nothing to do." | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Dump the drop's folds
         id: dump
         env:
           DATE: ${{ steps.puzzle.outputs.date }}
+          SKIP: ${{ steps.puzzle.outputs.skip }}
         run: |
           set -euo pipefail
+          if [ "$SKIP" = "true" ]; then
+            echo "count=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           ./node_modules/.bin/vite-node scripts/fold-audit/dump-folds.ts -- "$DATE"
           out=scripts/fold-audit/out
           mkdir -p "$out/daily/chunks"
