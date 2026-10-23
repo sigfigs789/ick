@@ -29,7 +29,6 @@ import type { AcceptedWord, DailyProgress } from "./game/types";
 const track = vi.hoisted(() => vi.fn());
 vi.mock("@vercel/analytics", () => ({ track }));
 vi.mock("@vercel/analytics/react", () => ({ Analytics: () => null }));
-vi.mock("@vercel/speed-insights/react", () => ({ SpeedInsights: () => null }));
 
 const TODAY = todayDateString();
 const YESTERDAY = addDays(TODAY, -1);
