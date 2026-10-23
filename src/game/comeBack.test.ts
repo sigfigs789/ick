@@ -37,8 +37,21 @@ describe("streakGoal", () => {
       streakGoal(streak({ currentStreak: 4, longestStreak: 4, bankedFreezes: 1 }))
     ).toEqual({
       headline: "Play tomorrow to make it a 5-day streak.",
-      detail: "10 days to your next 🧊 streak freeze.",
+      detail: "10 days to a 2nd 🧊 streak freeze.",
     });
+  });
+
+  it("counts the freeze a holder would add, not a next one they already have", () => {
+    // Back on a 1-day run with a best past 3: one held, the cap rises at 14.
+    expect(
+      streakGoal(streak({ currentStreak: 1, longestStreak: 5, bankedFreezes: 1 })).detail
+    ).toBe("13 days to a 2nd 🧊 streak freeze.");
+    expect(
+      streakGoal(streak({ currentStreak: 13, longestStreak: 13, bankedFreezes: 1 })).detail
+    ).toBe("Tomorrow earns a 2nd 🧊 streak freeze.");
+    expect(
+      streakGoal(streak({ currentStreak: 20, longestStreak: 20, bankedFreezes: 2 })).detail
+    ).toBe("8 days to a 3rd 🧊 streak freeze.");
   });
 
   it("falls back to the best streak, then to a new record", () => {
