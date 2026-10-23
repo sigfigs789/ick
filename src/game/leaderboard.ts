@@ -407,7 +407,7 @@ function scoreOf(word: string, storedZipf: unknown, foundOn: string | undefined)
  * record and a re-reckoning. This feed is an account of what happened on one
  * drop -- these words, these players, that day -- and the player who banked one
  * watched the game put a number on it. Pricing it again on today's terms is how
- * a word the game called Mythic an hour ago turns up here as Very Common.
+ * a word the game called Mythic an hour ago turns up here as Common.
  *
  * That was invisible while every scoring change moved forward, because today's
  * system was then the newest anything had ever been priced at. Freeform week is

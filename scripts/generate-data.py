@@ -70,12 +70,11 @@ MEASURED_FLOOR = 1.0
 # Rare used to start at 2.5 and covered better than a third of the words any
 # drop could reach, which made it the default rather than a find. Rare /
 # Extremely Rare / Elusive now take an even third each of that crowded top range,
-# and Quotidian was folded into Very Common. Keep these in lockstep with
-# measuredRarity() there and measured_rarity() in manage-extra-word.py.
-# The deep tail (Zipf < MEASURED_FLOOR) is its own top rank, so these bands
+# and Quotidian -- and later Very Common -- were folded into Common. Keep these
+# in lockstep with measuredRarity() there and measured_rarity() in
+# manage-extra-word.py. The deep tail (Zipf < MEASURED_FLOOR) is its own top rank, so these bands
 # only cover the measured range.
 RARITY_BANDS = [
-    (4.85, "Very Common"),
     (3.9, "Common"),
     (3.15, "Uncommon"),
     (2.13, "Rare"),
@@ -87,7 +86,6 @@ WORD_RE = re.compile(r"^[a-z]+$")
 
 # Single-char codes for rarity.json, index-aligned with dictionary.json.
 RARITY_CODE = {
-    "Very Common": "V",
     "Common": "C",
     "Uncommon": "U",
     "Rare": "R",

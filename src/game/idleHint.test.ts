@@ -72,7 +72,7 @@ describe("the idle hint experiments", () => {
 });
 
 describe("idleHintWords", () => {
-  it("picks three Common or Very Common words with the drop that the puzzle would accept together", () => {
+  it("picks three Common words with the drop that the puzzle would accept together", () => {
     const hints = idleHintWords("str", DATE, []);
     expect(hints).toHaveLength(3);
     const banked = [];

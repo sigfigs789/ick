@@ -57,7 +57,7 @@ HOW IT WORKS
 
 Wrong guesses are free. Type as many as you like — only a word the game accepts spends one of your four, so there is no penalty for trying something you are not sure about.
 
-Every accepted word comes back with a score out of ten and a tier, from Very Common up through Uncommon, Rare, Extremely Rare, Elusive, Mythic, and Legend. The score is not our opinion. It is measured against published word-frequency data — how often a word actually appears across books, news, film, websites, and conversation. A word you have never heard of is not automatically rare, and a word you use every day cannot be made rare by being long.
+Every accepted word comes back with a score out of ten and a tier, from Common up through Uncommon, Rare, Extremely Rare, Elusive, Mythic, and Legend. The score is not our opinion. It is measured against published word-frequency data — how often a word actually appears across books, news, film, websites, and conversation. A word you have never heard of is not automatically rare, and a word you use every day cannot be made rare by being long.
 
 There is no timer. There is no streak you lose by thinking for a minute. Take as long as you like; the puzzle is waiting when you come back.
 

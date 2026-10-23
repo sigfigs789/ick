@@ -260,16 +260,17 @@ describe("curated additions from rejected-word analytics", () => {
 describe("rarityFor", () => {
   it("returns a rarity and zipf score for a known word", () => {
     const info = rarityFor("the");
-    expect(info?.rarity).toBe("Very Common");
+    expect(info?.rarity).toBe("Common");
     expect(info?.zipf).toBeGreaterThan(7);
   });
 
-  it("puts everyday words in Very Common, the bottom tier", () => {
-    // Quotidian used to sit beneath this and was folded in, so the most common
-    // words in the language now share the tier rather than having their own.
-    expect(rarityFor("about")?.rarity).toBe("Very Common");
-    expect(rarityFor("the")?.rarity).toBe("Very Common");
-    expect(rarityFor("river")?.rarity).toBe("Very Common");
+  it("puts everyday words in Common, the bottom tier", () => {
+    // Quotidian and then Very Common used to sit beneath this and were folded
+    // in, so the most common words in the language share the tier rather than
+    // having their own.
+    expect(rarityFor("about")?.rarity).toBe("Common");
+    expect(rarityFor("the")?.rarity).toBe("Common");
+    expect(rarityFor("river")?.rarity).toBe("Common");
     expect(rarityScore(rarityFor("about")!.zipf)).toBeLessThanOrEqual(2.5);
   });
 

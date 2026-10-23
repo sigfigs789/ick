@@ -22,7 +22,7 @@ declare const process: { cwd(): string };
 // many decimals its score should show (two for the top two ranks, one for the
 // rest). Words are pinned so a scoring/label regression is actually caught.
 const RANKINGS: ReadonlyArray<[word: string, rarity: Rarity, decimals: number]> = [
-  ["the", "Very Common", 1],
+  ["the", "Common", 1],
   ["castle", "Common", 1],
   ["chateau", "Uncommon", 1],
   ["awol", "Rare", 1],
@@ -85,8 +85,8 @@ describe("rank ladder across the latest system", () => {
   // A representative Zipf from each measured band -- all below the top ranks --
   // to confirm the middle of the run lands in the right label at the right score.
   const MEASURED_LADDER: ReadonlyArray<[zipf: number, rarity: Rarity]> = [
-    [7.7, "Very Common"],
-    [5.6, "Very Common"],
+    [7.7, "Common"],
+    [5.6, "Common"],
     [4.5, "Common"],
     [3.5, "Uncommon"],
     [2.5, "Rare"],
@@ -126,8 +126,7 @@ describe("narrow measured bands (from 2026-08-21)", () => {
   // Each band's floor and the Zipf a hair beneath it, so a cutoff that drifts
   // is caught in both directions.
   const EDGES: ReadonlyArray<[zipf: number, rarity: Rarity]> = [
-    [4.85, "Very Common"],
-    [4.84, "Common"],
+    [7.7, "Common"],
     [3.9, "Common"],
     [3.89, "Uncommon"],
     [3.15, "Uncommon"],
@@ -156,11 +155,11 @@ describe("narrow measured bands (from 2026-08-21)", () => {
   });
 
   it("retires Quotidian without disturbing the puzzles that had it", () => {
-    // The bottom tier was folded into Very Common, but only forwards: an
-    // archived puzzle's everyday word still reads Quotidian.
+    // The bottom tier was folded in, but only forwards: an archived puzzle's
+    // everyday word still reads Quotidian.
     expect(rarityForZipf(7.7, BEFORE)).toBe("Quotidian");
-    expect(rarityForZipf(7.7, ON)).toBe("Very Common");
-    expect(rarityForZipf(7.7)).toBe("Very Common");
+    expect(rarityForZipf(7.7, ON)).toBe("Common");
+    expect(rarityForZipf(7.7)).toBe("Common");
   });
 
   it("keeps the retuned bands live for the puzzles between the two cutovers", () => {
@@ -252,7 +251,7 @@ describe("whole-point measured bands (from 2026-08-27)", () => {
     [3.91, "6.0", "Uncommon"],
     [3.92, "5.9", "Common"],
     [4.61, "5.0", "Common"],
-    [4.62, "4.9", "Very Common"],
+    [4.62, "4.9", "Common"],
   ];
 
   it.each(EDGES)("Zipf %s shows %s and sits in %s", (zipf, shown, rarity) => {
@@ -270,14 +269,13 @@ describe("whole-point measured bands (from 2026-08-27)", () => {
       "8": "Extremely Rare",
       "7": "Rare",
       "6": "Uncommon",
-      "5": "Common",
     };
     for (let hundredths = 100; hundredths <= 800; hundredths++) {
       const zipf = hundredths / 100;
       const rarity = rarityForZipf(zipf, ON);
       if (rarity === "Mythic" || rarity === "Legend") continue;
       const shown = formatRarityScore(zipf, ON);
-      const expected = BAND[shown.split(".")[0]] ?? "Very Common";
+      const expected = BAND[shown.split(".")[0]] ?? "Common";
       expect(rarity, `${shown} should be ${expected}, not ${rarity}`).toBe(expected);
     }
   });
@@ -297,30 +295,20 @@ describe("whole-point measured bands (from 2026-08-27)", () => {
     expect(rarityScore(3.5, ON)).toBeGreaterThan(rarityScore(3.5, BEFORE));
   });
 
-  it("demotes nothing but the bottom of Common, and pins that window", () => {
-    // Labels move up with the scores, with one exception, accepted deliberately:
-    // Very Common now starts wherever the score falls under 5.0, and at this
-    // gamma that lands at Zipf 4.62 -- below the 4.85 the old cutoff used. So the
-    // everyday words in between read Very Common where they read Common the day
-    // before. It is the one band where losing a rank costs nothing (the words are
-    // "balance", "twice", "fresh"), and the price of a bottom band that starts on
-    // a whole point like every other. Everything rarer only ever moves up.
-    const demoted: number[] = [];
+  it("demotes nothing", () => {
+    // Labels move up with the scores. There used to be one exception -- a
+    // window at Zipf 4.62..4.84 where Common fell to Very Common -- and retiring
+    // Very Common closed it.
     for (let hundredths = 100; hundredths <= 773; hundredths++) {
       const zipf = hundredths / 100;
       const before = rarityForZipf(zipf, BEFORE);
       const after = rarityForZipf(zipf, ON);
       // RARITY_ORDER runs rarest-first, so a rank going up means a lower index.
-      if (RARITY_ORDER.indexOf(after) > RARITY_ORDER.indexOf(before)) {
-        expect([before, after], `Zipf ${zipf} dropped an unexpected rank`).toEqual([
-          "Common",
-          "Very Common",
-        ]);
-        demoted.push(zipf);
-      }
+      expect(
+        RARITY_ORDER.indexOf(after),
+        `Zipf ${zipf} dropped from ${before} to ${after}`
+      ).toBeLessThanOrEqual(RARITY_ORDER.indexOf(before));
     }
-    expect(demoted[0]).toBeCloseTo(4.62, 5);
-    expect(demoted[demoted.length - 1]).toBeCloseTo(4.84, 5);
   });
 
   it("leaves the deep tail and the top ranks exactly as they were", () => {
@@ -368,8 +356,7 @@ describe("ranking colors", () => {
   it("maps every ranking to its color square", () => {
     expect(RARITY_SYMBOL).toEqual({
       Quotidian: "🥚",
-      "Very Common": "⬜",
-      Common: "🟫",
+      Common: "⬜",
       Uncommon: "🟩",
       Rare: "🟦",
       "Extremely Rare": "🟪",

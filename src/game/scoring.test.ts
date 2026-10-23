@@ -258,8 +258,7 @@ describe("the badge agrees with the number beside it", () => {
     if (shown >= 8) return "Extremely Rare";
     if (shown >= 7) return "Rare";
     if (shown >= 6) return "Uncommon";
-    if (shown >= 5) return "Common";
-    return "Very Common";
+    return "Common";
   }
 
   // From DECADE_BANDS_START, when every label began keying off the shown score.

@@ -5,7 +5,7 @@ and BombParty. Every player gets the same 2- or 3-letter drop each day
 (like `STR`, `OU`, or `MP`) and enters valid English words that contain
 it, in order, for up to 4 distinct guesses. The goal is rarity — your best
 one is crowned in the log. No timer, no login, just a 0–10 rarity score and
-tier (Very Common → Legend) on every accepted word. Stop anytime with "Lock
+tier (Common → Legend) on every accepted word. Stop anytime with "Lock
 in my result," or use all 4 guesses. Every puzzle can be played in
 **Standard** or **Freeform** mode (see below), and each mode has its own
 progress and its own leaderboard.
@@ -72,7 +72,7 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
   wordfreq `0.0` is not a measurement and falls through to the next source. A
   word no source measures is *unattested* and gets the sentinel Zipf (one notch
   below the rarest measured word), which scores a flat **10.00 / Legend**.
-  Tiers run Very Common … Mythic (9.5+) … Legend (9.9+). Freeform scores every
+  Tiers run Common … Mythic (9.5+) … Legend (9.9+). Freeform scores every
   word on its own frequency. Standard folds a derived form onto its common base
   first (next section). Gameplay never makes a live frequency lookup.
 - **Guesses** (`src/game/constants.ts`): up to `MAX_GUESSES` (4) distinct
@@ -446,7 +446,7 @@ lives in `supabase/migrations/`.
   first-ever session and in later ones alike. A hint (`...strong`) is
   typed into the placeholder a character at a time with a keystroke sound,
   held 2s and erased; the next follows 1s later, three in all, each a
-  Common or Very Common word with the drop that the puzzle would accept. The first letter the player types ends the loop. The
+  Common word with the drop that the puzzle would accept. The first letter the player types ends the loop. The
   clock waits for How to play (or any dialog) to close, and focusing the box
   does not stop it. Add `?idle-hint=treatment` (or `=control`) to the URL to
   force an arm while testing; a forced arm is never stored or reported. Each
