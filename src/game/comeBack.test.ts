@@ -32,7 +32,7 @@ describe("streakGoal", () => {
     // and day 14 is the first that raises the cap.
     expect(
       streakGoal(streak({ currentStreak: 4, longestStreak: 4, bankedFreezes: 1 }))
-    ).toBe("10 days until you can hold 2 🧊 streak freezes.");
+    ).toBe("10 days until your 🧊 freeze limit goes up to 2.");
   });
 
   it("says the cap rises when it is full", () => {
@@ -43,10 +43,10 @@ describe("streakGoal", () => {
     ).toBe("5 days to beat your best streak of 5.");
     expect(
       streakGoal(streak({ currentStreak: 13, longestStreak: 13, bankedFreezes: 1 }))
-    ).toBe("Tomorrow you can hold 2 🧊 streak freezes, and you earn another 🧊.");
+    ).toBe("Tomorrow your 🧊 freeze limit goes up to 2, and you earn a freeze to fill it.");
     expect(
       streakGoal(streak({ currentStreak: 20, longestStreak: 20, bankedFreezes: 2 }))
-    ).toBe("8 days until you can hold 3 🧊 streak freezes.");
+    ).toBe("8 days until your 🧊 freeze limit goes up to 3.");
   });
 
   it("counts the freeze a holder would add when there is room for it", () => {

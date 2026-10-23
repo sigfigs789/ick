@@ -46,7 +46,7 @@ export function streakGoal(streak: StreakState): string {
   const capFull = banked > 0 && banked >= freezeCap(best);
 
   if (keeps(next)) {
-    if (capFull) return `Tomorrow you can hold ${banked + 1} 🧊 streak freezes, and you earn another 🧊.`;
+    if (capFull) return `Tomorrow your 🧊 freeze limit goes up to ${banked + 1}, and you earn a freeze to fill it.`;
     if (nth) return `Tomorrow earns a ${nth} 🧊 streak freeze.`;
     return "Tomorrow earns a 🧊 freeze, which saves your streak on a day you miss.";
   }
@@ -63,7 +63,7 @@ export function streakGoal(streak: StreakState): string {
   const bestAway = best > days ? best - days + 1 : undefined;
 
   if (freezeAway !== undefined && (bestAway === undefined || freezeAway <= bestAway)) {
-    if (capFull) return `${freezeAway} days until you can hold ${banked + 1} 🧊 streak freezes.`;
+    if (capFull) return `${freezeAway} days until your 🧊 freeze limit goes up to ${banked + 1}.`;
     return `${freezeAway} days to ${nth ? `a ${nth}` : "your next"} 🧊 streak freeze.`;
   }
   if (bestAway !== undefined) return `${bestAway} days to beat your best streak of ${best}.`;
