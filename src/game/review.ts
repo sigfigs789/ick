@@ -383,13 +383,6 @@ export interface AnalyticsReport {
   chat: Record<Group, { opened: KeyMetrics; notOpened: KeyMetrics }>;
   chatSince: string | null;
   /**
-   * The play-screen test's two experiments, new and returning, each split by
-   * the variant it drew (see game/uiVariant.ts); `all` is each player once.
-   */
-  ui: Record<Group, { control: KeyMetrics; v2: KeyMetrics }>;
-  /** The first day a browser was put in the experiment, or null before it ran. */
-  uiSince: string | null;
-  /**
    * The idle hint test: each grouping, split by arm, over the players who sat
    * idle long enough to be hinted in the window. New and returning are the
    * test's own two experiments (see game/idleHint.ts).
@@ -606,8 +599,6 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
     }),
     chat: byGroup(r.chat, (raw) => ({ opened: metrics(obj(raw).opened), notOpened: metrics(obj(raw).notOpened) })),
     chatSince: text(r.chatSince),
-    ui: byGroup(r.ui, (raw) => ({ control: metrics(obj(raw).control), v2: metrics(obj(raw).v2) })),
-    uiSince: text(r.uiSince),
     idleHint: byGroup(r.idleHint, (raw) => ({
       control: metrics(obj(raw).control),
       treatment: metrics(obj(raw).treatment),

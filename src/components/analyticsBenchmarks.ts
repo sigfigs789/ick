@@ -192,17 +192,6 @@ export function puzzleTypeBenchmark(modes: Record<"standard" | "freeform", KeyMe
   );
 }
 
-/** Play screen test: v2's share who guessed against v1's, each player once. */
-export function playScreenBenchmark(ui: { control: KeyMetrics; v2: KeyMetrics }): Benchmark {
-  const least = 50;
-  return benchmark(
-    lift(guessedRate(ui.v2), guessedRate(ui.control), least),
-    "v2 vs v1, share who guessed",
-    { unit: "points", promising: 0.01, great: 0.05 },
-    `${least} players a screen`,
-  );
-}
-
 /** Chat: of the window's players, the share who opened the chat. */
 export function chatBenchmark(chat: { opened: KeyMetrics; notOpened: KeyMetrics }): Benchmark {
   const least = 30;

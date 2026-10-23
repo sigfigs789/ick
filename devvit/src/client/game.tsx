@@ -18,7 +18,6 @@ import { setInMemoryRouting } from '../../../src/routes';
 import { setReporting } from '../../../src/analytics';
 import { setAccount } from '../../../src/game/player';
 import { setPlayerMessages } from '../../../src/game/playerMessages';
-import { pinUiVariant } from '../../../src/game/uiVariant';
 import { pinIdleHintVariant } from '../../../src/game/idleHint';
 
 /**
@@ -70,14 +69,10 @@ setReporting(false);
 // having sent nothing is worse than no box. The post's comments are the chat.
 setPlayerMessages(false);
 
-// The reworked play screen for everyone. The website's play-screen test is
-// measured through the reporting switched off above, so a split here would be
-// a split nobody reads; every Reddit player gets the screen the test favours.
-pinUiVariant('v2');
-
-// The idle hint, for the same reason: on the website it is a test, and its arm
-// is only drawn where events are reported -- so without this a Reddit player
-// would never see it. Pinned, it runs for everyone and reports nothing.
+// The idle hint for everyone. On the website it is a test, measured through
+// the reporting switched off above, and its arm is only drawn where events are
+// reported -- so without this a Reddit player would never see it. Pinned, it
+// runs for everyone and reports nothing.
 pinIdleHintVariant('treatment');
 
 // `Root` rather than `App`: the puzzle is one of five pages, and the other four
