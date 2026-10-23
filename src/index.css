@@ -5497,12 +5497,22 @@ h2 {
   background: var(--bg-inset);
   color: var(--fg);
 }
-.chat__list {
+/* The scroller is a wrapper round the list so the list can always stand one
+   pixel taller than it. A room too short to scroll is otherwise no scroller at
+   all to iOS, which hands the drag to the page behind the panel; with a pixel
+   to scroll, the drag stays here and the list bounces back, and contain stops
+   the bounce at either end from carrying on into the page. */
+.chat__scroll {
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.chat__list {
+  min-height: calc(100% + 1px);
   margin: 0;
   padding: 0.6rem 1rem;
   list-style: none;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 0.55rem;

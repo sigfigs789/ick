@@ -380,7 +380,7 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
    */
   const readBefore = useRef<number | null>(null);
   const dividerRef = useRef<HTMLLIElement>(null);
-  const listRef = useRef<HTMLOListElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -942,36 +942,38 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
               ×
             </button>
           </header>
-          <ol className="chat__list" ref={listRef} aria-live="polite">
-            {!loaded ? (
-              <li className="chat__empty">Loading…</li>
-            ) : shown.length === 0 ? (
-              <li className="chat__empty">
-                {loadFailed ? "Couldn't load the chat." : "No messages yet. Say hello!"}
-              </li>
-            ) : (
-              shown.map((message) => (
-                <Fragment key={message.id}>
-                  {message.id === newFrom && (
-                    <li ref={dividerRef} className="chat__divider" role="separator" aria-label="New messages">
-                      New
-                    </li>
-                  )}
-                  <ChatLine
-                    message={message}
-                    own={message.handle === ownHandle}
-                    fresh={fresh.has(message.id)}
-                    ownHandle={ownHandle}
-                    reactions={reactions[message.id] ?? []}
-                    trayOpen={reacting === message.id && !picking}
-                    onTray={() => trayFor(message.id)}
-                    onReact={(emoji) => void react(message.id, emoji)}
-                    onMore={() => setPicking(true)}
-                  />
-                </Fragment>
-              ))
-            )}
-          </ol>
+          <div className="chat__scroll" ref={listRef}>
+            <ol className="chat__list" aria-live="polite">
+              {!loaded ? (
+                <li className="chat__empty">Loading…</li>
+              ) : shown.length === 0 ? (
+                <li className="chat__empty">
+                  {loadFailed ? "Couldn't load the chat." : "No messages yet. Say hello!"}
+                </li>
+              ) : (
+                shown.map((message) => (
+                  <Fragment key={message.id}>
+                    {message.id === newFrom && (
+                      <li ref={dividerRef} className="chat__divider" role="separator" aria-label="New messages">
+                        New
+                      </li>
+                    )}
+                    <ChatLine
+                      message={message}
+                      own={message.handle === ownHandle}
+                      fresh={fresh.has(message.id)}
+                      ownHandle={ownHandle}
+                      reactions={reactions[message.id] ?? []}
+                      trayOpen={reacting === message.id && !picking}
+                      onTray={() => trayFor(message.id)}
+                      onReact={(emoji) => void react(message.id, emoji)}
+                      onMore={() => setPicking(true)}
+                    />
+                  </Fragment>
+                ))
+              )}
+            </ol>
+          </div>
           {reacting !== null && picking && (
             <ReactionPicker
               onPick={(emoji) => void react(reacting, emoji)}
