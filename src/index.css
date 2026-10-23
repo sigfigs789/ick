@@ -876,6 +876,11 @@ h2 {
 .yesterdays-best__finders {
   color: var(--fg-faint);
 }
+/* Under the drop: pulled up into the drop's own bottom margin, so it reads as
+   a caption to the letters rather than a row of its own. */
+.puzzle-nav--drop + .yesterdays-best {
+  margin-top: -0.75rem;
+}
 
 /* Drop display */
 .drop-display {

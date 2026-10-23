@@ -4,10 +4,13 @@ import { YesterdaysBest } from "./YesterdaysBest";
 import { bestFind } from "../game/yesterdaysBest";
 import { forgetPageCaches } from "../game/pageCache";
 import { dropForDate } from "../game/drop";
+import { learnableWordForDrop } from "../game/dictionary";
 import type { FoundWord } from "../game/leaderboard";
 
 const TODAY = "2026-10-23";
 const YESTERDAY = "2026-10-22";
+/** What yesterday's finished puzzle revealed: the line's word with no finds to name. */
+const OFFERED = learnableWordForDrop(dropForDate(YESTERDAY), YESTERDAY)!.word;
 
 /** Answer the feed fetch; a `null` body makes the request fail instead. */
 function stubFetch(words: unknown) {
@@ -68,19 +71,32 @@ describe("the yesterday's best line", () => {
     expect(String((fetchMock.mock.calls[0] as unknown[])[0])).toContain(`today=${YESTERDAY}`);
   });
 
-  it("stays silent when yesterday's finds can't be read", async () => {
-    const fetchMock = stubFetch(null);
-    const { container } = render(<YesterdaysBest date={TODAY} />);
+  it("names the word yesterday's drop offered before the feed answers", () => {
+    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => {})));
+    render(<YesterdaysBest date={TODAY} />);
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
-    expect(container).toBeEmptyDOMElement();
+    expect(screen.getByText(OFFERED)).toBeInTheDocument();
+    expect(screen.queryByText(/found by/)).not.toBeInTheDocument();
   });
 
-  it("stays silent for a day nobody found anything", async () => {
-    const fetchMock = stubFetch([]);
-    const { container } = render(<YesterdaysBest date={TODAY} />);
+  it("names the word yesterday's drop offered when the finds can't be read", async () => {
+    const fetchMock = stubFetch(null);
+    render(<YesterdaysBest date={TODAY} />);
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
-    expect(container).toBeEmptyDOMElement();
+    expect(screen.getByText(OFFERED)).toBeInTheDocument();
+    expect(screen.queryByText(/found by/)).not.toBeInTheDocument();
+  });
+
+  it("names the word yesterday's drop offered for a day nobody found anything", async () => {
+    const fetchMock = stubFetch([]);
+    render(<YesterdaysBest date={TODAY} />);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(screen.getByText(OFFERED)).toBeInTheDocument();
+    expect(
+      screen.getByText(new RegExp(`Yesterday's best for .${dropForDate(YESTERDAY)}.`)),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/found by/)).not.toBeInTheDocument();
   });
 });

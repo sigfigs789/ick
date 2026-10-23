@@ -239,6 +239,18 @@ describe("gameplay end to end", () => {
     expect(savedProgress(TODAY)?.completed).toBe(false);
   });
 
+  it("shows yesterday's best word under the drop before any answer", () => {
+    render(<App />);
+
+    // Straight after the drop, not down under the guesses, and with nothing
+    // banked yet: it never waits on the player.
+    expect(document.querySelector(".puzzle-nav--drop + .yesterdays-best")).toHaveTextContent(
+      `Yesterday's best for “${dropForDate(YESTERDAY)}”`,
+    );
+    expect(document.querySelectorAll(".yesterdays-best")).toHaveLength(1);
+    expect(loggedWords()).toEqual([]);
+  });
+
   it("finishes a puzzle without handing over its own best word", async () => {
     // The word of the day is gone; the best word on show is yesterday's best
     // find (see YesterdaysBest), which spoils nothing about today's puzzle.

@@ -294,6 +294,12 @@ export default function App() {
             isToday={isToday}
           />
         </PuzzleNav>
+        {/* Straight under the drop, where the word of the day used to land,
+            and from the first paint: it names a word without waiting on a
+            request (see YesterdaysBest), so it never moves the input below it.
+            Today's puzzle only -- on an archived day "yesterday" is a day the
+            player is not looking at. */}
+        {isToday && <YesterdaysBest date={date} />}
         {/* Over the words it is about: a fold rejected live on this puzzle
             moved one of them (see game/liveFoldRescore.ts). */}
         <FoldedLiveNotice
@@ -339,12 +345,6 @@ export default function App() {
             ) : undefined
           }
         />
-
-        {/* Under the guesses rather than under the drop: it arrives with a
-            request, and anything landing above the input would push the input
-            down the page as it did. Today's puzzle only -- on an archived day
-            "yesterday" is a day the player is not looking at. */}
-        {isToday && <YesterdaysBest date={date} />}
 
         {!progress.completed && !isToday && (
           <p className="archive-note">
