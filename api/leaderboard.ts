@@ -134,6 +134,7 @@
 
 import { MIN_RANKED_VERSION } from "../src/version";
 import { record, rpc, supabaseConfigured, type EdgeContext } from "./_supabase";
+import { isVercelRequest } from "../src/game/vercelHost";
 
 // Vercel's Edge runtime exposes `process.env`; see api/_supabase.ts.
 declare const process: { env: Record<string, string | undefined> };
@@ -1209,6 +1210,11 @@ async function handlePost(request: Request, context?: EdgeContext): Promise<Resp
   // credentials is a setup problem, and an empty board is a miserable way to
   // discover it. The client ignores this either way.
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
+
+  // A preview or *.vercel.app alias is the people building the game, not
+  // players (see src/game/vercelHost.ts): nothing played there goes on the
+  // board. Accepted with no days, so the client has nothing to retry.
+  if (isVercelRequest(request)) return reply(202, { ok: true, days: 0 });
 
   await record(
     "rpc/submit_leaderboard_scores",
