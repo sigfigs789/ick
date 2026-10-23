@@ -8,7 +8,7 @@
  */
 import { readFileSync } from "node:fs";
 import { loadCorpus } from "../../src/game/corpus";
-import { foldTrace, rarityScore } from "../../src/game/dictionary";
+import { foldTrace, rarityScore, scoringReady } from "../../src/game/dictionary";
 import { setMode } from "../../src/game/mode";
 import { evaluateSubmission } from "../../src/game/submit";
 
@@ -52,6 +52,7 @@ async function main(): Promise<void> {
   setMode("standard");
   serve();
   await loadCorpus();
+  await scoringReady();
   const DATE = "2026-10-01";
 
   const words = corpusWords();

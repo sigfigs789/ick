@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://wordink.app/sitemap.xml
+Sitemap: https://www.wordink.app/sitemap.xml

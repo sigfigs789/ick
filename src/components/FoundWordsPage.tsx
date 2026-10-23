@@ -9,7 +9,7 @@ import {
 } from "../game/leaderboard";
 import { pageCache } from "../game/pageCache";
 import { useGameMode } from "../hooks/useGameMode";
-import { useRejectionMetadataLoaded } from "../hooks/useRejectionMetadataLoaded";
+import { useWordDataLoaded } from "../hooks/useWordDataLoaded";
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
 import { navigate } from "../routes";
@@ -98,11 +98,12 @@ export function FoundWordsPage() {
    * the mode the *reader* is in -- so flipping the switch repaints every badge
    * here the way it repaints the puzzle, with nothing fetched. `mode` is read
    * only to re-run this; the pricing itself asks game/mode.ts. The rejection
-   * metadata is the same kind of trigger: until it is in, a word the reader's
-   * rules refuse by register is judged as merely unknown.
+   * metadata and the deferred scoring data are the same kind of trigger: until
+   * they are in, a word the reader's rules refuse by register is judged as
+   * merely unknown, and a word priced off an estimate shows the wrong score.
    */
   const [mode] = useGameMode();
-  const metadataLoaded = useRejectionMetadataLoaded();
+  const metadataLoaded = useWordDataLoaded();
   const priced = useMemo(
     () => repriceFoundWords(words),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `mode` and `metadataLoaded` are triggers

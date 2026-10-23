@@ -16,6 +16,8 @@ import {
   rarityForZipf,
   rarityScore,
   rawTotalRarityScore,
+  scoringLoaded,
+  scoringReady,
   topRarityScore,
 } from "./dictionary";
 import { todayDateString } from "./date";
@@ -653,7 +655,10 @@ export async function fetchBoards(
     { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), cache: "no-store" }
   );
   if (!response.ok) throw new Error(`leaderboard ${response.status}`);
-  return readBoards((await response.json()) as Record<string, unknown>, since, mode);
+  const body = (await response.json()) as Record<string, unknown>;
+  // A row without a stored Zipf is priced here (see `scoreOf`).
+  await scoringReady();
+  return readBoards(body, since, mode);
 }
 
 /** One row of the puzzles-played board. */
@@ -803,6 +808,8 @@ export async function fetchFoundWords(
   );
   if (!response.ok) throw new Error(`leaderboard words ${response.status}`);
   const body = (await response.json()) as Record<string, unknown>;
+  // Each word is priced by its puzzle here (see `priceFind`).
+  await scoringReady(date);
   return parseWords(body.words, date);
 }
 
@@ -1211,6 +1218,30 @@ export function syncHistory(today: string = todayDateString()): number {
   if (!playerId) return 0;
   backfillFinds(playerId);
   return backfillHistory(playerId, undefined, today);
+}
+
+/**
+ * `syncHistory`, once the deferred scoring data every played day needs is in
+ * (see `scoringReady` in dictionary.ts). The history is re-priced on its way to
+ * the board, and a day priced without the estimates and reviewed folds would
+ * overwrite a right score with a wrong one. The oldest day decides whether the
+ * legacy rarity is needed too. A file that failed to arrive skips this sync;
+ * the next one tries again.
+ */
+export function syncHistoryWhenReady(): void {
+  let oldest: string | undefined;
+  for (const progress of playedHistory()) {
+    if (oldest === undefined || progress.date < oldest) oldest = progress.date;
+  }
+  // At once when it is already in, as it is on every open after the first.
+  if (scoringLoaded(oldest)) {
+    syncHistory();
+    return;
+  }
+  scoringReady(oldest).then(
+    () => syncHistory(),
+    () => {}
+  );
 }
 
 /**

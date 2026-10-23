@@ -19,10 +19,9 @@ import {
   consultsCorpus,
   evaluateSubmission,
   REJECTION_MESSAGES,
-  rejectionMetadataLoaded,
-  rejectionMetadataReady,
   spellingNearMiss,
 } from "../game/submit";
+import { wordDataLoaded, wordDataReady } from "../game/wordData";
 import {
   baseFormSubstitution,
   isUnattestedZipf,
@@ -90,7 +89,10 @@ import {
   type CrossModePreview,
 } from "../game/crossMode";
 import { useGameMode } from "./useGameMode";
-import { useRejectionMetadataLoaded } from "./useRejectionMetadataLoaded";
+import { useWordDataLoaded } from "./useWordDataLoaded";
+
+/** Shown when a deferred word-data file failed to arrive (see submitWord). */
+const WORD_DATA_UNAVAILABLE = "Couldn't load the word list. Check your connection and try again.";
 
 /**
  * How the acceptance names a waived reason. Adjectives rather than the data's
@@ -277,8 +279,10 @@ export function useDailyPuzzle() {
     fetchLiveFoldRejections(viewedDate)
       .then(async (rejections) => {
         if (rejections.length === 0) return;
-        // A corpus word is priced off the corpus, so it has to be there first.
+        // A corpus word is priced off the corpus, so it has to be there first,
+        // and every word off the deferred scoring data.
         if (consultsCorpus(viewedDate)) await loadCorpus();
+        await wordDataReady(viewedDate);
         const before = progressRef.current;
         if (cancelled || before.date !== viewedDate) return;
         const { rescored, notices } = liveFoldRescore(before);
@@ -493,11 +497,21 @@ export function useDailyPuzzle() {
 
   const submitWord = useCallback(
     async (raw: string): Promise<SubmissionResult> => {
-      // A bare "not-a-word" is what sends a word to the live lookup, and only
-      // the rejection metadata can tell it from a word refused for its
-      // register -- so no verdict is drawn before the file is in. Nearly always
-      // a no-op: it arrives within moments of the puzzle appearing.
-      if (!rejectionMetadataLoaded()) await rejectionMetadataReady;
+      // No verdict is drawn before the deferred word data is in: a bare
+      // "not-a-word" is what sends a word to the live lookup, and only the
+      // rejection metadata can tell it from a word refused for its register;
+      // and the score saved with an accepted word, and sent to the board, is
+      // priced off the estimates and reviewed folds. Nearly always a no-op: the
+      // files arrive within moments of the puzzle appearing. If one could not
+      // be fetched at all, the guess is not spent, and trying again refetches.
+      if (!wordDataLoaded(viewedDate)) {
+        try {
+          await wordDataReady(viewedDate);
+        } catch {
+          showFeedback("rejected", WORD_DATA_UNAVAILABLE);
+          return { ok: false };
+        }
+      }
       const result = evaluateSubmission(raw, drop, progressRef.current.acceptedWords, viewedDate);
       // Each submission starts from a clean slate; last guess's note is gone.
       setLiveNote(null);
@@ -677,9 +691,10 @@ export function useDailyPuzzle() {
    * guess log. Empty on a puzzle from before the choice date, which has only
    * the one game.
    */
-  // Read only to re-run the previews once the rejection metadata is in: until
-  // then a word the other mode refuses by register looks merely unknown.
-  const metadataLoaded = useRejectionMetadataLoaded();
+  // Read only to re-run the previews once the deferred word data is in: until
+  // then a word the other mode refuses by register looks merely unknown, and
+  // one it prices off an estimate or a reviewed fold shows the wrong score.
+  const metadataLoaded = useWordDataLoaded(viewedDate);
   const crossMode = useMemo<Record<string, CrossModePreview>>(() => {
     if (!crossModeAvailable(viewedDate)) return {};
     const previews: Record<string, CrossModePreview> = {};
@@ -708,8 +723,15 @@ export function useDailyPuzzle() {
   const copyToOtherMode = useCallback(
     async (raw: string) => {
       // The same wait as submitWord's: the preview below decides whether the
-      // word goes to the live lookup.
-      if (!rejectionMetadataLoaded()) await rejectionMetadataReady;
+      // word goes to the live lookup, and what it scores over there.
+      if (!wordDataLoaded(viewedDate)) {
+        try {
+          await wordDataReady(viewedDate);
+        } catch {
+          showFeedback("rejected", WORD_DATA_UNAVAILABLE);
+          return;
+        }
+      }
       if (!crossModeAvailable(viewedDate) || copyingRef.current) return;
       const source = progressRef.current.acceptedWords.find((w) => w.word === raw);
       if (!source) return;

@@ -47,10 +47,14 @@ export type ShareSource = "share" | "twitter";
  * The link under a shared result. A tagged link carries the mode it was shared
  * from, so a friend who has never played starts in the same game as the result
  * they were sent (see game/onboarding.ts) -- `?s=sh.f`, `?s=t.s`.
+ *
+ * Both tagged links name the www host. The bare domain answers with a redirect
+ * to it, which is a round trip a friend's first load spends before the game
+ * has started downloading.
  */
 function shareUrl(source: ShareSource | null, mode: GameMode): string {
-  if (source === "share") return `https://wordink.app/?s=${shareCode("sh", mode)}`;
-  if (source === "twitter") return `wordink.app/?s=${shareCode("t", mode)}`;
+  if (source === "share") return `https://www.wordink.app/?s=${shareCode("sh", mode)}`;
+  if (source === "twitter") return `www.wordink.app/?s=${shareCode("t", mode)}`;
   return "wordink.app";
 }
 

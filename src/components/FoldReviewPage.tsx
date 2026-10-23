@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ReviewPage } from "./ReviewPage";
 import { formatDateLabel } from "../game/date";
-import { formatRarityScore, rarityFor } from "../game/dictionary";
+import { formatRarityScore, rarityFor, scoringReady } from "../game/dictionary";
 import { loadCorpus } from "../game/corpus";
 import {
   FOLD_BATCH_SIZE,
@@ -131,7 +131,7 @@ export function FoldReviewPage() {
   useEffect(() => {
     if (dates.length === 0) return;
     let cancelled = false;
-    loadCorpus().then(() => {
+    Promise.all([loadCorpus(), scoringReady()]).then(() => {
       if (cancelled) return;
       window.setTimeout(() => {
         if (cancelled) return;

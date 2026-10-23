@@ -1,7 +1,7 @@
 /** Every fold corrected by the 50k pass, before and after the fix date. */
 import { readFileSync, writeFileSync } from "node:fs";
 import { loadCorpus } from "../../src/game/corpus";
-import { foldTrace, rarityScore, rarityForZipf } from "../../src/game/dictionary";
+import { foldTrace, rarityScore, rarityForZipf, scoringReady } from "../../src/game/dictionary";
 import { setMode } from "../../src/game/mode";
 function serve(): void {
   const base = "public/corpus";
@@ -27,7 +27,7 @@ function serve(): void {
 const BEFORE = "2026-09-30";
 const AFTER = "2026-10-01";
 async function main(): Promise<void> {
-  setMode("standard"); serve(); await loadCorpus();
+  setMode("standard"); serve(); await loadCorpus(); await scoringReady();
   const rows = JSON.parse(readFileSync("scripts/fold-audit/out/confirmed.json", "utf8"));
   const out: string[] = ["word\twas\tnow\trule\tscoreBefore\trankBefore\tscoreAfter\trankAfter\tstatus\twhy"];
   let stillWrong = 0;

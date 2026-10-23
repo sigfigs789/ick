@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { beforeEach } from "vitest";
+import { beforeAll, beforeEach } from "vitest";
 import { forgetPageCaches } from "../game/pageCache";
 
 // jsdom doesn't implement the Clipboard API's image-write pieces
@@ -19,3 +19,14 @@ if (!("ClipboardItem" in globalThis)) {
 // The paged views remember what they read for the life of the module (see
 // game/pageCache.ts); a test must not open on rows another test put there.
 beforeEach(() => forgetPageCaches());
+
+// The game fetches part of its scoring data after it starts (see `scoringReady`
+// in game/dictionary.ts) and waits for it before scoring anything. Tests score
+// words directly, so every file starts with all of it in -- the legacy rarity
+// included, by asking for a puzzle old enough to need it. Imported here rather
+// than at the top so a file that mocks the dictionary gets its own mock, which
+// may not carry the export.
+beforeAll(async () => {
+  const dictionary = await import("../game/dictionary");
+  if (typeof dictionary.scoringReady === "function") await dictionary.scoringReady("2026-08-01");
+});

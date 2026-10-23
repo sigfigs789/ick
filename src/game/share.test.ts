@@ -71,7 +71,7 @@ describe("buildShareText", () => {
   it("adds compact share attribution only when explicitly requested", () => {
     expect(
       buildShareText("2024-01-05", "str", words, { source: "share" }),
-    ).toMatch(/https:\/\/wordink\.app\/\?s=sh\.s$/);
+    ).toMatch(/https:\/\/www\.wordink\.app\/\?s=sh\.s$/);
   });
 
   it("tags a share link with the mode the puzzle was played in", () => {

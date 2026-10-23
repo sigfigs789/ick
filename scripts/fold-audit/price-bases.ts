@@ -21,7 +21,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { argv, stderr } from "node:process";
 
 import { loadCorpus } from "../../src/game/corpus";
-import { measuredBaseZipf } from "../../src/game/dictionary";
+import { measuredBaseZipf, scoringReady } from "../../src/game/dictionary";
 import { setMode } from "../../src/game/mode";
 
 const OUT = "scripts/fold-audit/out/daily";
@@ -69,6 +69,7 @@ async function main(): Promise<void> {
 
   setMode("standard");
   serveShippedCorpus();
+  await scoringReady();
   if (!(await loadCorpus())) throw new Error("corpus failed to load");
 
   const rows = ["word\tbase\tbaseZipf"];

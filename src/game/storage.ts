@@ -1,7 +1,7 @@
 import { addDays, toDateString, todayDateString } from "./date";
 import { modeForDate, modeIsChosen, type GameMode } from "./mode";
 import { maxGuessesFor } from "./constants";
-import { rarityFor, rarityScore, usesRetunedTiers } from "./dictionary";
+import { rarityFor, rarityScore, scoringLoaded, usesRetunedTiers } from "./dictionary";
 import { isEliteRarity, isWinningRarity } from "./rank";
 import type { AcceptedWord, DailyProgress, StreakState } from "./types";
 import {
@@ -96,9 +96,14 @@ export function loadProgress(date: string, mode?: GameMode): DailyProgress | nul
   // "Legend" -- with "Elusive" since revived for a mid-ladder tier, so its
   // migration is date-gated below. Also refresh words saved with the former
   // unknown-frequency fallbacks now that the dictionary uses 1.4.
+  // The two migrations that re-price a word need the deferred scoring data
+  // (see `scoringReady` in dictionary.ts). Before it is in they wait for the
+  // next load rather than save a price made without it; neither is urgent, and
+  // the words keep the scores they were saved with meanwhile.
+  const canReprice = scoringLoaded(date);
   let migrated = false;
   const acceptedWords = progress.acceptedWords.map((word) => {
-    if (word.zipf === 0.1 || word.zipf === 0.3 || word.zipf === 0.5) {
+    if (canReprice && (word.zipf === 0.1 || word.zipf === 0.3 || word.zipf === 0.5)) {
       const current = rarityFor(word.word, date);
       if (current) {
         migrated = true;
@@ -127,6 +132,7 @@ export function loadProgress(date: string, mode?: GameMode): DailyProgress | nul
     // actually uses the Legend tier -- never the latest system's measured Mythic
     // band (Zipf >= 1).
     if (
+      canReprice &&
       (word.rarity as string) === "Mythic" &&
       word.zipf < 1 &&
       rarityFor(word.word, date)?.rarity === "Legend"

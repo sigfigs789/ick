@@ -32,7 +32,7 @@ globalThis.fetch = (async (input: string | URL) => {
 const { loadCorpus } = await import("../src/game/corpus.ts");
 const { evaluateSubmission } = await import("../src/game/submit.ts");
 const { asMode } = await import("../src/game/mode.ts");
-const { formatRarityScore } = await import("../src/game/dictionary.ts");
+const { formatRarityScore, scoringReady } = await import("../src/game/dictionary.ts");
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -46,6 +46,7 @@ if (!askedPath || !out) {
   process.exit(2);
 }
 
+await scoringReady();
 if (!(await loadCorpus())) {
   console.error("could not load public/corpus");
   process.exit(1);
