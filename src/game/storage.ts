@@ -649,9 +649,10 @@ export function rescoreAcceptedWords(
 /**
  * Give up this puzzle's retry without spending it on a word.
  *
- * The one caller is the reveal under the drop (see DropDisplay): a finished
- * puzzle still holding its retry is a puzzle the player may yet re-open, and
- * showing them the best word first would turn the mulligan into a lookup. So
+ * The one caller is the reveal under the drop (see the native app's
+ * DropDisplay): a finished puzzle still holding its retry is a puzzle the
+ * player may yet re-open, and showing them the best word first would turn the
+ * mulligan into a lookup. So
  * the reveal costs the retry, and this is the payment -- the same flag
  * `retryWord` sets, with none of the roll-back, because no word moved.
  *

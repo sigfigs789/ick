@@ -775,7 +775,8 @@ describe("curated word rejections", () => {
 
   it("never offers a rejected word as a drop's best possible answer", () => {
     // bestWordForDrop scans dictionary.json directly and its result is shown to
-    // the player (DropDisplay), so the rejection has to be honoured there too.
+    // the player (the native DropDisplay), so the rejection has to be honoured
+    // there too.
     for (const [word, { since }] of rejections) {
       const best = bestWordForDrop(word.slice(1, 4), since);
       expect(best?.word).not.toBe(word);

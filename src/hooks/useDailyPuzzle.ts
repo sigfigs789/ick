@@ -653,7 +653,8 @@ export function useDailyPuzzle() {
   );
 
   /**
-   * Give up the retry to see the day's word (see DropDisplay).
+   * Give up the retry to see the day's word (see the native app's DropDisplay;
+   * the web app no longer shows the word of the day).
    *
    * No word moves, so nothing is rolled back and the board is left alone --
    * the only change is that the retry is spent, which is what closes the door

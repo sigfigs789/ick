@@ -2991,9 +2991,9 @@ export function foldAffixGroups(
  * rule as submit.ts's containsDropInOrder.
  *
  * Skips the reviewed rejections: this word is shown to the player as the drop's
- * ceiling (see DropDisplay), so it has to be one they could actually have
- * submitted. A rejected word is still in WORDS, which is exactly why the check
- * is needed here and not just in submit.
+ * ceiling (see the native app's DropDisplay), so it has to be one they could
+ * actually have submitted. A rejected word is still in WORDS, which is exactly
+ * why the check is needed here and not just in submit.
  */
 export function bestWordForDrop(drop: string, date?: string): AcceptedWord | undefined {
   const needle = drop.toLowerCase();

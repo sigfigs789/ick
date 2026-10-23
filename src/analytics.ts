@@ -244,9 +244,10 @@ export function trackAnswerRetried(
 
 /**
  * The player traded their unspent retry for a look at the day's word (see
- * DropDisplay). Counted separately from `answer_retried`: both spend the same
- * allowance, but one takes a word back and this one buys a spoiler, and how
- * often players prefer the spoiler is the question worth watching.
+ * the native app's DropDisplay). Counted separately from `answer_retried`:
+ * both spend the same allowance, but one takes a word back and this one buys
+ * a spoiler, and how often players prefer the spoiler is the question worth
+ * watching.
  */
 export function trackAnswerRevealed(date: string, answerCount: number) {
   send("answer_revealed", {

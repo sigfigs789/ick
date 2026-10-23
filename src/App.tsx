@@ -75,7 +75,6 @@ export default function App() {
     crossMode,
     copying,
     copyToOtherMode,
-    revealAnswer,
     resetAnswers,
     mode,
     modeChosen,
@@ -293,9 +292,6 @@ export default function App() {
             drop={drop}
             date={date}
             isToday={isToday}
-            completed={progress.completed}
-            retryOffered={retryOffered}
-            onReveal={revealAnswer}
           />
         </PuzzleNav>
         {/* Over the words it is about: a fold rejected live on this puzzle
