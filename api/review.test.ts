@@ -476,10 +476,15 @@ describe("api/review", () => {
     const response = await handler(get("?list=analytics-v2&today=2026-10-22&experiments=1"));
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ report: body, wordOfDay: body });
+    expect(await response.json()).toEqual({ report: body, wordOfDay: body, comeBack: body });
     const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
-    expect(calls.map((c) => String(c[0]).split("/").pop()).sort()).toEqual(["analytics_v2", "analytics_v2_word_of_day"]);
-    expect(JSON.parse(String(calls[1][1].body))).toEqual({ p_today: "2026-10-22" });
+    expect(calls.map((c) => String(c[0]).split("/").pop()).sort()).toEqual([
+      "analytics_v2",
+      "analytics_v2_experiment",
+      "analytics_v2_experiment",
+    ]);
+    expect(JSON.parse(String(calls[1][1].body))).toEqual({ p_today: "2026-10-22", p_event: "word_of_day_assigned" });
+    expect(JSON.parse(String(calls[2][1].body))).toEqual({ p_today: "2026-10-22", p_event: "come_back_assigned" });
   });
 
   it("no longer serves the idle hint report on its own", async () => {

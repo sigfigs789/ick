@@ -115,4 +115,22 @@ describe("AnalyticsV2Page", () => {
     expect(d1.textContent).toContain("30%");
     expect(d1.textContent).toContain("+10 pts *");
   });
+
+  it("draws the come-back tip experiment beside the word of the day", async () => {
+    const comeBack = {
+      since: "2026-11-01",
+      arms: [
+        { variant: "shown", segment: "all", assigned: 320, d1: { cohort: 300, returned: 60 } },
+        { variant: "hidden", segment: "all", assigned: 310, d1: { cohort: 300, returned: 90 } },
+      ],
+    };
+    const body = { report: REPORT, wordOfDay: { since: null, arms: [] }, comeBack };
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(body), { status: 200 })));
+    render(<AnalyticsV2Page />);
+
+    expect(await screen.findByRole("heading", { name: "Experiment: come-back tip" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Experiment: word of the day" })).toBeTruthy();
+    expect(screen.getByText("Remove the come-back tip")).toBeTruthy();
+    expect(screen.getByRole("table", { name: "Everyone drawn: with the come-back tip against without." })).toBeTruthy();
+  });
 });

@@ -141,6 +141,8 @@ beforeEach(() => {
   // Reporting is on here, so finishing a puzzle would draw the word of the day
   // experiment at random; these tests are about the word itself.
   localStorage.setItem("ick:word-of-day", "shown");
+  // And banking a word would draw the come-back test; keep its line on.
+  localStorage.setItem("ick:come-back-test", "shown");
   resetLiveCheckSession();
   track.mockClear();
   stubFetch();

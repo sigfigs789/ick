@@ -4,38 +4,47 @@ import type { Rate } from "./report";
 import { count, percent, STANDING_NAMES, type Standing } from "./scorecard";
 
 /**
- * The word of the day experiment on /analyticsV2: the call first, then the two
- * arms side by side on the scorecard's own measures, for everyone drawn and for
- * new players alone.
+ * An experiment on /analyticsV2: the call first, then the two arms side by side
+ * on the scorecard's own measures, for everyone drawn and for new players
+ * alone. `subject` names the thing tested ("the word of the day"); `about`
+ * says who is drawn when, and how to force an arm.
  */
-export function WordOfDayExperiment({ experiment }: { experiment: Experiment }) {
-  const call = verdict(experiment);
+export function ExperimentView({
+  experiment,
+  subject,
+  about,
+}: {
+  experiment: Experiment;
+  subject: string;
+  about: ReactNode;
+}) {
+  const call = verdict(experiment, subject);
   return (
     <>
       <div className="av2__verdict" data-call={call.call}>
         <strong className="av2__verdict-headline">{call.headline}</strong>
         <p className="av2__verdict-reason">{call.reason}</p>
       </div>
-      <ArmTable experiment={experiment} segment="all" />
-      <ArmTable experiment={experiment} segment="new" />
+      <ArmTable experiment={experiment} segment="all" subject={subject} />
+      <ArmTable experiment={experiment} segment="new" subject={subject} />
       <p className="review__meta av2__note">
-        Half of players never see the word under a finished puzzle&rsquo;s drop. Each is drawn once, the first time they
-        finish a puzzle{experiment.since ? ` (since ${experiment.since})` : ""}, and every number counts from that day.
-        The call rests on D1 for everyone drawn; 7-day return breaks a tie. Sharing and finishing later puzzles are
-        guardrails: a big drop there is worth a look even when D1 is level. A gap marked * is a real one (p &lt; 0.05).
-        Try either arm with{" "}
-        <code>?word-of-day=hidden</code> or <code>=shown</code>; a forced arm is not counted.
+        {about}
+        {experiment.since ? ` Drawn since ${experiment.since}; ` : " "}
+        every number counts from the day a player was drawn. The call rests on D1 for everyone drawn; 7-day return
+        breaks a tie. Sharing and finishing later puzzles are guardrails: a big drop there is worth a look even when D1
+        is level. A gap marked * is a real one (p &lt; 0.05).
       </p>
     </>
   );
 }
 
-const CAPTIONS: Record<Segment, string> = {
-  all: "Everyone drawn: with the word of the day against without.",
+const captions = (subject: string): Record<Segment, string> => ({
+  all: `Everyone drawn: with ${subject} against without.`,
   new: "New players alone: drawn on the day of their first word, who never saw the game with it before.",
-};
+});
 
-function ArmTable({ experiment, segment }: { experiment: Experiment; segment: Segment }) {
+function ArmTable({ experiment, segment, subject }: { experiment: Experiment; segment: Segment; subject: string }) {
+  const caption = captions(subject)[segment];
   const shown = arm(experiment, "shown", segment);
   const hidden = arm(experiment, "hidden", segment);
   const s = standings(shown);
@@ -53,8 +62,8 @@ function ArmTable({ experiment, segment }: { experiment: Experiment; segment: Se
   ];
   return (
     <div className="av2__table-wrap">
-      <p className="review__meta av2__caption">{CAPTIONS[segment]}</p>
-      <table className="av2__table" aria-label={CAPTIONS[segment]}>
+      <p className="review__meta av2__caption">{caption}</p>
+      <table className="av2__table" aria-label={caption}>
         <thead>
           <tr>
             <th scope="col">Measure</th>

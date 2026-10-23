@@ -2,10 +2,10 @@ import type { Rate } from "./report";
 import { count, D1_MARKS, D7_MARKS, LEAST, percent, SHARE_MARKS, stand, type Marks, type Standing } from "./scorecard";
 
 /**
- * The word of the day experiment on /analyticsV2: what
- * `analytics_v2_word_of_day` returns (see the 2026-11-01 migration, where every
- * number is defined), and the call it points to -- keep the word of the day, or
- * take it out.
+ * An experiment on /analyticsV2 -- the word of the day, the come-back line --
+ * as `analytics_v2_experiment` returns it (see the 2026-11-01 migrations, where
+ * every number is defined), and the call it points to: keep the thing tested,
+ * or take it out.
  *
  * The call rests on D1, the scorecard's first row and the one a single puzzle's
  * screen can most plausibly move, over everyone drawn. 7-day return breaks a
@@ -143,8 +143,8 @@ const pts = (gap: number) => {
   return `${n} ${n === 1 ? "pt" : "pts"}`;
 };
 
-/** Keep it, take it out, or not yet -- from everyone drawn. */
-export function verdict(experiment: Experiment): Verdict {
+/** Keep `subject` (the thing tested, as "the word of the day"), take it out, or not yet -- from everyone drawn. */
+export function verdict(experiment: Experiment, subject = "the word of the day"): Verdict {
   const shown = arm(experiment, "shown", "all");
   const hidden = arm(experiment, "hidden", "all");
   const least = Math.min(shown.d1.cohort, hidden.d1.cohort);
@@ -164,7 +164,7 @@ export function verdict(experiment: Experiment): Verdict {
     const keep = d1.gap > 0;
     return {
       call: keep ? "keep" : "remove",
-      headline: keep ? "Keep the word of the day" : "Remove the word of the day",
+      headline: keep ? `Keep ${subject}` : `Remove ${subject}`,
       reason:
         `D1 is ${percent(d1.shown)} with it and ${percent(d1.hidden)} without, ${pts(d1.gap)} ` +
         `${keep ? "better" : "worse"} with it (p = ${d1.p.toFixed(3)}). ` +

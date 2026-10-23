@@ -3,7 +3,7 @@ import { ReviewPage } from "../components/ReviewPage";
 import { useReviewList } from "../components/reviewList";
 import { todayDateString } from "../game/date";
 import { fetchReport, type Rate, type Report, type Source } from "./report";
-import { WordOfDayExperiment } from "./WordOfDayExperiment";
+import { ExperimentView } from "./ExperimentView";
 import {
   addDays,
   average,
@@ -106,7 +106,36 @@ function Dashboard({ report, before }: { report: Report; before: Report | null }
           title="Experiment: word of the day"
           note="Whether showing the word of the day under a finished puzzle moves the scorecard. Over players."
         >
-          <WordOfDayExperiment experiment={report.wordOfDay} />
+          <ExperimentView
+            experiment={report.wordOfDay}
+            subject="the word of the day"
+            about={
+              <>
+                Half of players never see the word under a finished puzzle&rsquo;s drop. Each is drawn once, the first
+                time they finish a puzzle. Try either arm with <code>?word-of-day=hidden</code> or <code>=shown</code>;
+                a forced arm is not counted.
+              </>
+            }
+          />
+        </Section>
+      )}
+
+      {report.comeBack && (
+        <Section
+          title="Experiment: come-back tip"
+          note="Whether the line under the streak saying what tomorrow is worth moves the scorecard. Over players."
+        >
+          <ExperimentView
+            experiment={report.comeBack}
+            subject="the come-back tip"
+            about={
+              <>
+                Half of players never see the line under the streak that says what tomorrow is worth. Each is drawn
+                once, the first time it would appear: a word banked on today&rsquo;s puzzle. Try either arm with{" "}
+                <code>?come-back=hidden</code> or <code>=shown</code>; a forced arm, or a tester, is not counted.
+              </>
+            }
+          />
         </Section>
       )}
 

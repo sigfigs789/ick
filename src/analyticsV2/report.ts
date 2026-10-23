@@ -98,8 +98,9 @@ export interface Report {
   sources: Source[];
   window: Window;
   scores: { tiers: Tier[]; buckets: Record<number, number> };
-  /** The word of the day experiment, when it was asked for (see experiment.ts). */
+  /** The experiments, when they were asked for (see experiment.ts). */
   wordOfDay?: Experiment | null;
+  comeBack?: Experiment | null;
 }
 
 type Json = Record<string, unknown>;
@@ -211,5 +212,6 @@ export async function fetchReport(today: string, experiments = false): Promise<R
   });
   if (!response.ok) throw new Error(`analytics-v2 ${response.status}`);
   const body = (await response.json()) as Json;
-  return experiments ? { ...parseReport(body.report), wordOfDay: parseExperiment(body.wordOfDay) } : parseReport(body.report);
+  if (!experiments) return parseReport(body.report);
+  return { ...parseReport(body.report), wordOfDay: parseExperiment(body.wordOfDay), comeBack: parseExperiment(body.comeBack) };
 }

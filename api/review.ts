@@ -362,13 +362,16 @@ async function handleGet(request: Request): Promise<Response> {
       if (today === null || !isCalendarDate(today)) return reply(400, { ok: false, reason: "bad-date" });
       // The experiments ride along only when asked for: the page's second
       // fetch, yesterday's report for the scorecard's change, has no use for them.
-      const [report, wordOfDay] = await Promise.all([
-        rpc<Record<string, unknown> | null>("analytics_v2", { p_today: today }),
+      const experiment = (event: string) =>
         params.get("experiments") === "1"
-          ? rpc<Record<string, unknown> | null>("analytics_v2_word_of_day", { p_today: today })
-          : null,
+          ? rpc<Record<string, unknown> | null>("analytics_v2_experiment", { p_today: today, p_event: event })
+          : null;
+      const [report, wordOfDay, comeBack] = await Promise.all([
+        rpc<Record<string, unknown> | null>("analytics_v2", { p_today: today }),
+        experiment("word_of_day_assigned"),
+        experiment("come_back_assigned"),
       ]);
-      return reply(200, wordOfDay === null ? { report: report ?? {} } : { report: report ?? {}, wordOfDay });
+      return reply(200, wordOfDay === null ? { report: report ?? {} } : { report: report ?? {}, wordOfDay, comeBack });
     }
     if (list === "analytics") {
       // The window's ends and the viewer's own puzzle, sent as-is rather than
