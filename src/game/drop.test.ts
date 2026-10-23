@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import dropData from "../data/drops.json";
+import { addDays, daysSinceEpoch } from "./date";
 import { dropForDate } from "./drop";
+import difficultySource from "../../scripts/drop-difficulty.json?raw";
 
 // Published dates are immutable; the expanded rotation begins afterward.
 const PUBLISHED_DROPS = [
@@ -85,5 +87,39 @@ describe("affix drops", () => {
     expect(dropForDate("2026-09-04")).toBe("PRE");
     expect(dropForDate("2026-09-05")).toBe("LIS");
     expect(dropForDate("2026-09-06")).toBe(dropData.drops[67]);
+  });
+});
+
+// From 2026-11-03 the two busiest days of the week, Tuesday and Thursday, are
+// dealt easy drops (scripts/reorder-drops.py, EASY_WEEKDAYS). Easy is the
+// measure the difficulty tiers use, the Rare+ answers in
+// scripts/drop-difficulty.json, read against the other drops of the same
+// length still to be dealt, since the sort keeps the 2-letter/3-letter cadence.
+// Re-seeded drops keep the day they were placed on, so they are not held to it.
+// 2026-11-26 is short one: the one-day estimate batches pin UC (11-14) and ICA
+// (11-16), so the reviewed stretch 11-17..11-30 holds only three 3-letter drops
+// at the median for its four busy days.
+const SHORT_BUSY_DAYS = ["2026-11-26"];
+describe("busy-day drops", () => {
+  const rarePlus: Record<string, number> = JSON.parse(difficultySource).rarePlus;
+  const from = daysSinceEpoch("2026-11-02", dropData.epoch);
+  const rest = dropData.drops.slice(from);
+  const median = (length: number) => {
+    const counts = rest.filter((d) => d.length === length).map((d) => rarePlus[d]).sort((a, b) => a - b);
+    return counts[Math.floor(counts.length / 2)];
+  };
+  const medians: Record<number, number> = { 2: median(2), 3: median(3) };
+
+  it("deals every Tuesday and Thursday a drop at least as rich as the median of its length", () => {
+    const poor: string[] = [];
+    for (let i = from; i < dropData.drops.length; i++) {
+      const date = addDays(dropData.epoch, i);
+      const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
+      const drop = dropData.drops[i];
+      if ((weekday !== 2 && weekday !== 4) || dropData.seededDrops.includes(drop)) continue;
+      if (SHORT_BUSY_DAYS.includes(date)) continue;
+      if (rarePlus[drop] < medians[drop.length]) poor.push(`${date} ${drop} ${rarePlus[drop]}`);
+    }
+    expect(poor).toEqual([]);
   });
 });

@@ -4021,7 +4021,7 @@
     },
     {
       "since": "2026-10-10",
-      "drop": "CAM, HO, POR, JO, OMP, EA, HOP, TAI, HA, RAT, QUI, IVI, AM, CIP, EP, TTE, SES, KS, EME, RMA, VIN, ORR, EXP, RM, COM, OP, YE, NCE, SET, CHI, PL, NTR, AIL, GHT, MIN, UC, ARL, ICA, ACH, TY, IES, ERV, EE, PRA, ST, ESP, REF, ESC, TA, WAR, THI, EL, TEC, AD, HAR, NAT, EMP, CES, MO, RDE, FR, ROP, ASE, NI, EQU, NER, IND, PO, NVE, AC, QUE, OV, PAR, EGA, SEN, EET, OC, ORE, OT, PER, FF, AST, ALT, NEL, SI, RAD, UNC, PT, STO, EV",
+      "drop": "CAM, HO, POR, JO, OMP, EA, HOP, TAI, HA, RAT, QUI, IVI, AM, CIP, EP, TTE, SES, KS, EME, RMA, VIN, ORR, EXP, RM, CHI, YE, OP, COM, SET, NCE, PL, NTR, AIL, GHT, MIN, UC, ARL, ICA, ACH, TY, IES, ERV, EE, ESP, ST, ESC, PRA, WAR, TA, REF, TEC, EL, THI, AD, NAT, HAR, EMP, RDE, MO, CES, FR, STO, ASE, SI, EET, EGA, PAR, FF, AST, AC, QUE, OV, NVE, PER, SEN, ORE, OC, ROP, OT, ALT, NI, EQU, NER, NEL, PT, RAD, IND, PO, UNC, EV",
       "model": "claude-opus-5-5",
       "source": "claude",
       "run": "https://github.com/sigfigs789/ick/actions/runs/37810745096",
@@ -10530,7 +10530,7 @@
     },
     {
       "since": "2026-10-11",
-      "drop": "HO, POR, JO, OMP, EA, HOP, TAI, HA, RAT, QUI, IVI, AM, CIP, EP, TTE, SES, KS, EME, RMA, VIN, ORR, EXP, RM, COM, OP, YE, NCE, SET, CHI, PL",
+      "drop": "HO, POR, JO, OMP, EA, HOP, TAI, HA, RAT, QUI, IVI, AM, CIP, EP, TTE, SES, KS, EME, RMA, VIN, ORR, EXP, RM, CHI, YE, OP, COM, SET, NCE, PL",
       "model": "claude-opus-5-5",
       "source": "claude",
       "estimatedAt": "2026-10-09T22:48:24Z",
@@ -247257,7 +247257,7 @@
     },
     {
       "since": "2026-11-09",
-      "drop": "PL, NTR, AIL, GHT, MIN, UC, ARL, ICA, ACH, TY, IES, ERV, EE, PRA, ST, ESP, REF, ESC, TA, WAR, THI, EL, TEC, AD, HAR, NAT, EMP, CES, MO, RDE, FR",
+      "drop": "PL, NTR, AIL, GHT, MIN, UC, ARL, ICA, ACH, TY, IES, ERV, EE, ESP, ST, ESC, PRA, WAR, TA, REF, TEC, EL, THI, AD, NAT, HAR, EMP, RDE, MO, CES, FR",
       "model": "claude-opus-5-5",
       "source": "claude",
       "estimatedAt": "2026-10-18T08:05:51Z",
@@ -422573,15 +422573,19 @@
       }
     },
     {
-      "since": "2026-11-15",
-      "drop": "REF",
+      "since": "2026-11-22",
+      "drop": "ESP",
       "model": "claude-opus-5-5",
       "source": "claude",
-      "estimatedAt": "2026-10-23T22:56:05Z",
-      "note": "Words the REF drop still had unestimated, done by hand because the drop reorder in #567 moves REF earlier, to 2026-11-15",
+      "estimatedAt": "2026-10-23T23:06:29Z",
+      "note": "Words the ESP drop still had unestimated; #567 moved ESP earlier, to 2026-11-22. Done by hand ahead of the daily job",
       "zipf": {
-        "refunctionalizations": -0.9,
-        "spectroreflectometer": -0.7
+        "cardiorespirographic": -1.2,
+        "corticoresponsiveness": -1.1,
+        "deresponsibilisations": -1.4,
+        "deresponsibilizations": -1.3,
+        "electroresponsiveness": -1.0,
+        "interresponsibilities": -1.4
       }
     },
     {
@@ -422590,10 +422594,36 @@
       "model": "claude-opus-5-5",
       "source": "claude",
       "estimatedAt": "2026-10-23T22:56:05Z",
-      "note": "Words the ESC drop still had unestimated, done by hand because the drop reorder in #567 moves ESC earlier, to 2026-11-24",
+      "note": "Words the ESC drop still had unestimated; #567 moved ESC earlier, to 2026-11-24. Done by hand ahead of the daily job",
       "zipf": {
         "immunocytofluorescent": -0.8,
         "reticulatocoalescent": -1.4
+      }
+    },
+    {
+      "since": "2026-11-28",
+      "drop": "REF",
+      "model": "claude-opus-5-5",
+      "source": "claude",
+      "estimatedAt": "2026-10-23T22:56:05Z",
+      "note": "Words the REF drop still had unestimated; #567 moved REF earlier, to 2026-11-28. Done by hand ahead of the daily job",
+      "zipf": {
+        "refunctionalizations": -0.9,
+        "spectroreflectometer": -0.7
+      }
+    },
+    {
+      "since": "2026-11-29",
+      "drop": "TEC",
+      "model": "claude-opus-5-5",
+      "source": "claude",
+      "estimatedAt": "2026-10-23T23:06:31Z",
+      "note": "Words the TEC drop still had unestimated; #567 moved TEC earlier, to 2026-11-29. Done by hand ahead of the daily job",
+      "zipf": {
+        "cytohistotechnicians": -1.4,
+        "hypercalprotectinemia": -1.1,
+        "immunohistodetection": -1.0,
+        "tectonofractographic": -1.4
       }
     },
     {
@@ -422602,7 +422632,7 @@
       "model": "claude-opus-5-5",
       "source": "claude",
       "estimatedAt": "2026-10-23T22:56:05Z",
-      "note": "Words the NAT drop still had unestimated, done by hand because the drop reorder in #567 moves NAT earlier, to 2026-12-03",
+      "note": "Words the NAT drop still had unestimated; #567 moved NAT earlier, to 2026-12-03. Done by hand ahead of the daily job",
       "zipf": {
         "antimiscegenationists": -0.6,
         "autohemagglutinations": -1.3,
