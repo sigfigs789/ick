@@ -1,3 +1,5 @@
+import { parseExperiment, type Experiment } from "./experiment";
+
 /**
  * The /analyticsV2 report: what `analytics_v2` returns (see the 2026-10-30
  * migration, which is where every number is defined), read into types.
@@ -96,6 +98,8 @@ export interface Report {
   sources: Source[];
   window: Window;
   scores: { tiers: Tier[]; buckets: Record<number, number> };
+  /** The word of the day experiment, when it was asked for (see experiment.ts). */
+  wordOfDay?: Experiment | null;
 }
 
 type Json = Record<string, unknown>;
@@ -199,13 +203,13 @@ export function parseReport(raw: unknown): Report {
   };
 }
 
-/** The report for the puzzle the reader is on. */
-export async function fetchReport(today: string): Promise<Report> {
-  const response = await fetch(`/api/review?list=analytics-v2&today=${today}`, {
+/** The report for the puzzle the reader is on, with the experiments when `experiments` asks for them. */
+export async function fetchReport(today: string, experiments = false): Promise<Report> {
+  const response = await fetch(`/api/review?list=analytics-v2&today=${today}${experiments ? "&experiments=1" : ""}`, {
     signal: AbortSignal.timeout(15_000),
     cache: "no-store",
   });
   if (!response.ok) throw new Error(`analytics-v2 ${response.status}`);
   const body = (await response.json()) as Json;
-  return parseReport(body.report);
+  return experiments ? { ...parseReport(body.report), wordOfDay: parseExperiment(body.wordOfDay) } : parseReport(body.report);
 }

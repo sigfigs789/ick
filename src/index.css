@@ -6306,6 +6306,34 @@ h2 {
   background: var(--success-bg);
   color: var(--success-fg);
 }
+.av2__verdict {
+  margin: 0 0 0.8rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  background: var(--bg-inset);
+  color: var(--fg);
+}
+.av2__verdict[data-call="keep"] {
+  background: var(--success-bg);
+  color: var(--success-fg);
+}
+.av2__verdict[data-call="remove"] {
+  background: var(--danger-bg);
+  color: var(--danger-fg);
+}
+.av2__verdict[data-call="even"] {
+  background: var(--caution-bg);
+  color: var(--caution-fg);
+}
+.av2__verdict-headline {
+  display: block;
+  font-size: 1rem;
+}
+.av2__verdict-reason {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
 .av2__notes {
   margin: 0 0 0.8rem;
   padding-left: 1.1rem;

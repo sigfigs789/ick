@@ -38,11 +38,16 @@ export interface Row {
 }
 
 /** Below `nowhere` is going nowhere, from `promising` promising, from `great` great; between the first two, in between. */
-interface Marks {
+export interface Marks {
   nowhere: number;
   promising: number;
   great: number;
 }
+
+export const D1_MARKS: Marks = { nowhere: 0.15, promising: 0.25, great: 0.4 };
+export const D7_MARKS: Marks = { nowhere: 0.05, promising: 0.1, great: 0.2 };
+/** Sharing has no great mark of its own: great is consistent sharing that also brings players. */
+export const SHARE_MARKS: Marks = { nowhere: 0.05, promising: 0.1, great: Infinity };
 
 /** A share as the whole percent it is shown as, so a "25%" is never judged under 25%. */
 const whole = (share: number): number => Math.round(share * 100);
@@ -82,7 +87,7 @@ export function average(daily: Day[], end: string, n: number, field: "players" |
 }
 
 /** The least cohort a rate is judged over; under it the row says it is too early. */
-const LEAST = 30;
+export const LEAST = 30;
 
 function retentionRow(metric: string, n: number, rate: Rate, bands: Row["bands"], marks: Marks): Row {
   const ok = rate.cohort >= LEAST;
@@ -140,16 +145,8 @@ export function scorecard(report: Report): Row[] {
   const reg = lastWeek ? regulars(lastWeek) : null;
 
   return [
-    retentionRow("D1 retention", 1, r.d1.players, { nowhere: "Under 15%", promising: "25–35%", great: "40%+" }, {
-      nowhere: 0.15,
-      promising: 0.25,
-      great: 0.4,
-    }),
-    retentionRow("D7 retention", 7, r.d7.players, { nowhere: "Under 5%", promising: "10–15%", great: "20%+" }, {
-      nowhere: 0.05,
-      promising: 0.1,
-      great: 0.2,
-    }),
+    retentionRow("D1 retention", 1, r.d1.players, { nowhere: "Under 15%", promising: "25–35%", great: "40%+" }, D1_MARKS),
+    retentionRow("D7 retention", 7, r.d7.players, { nowhere: "Under 5%", promising: "10–15%", great: "20%+" }, D7_MARKS),
     retentionRow("D30 retention", 30, r.d30.players, { nowhere: "Under 2%", promising: "5–8%", great: "10%+" }, {
       nowhere: 0.02,
       promising: 0.05,
@@ -176,7 +173,7 @@ export function scorecard(report: Report): Row[] {
           ? null
           : whole(shareRate) >= 10 && whole(driven) >= 10
             ? "great"
-            : stand(shareRate, { nowhere: 0.05, promising: 0.1, great: Infinity }),
+            : stand(shareRate, SHARE_MARKS),
       detail:
         `${percent(shareRate)} of player-days had a share; share links brought ${count(shares.fromShares)} of ` +
         `${count(shares.all)} new players (${percent(driven)})`,

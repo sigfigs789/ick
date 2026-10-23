@@ -468,6 +468,20 @@ describe("api/review", () => {
     expect((await handler(get("?list=analytics-v2&today=2026-13-40"))).status).toBe(400);
   });
 
+  it("adds the word of the day experiment to the v2 report only when asked", async () => {
+    withEnv(CONFIGURED);
+    const body = { arms: [] };
+    const fetchMock = stubFetch(body);
+
+    const response = await handler(get("?list=analytics-v2&today=2026-10-22&experiments=1"));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ report: body, wordOfDay: body });
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+    expect(calls.map((c) => String(c[0]).split("/").pop()).sort()).toEqual(["analytics_v2", "analytics_v2_word_of_day"]);
+    expect(JSON.parse(String(calls[1][1].body))).toEqual({ p_today: "2026-10-22" });
+  });
+
   it("no longer serves the idle hint report on its own", async () => {
     withEnv(CONFIGURED);
     stubFetch({});

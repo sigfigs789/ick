@@ -29,6 +29,12 @@ describe("DropDisplay", () => {
     expect(document.querySelector(".drop-display__ceiling-word")).not.toBeInTheDocument();
   });
 
+  it("shows nothing under the drop for the word of the day experiment's hidden arm", () => {
+    render(<DropDisplay drop="str" completed wordOfDay={false} />);
+    expect(screen.queryByText(learnableWordForDrop("str")!.word, { exact: false })).not.toBeInTheDocument();
+    expect(document.querySelector(".drop-display__reveal")).not.toBeInTheDocument();
+  });
+
   it("reveals a learnable word, its score and its rarity once completed", () => {
     render(<DropDisplay drop="str" completed />);
     const reveal = learnableWordForDrop("str")!;

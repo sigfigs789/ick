@@ -95,4 +95,24 @@ describe("AnalyticsV2Page", () => {
     await screen.findByRole("heading", { name: "Scorecard" });
     expect(screen.queryByLabelText(/since yesterday/)).toBeNull();
   });
+
+  it("draws the word of the day experiment and its call when the report carries it", async () => {
+    const wordOfDay = {
+      since: "2026-11-01",
+      arms: [
+        { variant: "shown", segment: "all", assigned: 320, d1: { cohort: 300, returned: 90 }, d7: { cohort: 200, returned: 20 } },
+        { variant: "hidden", segment: "all", assigned: 310, d1: { cohort: 300, returned: 60 }, d7: { cohort: 200, returned: 12 } },
+      ],
+    };
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ report: REPORT, wordOfDay }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<AnalyticsV2Page />);
+
+    expect(await screen.findByRole("heading", { name: "Experiment: word of the day" })).toBeTruthy();
+    expect(String((fetchMock.mock.calls[0] as unknown[])[0])).toContain("experiments=1");
+    expect(screen.getByText("Keep the word of the day")).toBeTruthy();
+    const d1 = screen.getAllByRole("rowheader", { name: "D1 retention" })[1].closest("tr")!;
+    expect(d1.textContent).toContain("30%");
+    expect(d1.textContent).toContain("+10 pts *");
+  });
 });
