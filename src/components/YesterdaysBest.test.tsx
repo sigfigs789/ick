@@ -95,6 +95,7 @@ describe("the yesterday's best line", () => {
     expect(await screen.findByText("asphyxiate")).toBeInTheDocument();
     expect(await screen.findByText(`Found by ${handleFor(OTHER)}`)).toBeInTheDocument();
     expect(document.querySelector(".rarity-badge")).toBeNull();
+    expect(document.querySelector(".yesterdays-best__score .rarity-badge__dot")).not.toBeNull();
     expect(
       screen.getByText(new RegExp(`Yesterday's best for .${dropForDate(YESTERDAY)}.`)),
     ).toBeInTheDocument();

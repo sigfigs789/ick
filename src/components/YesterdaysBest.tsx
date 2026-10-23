@@ -115,9 +115,10 @@ export function YesterdaysBest({ date }: Props) {
         {"”"}
       </span>{" "}
       <span className="yesterdays-best__word">{best.word}</span>{" "}
-      {/* The score alone in its tier's colours, as the ceiling reveal shows it;
-          the tier is named for a screen reader. */}
+      {/* The score beside its tier's dot, without the badge; the tier is
+          named for a screen reader. */}
       <span className={`yesterdays-best__score ${rarityClassName(best.rarity, scoreDate)}`}>
+        <span className="rarity-badge__dot" aria-hidden="true" />
         {formatRarityScore(best.zipf, scoreDate)}
         <span className="sr-only"> {best.rarity}</span>
       </span>
