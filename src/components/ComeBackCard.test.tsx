@@ -13,9 +13,9 @@ const streak: StreakState = {
 };
 
 describe("ComeBackCard", () => {
-  it("says what tomorrow does for the streak", () => {
+  it("says the one thing tomorrow is worth", () => {
     render(<ComeBackCard streak={streak} />);
-    expect(screen.getByText("Play tomorrow to make it a 3-day streak.")).toBeInTheDocument();
     expect(screen.getByText(/Tomorrow earns a 🧊 freeze/)).toBeInTheDocument();
+    expect(screen.queryByText(/make it a 3-day streak/)).not.toBeInTheDocument();
   });
 });
