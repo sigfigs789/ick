@@ -1,4 +1,4 @@
-import { daysSinceEpoch, formatDateLabel, toDateString } from "./date";
+import { daysSinceEpoch, formatDateLabel } from "./date";
 import {
   formatRarityScore,
   totalRarityScore,
@@ -183,16 +183,4 @@ export function buildShareText(
   // the switch -- whose mode the calendar picked -- sends the sharer's own.
   lines.push(shareUrl(source, modeIsChosen(dateStr) ? mode : currentMode()));
   return lines.join("\n");
-}
-
-export function todayShareText(
-  drop: string,
-  words: AcceptedWord[],
-  options?: ShareOptions,
-): string {
-  // Today by definition, so it says so unless a caller insists otherwise.
-  return buildShareText(toDateString(new Date()), drop, words, {
-    isToday: true,
-    ...options,
-  });
 }

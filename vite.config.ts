@@ -2,6 +2,11 @@
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { APP_VERSION, MIN_RANKED_VERSION, MIN_VERSION } from './src/version'
+// @ts-expect-error -- Node builtin; this project has no @types/node, but the
+// config runs under Node.
+import { createHash } from 'node:crypto'
+// @ts-expect-error -- as above.
+import { readFileSync } from 'node:fs'
 
 // Serves the api/ edge functions during `npm run dev`. In production those files
 // are Vercel Edge Functions, which `vite dev` knows nothing about -- without this
@@ -32,6 +37,23 @@ declare const process: { env: Record<string, string | undefined>; cwd(): string 
  * `import.meta.env` rather than a defined global.
  */
 if (process.env.VERCEL_ENV === 'preview') process.env.VITE_DEV_TOOLS = '1'
+
+/*
+ * A fingerprint of the corpus files under public/corpus/, for the client to put
+ * on their URLs (see loadCorpus in src/game/corpus.ts).
+ *
+ * The corpus is 3.6MB gzipped and is served from public/, so Vite does not hash
+ * its file names. Keyed by APP_VERSION instead, it was downloaded afresh on
+ * every release -- near daily -- though it changes a few times a year. Keyed by
+ * its own contents, a returning player keeps it until it actually changes, and
+ * the five files still move together: a rebuilt corpus changes the key on all
+ * of them at once. Computed here, from the files being deployed, so it cannot
+ * drift from them the way a committed hash could.
+ */
+const CORPUS_FILES = ['meta.json', 'words.txt', 'tags.bin', 'sources.bin', 'zipf.bin']
+const corpusHash = createHash('sha256')
+for (const name of CORPUS_FILES) corpusHash.update(readFileSync(`public/corpus/${name}`))
+process.env.VITE_CORPUS_VERSION = corpusHash.digest('hex').slice(0, 16)
 
 /** The bits of the Node request/response the middleware below actually touches. */
 interface DevRequest {

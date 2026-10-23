@@ -23,6 +23,12 @@ interface ImportMetaEnv {
    * and falls back to `DEV`, which here is Metro's own `__DEV__`.
    */
   readonly VITE_DEV_TOOLS?: string;
+  /**
+   * Optional, and always undefined in this bundle: the root vite.config.ts
+   * hashes the website's corpus files into it. `src/game/corpus.ts` falls back
+   * to `APP_VERSION` without it.
+   */
+  readonly VITE_CORPUS_VERSION?: string;
 }
 
 interface ImportMeta {

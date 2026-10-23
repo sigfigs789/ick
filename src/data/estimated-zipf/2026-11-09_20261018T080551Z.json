@@ -1,6 +1,6 @@
 {
   "since": "2026-11-09",
-  "drop": "PL, NTR, AIL, GHT, MIN, UC, ARL, ICA, ACH, TY, IES, ERV, EE, PRA, ST, ESP, REF, ESC, TA, WAR, THI, EL, TEC, AD, HAR, NAT, EMP, CES, MO, RDE, FR",
+  "drop": "PL, NTR, AIL, GHT, MIN, UC, ARL, ICA, ACH, TY, IES, ERV, EE, ESP, ST, ESC, PRA, WAR, TA, REF, TEC, EL, THI, AD, NAT, HAR, EMP, RDE, MO, CES, FR",
   "model": "claude-opus-5-5",
   "source": "claude",
   "estimatedAt": "2026-10-18T08:05:51Z",

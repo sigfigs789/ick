@@ -1,6 +1,6 @@
 {
   "since": "2026-10-11",
-  "drop": "HO, POR, JO, OMP, EA, HOP, TAI, HA, RAT, QUI, IVI, AM, CIP, EP, TTE, SES, KS, EME, RMA, VIN, ORR, EXP, RM, COM, OP, YE, NCE, SET, CHI, PL",
+  "drop": "HO, POR, JO, OMP, EA, HOP, TAI, HA, RAT, QUI, IVI, AM, CIP, EP, TTE, SES, KS, EME, RMA, VIN, ORR, EXP, RM, CHI, YE, OP, COM, SET, NCE, PL",
   "model": "claude-opus-5-5",
   "source": "claude",
   "estimatedAt": "2026-10-09T22:48:24Z",
