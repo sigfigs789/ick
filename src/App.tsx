@@ -344,12 +344,6 @@ export default function App() {
           }
         />
 
-        {/* Under the guesses rather than under the drop: it arrives with a
-            request, and anything landing above the input would push the input
-            down the page as it did. Today's puzzle only -- on an archived day
-            "yesterday" is a day the player is not looking at. */}
-        {isToday && <YesterdaysBest date={date} />}
-
         {!progress.completed && !isToday && (
           <p className="archive-note">
             You're playing an old puzzle — this is just for fun and won't affect
@@ -367,6 +361,15 @@ export default function App() {
             hasWords={progress.acceptedWords.length > 0}
           />
         )}
+
+        {/* Once today's word is banked -- which is when the streak counts the
+            day, whether or not the puzzle is locked in -- say what coming
+            back tomorrow is worth (see game/comeBack.ts). Straight under the
+            streak it talks about (in the guess log on a finished puzzle), so
+            the two read as one block rather than a second card restating it.
+            Below the guesses, so it never sits between a player and the
+            guesses they have left. */}
+        {isToday && progress.acceptedWords.length > 0 && <ComeBackCard streak={streak} />}
 
         {/* From the first banked word, not from the end of the puzzle.
             Sharing used to be the reward for pressing "I'm done guessing",
@@ -395,11 +398,14 @@ export default function App() {
           />
         )}
 
-        {/* Once today's word is banked -- which is when the streak counts the
-            day, whether or not the puzzle is locked in -- say what coming
-            back tomorrow is worth (see game/comeBack.ts). Last on the page,
-            so it never sits between a player and the guesses they have left. */}
-        {isToday && progress.acceptedWords.length > 0 && <ComeBackCard streak={streak} />}
+        {/* Last on the page, as a footnote: it is about other players'
+            yesterday, so it stays out from between the player's guesses and
+            their own streak and total. Under the guesses rather than under the
+            drop: it arrives with a request, and anything landing above the
+            input would push the input down the page as it did. Today's puzzle
+            only -- on an archived day "yesterday" is a day the player is not
+            looking at. */}
+        {isToday && <YesterdaysBest date={date} />}
       </main>
 
       {/* Dev only, and pinned beside the dev date bar rather than in the
