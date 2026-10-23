@@ -19,6 +19,8 @@ import {
   consultsCorpus,
   evaluateSubmission,
   REJECTION_MESSAGES,
+  rejectionMetadataLoaded,
+  rejectionMetadataReady,
   spellingNearMiss,
 } from "../game/submit";
 import {
@@ -88,6 +90,7 @@ import {
   type CrossModePreview,
 } from "../game/crossMode";
 import { useGameMode } from "./useGameMode";
+import { useRejectionMetadataLoaded } from "./useRejectionMetadataLoaded";
 
 /**
  * How the acceptance names a waived reason. Adjectives rather than the data's
@@ -490,6 +493,11 @@ export function useDailyPuzzle() {
 
   const submitWord = useCallback(
     async (raw: string): Promise<SubmissionResult> => {
+      // A bare "not-a-word" is what sends a word to the live lookup, and only
+      // the rejection metadata can tell it from a word refused for its
+      // register -- so no verdict is drawn before the file is in. Nearly always
+      // a no-op: it arrives within moments of the puzzle appearing.
+      if (!rejectionMetadataLoaded()) await rejectionMetadataReady;
       const result = evaluateSubmission(raw, drop, progressRef.current.acceptedWords, viewedDate);
       // Each submission starts from a clean slate; last guess's note is gone.
       setLiveNote(null);
@@ -669,6 +677,9 @@ export function useDailyPuzzle() {
    * guess log. Empty on a puzzle from before the choice date, which has only
    * the one game.
    */
+  // Read only to re-run the previews once the rejection metadata is in: until
+  // then a word the other mode refuses by register looks merely unknown.
+  const metadataLoaded = useRejectionMetadataLoaded();
   const crossMode = useMemo<Record<string, CrossModePreview>>(() => {
     if (!crossModeAvailable(viewedDate)) return {};
     const previews: Record<string, CrossModePreview> = {};
@@ -676,7 +687,8 @@ export function useDailyPuzzle() {
       previews[word.word] = previewInMode(word, target, viewedDate, drop, otherProgress);
     }
     return previews;
-  }, [progress.acceptedWords, otherProgress, target, viewedDate, drop]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `metadataLoaded` is a trigger
+  }, [progress.acceptedWords, otherProgress, target, viewedDate, drop, metadataLoaded]);
 
   /**
    * Bank one of this game's words in the other mode's game for the same
@@ -695,6 +707,9 @@ export function useDailyPuzzle() {
    */
   const copyToOtherMode = useCallback(
     async (raw: string) => {
+      // The same wait as submitWord's: the preview below decides whether the
+      // word goes to the live lookup.
+      if (!rejectionMetadataLoaded()) await rejectionMetadataReady;
       if (!crossModeAvailable(viewedDate) || copyingRef.current) return;
       const source = progressRef.current.acceptedWords.find((w) => w.word === raw);
       if (!source) return;

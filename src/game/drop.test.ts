@@ -96,6 +96,10 @@ describe("affix drops", () => {
 // scripts/drop-difficulty.json, read against the other drops of the same
 // length still to be dealt, since the sort keeps the 2-letter/3-letter cadence.
 // Re-seeded drops keep the day they were placed on, so they are not held to it.
+// 2026-11-26 is short one: the one-day estimate batches pin UC (11-14) and ICA
+// (11-16), so the reviewed stretch 11-17..11-30 holds only three 3-letter drops
+// at the median for its four busy days.
+const SHORT_BUSY_DAYS = ["2026-11-26"];
 describe("busy-day drops", () => {
   const rarePlus: Record<string, number> = JSON.parse(difficultySource).rarePlus;
   const from = daysSinceEpoch("2026-11-02", dropData.epoch);
@@ -113,6 +117,7 @@ describe("busy-day drops", () => {
       const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
       const drop = dropData.drops[i];
       if ((weekday !== 2 && weekday !== 4) || dropData.seededDrops.includes(drop)) continue;
+      if (SHORT_BUSY_DAYS.includes(date)) continue;
       if (rarePlus[drop] < medians[drop.length]) poor.push(`${date} ${drop} ${rarePlus[drop]}`);
     }
     expect(poor).toEqual([]);

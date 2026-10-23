@@ -177,6 +177,20 @@ export function congratsMessage(name: string, spot: CongratsSpot): string {
   return `Congrats ${name} on ${monthName(spot.start)}'s ${mode} win`;
 }
 
+/**
+ * What the bubble says when the winner is the reader.
+ *
+ * "Congrats mo for last week's win" read by mo is the game congratulating them
+ * in the third person, as if it had not noticed who was looking. Their own win
+ * gets said to them: the headline is the one fact, and the detail says which
+ * board, in the same words the message above uses for everybody else.
+ */
+export function selfCongratsMessage(spot: CongratsSpot): { headline: string; detail: string } {
+  const mode = MODE_LABELS[spot.mode];
+  const window = spot.window === "week" ? "last week's" : `${monthName(spot.start)}'s`;
+  return { headline: "You won!", detail: `Top of ${window} ${mode} board` };
+}
+
 /** `September`, for the month a closed monthly window covers. */
 function monthName(start: string): string {
   return new Date(`${start}T00:00:00`).toLocaleDateString(undefined, {

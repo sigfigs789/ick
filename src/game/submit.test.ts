@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import rejectionMetadata from "../data/rejection-metadata.json";
 import { isValidWord } from "./dictionary";
 import {
@@ -6,9 +6,14 @@ import {
   evaluateSubmission,
   REJECTION_LEADS,
   REJECTION_MESSAGES,
+  rejectionMetadataReady,
   spellingNearMiss,
 } from "./submit";
 import type { AcceptedWord } from "./types";
+
+// The metadata is fetched after the module loads (see submit.ts); every
+// expectation below about a named reason is about the game once it is in.
+beforeAll(() => rejectionMetadataReady);
 
 describe("containsDropInOrder", () => {
   it("matches a contiguous, in-order substring", () => {

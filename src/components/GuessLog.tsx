@@ -3,6 +3,7 @@ import { maxGuessesFor } from "../game/constants";
 import { bestWord } from "../game/rank";
 import { baseFormSubstitution, totalRarityScore } from "../game/dictionary";
 import { raritySymbol } from "../game/share";
+import { isNewBest } from "../game/celebration";
 import { CommonFormModal } from "./CommonFormModal";
 import { RarityBadge } from "./RarityBadge";
 import { StreakDisplay } from "./StreakDisplay";
@@ -41,11 +42,14 @@ interface Props {
   copying?: string | null;
   /** Submit a word to `otherMode` as well. */
   onCopyToOtherMode?: (word: string) => void;
-  /** The new play screen is on (see game/uiVariant.ts). */
+  /** The play screen's layout, which App.tsx always asks for. */
   newUi?: boolean;
-  /** Sits in the header beside the count: the new play screen's Share. */
+  /** Sits in the header beside the count: the play screen's Share. */
   headerAction?: ReactNode;
 }
+
+/** How long a just-scored word keeps its "fresh" flourishes, in ms. */
+const FRESH_MS = 2600;
 
 export function GuessLog({
   acceptedWords,
@@ -86,16 +90,29 @@ export function GuessLog({
   // New play screen: the word that has just landed, lit for a moment so the
   // eye finds it under the input. Only a word added while the log is on screen
   // -- not the words a puzzle loads with, or a puzzle switch.
+  //
+  // On either screen, the same word is also "fresh" for a little longer: its
+  // badge pops in with its score rolling up, and if it beat the day's earlier
+  // best it says so. A reward lands harder when it is seen arriving.
   const [landed, setLanded] = useState<string | null>(null);
+  const [fresh, setFresh] = useState<{ word: string; newBest: boolean } | null>(null);
   const seen = useRef({ date, count: acceptedWords.length });
   useEffect(() => {
     const before = seen.current;
     seen.current = { date, count: acceptedWords.length };
-    if (!newUi || before.date !== date || acceptedWords.length <= before.count) return;
+    if (before.date !== date || acceptedWords.length <= before.count) return;
     const word = acceptedWords[acceptedWords.length - 1].word;
-    setLanded(word);
-    const timer = window.setTimeout(() => setLanded((w) => (w === word ? null : w)), 1600);
-    return () => window.clearTimeout(timer);
+    setFresh({ word, newBest: isNewBest(acceptedWords) });
+    if (newUi) setLanded(word);
+    const landedTimer = window.setTimeout(() => setLanded((w) => (w === word ? null : w)), 1600);
+    const freshTimer = window.setTimeout(
+      () => setFresh((f) => (f?.word === word ? null : f)),
+      FRESH_MS,
+    );
+    return () => {
+      window.clearTimeout(landedTimer);
+      window.clearTimeout(freshTimer);
+    };
   }, [acceptedWords, date, newUi]);
 
   // New play screen: the per-word "Submit to <other mode>" controls stay
@@ -166,12 +183,15 @@ export function GuessLog({
             // meant to explain away.
             const baseNote = baseFormSubstitution(w.word, date);
             const elsewhere = otherMode ? crossMode?.[w.word] : undefined;
+            const isFresh = fresh?.word === w.word;
             return (
               <li
                 key={w.word}
                 className={`guess-log__entry${isBest ? " guess-log__entry--best" : ""}${
                   picking ? " guess-log__entry--picking" : ""
-                }${landed === w.word ? " guess-log__entry--landed" : ""}`}
+                }${landed === w.word ? " guess-log__entry--landed" : ""}${
+                  isFresh && fresh?.newBest ? " guess-log__entry--new-best" : ""
+                }`}
               >
                 {/* The card is a button only while the retry is armed, when
                     tapping it drops that word. It used to copy the word to the
@@ -206,8 +226,11 @@ export function GuessLog({
                       </span>
                     )}
                     <span className="guess-log__word">{w.word}</span>
+                    {isFresh && fresh?.newBest && (
+                      <span className="guess-log__new-best">New best!</span>
+                    )}
                     <span className="guess-log__entry-meta">
-                      <RarityBadge rarity={w.rarity} zipf={w.zipf} date={date} />
+                      <RarityBadge rarity={w.rarity} zipf={w.zipf} date={date} fresh={isFresh} />
                     </span>
                   </div>
                 )}

@@ -29,7 +29,6 @@ import type { AcceptedWord, DailyProgress } from "./game/types";
 const track = vi.hoisted(() => vi.fn());
 vi.mock("@vercel/analytics", () => ({ track }));
 vi.mock("@vercel/analytics/react", () => ({ Analytics: () => null }));
-vi.mock("@vercel/speed-insights/react", () => ({ SpeedInsights: () => null }));
 
 const TODAY = todayDateString();
 const YESTERDAY = addDays(TODAY, -1);
@@ -122,7 +121,7 @@ function stubFetch(validateBody?: unknown) {
 async function submit(word: string) {
   const input = screen.getByLabelText(/enter a word containing/i);
   await userEvent.type(input, word);
-  await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+  await userEvent.click(screen.getByRole("button", { name: "Play" }));
 }
 
 /** The guess log's list entries, in order, as their word text. */
@@ -184,7 +183,7 @@ describe("gameplay end to end", () => {
     expect(loggedWords()).toEqual([word]);
     expect(screen.getByText(new RegExp(`1 of ${LIMIT} guesses`, "i"))).toBeInTheDocument();
     // Still playable: a restored puzzle picks up mid-game, not finished.
-    expect(screen.getByRole("button", { name: "Submit" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Play" })).toBeInTheDocument();
   });
 
   it("explains a rejected guess and leaves the log untouched", async () => {
@@ -223,28 +222,28 @@ describe("gameplay end to end", () => {
     }
 
     await waitFor(() =>
-      expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument()
+      expect(screen.queryByRole("button", { name: "Play" })).not.toBeInTheDocument()
     );
-    expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^share$/i })).toBeInTheDocument();
     expect(loggedWords()).toEqual(words);
     const saved = savedProgress(TODAY);
     expect(saved?.completed).toBe(true);
     expect(saved?.completedAt).toBeTruthy();
   });
 
-  it("offers the share panel from the first word, without ending the puzzle", async () => {
+  it("offers Share from the first word, without ending the puzzle", async () => {
     const [word] = playableWords(1, DROP, TODAY);
     render(<App />);
 
     // Nothing to share before there is a word.
-    expect(screen.queryByRole("region", { name: /share result/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^share$/i })).not.toBeInTheDocument();
     await submit(word);
     await waitFor(() => expect(loggedWords()).toEqual([word]));
 
-    // The panel arrives and the form stays: sharing used to require pressing
+    // Share arrives and the form stays: sharing used to require pressing
     // "I'm done guessing", which finished the day for good.
-    expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Submit" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^share$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Play" })).toBeInTheDocument();
     expect(savedProgress(TODAY)?.completed).toBe(false);
   });
 

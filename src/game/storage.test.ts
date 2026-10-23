@@ -78,6 +78,20 @@ describe("newProgress / loadOrCreateProgress", () => {
     expect(loadProgress("2024-01-01")?.acceptedWords[0].rarity).toBe("Legend");
   });
 
+  it("migrates the retired Very Common rank to Common in saved progress", () => {
+    for (const date of ["2024-01-01", "2026-10-20"]) {
+      localStorage.setItem(
+        `ick:progress:${date}`,
+        JSON.stringify({
+          ...newProgress(date, "str"),
+          acceptedWords: [{ word: "strange", rarity: "Very Common", zipf: 4.6 }],
+        })
+      );
+
+      expect(loadProgress(date)?.acceptedWords[0].rarity).toBe("Common");
+    }
+  });
+
   it("leaves Elusive alone on a puzzle that uses it as a live tier", () => {
     // Elusive is the rank between Extremely Rare and Mythic from the retuned
     // tiers on, so promoting it there would hand out a Legend nobody earned.
@@ -230,7 +244,7 @@ describe("recordAcceptedWord", () => {
   it("keeps the puzzle active and updates the streak immediately after any valid word", () => {
     const p = recordAcceptedWord(
       newProgress("2024-01-01", "str"),
-      word("the", 7.7, "Very Common")
+      word("the", 7.7, "Common")
     );
     expect(p.completed).toBe(false);
     expect(p.won).toBeUndefined();
@@ -492,14 +506,35 @@ describe("streak freezes", () => {
   it("lets a new streak earn from its first week up to the cap a past one reached", () => {
     for (let d = 1; d <= 14; d++) play(`2024-01-${String(d).padStart(2, "0")}`);
     for (let d = 20; d <= 22; d++) play(`2024-01-${d}`); // a new streak, 3 days
-    expect(loadStreak()).toMatchObject({ currentStreak: 3, longestStreak: 14, bankedFreezes: 1 });
-    for (let d = 23; d <= 26; d++) play(`2024-01-${d}`); // 7 days
+    // One from coming back (see welcomeBack), one from day 3.
+    expect(loadStreak()).toMatchObject({ currentStreak: 3, longestStreak: 14, bankedFreezes: 2 });
+    for (let d = 23; d <= 26; d++) play(`2024-01-${d}`); // 7 days, already at the cap
     expect(loadStreak()).toMatchObject({ currentStreak: 7, longestStreak: 14, bankedFreezes: 2 });
   });
 
-  it("drops saved freezes when a new streak starts", () => {
+  it("drops saved freezes when a new streak starts, but gives a returning player one", () => {
     for (let d = 1; d <= 14; d++) play(`2024-01-${String(d).padStart(2, "0")}`);
     play("2024-01-20");
+    expect(loadStreak()).toMatchObject({
+      currentStreak: 1,
+      bankedFreezes: 1,
+      welcomeBackFreezeDate: "2024-01-20",
+    });
+  });
+
+  it("gives the welcome-back freeze at most once every 30 days", () => {
+    for (let d = 1; d <= 3; d++) play(`2024-01-0${d}`);
+    play("2024-01-10"); // back: a new streak with a welcome-back freeze
+    play("2024-01-15"); // the freeze cannot cover four days, and none is due yet
+    expect(loadStreak()).toMatchObject({ currentStreak: 1, bankedFreezes: 0 });
+    play("2024-02-12"); // 33 days on from the last one
+    expect(loadStreak()).toMatchObject({ currentStreak: 1, bankedFreezes: 1 });
+  });
+
+  it("gives no welcome-back freeze to a player whose best never reached 3 days", () => {
+    play("2024-01-01");
+    play("2024-01-02");
+    play("2024-01-10");
     expect(loadStreak()).toMatchObject({ currentStreak: 1, bankedFreezes: 0 });
   });
 

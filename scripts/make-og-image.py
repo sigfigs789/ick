@@ -31,13 +31,13 @@ FG_MUTED = (167, 170, 176)
 FG_FAINT = (117, 120, 126)
 
 # The rarity-tier dots, in tier order, as a white-to-black ramp: the scale reads
-# as a ramp at a glance, which a row of eight hues did not. Brown (Common) and
-# orange (Elusive) are left off because they muddied the middle, and Quotidian
-# is gone entirely -- it was retired at NARROW_BANDS_START and only survives on
-# archived puzzles. Colors track the dark-theme --rarity-*-dot values in
+# as a ramp at a glance, which a row of eight hues did not. Orange (Elusive) is
+# left off because it muddied the middle, and Quotidian is gone entirely -- it
+# was retired at NARROW_BANDS_START and only survives on archived puzzles.
+# Colors track the dark-theme --rarity-*-dot values in
 # src/index.css, with the two ends pushed to pure white and pure black.
 DOTS = [
-    (255, 255, 255),  # very common
+    (255, 255, 255),  # common
     (59, 191, 108),  # uncommon
     (74, 143, 242),  # rare
     (171, 95, 240),  # extremely rare

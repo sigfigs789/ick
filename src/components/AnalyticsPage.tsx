@@ -38,7 +38,6 @@ import {
   idleHintBenchmark,
   keyNumbersBenchmark,
   museBenchmark,
-  playScreenBenchmark,
   puzzleTypeBenchmark,
   resurrectedBenchmark,
   sourcesBenchmark,
@@ -59,8 +58,7 @@ import { handleFor } from "../game/handle";
  * finished a puzzle, the ones who shared their result, and the ones who came
  * back the next day and within seven days. They are split by who the players
  * are -- new or returning -- by the puzzle type they played, by whether they
- * opened the chat, by which play screen they were shown, and by the idle hint
- * test's arm. Every number is built in one place, `analytics_overview` (see the
+ * opened the chat, and by the idle hint test's arm. Every number is built in one place, `analytics_overview` (see the
  * 2026-10-18, 2026-10-21 and 2026-10-26 migrations), and this page only draws
  * them. Growth, weekly active players by the same groupings, comes from the
  * same place (the 2026-10-27 migration), and so do the sections on whether
@@ -275,22 +273,6 @@ function Report({
               metrics: report.modes[g][type],
             })),
           )}
-        />
-      </Section>
-
-      <Section
-        title="Play screen test"
-        benchmark={playScreenBenchmark(report.ui.all)}
-        note={`${span}. Play screen v1 (the one before the test) vs v2, new and returning players each split on their own: new 50/50 at first and 30/70 since Oct 19, returning 50/50${
-          report.uiSince ? `, since ${shortDate(report.uiSince)}` : ""
-        }. New is a first-ever session, counted on that day; returning any later one, counted from the day it was split.`}
-      >
-        <MetricsTable
-          split="Play screen"
-          rows={GROUPS.flatMap((g) => [
-            { key: `${g}-control`, label: GROUP_NAMES[g], side: "v1", metrics: report.ui[g].control },
-            { key: `${g}-v2`, label: GROUP_NAMES[g], side: "v2", metrics: report.ui[g].v2 },
-          ])}
         />
       </Section>
 

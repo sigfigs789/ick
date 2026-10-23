@@ -8,6 +8,7 @@ import {
   average,
   count,
   lastSaturday,
+  moved,
   percent,
   scorecard,
   STANDING_NAMES,
@@ -35,9 +36,15 @@ import {
  */
 export function AnalyticsV2Page() {
   const today = todayDateString();
-  const load = useCallback(async () => [await fetchReport(today)], [today]);
+  // Yesterday's report is only for the scorecard's day-on-day change, so a
+  // failure there leaves the changes blank rather than the page.
+  const load = useCallback(async () => {
+    const [report, before] = await Promise.all([fetchReport(today), fetchReport(addDays(today, -1)).catch(() => null)]);
+    return [{ report, before }];
+  }, [today]);
   const { rows, state, refreshing, refresh, retry } = useReviewList(load);
-  const report = rows[0];
+  const report = rows[0]?.report;
+  const before = rows[0]?.before ?? null;
   return (
     <ReviewPage
       title="Analytics v2"
@@ -50,12 +57,12 @@ export function AnalyticsV2Page() {
       empty="Nobody has played yet."
       isEmpty={!report}
     >
-      {report && <Dashboard report={report} />}
+      {report && <Dashboard report={report} before={before} />}
     </ReviewPage>
   );
 }
 
-function Dashboard({ report }: { report: Report }) {
+function Dashboard({ report, before }: { report: Report; before: Report | null }) {
   const w = report.window;
   const yesterday = addDays(report.today, -1);
   const saturday = lastSaturday(report.today);
@@ -86,8 +93,11 @@ function Dashboard({ report }: { report: Report }) {
         </p>
       )}
 
-      <Section title="Scorecard" note="Each category against the bands for a small daily browser word game. Over players.">
-        <Scorecard rows={scorecard(report)} />
+      <Section
+        title="Scorecard"
+        note="Each category against the bands for a small daily browser word game. Over players. Arrows are the change since yesterday."
+      >
+        <Scorecard rows={scorecard(report)} before={before ? scorecard(before) : []} />
       </Section>
 
       <Section title="Acquisition" note="Last 28 days.">
@@ -249,7 +259,7 @@ function Section({ title, note, children }: { title: string; note?: string; chil
   );
 }
 
-function Scorecard({ rows }: { rows: Row[] }) {
+function Scorecard({ rows, before }: { rows: Row[]; before: Row[] }) {
   return (
     <>
       <div className="av2__table-wrap">
@@ -268,7 +278,10 @@ function Scorecard({ rows }: { rows: Row[] }) {
               <tr key={r.metric}>
                 <th scope="row">{r.metric}</th>
                 <td className="av2__standing">
-                  <strong className="av2__score">{r.value ?? "–"}</strong>
+                  <strong className="av2__score">
+                    {r.value ?? "–"}
+                    <Moved by={moved(r, before.find((b) => b.metric === r.metric))} />
+                  </strong>
                   <span className={`av2__pill av2__pill--${r.standing ?? "early"}`}>
                     {r.standing ? STANDING_NAMES[r.standing] : "Too early"}
                   </span>
@@ -291,6 +304,22 @@ function Scorecard({ rows }: { rows: Row[] }) {
         ))}
       </ul>
     </>
+  );
+}
+
+/** The change since yesterday, in points: up, down, or level. */
+function Moved({ by }: { by: number | null }) {
+  if (by === null) return null;
+  const pts = (n: number) => `${n} ${n === 1 ? "pt" : "pts"}`;
+  const [dir, mark, label] =
+    by > 0 ? ["up", "▲", `up ${pts(by)} since yesterday`] : by < 0 ? ["down", "▼", `down ${pts(-by)} since yesterday`] : ["level", "–", "no change since yesterday"];
+  return (
+    <span className={`av2__moved av2__moved--${dir}`} title={label} aria-label={label}>
+      <span aria-hidden="true">
+        {mark}
+        {by !== 0 && ` ${Math.abs(by)}`}
+      </span>
+    </span>
   );
 }
 

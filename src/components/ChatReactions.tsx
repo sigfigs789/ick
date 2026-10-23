@@ -1,8 +1,16 @@
-import { lazy, Suspense, useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { QUICK_REACTIONS, reactorsLabel, type Reaction } from "../game/chat";
+import { lazyPage } from "../lazyPage";
 
-/** The full picker, fetched the first time a tray's "+" is pressed. */
-const ChatEmojiPicker = lazy(() => import("./ChatEmojiPicker"));
+/**
+ * The full picker, fetched the first time a tray's "+" is pressed. Through
+ * lazyPage rather than a bare `lazy` so a stale tab's failed fetch waits on the
+ * recovery reload instead of throwing (see chunkRecovery).
+ */
+const ChatEmojiPicker = lazyPage(
+  () => import("./ChatEmojiPicker"),
+  (m) => m.default,
+);
 
 /**
  * The reactions on one line, each a chip with its count. Pressing a chip adds

@@ -715,8 +715,8 @@ def decade_rarity(score: float) -> str:
     """Mirrors decadeRarity() in src/game/dictionary.ts (the latest labels).
 
     The rank is whatever whole point the shown score displays in, so the leading
-    digit is the rank. Elusive keeps the half band above them (9.0..9.4) and Very
-    Common takes everything under 5.0.
+    digit is the rank. Elusive keeps the half band above them (9.0..9.4) and
+    Common takes everything under 6.0 (Very Common, retired, used to split it).
     """
     shown = _round_to_tenths(score)
     if shown >= 9:
@@ -727,9 +727,7 @@ def decade_rarity(score: float) -> str:
         return "Rare"
     if shown >= 6:
         return "Uncommon"
-    if shown >= 5:
-        return "Common"
-    return "Very Common"
+    return "Common"
 
 
 def measured_rarity(zipf: float) -> str:
@@ -738,8 +736,6 @@ def measured_rarity(zipf: float) -> str:
     Superseded by decade_rarity() from DECADE_BANDS_START on; kept because the
     audit skills still read archived puzzles' labels through it.
     """
-    if zipf >= 4.85:
-        return "Very Common"
     if zipf >= 3.9:
         return "Common"
     if zipf >= 3.15:

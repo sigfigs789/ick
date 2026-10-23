@@ -590,8 +590,9 @@ const REVIEWED_FOLD_START = "2026-08-26";
  *                   7.x, Uncommon 6.x, Common 5.x -- so the leading digit *is*
  *                   the rank and the distance to the next one is readable off
  *                   the score. Elusive keeps the half band above them (9.0..9.4,
- *                   Mythic taking 9.5), and Very Common takes everything under
- *                   5.0. A boundary on a whole point cannot land mid-tenth, so
+ *                   Mythic taking 9.5), and Common takes everything under
+ *                   6.0 (Very Common, once everything under 5.0, has since
+ *                   been folded into it). A boundary on a whole point cannot land mid-tenth, so
  *                   the straddle that the Zipf cutoffs were shaped to avoid is
  *                   now impossible rather than merely avoided.
  *
@@ -606,11 +607,9 @@ const DECADE_BANDS_START = "2026-08-27";
 // being the default outcome is what the 2026-08-21 retune existed to fix: it
 // goes 14% of answers to 19% here, where 0.8 would make it 24% and 0.7 31%.
 //
-// Lowering it later is a one-line change, but two tests move with it: the
-// whole-point band edges, and the window where Common demotes to Very Common.
-// That window is the thing to watch, because it is the only place this system
-// takes a rank away -- it is Zipf 4.62..4.84 at 0.9, and 0.85 halves it (4.76 up)
-// while adding 0.12 to the mean shown score. It closes entirely at 0.8.
+// Lowering it later is a one-line change, but the whole-point band edges test
+// moves with it. (There used to be a second: a window, Zipf 4.62..4.84 at 0.9,
+// where Common demoted to Very Common. Retiring Very Common closed it.)
 const SCORE_GAMMA = 0.9;
 
 /*
@@ -2135,18 +2134,19 @@ const LEGACY_SCORING: Scoring = {
  * 8s. Elusive takes the smallest slice deliberately -- ~13% against their ~16%
  * each -- so hitting it reads as closing in on Mythic rather than as one more
  * step up the ladder. Below them Uncommon and Common are unchanged in spirit,
- * and Very Common absorbs what used to be a separate Quotidian tier at the very
- * bottom. Scores are untouched throughout -- this only changes which label a
+ * and Common absorbs what used to be separate Very Common and Quotidian tiers
+ * at the bottom (Very Common was retired everywhere, not just going forward:
+ * folding it into Common only ever moves a label up). Scores are untouched throughout -- this only changes which label a
  * score wears.
  *
  * Both sets stay live: a puzzle played before the cutover keeps the tiers it
- * was played with, Quotidian included. Neither is what a puzzle from
+ * was played with, Quotidian included -- though what was Very Common reads
+ * Common there too. Neither is what a puzzle from
  * DECADE_BANDS_START on reads -- those label off the shown score (see
  * `decadeRarity`) and reach this only through the archived profiles.
  */
 function measuredRarity(zipf: number, narrowBands: boolean): Rarity {
   if (narrowBands) {
-    if (zipf >= 4.85) return "Very Common";
     if (zipf >= 3.9) return "Common";
     // 3.15 for the same reason Elusive's cutoff is 1.59: it puts the seam exactly
     // on the shown value, so everything displaying 6.8 or rarer is Rare and
@@ -2169,7 +2169,6 @@ function measuredRarity(zipf: number, narrowBands: boolean): Rarity {
   }
   // The original bands, frozen for archived puzzles -- Quotidian and all.
   if (zipf >= 6.4) return "Quotidian";
-  if (zipf >= 5.2) return "Very Common";
   if (zipf >= 4.2) return "Common";
   if (zipf >= 3.3) return "Uncommon";
   if (zipf >= 2.5) return "Rare";
@@ -2184,9 +2183,10 @@ function measuredRarity(zipf: number, narrowBands: boolean): Rarity {
  * the whole reason the bands moved.
  *
  * Elusive keeps a half band (9.0..9.4, Mythic starts at 9.5) because it is meant
- * to read as closing in on the top rather than as one more rung, and Very Common
- * takes the whole bottom half (under 5.0) because nothing below "this is an
- * everyday word" needs telling apart. The rounding is the display's own (see
+ * to read as closing in on the top rather than as one more rung, and Common
+ * takes everything under 6.0 because nothing below "this is an everyday word"
+ * needs telling apart -- which is why the Very Common tier that once split it at
+ * 5.0 was retired. The rounding is the display's own (see
  * `format`), so the label can never disagree with the number beside it.
  */
 function decadeRarity(score: number): Rarity {
@@ -2195,8 +2195,7 @@ function decadeRarity(score: number): Rarity {
   if (shown >= 8) return "Extremely Rare";
   if (shown >= 7) return "Rare";
   if (shown >= 6) return "Uncommon";
-  if (shown >= 5) return "Common";
-  return "Very Common";
+  return "Common";
 }
 
 function scoringFor(date?: string, mode?: GameMode): Scoring {
@@ -4310,7 +4309,6 @@ export const RARITY_ORDER: Rarity[] = [
   "Rare",
   "Uncommon",
   "Common",
-  "Very Common",
   "Quotidian",
 ];
 

@@ -134,6 +134,7 @@
 
 import { MIN_RANKED_VERSION } from "../src/version";
 import { record, rpc, supabaseConfigured, type EdgeContext } from "./_supabase";
+import { isVercelRequest } from "../src/game/vercelHost";
 
 // Vercel's Edge runtime exposes `process.env`; see api/_supabase.ts.
 declare const process: { env: Record<string, string | undefined> };
@@ -889,6 +890,41 @@ async function handleWordsGet(params: URLSearchParams): Promise<Response> {
   }
 }
 
+/** The most finders one word's request returns. */
+const FINDERS_LIMIT = 100;
+
+/**
+ * Who found one word on one puzzle, first finder first.
+ *
+ * Read by the "yesterday's best" line, which names a finder rather than only
+ * counting them. Carries no player, so one URL per word and day is shared by
+ * every reader through the CDN; the client puts its own player first.
+ */
+async function handleFindersGet(params: URLSearchParams): Promise<Response> {
+  const word = params.get("finders") ?? "";
+  if (!WORD_RE.test(word)) return reply(400, { ok: false, reason: "bad-word" });
+  const day = wordsDay(params.get("today"));
+  if (day === null) return reply(200, { finders: [] }, WORDS_CACHE_SECONDS);
+
+  if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
+
+  try {
+    const rows = await rpc<{ player_id: string }[]>("leaderboard_word_finders", {
+      p_date: day,
+      p_word: word,
+      p_limit: FINDERS_LIMIT,
+    });
+    const finders = (Array.isArray(rows) ? rows : []).map((row) => String(row.player_id));
+    return reply(200, { finders }, WORDS_CACHE_SECONDS);
+  } catch (error) {
+    console.error(
+      "[leaderboard] finders read failed:",
+      error instanceof Error ? error.message : error
+    );
+    return reply(502, { ok: false, reason: "unavailable" });
+  }
+}
+
 /** One row of the puzzles-played board, as `leaderboard_total_played` returns it. */
 interface TotalRow {
   rank: number;
@@ -1003,6 +1039,8 @@ async function handleGet(request: Request): Promise<Response> {
   // that is the whole point of it: a URL identical for every player is a URL the
   // CDN can answer once.
   if (params.get("words") === "1") return handleWordsGet(params);
+  // One word's finders, shared by every reader in the same way.
+  if (params.has("finders")) return handleFindersGet(params);
   // The puzzles-played board, on its own: it has no window to validate.
   if (params.get("total") === "1") return handleTotalGet(params);
   // The dead-streaks board, on its own for the same reason.
@@ -1209,6 +1247,11 @@ async function handlePost(request: Request, context?: EdgeContext): Promise<Resp
   // credentials is a setup problem, and an empty board is a miserable way to
   // discover it. The client ignores this either way.
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
+
+  // A preview or *.vercel.app alias is the people building the game, not
+  // players (see src/game/vercelHost.ts): nothing played there goes on the
+  // board. Accepted with no days, so the client has nothing to retry.
+  if (isVercelRequest(request)) return reply(202, { ok: true, days: 0 });
 
   await record(
     "rpc/submit_leaderboard_scores",

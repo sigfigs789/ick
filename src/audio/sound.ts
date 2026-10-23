@@ -52,7 +52,6 @@ function tone(c: AudioContext, freq: number, startTime: number, duration: number
 
 const RARITY_RANK: Record<Rarity, number> = {
   Quotidian: 0,
-  "Very Common": 1,
   Common: 2,
   Uncommon: 3,
   Rare: 4,
@@ -80,6 +79,39 @@ export function playAccept(rarity: Rarity): void {
   }
 }
 
+/**
+ * The jackpot, for a Mythic or Legend: a quick run up a C-major scale into a
+ * held, shimmering chord, played over the accept chime. Bigger than the
+ * puzzle-complete arpeggio on purpose -- it is the rarest thing that can
+ * happen on a guess, and should sound like it.
+ */
+export function playJackpot(): void {
+  const c = getContext();
+  if (!c) return;
+  const now = c.currentTime + 0.2;
+  const run = [523.25, 587.33, 659.25, 783.99, 880, 1046.5]; // C5 D5 E5 G5 A5 C6
+  run.forEach((freq, i) => tone(c, freq, now + i * 0.05, 0.12, { type: "triangle", peakGain: 0.09 }));
+  const chordAt = now + run.length * 0.05;
+  [1046.5, 1318.51, 1567.98].forEach((freq) =>
+    tone(c, freq, chordAt, 0.9, { type: "triangle", peakGain: 0.07 }),
+  );
+  // A high glint that slides up into the chord's top note.
+  tone(c, 1567.98, chordAt + 0.05, 0.35, { peakGain: 0.04, glideTo: 2093 });
+}
+
+/**
+ * A buzz of the phone in the hand, on devices that have one. Silently nothing
+ * everywhere else (desktop browsers, iOS Safari), which is what we want.
+ */
+export function vibrate(pattern: number[]): void {
+  if (typeof navigator === "undefined" || typeof navigator.vibrate !== "function") return;
+  try {
+    navigator.vibrate(pattern);
+  } catch {
+    // Some embedded browsers throw rather than ignore; it is only a flourish.
+  }
+}
+
 /** A short, low, descending buzz -- deliberately unobtrusive, not punishing. */
 export function playReject(): void {
   const c = getContext();
@@ -94,6 +126,23 @@ export function playComplete(): void {
   const now = c.currentTime;
   const notes = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6
   notes.forEach((freq, i) => tone(c, freq, now + i * 0.1, 0.24, { peakGain: 0.15 }));
+}
+
+/**
+ * A quick climbing run for the player's average going up (see
+ * components/ImprovementCelebration.tsx): a C-major scale racing up two octaves
+ * and landing on a held chord -- the puzzle-complete chime, but still going.
+ */
+export function playRising(): void {
+  const c = getContext();
+  if (!c) return;
+  const now = c.currentTime;
+  const run = [523.25, 587.33, 659.25, 698.46, 783.99, 880, 987.77]; // C5..B5
+  run.forEach((freq, i) => tone(c, freq, now + i * 0.055, 0.1, { peakGain: 0.11 }));
+  const landing = now + run.length * 0.055;
+  [1046.5, 1318.51, 1567.98].forEach((freq) => // C6 E6 G6
+    tone(c, freq, landing, 0.6, { type: "triangle", peakGain: 0.08 }),
+  );
 }
 
 /**

@@ -3,7 +3,6 @@ import type { GameMode } from "./mode";
 export type Rarity =
   /** Retired at NARROW_BANDS_START -- reachable only on archived puzzles. */
   | "Quotidian"
-  | "Very Common"
   | "Common"
   | "Uncommon"
   | "Rare"
@@ -137,4 +136,9 @@ export interface StreakState {
    * had freezes existed before 2026-10-15 (see `backdateFreezes`).
    */
   freezesBackdated?: true;
+  /**
+   * The last day a welcome-back freeze was given to a returning player's new
+   * streak (see `welcomeBack` in game/streakFreeze.ts), which spaces them out.
+   */
+  welcomeBackFreezeDate?: string;
 }

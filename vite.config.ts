@@ -169,9 +169,49 @@ function emitVersionJson(): Plugin {
   }
 }
 
+/*
+ * Which chunk a module lands in, so the bundle is several files rather than one.
+ *
+ * The word data under src/data/ is most of the download (the dictionary,
+ * rarity and estimate files alone run to megabytes), and before this it was
+ * baked into the same file as the app's code. Any deploy -- a copy tweak, one
+ * new score override -- changed that file's hash, and every returning player
+ * downloaded all of it again. One chunk per data file means a deploy only
+ * invalidates the files it actually touched, and the browser fetches the
+ * chunks in parallel (Vite emits a modulepreload for each).
+ *
+ * React gets a chunk of its own for the same reason: it changes only when the
+ * dependency is bumped. Only react, react-dom and scheduler -- every other
+ * package stays where Rollup puts it, which keeps the lazily loaded emoji
+ * picker out of the first load.
+ */
+function chunkFor(id: string): string | undefined {
+  const data = id.match(/\/src\/data\/([^/]+)\.json$/)
+  if (data) return `data-${data[1]}`
+  if (/\/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'react'
+  return undefined
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), emitVersionJson(), serveApiFunctions()],
+  // Emit each JSON import as `JSON.parse("...")` rather than an object literal.
+  // Engines parse a JSON string faster than the same data as JavaScript (about
+  // a fifth faster for estimated-zipf.json, measured cold in Node), and with
+  // megabytes of word data that is time a phone spends before the puzzle can
+  // appear. Every data
+  // import in src/ is a default import, which is all this mode supports.
+  json: { stringify: true },
+  // vercel.json serves everything under /assets/ as `immutable` for a year,
+  // which is only safe because Vite names every file there by its content hash.
+  // Nothing else may live there: a file put in public/assets/ would keep its
+  // name across deploys and be cached, stale, for that long. (vercel.json is
+  // plain JSON, so the note lives here.)
+  build: {
+    rollupOptions: {
+      output: { manualChunks: chunkFor },
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,

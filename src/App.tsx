@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { DropDisplay } from "./components/DropDisplay";
 import { GuessLog } from "./components/GuessLog";
 import { DEV_TOOLS } from "./dev/devTools";
@@ -10,17 +10,30 @@ import { WordRulesModal } from "./components/WordRulesModal";
 import { PuzzleNav } from "./components/PuzzleNav";
 import { FoldedLiveNotice } from "./components/FoldedLiveNotice";
 import { ConfettiBurst } from "./components/ConfettiBurst";
+import { JackpotStamp } from "./components/JackpotStamp";
 import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
+import { ImprovementCelebration } from "./components/ImprovementCelebration";
 import { QuickShareButton } from "./components/QuickShareButton";
-import { isNewPlayUi } from "./game/uiVariant";
+import { YesterdaysBest } from "./components/YesterdaysBest";
+import { ComeBackCard } from "./components/ComeBackCard";
+import { WelcomeBackCard } from "./components/WelcomeBackCard";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { isWinningRarity } from "./game/rank";
+import { celebrationFor } from "./game/celebration";
+import type { Rarity } from "./game/types";
 import { completedWholeMonth } from "./game/perfectMonth";
+import { welcomeBack } from "./game/streakFreeze";
+import { dismissWelcomeBack, welcomeBackDismissedOn } from "./game/storage";
+import {
+  averageImprovement,
+  improvementCelebrationDue,
+  markImprovementCelebrated,
+  type Improvement,
+} from "./game/improvement";
 import { totalRarityScore } from "./game/dictionary";
 import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/react";
 import {
   campaignSourceFromSearch,
   trackRedditArrival,
@@ -76,19 +89,34 @@ export default function App() {
   // header's switch does (see index.css).
   const playMode = modeChosen ? mode : undefined;
   const [showWordRules, setShowWordRules] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
+  // The celebration for the word just accepted, keyed by its feedback so two
+  // good words in a row each get their own burst rather than sharing one.
+  const [burst, setBurst] = useState<{ key: number; grand: boolean; rarity: Rarity } | null>(
+    null,
+  );
   const [showPerfectMonth, setShowPerfectMonth] = useState(false);
   const endPerfectMonth = useCallback(() => setShowPerfectMonth(false), []);
+  const [improvement, setImprovement] = useState<Improvement | null>(null);
+  const endImprovement = useCallback(() => setImprovement(null), []);
   const sound = useSound();
-  // The play-screen experiment (see game/uiVariant.ts): settled before the
-  // first render and fixed for the browser, so it never changes under a player.
-  const newUi = isNewPlayUi();
-  // New play screen: the share panel stays out of the way until the Share
-  // beside the guess count is pressed, which opens it and scrolls to it. Each
-  // press bumps the count, so a second press scrolls back to it again. A new
-  // puzzle starts closed.
+  // The share panel stays out of the way until the Share beside the guess
+  // count is pressed, which opens it and scrolls to it. Each press bumps the
+  // count, so a second press scrolls back to it again. A new puzzle starts
+  // closed.
   const [shareRequests, setShareRequests] = useState(0);
   useEffect(() => setShareRequests(0), [date]);
+  // A player back after their streak ended (see game/streakFreeze.ts), greeted
+  // on today's puzzle until its first word or until the card is closed --
+  // closed for that day, so a reload does not bring it back.
+  const [welcomeDismissedOn, setWelcomeDismissedOn] = useState(welcomeBackDismissedOn);
+  const welcome =
+    isToday && progress.acceptedWords.length === 0 && welcomeDismissedOn !== date
+      ? welcomeBack(streak, date)
+      : null;
+  const closeWelcome = () => {
+    dismissWelcomeBack(date);
+    setWelcomeDismissedOn(date);
+  };
 
   // The compact share-link code identifies its origin without exposing a
   // long UTM parameter in the result text.
@@ -133,11 +161,19 @@ export default function App() {
     };
   }, []);
 
-  // Play a chime/buzz on every submission, pitched by rarity when accepted.
+  // Play a chime/buzz on every submission, pitched by rarity when accepted --
+  // and celebrate every Rare-or-better word, louder the rarer it is (see
+  // game/celebration.ts). Only a fresh verdict does this, never a puzzle
+  // restored from storage.
   useEffect(() => {
     if (!feedback) return;
     if (feedback.kind === "accepted" && feedback.rarity) {
       sound.accept(feedback.rarity);
+      const celebration = celebrationFor(feedback.rarity);
+      if (celebration === "grand") sound.jackpot();
+      if (celebration !== "none") {
+        setBurst({ key: feedback.key, grand: celebration === "grand", rarity: feedback.rarity });
+      }
     } else if (feedback.kind === "rejected") {
       sound.reject();
     }
@@ -146,20 +182,25 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedback]);
 
+  // Each burst clears itself once its pieces have fallen.
+  useEffect(() => {
+    if (!burst) return;
+    const timeout = window.setTimeout(() => setBurst(null), burst.grand ? 2800 : 1800);
+    return () => window.clearTimeout(timeout);
+  }, [burst]);
+
   const hasWinningWord = progress.acceptedWords.some((word) =>
     isWinningRarity(word.rarity),
   );
-  // Celebrate the first qualifying word only, never a puzzle restored
-  // from storage that already contains one.
+  // The completion chime, for the day's first qualifying word only -- never a
+  // puzzle restored from storage that already contains one. The confetti now
+  // comes with every good word (above), but this chime stays a once-a-day
+  // milestone. A first winning word that is already a jackpot has its own
+  // fanfare instead.
   const hadWinningWord = useRef(hasWinningWord);
   useEffect(() => {
-    if (hasWinningWord && !hadWinningWord.current) {
-      hadWinningWord.current = true;
-      sound.complete();
-      setShowConfetti(true);
-      const timeout = window.setTimeout(() => setShowConfetti(false), 1800);
-      return () => window.clearTimeout(timeout);
-    }
+    const jackpot = progress.acceptedWords.some((word) => celebrationFor(word.rarity) === "grand");
+    if (hasWinningWord && !hadWinningWord.current && !jackpot) sound.complete();
     hadWinningWord.current = hasWinningWord;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasWinningWord]);
@@ -181,6 +222,27 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perfectMonth, date]);
 
+  // The player's average on the way up (see game/improvement.ts), celebrated
+  // when today's puzzle is finished -- the day's total is final then, so it is
+  // the first moment the average it joins means anything. Only on the finish
+  // itself, as the Rare burst above is only on the word: a puzzle that mounts
+  // already finished, by reload or by stepping back from the archive, throws
+  // none. The record of the last celebration keeps it to one a week.
+  const finishedToday = isToday && progress.completed;
+  const wasFinished = useRef({ date, finished: finishedToday });
+  useEffect(() => {
+    const before = wasFinished.current;
+    wasFinished.current = { date, finished: finishedToday };
+    if (!finishedToday || before.date !== date || before.finished) return;
+    if (!improvementCelebrationDue(date)) return;
+    const rise = averageImprovement(date, progress.mode);
+    if (!rise) return;
+    markImprovementCelebrated(date);
+    sound.rising();
+    setImprovement(rise);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finishedToday, date]);
+
   const guessEntry = (
     <>
       {!progress.completed && (
@@ -193,7 +255,7 @@ export default function App() {
           date={date}
           mode={playMode}
           acceptedWords={progress.acceptedWords}
-          submitLabel={newUi ? "Play" : undefined}
+          submitLabel="Play"
         />
       )}
       <FeedbackRegion
@@ -201,8 +263,8 @@ export default function App() {
         note={liveNote}
         reserveSpace={!progress.completed}
         onWordRules={() => setShowWordRules(true)}
-        settledNote={!newUi}
-        visibleMs={newUi ? (feedback?.kind === "accepted" ? 4000 : 8000) : undefined}
+        settledNote={false}
+        visibleMs={feedback?.kind === "accepted" ? 4000 : 8000}
       />
     </>
   );
@@ -215,19 +277,22 @@ export default function App() {
           days={Number(date.slice(8, 10))}
           onDone={endPerfectMonth}
         />
+      ) : improvement ? (
+        // After the perfect month's card, if both land on one finish.
+        <ImprovementCelebration improvement={improvement} onDone={endImprovement} />
       ) : (
-        showConfetti && <ConfettiBurst />
+        burst && (
+          <Fragment key={burst.key}>
+            <ConfettiBurst grand={burst.grand} />
+            {burst.grand && <JackpotStamp rarity={burst.rarity} date={date} />}
+          </Fragment>
+        )
       )}
 
-      {/* Not mounted where reporting is off: inside a Reddit post both scripts
-          are blocked by the frame's content policy, and neither should be
+      {/* Not mounted where reporting is off: inside a Reddit post the script
+          is blocked by the frame's content policy, and it shouldn't be
           reaching a third party from there in any case. See analytics.ts. */}
-      {isReporting() && (
-        <>
-          <Analytics />
-          <SpeedInsights />
-        </>
-      )}
+      {isReporting() && <Analytics />}
       <main className={playMode ? `play play--${playMode}` : undefined}>
         {/* Below the header rather than inside it: which puzzle you are on is
             part of the puzzle, not part of the app's identity -- and the header
@@ -259,10 +324,16 @@ export default function App() {
           notices={foldNotices}
           onDismiss={dismissFoldNotices}
         />
-        {/* The new play screen puts the input straight under the drop, so it
-            stays where it is as words land below it rather than being pushed
-            down the page by each one. */}
-        {newUi && guessEntry}
+        {/* The input sits straight under the drop, so it stays where it is
+            as words land below it rather than being pushed down the page by
+            each one. */}
+        {welcome && (
+          <WelcomeBackCard
+            welcome={welcome}
+            onDismiss={closeWelcome}
+          />
+        )}
+        {guessEntry}
         <GuessLog
           acceptedWords={progress.acceptedWords}
           completed={progress.completed}
@@ -276,9 +347,9 @@ export default function App() {
           crossMode={crossMode}
           copying={copying}
           onCopyToOtherMode={copyToOtherMode}
-          newUi={newUi}
+          newUi
           headerAction={
-            newUi && progress.acceptedWords.length > 0 ? (
+            progress.acceptedWords.length > 0 ? (
               <QuickShareButton
                 date={date}
                 drop={drop}
@@ -291,8 +362,6 @@ export default function App() {
             ) : undefined
           }
         />
-
-        {!newUi && guessEntry}
 
         {!progress.completed && !isToday && (
           <p className="archive-note">
@@ -307,10 +376,19 @@ export default function App() {
             totalRarity={totalRarityScore(progress.acceptedWords, date)}
             date={date}
             isToday={isToday}
-            hideEmpty={newUi}
+            hideEmpty
             hasWords={progress.acceptedWords.length > 0}
           />
         )}
+
+        {/* Once today's word is banked -- which is when the streak counts the
+            day, whether or not the puzzle is locked in -- say what coming
+            back tomorrow is worth (see game/comeBack.ts). Straight under the
+            streak it talks about (in the guess log on a finished puzzle), so
+            the two read as one block rather than a second card restating it.
+            Below the guesses, so it never sits between a player and the
+            guesses they have left. */}
+        {isToday && progress.acceptedWords.length > 0 && <ComeBackCard streak={streak} />}
 
         {/* From the first banked word, not from the end of the puzzle.
             Sharing used to be the reward for pressing "I'm done guessing",
@@ -324,9 +402,9 @@ export default function App() {
 
             The panel reads the live word list, so a share taken now and a
             share taken three words later are both current. */}
-        {/* On the new play screen, only once asked for by the Share beside the
-            guess count, which stays on a finished puzzle too. */}
-        {progress.acceptedWords.length > 0 && (!newUi || shareRequests > 0) && (
+        {/* Only once asked for by the Share beside the guess count, which
+            stays on a finished puzzle too. */}
+        {progress.acceptedWords.length > 0 && shareRequests > 0 && (
           <ResultsPanel
             date={date}
             drop={drop}
@@ -334,10 +412,19 @@ export default function App() {
             streak={streak}
             isToday={isToday}
             mode={progress.mode}
-            collapsible={newUi}
+            collapsible
             scrollSignal={shareRequests}
           />
         )}
+
+        {/* Last on the page, as a footnote: it is about other players'
+            yesterday, so it stays out from between the player's guesses and
+            their own streak and total. Under the guesses rather than under the
+            drop: it arrives with a request, and anything landing above the
+            input would push the input down the page as it did. On every
+            puzzle, archived ones too: it reports the day before the one being
+            played, by its date when that isn't yesterday. */}
+        <YesterdaysBest date={date} isToday={isToday} />
       </main>
 
       {/* Dev only, and pinned beside the dev date bar rather than in the

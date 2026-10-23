@@ -78,6 +78,22 @@ afterEach(() => {
 });
 
 describe("api/leaderboard submissions", () => {
+  it("keeps a *.vercel.app host's scores off the board", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    const response = await handler(
+      new Request("https://ick-git-branch-sigfigs789.vercel.app/api/leaderboard", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(score()),
+      })
+    );
+
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({ ok: true, days: 0 });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("records a score through the upsert function", async () => {
     withEnv();
     const fetchMock = stubFetch([[]]);
@@ -1004,6 +1020,29 @@ describe("api/leaderboard recent finds", () => {
 
     expect(response.status).toBe(502);
     expect(await response.json()).toEqual({ ok: false, reason: "unavailable" });
+  });
+});
+
+describe("api/leaderboard word finders", () => {
+  it("asks for one word's finders on one puzzle and passes their ids through", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[{ player_id: "a" }, { player_id: "b" }]]);
+    const response = await handler(get("?finders=inkling&today=2026-08-25"));
+
+    expect(rpcCall(fetchMock)?.url).toBe(
+      "https://project.supabase.co/rest/v1/rpc/leaderboard_word_finders"
+    );
+    expect(rpcCall(fetchMock)?.args).toMatchObject({ p_date: "2026-08-25", p_word: "inkling" });
+    expect(await response.json()).toEqual({ finders: ["a", "b"] });
+  });
+
+  it("refuses anything that isn't a word", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    const response = await handler(get("?finders=DROP%20TABLE&today=2026-08-25"));
+
+    expect(response.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 

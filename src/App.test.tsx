@@ -1,16 +1,15 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { markSeen } from "./game/whatsNew";
-import { setUiVariantForTest } from "./game/uiVariant";
+import { addDays } from "./game/date";
 
 vi.mock("./hooks/useDailyPuzzle", () => ({ useDailyPuzzle: vi.fn() }));
 vi.mock("./hooks/useSound", () => ({ useSound: vi.fn() }));
 vi.mock("@vercel/analytics/react", () => ({ Analytics: () => null }));
-vi.mock("@vercel/speed-insights/react", () => ({ SpeedInsights: () => null }));
 
 const submitWord = vi.fn();
 const retryAnswer = vi.fn();
@@ -71,7 +70,9 @@ describe("App", () => {
       accept: vi.fn(),
       reject: vi.fn(),
       complete: vi.fn(),
+      jackpot: vi.fn(),
       applause: vi.fn(),
+      rising: vi.fn(),
     });
   });
 
@@ -81,11 +82,11 @@ describe("App", () => {
 
     const input = screen.getByLabelText(/enter a word containing "STR"/i);
     await userEvent.type(input, "strange");
-    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+    await userEvent.click(screen.getByRole("button", { name: "Play" }));
     expect(submitWord).toHaveBeenCalledWith("strange");
   });
 
-  it("notes an archived puzzle and offers the share panel from the first word", async () => {
+  it("notes an archived puzzle and offers Share from the first word", async () => {
     vi.mocked(useDailyPuzzle).mockReturnValue(
       puzzle({
         date: "2026-08-12",
@@ -103,8 +104,8 @@ describe("App", () => {
     render(<App />);
 
     expect(screen.getByText(/playing an old puzzle/i)).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Submit" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^share$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Play" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /done guessing/i })).not.toBeInTheDocument();
   });
 
@@ -115,7 +116,7 @@ describe("App", () => {
     expect(screen.queryByRole("region", { name: /share result/i })).not.toBeInTheDocument();
   });
 
-  it("replaces input controls with sharing results after completion", () => {
+  it("replaces input controls with Share after completion", () => {
     vi.mocked(useDailyPuzzle).mockReturnValue(
       puzzle({
         progress: {
@@ -129,9 +130,62 @@ describe("App", () => {
     );
     render(<App />);
 
-    expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Play" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /lock in/i })).not.toBeInTheDocument();
-    expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^share$/i })).toBeInTheDocument();
+  });
+
+  describe("an improving average", () => {
+    const today = "2026-08-13";
+
+    /** Three common days, then three rarer ones -- today's the last. */
+    function storeRisingWeek() {
+      [5, 5, 5, 3, 3, 3].forEach((zipf, i) => {
+        const date = addDays(today, i - 5);
+        localStorage.setItem(
+          `ick:progress:${date}`,
+          JSON.stringify({
+            date,
+            drop: "str",
+            acceptedWords: [{ word: `w${i}`, rarity: "Common", zipf }],
+            rejectedAttempts: [],
+            completed: true,
+            firstWordAt: `${date}T12:00:00`,
+          })
+        );
+      });
+    }
+
+    function day(completed: boolean) {
+      return puzzle({
+        progress: {
+          date: today,
+          drop: "str",
+          acceptedWords: [{ word: "w5", rarity: "Common", zipf: 3 }],
+          rejectedAttempts: [],
+          completed,
+        },
+      }) as ReturnType<typeof useDailyPuzzle>;
+    }
+
+    it("is celebrated on the guess that finishes today's puzzle", () => {
+      storeRisingWeek();
+      vi.mocked(useDailyPuzzle).mockReturnValue(day(false));
+      const { rerender } = render(<App />);
+      expect(screen.queryByText("You're on the rise!")).not.toBeInTheDocument();
+
+      vi.mocked(useDailyPuzzle).mockReturnValue(day(true));
+      rerender(<App />);
+      expect(screen.getByText("You're on the rise!")).toBeInTheDocument();
+      expect(vi.mocked(useSound).mock.results[0].value.rising).toHaveBeenCalledTimes(1);
+    });
+
+    it("is not celebrated on a puzzle that mounts already finished", () => {
+      storeRisingWeek();
+      vi.mocked(useDailyPuzzle).mockReturnValue(day(true));
+      render(<App />);
+      expect(screen.queryByText("You're on the rise!")).not.toBeInTheDocument();
+    });
   });
 });
 
@@ -155,7 +209,7 @@ describe("the results on a finished puzzle", () => {
   });
 });
 
-describe("the new play screen's share panel", () => {
+describe("the share panel", () => {
   const inPlay = {
     progress: {
       date: "2026-08-13",
@@ -168,11 +222,9 @@ describe("the new play screen's share panel", () => {
 
   beforeEach(() => {
     localStorage.clear();
-    setUiVariantForTest("v2");
     Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
     Element.prototype.scrollIntoView = vi.fn();
   });
-  afterEach(() => setUiVariantForTest("control"));
 
   it("stays hidden until the Share beside the guesses is pressed, then opens and scrolls to it", async () => {
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle(inPlay) as ReturnType<typeof useDailyPuzzle>);
@@ -196,5 +248,125 @@ describe("the new play screen's share panel", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /^share$/i }));
     expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument();
+  });
+});
+
+describe("the welcome-back card", () => {
+  const lapsed = {
+    currentStreak: 0,
+    longestStreak: 12,
+    lastCompletedDate: "2026-08-01",
+    totalCompleted: 12,
+    crushedIt: 0,
+    elite: 0,
+    highScore: 0,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    markSeen("instructions");
+    vi.mocked(useSound).mockReturnValue({
+      accept: vi.fn(),
+      reject: vi.fn(),
+      complete: vi.fn(),
+      jackpot: vi.fn(),
+      applause: vi.fn(),
+      rising: vi.fn(),
+    });
+  });
+
+  it("greets a player back after their streak ended, with the freeze on offer, until closed", async () => {
+    vi.mocked(useDailyPuzzle).mockReturnValue(
+      puzzle({ streak: lapsed }) as ReturnType<typeof useDailyPuzzle>
+    );
+    const { unmount } = render(<App />);
+
+    expect(screen.getByText(/welcome back/i)).toBeInTheDocument();
+    expect(screen.getByText("12 days")).toBeInTheDocument();
+    expect(screen.getByText(/streak freeze to cover a missed day/i)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+    expect(screen.queryByText(/welcome back/i)).not.toBeInTheDocument();
+
+    // Closed for the day: a reload does not bring it back, but another day does.
+    unmount();
+    const second = render(<App />);
+    expect(screen.queryByText(/welcome back/i)).not.toBeInTheDocument();
+    second.unmount();
+    vi.mocked(useDailyPuzzle).mockReturnValue(
+      puzzle({ streak: lapsed, date: "2026-08-14" }) as ReturnType<typeof useDailyPuzzle>
+    );
+    render(<App />);
+    expect(screen.getByText(/welcome back/i)).toBeInTheDocument();
+  });
+
+  it("is not shown on an archived puzzle, once a word is played, or to a player who never reached 3 days", () => {
+    const cases = [
+      puzzle({ streak: lapsed, isToday: false }),
+      puzzle({
+        streak: lapsed,
+        progress: {
+          date: "2026-08-13",
+          drop: "str",
+          acceptedWords: [{ word: "strange", rarity: "Common", zipf: 5 }],
+          rejectedAttempts: [],
+          completed: false,
+        },
+      }),
+      puzzle({ streak: { ...lapsed, longestStreak: 2 } }),
+    ];
+    for (const value of cases) {
+      vi.mocked(useDailyPuzzle).mockReturnValue(value as ReturnType<typeof useDailyPuzzle>);
+      const { unmount } = render(<App />);
+      expect(screen.queryByText(/welcome back/i)).not.toBeInTheDocument();
+      unmount();
+    }
+  });
+});
+
+
+describe("celebrating a good word", () => {
+  const jackpot = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    markSeen("instructions");
+    vi.mocked(useSound).mockReturnValue({
+      accept: vi.fn(),
+      reject: vi.fn(),
+      complete: vi.fn(),
+      jackpot,
+      applause: vi.fn(),
+      rising: vi.fn(),
+    });
+  });
+
+  it("throws confetti for every good word, and a jackpot for the top tiers", () => {
+    const accepted = (key: number, rarity: string) => ({
+      kind: "accepted",
+      message: `accepted — ${rarity}.`,
+      rarity,
+      key,
+    });
+    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ feedback: null }) as ReturnType<typeof useDailyPuzzle>);
+    const { rerender } = render(<App />);
+    expect(document.querySelector(".confetti")).toBeNull();
+
+    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ feedback: accepted(1, "Common") }) as ReturnType<typeof useDailyPuzzle>);
+    rerender(<App />);
+    expect(document.querySelector(".confetti")).toBeNull();
+
+    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ feedback: accepted(2, "Rare") }) as ReturnType<typeof useDailyPuzzle>);
+    rerender(<App />);
+    expect(document.querySelector(".confetti")).not.toBeNull();
+    expect(document.querySelector(".confetti--grand")).toBeNull();
+
+    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ feedback: accepted(3, "Legend") }) as ReturnType<typeof useDailyPuzzle>);
+    rerender(<App />);
+    expect(document.querySelector(".confetti--grand")).not.toBeNull();
+    expect(document.querySelector(".jackpot__stamp")).toHaveTextContent("Legend!");
+    expect(jackpot).toHaveBeenCalledTimes(1);
   });
 });

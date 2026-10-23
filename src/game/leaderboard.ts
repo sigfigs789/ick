@@ -407,7 +407,7 @@ function scoreOf(word: string, storedZipf: unknown, foundOn: string | undefined)
  * record and a re-reckoning. This feed is an account of what happened on one
  * drop -- these words, these players, that day -- and the player who banked one
  * watched the game put a number on it. Pricing it again on today's terms is how
- * a word the game called Mythic an hour ago turns up here as Very Common.
+ * a word the game called Mythic an hour ago turns up here as Common.
  *
  * That was invisible while every scoring change moved forward, because today's
  * system was then the newest anything had ever been priced at. Freeform week is
@@ -804,6 +804,22 @@ export async function fetchFoundWords(
   if (!response.ok) throw new Error(`leaderboard words ${response.status}`);
   const body = (await response.json()) as Record<string, unknown>;
   return parseWords(body.words, date);
+}
+
+/**
+ * The player ids that found `word` on `date`'s puzzle, first finder first.
+ * Shared by every reader like the feed, so it carries no player of its own.
+ */
+export async function fetchWordFinders(word: string, date: string): Promise<string[]> {
+  const response = await fetch(
+    `/api/leaderboard?finders=${encodeURIComponent(word)}&today=${encodeURIComponent(date)}`,
+    { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), cache: "no-store" }
+  );
+  if (!response.ok) throw new Error(`leaderboard finders ${response.status}`);
+  const body = (await response.json()) as Record<string, unknown>;
+  return Array.isArray(body.finders)
+    ? body.finders.filter((id): id is string => typeof id === "string")
+    : [];
 }
 
 /** Turn one response body -- real or sample -- into the boards the page renders. */
