@@ -42,7 +42,11 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
 - **Drop selection** (`src/game/drop.ts`, `src/data/drops.json`):
   the day's drop is picked deterministically from a curated list, keyed
   off the number of days since a fixed epoch — every player on the same
-  calendar date gets the same drop, no server required.
+  calendar date gets the same drop, no server required. From 2026-11-03,
+  Tuesdays and Thursdays (the days with the most daily visitors) are dealt the
+  easier drops: the ones with the most Rare+ answers for their length, picked
+  so that consecutive busy days reach different kinds of words
+  (`scripts/reorder-drops.py`).
 - **Modes** (`src/game/mode.ts`): from `MODE_CHOICE_START` (2026-09-27) the
   player picks Standard (the default) or Freeform, and the choice is
   remembered. 2026-09-14 to 2026-09-26 was the Freeform trial, when the calendar

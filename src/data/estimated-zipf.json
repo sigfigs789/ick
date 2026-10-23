@@ -4021,7 +4021,7 @@
     },
     {
       "since": "2026-10-10",
-      "drop": "CAM, HO, POR, JO, OMP, EA, HOP, TAI, HA, RAT, QUI, IVI, AM, CIP, EP, TTE, SES, KS, EME, RMA, VIN, ORR, EXP, RM, COM, OP, YE, NCE, SET, CHI, PL, NTR, AIL, GHT, MIN, UC, ARL, ICA, ACH, TY, IES, ERV, EE, PRA, ST, ESP, REF, ESC, TA, WAR, THI, EL, TEC, AD, HAR, NAT, EMP, CES, MO, RDE, FR, ROP, ASE, NI, EQU, NER, IND, PO, NVE, AC, QUE, OV, PAR, EGA, SEN, EET, OC, ORE, OT, PER, FF, AST, ALT, NEL, SI, RAD, UNC, PT, STO, EV",
+      "drop": "CAM, HO, POR, JO, OMP, EA, HOP, TAI, HA, RAT, QUI, IVI, AM, CIP, EP, TTE, SES, KS, EME, RMA, VIN, ORR, EXP, RM, CHI, YE, OP, COM, NCE, SET, PL, NTR, AIL, GHT, MIN, UC, REF, ARL, ICA, TY, ACH, WAR, EE, ERV, ST, ESC, ESP, IES, TA, PRA, THI, EL, HAR, AD, NAT, TEC, EMP, RDE, MO, CES, FR, STO, PAR, PT, EET, QUE, NER, OV, AST, AC, SEN, PO, NVE, IND, EGA, PER, FF, EQU, OT, ASE, NI, ALT, ORE, NEL, SI, RAD, UNC, OC, ROP, EV",
       "model": "claude-opus-5-5",
       "source": "claude",
       "run": "https://github.com/sigfigs789/ick/actions/runs/37810745096",
@@ -10530,7 +10530,7 @@
     },
     {
       "since": "2026-10-11",
-      "drop": "HO, POR, JO, OMP, EA, HOP, TAI, HA, RAT, QUI, IVI, AM, CIP, EP, TTE, SES, KS, EME, RMA, VIN, ORR, EXP, RM, COM, OP, YE, NCE, SET, CHI, PL",
+      "drop": "HO, POR, JO, OMP, EA, HOP, TAI, HA, RAT, QUI, IVI, AM, CIP, EP, TTE, SES, KS, EME, RMA, VIN, ORR, EXP, RM, CHI, YE, OP, COM, NCE, SET, PL",
       "model": "claude-opus-5-5",
       "source": "claude",
       "estimatedAt": "2026-10-09T22:48:24Z",
@@ -247257,7 +247257,7 @@
     },
     {
       "since": "2026-11-09",
-      "drop": "PL, NTR, AIL, GHT, MIN, UC, ARL, ICA, ACH, TY, IES, ERV, EE, PRA, ST, ESP, REF, ESC, TA, WAR, THI, EL, TEC, AD, HAR, NAT, EMP, CES, MO, RDE, FR",
+      "drop": "PL, NTR, AIL, GHT, MIN, UC, REF, ARL, ICA, TY, ACH, WAR, EE, ERV, ST, ESC, ESP, IES, TA, PRA, THI, EL, HAR, AD, NAT, TEC, EMP, RDE, MO, CES, FR",
       "model": "claude-opus-5-5",
       "source": "claude",
       "estimatedAt": "2026-10-18T08:05:51Z",
