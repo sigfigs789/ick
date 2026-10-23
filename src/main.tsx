@@ -2,14 +2,27 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { Root } from './Root.tsx'
+import { setReporting } from './analytics'
 import { installChunkRecovery } from './chunkRecovery'
 import { assignStartingMode } from './game/onboarding'
 import { adoptPlayerFromUrl } from './game/player'
+import { setPlayerMessages } from './game/playerMessages'
 import { visitorTag } from './game/visitor'
+import { isVercelHost } from './game/vercelHost'
 
 // First, so a chunk that fails at any point in the visit -- including one
 // asked for during the first render -- reloads the tab (see chunkRecovery.ts).
 installChunkRecovery()
+
+// A preview or *.vercel.app alias is the people building the game: no Vercel
+// Analytics and no event mirror from it (see game/vercelHost.ts). The endpoints
+// drop its events and scores as well; this keeps the dashboard clean too. The
+// message boxes go with it -- notes and suggestions ride the event mirror, so
+// left up they would say "Thanks" and send nothing (see game/playerMessages.ts).
+if (isVercelHost(window.location.hostname)) {
+  setReporting(false)
+  setPlayerMessages(false)
+}
 
 // Muse AI's `?player=` id, stored before Root's `joinBoard` would mint a new
 // one (see game/player.ts). Taken out of the address bar once read, so it is

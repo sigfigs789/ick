@@ -74,6 +74,20 @@ describe("api/events recording", () => {
     expect(props.feedback).toHaveLength(4000);
   });
 
+  it("drops an event sent to a *.vercel.app host", async () => {
+    withEnv();
+    const fetchMock = stubFetch();
+    const response = await handler(
+      new Request("https://ick-git-branch-sigfigs789.vercel.app/api/events", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: "answer_accepted", props: { word: "quixotic" } }),
+      })
+    );
+    expect(response.status).toBe(202);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("accepts the event even when the write itself fails", async () => {
     withEnv();
     stubFetch({ throws: new Error("supabase unreachable") });

@@ -19,6 +19,7 @@
 
 import { record, supabaseConfigured, type EdgeContext } from "./_supabase";
 import { isBotUserAgent } from "../src/game/botUa";
+import { isVercelRequest } from "../src/game/vercelHost";
 
 export const config = { runtime: "edge" };
 
@@ -112,6 +113,11 @@ export default async function handler(request: Request, context?: EdgeContext): 
   // credentials is a setup problem, and an empty table is a miserable way to
   // discover it. The client ignores this either way.
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
+
+  // A preview or *.vercel.app alias is the people building the game, not
+  // players (see src/game/vercelHost.ts). Accepted and dropped, so the client
+  // has nothing to retry.
+  if (isVercelRequest(request)) return reply(202);
 
   // The request's own user agent, read here rather than trusted from the body:
   // a visit's client signals can be absent (an old bundle) or faked, the header

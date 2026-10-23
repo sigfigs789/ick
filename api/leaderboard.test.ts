@@ -78,6 +78,22 @@ afterEach(() => {
 });
 
 describe("api/leaderboard submissions", () => {
+  it("keeps a *.vercel.app host's scores off the board", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    const response = await handler(
+      new Request("https://ick-git-branch-sigfigs789.vercel.app/api/leaderboard", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(score()),
+      })
+    );
+
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({ ok: true, days: 0 });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("records a score through the upsert function", async () => {
     withEnv();
     const fetchMock = stubFetch([[]]);
