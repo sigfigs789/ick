@@ -1,13 +1,14 @@
 # Daily fold check
 
 What Claude does in `.github/workflows/daily-fold-check.yml`. The workflow has
-already dumped the puzzle's folds and split them into chunks; it prices any
-base Claude names, applies the result and opens the PR itself. Claude's whole
-job is the two files below.
+already dumped two weeks of puzzles' folds, kept each word once, and split them
+into shards of chunks; one Claude run judges one shard. The workflow prices any
+base Claude names, applies the result puzzle by puzzle and opens the PR itself.
+Claude's whole job is the two files below.
 
-Every row is a playable answer for that one puzzle's drop -- the dump runs each
-word through the real submission gate -- whose Standard-mode fold lowers its
-score. Judge only those rows. Do not look for other words.
+Every row is a playable answer for one of those puzzles' drops -- the dump runs
+each word through the real submission gate -- whose Standard-mode fold lowers
+its score. Judge only those rows. Do not look for other words.
 
 ## Input
 
