@@ -861,14 +861,17 @@ h2 {
   text-align: center;
 }
 
-/* One quiet line under the guesses: yesterday's rarest find. */
+/* One quiet footnote at the foot of the play screen: yesterday's rarest find.
+   A hairline sets it apart from the player's own streak and total above. */
 .yesterdays-best {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 0.2rem 0.4rem;
-  margin: 0 0 1rem;
+  margin: 1.25rem 0 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
   font-size: 0.82rem;
   color: var(--fg-muted);
   text-align: center;
@@ -1080,7 +1083,7 @@ h2 {
   justify-content: center;
 }
 .guess-log__completion-trackers {
-  margin-top: 0.3rem;
+  margin-top: 0.75rem;
   margin-bottom: 0.65rem;
 }
 .guess-log__title {
@@ -5985,24 +5988,20 @@ h2 {
   background: var(--accent);
 }
 
-/* The come-back card (components/ComeBackCard.tsx): under today's banked word,
-   what playing tomorrow does for the streak. Quieter than the share panel above
-   it -- no shadow, a muted border -- since it is the last thing on the page,
-   not the main event. */
+/* The come-back line (components/ComeBackCard.tsx): what playing tomorrow does
+   for the streak, as a caption to the streak strip right above it rather than a
+   card of its own -- a box there restated the streak and the 🧊 a second time. */
 .come-back {
-  margin-top: 1rem;
-  padding: 1rem 1.2rem;
-  border: 1px dashed var(--border-strong);
-  border-radius: 1rem;
+  margin: 0.15rem 0 1rem;
   text-align: center;
+  font-size: 0.85rem;
   animation: panel-in 0.4s var(--ease-standard);
 }
 .come-back__goal {
   margin: 0;
-  font-weight: 700;
+  font-weight: 600;
 }
 .come-back__detail {
-  margin: 0.2rem 0 0;
+  margin: 0.1rem 0 0;
   color: var(--fg-muted);
-  font-size: 0.85rem;
 }
