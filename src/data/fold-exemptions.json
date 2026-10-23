@@ -13292,6 +13292,14 @@
     "since": "2026-09-27",
     "reason": "Folded onto `whist`, costing 1.97 points. Flagged in the 2026-09-22 semantic audit (whister not from whist) and confirmed on adversarial re-review (whister unrelated to whist)."
   },
+  "whitecapper": {
+    "since": "2026-12-01",
+    "reason": "Folded onto `whitecaps` (whitecapper > whitecap > whitecaps), costing 1.77 points. Flagged by the daily fold check for the 2026-12-01 `TEC` drop (historical vigilante, not wave sense) and confirmed on adversarial re-review (vigilante sense, not the everyday wave sense)."
+  },
+  "whitecappers": {
+    "since": "2026-12-01",
+    "reason": "Folded onto `whitecaps` (whitecappers > whitecapper > whitecap > whitecaps), costing 1.78 points. Flagged by the daily fold check for the 2026-12-01 `TEC` drop (historical vigilantes, not wave sense) and confirmed on adversarial re-review (vigilante sense, not the everyday wave sense)."
+  },
   "whooped": {
     "since": "2026-10-11",
     "reason": "Folded onto `whoops` (whooped > whoop > whoops), costing 1.23 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (final base whoops is mistake exclamation) and confirmed on adversarial re-review (chain overshoots to the exclamation whoops)."
