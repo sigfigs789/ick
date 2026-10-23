@@ -48,7 +48,7 @@ describe("streakGoal", () => {
     ).toBe("13 days until you can hold 2 🧊 streak freezes.");
     expect(
       streakGoal(streak({ currentStreak: 13, longestStreak: 13, bankedFreezes: 1 })).detail
-    ).toBe("Tomorrow you can hold 2 🧊 streak freezes, and you earn the 2nd.");
+    ).toBe("Tomorrow you can hold 2 🧊 streak freezes, and you earn another 🧊.");
     expect(
       streakGoal(streak({ currentStreak: 20, longestStreak: 20, bankedFreezes: 2 })).detail
     ).toBe("8 days until you can hold 3 🧊 streak freezes.");

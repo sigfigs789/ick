@@ -53,7 +53,7 @@ export function streakGoal(streak: StreakState): StreakGoal {
 
   if (keeps(next)) {
     let detail = "Tomorrow earns a 🧊 freeze, which saves your streak on a day you miss.";
-    if (capFull) detail = `Tomorrow you can hold ${banked + 1} 🧊 streak freezes, and you earn the ${nth}.`;
+    if (capFull) detail = `Tomorrow you can hold ${banked + 1} 🧊 streak freezes, and you earn another 🧊.`;
     else if (nth) detail = `Tomorrow earns a ${nth} 🧊 streak freeze.`;
     return { headline, detail };
   }
