@@ -843,7 +843,7 @@ describe("the finds feed, fetched on its own", () => {
   it("prices a find by the puzzle it was found on, not by today's dictionary", async () => {
     // "kindless" is the mismatch in miniature. Freeform week scores it on its
     // own frequency at 1.08 and the game shows Mythic; every other system folds
-    // it onto "kind" at 5.45 and calls it Very Common. Priced undated, the feed
+    // it onto "kind" at 5.45 and calls it Common. Priced undated, the feed
     // contradicted the game about the same word on the same afternoon.
     stubFetch(feed("kindless", 5.45, "2026-09-15"));
 
@@ -915,7 +915,7 @@ describe("the finds feed, fetched on its own", () => {
     stubFetch(feed("kindless", 1.08, "2026-09-13"));
 
     expect(await fetchFoundWords("2026-09-15")).toMatchObject([
-      { word: "kindless", zipf: 5.45, rarity: "Very Common", today: false },
+      { word: "kindless", zipf: 5.45, rarity: "Common", today: false },
     ]);
   });
 
@@ -944,7 +944,7 @@ describe("the finds feed, fetched on its own", () => {
     stubFetch(feed("kindless", 5.45, ""));
 
     expect(await fetchFoundWords("2026-09-15")).toMatchObject([
-      { word: "kindless", zipf: 5.45, rarity: "Very Common" },
+      { word: "kindless", zipf: 5.45, rarity: "Common" },
     ]);
   });
 

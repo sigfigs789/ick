@@ -14,7 +14,7 @@ and nothing to buy.
    unlimited; only a word the game accepts spends one of your four.
 3. Each accepted word is scored on how rare it is, measured against published
    word-frequency data rather than on length or difficulty. The score is a
-   number out of ten and a tier, from Very Common up to Legend.
+   number out of ten and a tier, from Common up to Legend.
 4. Your best word and your total go on the board, and every word anybody found
    shows up in the finds feed. Three tabs across the top: **Play**,
    **Words found**, and **Leaderboards**.

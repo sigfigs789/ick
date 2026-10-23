@@ -49,13 +49,9 @@
   --rarity-quotidian-fg: #fff;
   --rarity-quotidian-dot: #fff;
 
-  --rarity-very-common-bg: #eceef1;
-  --rarity-very-common-fg: #4b4f57;
-  --rarity-very-common-dot: #9aa0a8;
-
-  --rarity-common-bg: #ece1d4;
-  --rarity-common-fg: #6b4423;
-  --rarity-common-dot: #8b5a2b;
+  --rarity-common-bg: #eceef1;
+  --rarity-common-fg: #4b4f57;
+  --rarity-common-dot: #9aa0a8;
 
   --rarity-uncommon-bg: #e3f6e8;
   --rarity-uncommon-fg: #1c7a3d;
@@ -70,7 +66,7 @@
   --rarity-extremely-rare-dot: #9b4fe0;
 
   /* Elusive sits between Extremely Rare and Mythic, and wears gold: the one
-     share square no other rank uses, as far from Common's brown as a warm hue
+     share square no other rank uses, as far from Common's grey as a warm hue
      gets, and the colour games use for "you found treasure". The text is a dark
      amber because yellow on cream is unreadable; the dot carries the gold.
      Backed by the yellow square in shared results. */
@@ -151,13 +147,9 @@
     --rarity-quotidian-fg: #fff;
     --rarity-quotidian-dot: #fff;
 
-    --rarity-very-common-bg: #232326;
-    --rarity-very-common-fg: #c2c5cb;
-    --rarity-very-common-dot: #8a8d93;
-
-    --rarity-common-bg: #291c10;
-    --rarity-common-fg: #d8b98f;
-    --rarity-common-dot: #a9784b;
+    --rarity-common-bg: #232326;
+    --rarity-common-fg: #c2c5cb;
+    --rarity-common-dot: #8a8d93;
 
     --rarity-uncommon-bg: #0f2b19;
     --rarity-uncommon-fg: #7fe0a3;
@@ -1455,13 +1447,6 @@ h2 {
 }
 .rarity--quotidian .rarity-badge__dot {
   background: var(--rarity-quotidian-dot);
-}
-.rarity--very-common {
-  background: var(--rarity-very-common-bg);
-  color: var(--rarity-very-common-fg);
-}
-.rarity--very-common .rarity-badge__dot {
-  background: var(--rarity-very-common-dot);
 }
 .rarity--common {
   background: var(--rarity-common-bg);

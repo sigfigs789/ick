@@ -52,7 +52,6 @@ function tone(c: AudioContext, freq: number, startTime: number, duration: number
 
 const RARITY_RANK: Record<Rarity, number> = {
   Quotidian: 0,
-  "Very Common": 1,
   Common: 2,
   Uncommon: 3,
   Rare: 4,

@@ -83,8 +83,7 @@ export const lightTheme: Theme = {
 
   rarity: {
     Quotidian: { bg: '#000000', fg: '#ffffff', dot: '#ffffff' },
-    'Very Common': { bg: '#eceef1', fg: '#4b4f57', dot: '#9aa0a8' },
-    Common: { bg: '#ece1d4', fg: '#6b4423', dot: '#8b5a2b' },
+    Common: { bg: '#eceef1', fg: '#4b4f57', dot: '#9aa0a8' },
     Uncommon: { bg: '#e3f6e8', fg: '#1c7a3d', dot: '#2fa457' },
     Rare: { bg: '#e2eefd', fg: '#1450b8', dot: '#2f78e0' },
     'Extremely Rare': { bg: '#f1e6fc', fg: '#7222c2', dot: '#9b4fe0' },
@@ -123,8 +122,7 @@ export const darkTheme: Theme = {
 
   rarity: {
     Quotidian: { bg: '#000000', fg: '#ffffff', dot: '#ffffff' },
-    'Very Common': { bg: '#232326', fg: '#c2c5cb', dot: '#8a8d93' },
-    Common: { bg: '#291c10', fg: '#d8b98f', dot: '#a9784b' },
+    Common: { bg: '#232326', fg: '#c2c5cb', dot: '#8a8d93' },
     Uncommon: { bg: '#0f2b19', fg: '#7fe0a3', dot: '#3bbf6c' },
     Rare: { bg: '#0f2140', fg: '#8bb6fb', dot: '#4a8ff2' },
     'Extremely Rare': { bg: '#2a1440', fg: '#cd9bf7', dot: '#ab5ff0' },

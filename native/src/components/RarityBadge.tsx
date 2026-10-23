@@ -14,7 +14,6 @@ import { rarityPalette, useTheme } from '../theme/useTheme';
  */
 const RARITY_TAG: Record<Rarity, string> = {
   Quotidian: 'QUOTIDIAN',
-  'Very Common': 'VERY COMMON',
   Common: 'COMMON',
   Uncommon: 'UNCOMMON',
   Rare: 'RARE',

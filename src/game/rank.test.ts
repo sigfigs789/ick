@@ -8,13 +8,13 @@ describe("bestWord", () => {
   });
 
   it("returns the only word in a single-item list", () => {
-    const words: AcceptedWord[] = [{ word: "the", rarity: "Very Common", zipf: 7.7 }];
+    const words: AcceptedWord[] = [{ word: "the", rarity: "Common", zipf: 7.7 }];
     expect(bestWord(words)).toEqual(words[0]);
   });
 
   it("picks the word with the lowest zipf (rarest)", () => {
     const words: AcceptedWord[] = [
-      { word: "the", rarity: "Very Common", zipf: 7.7 },
+      { word: "the", rarity: "Common", zipf: 7.7 },
       { word: "aardvark", rarity: "Extremely Rare", zipf: 2.4 },
       { word: "strange", rarity: "Common", zipf: 4.6 },
     ];

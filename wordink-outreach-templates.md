@@ -166,7 +166,7 @@ it doesn't apply.*
 >
 > Every day there's a 2–3 letter drop; you submit words containing it as a
 > contiguous substring. Instead of win/lose, each word gets a rarity score from
-> Zipf frequency data (wordfreq), bucketed Very Common → Extremely Rare.
+> Zipf frequency data (wordfreq), bucketed Common → Extremely Rare.
 >
 > The interesting problem was scoring fairness: a plural or a third-person form
 > shouldn't out-score the word it came from, and a word no corpus attests isn't
