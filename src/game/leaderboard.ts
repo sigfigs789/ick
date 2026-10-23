@@ -806,6 +806,22 @@ export async function fetchFoundWords(
   return parseWords(body.words, date);
 }
 
+/**
+ * The player ids that found `word` on `date`'s puzzle, first finder first.
+ * Shared by every reader like the feed, so it carries no player of its own.
+ */
+export async function fetchWordFinders(word: string, date: string): Promise<string[]> {
+  const response = await fetch(
+    `/api/leaderboard?finders=${encodeURIComponent(word)}&today=${encodeURIComponent(date)}`,
+    { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), cache: "no-store" }
+  );
+  if (!response.ok) throw new Error(`leaderboard finders ${response.status}`);
+  const body = (await response.json()) as Record<string, unknown>;
+  return Array.isArray(body.finders)
+    ? body.finders.filter((id): id is string => typeof id === "string")
+    : [];
+}
+
 /** Turn one response body -- real or sample -- into the boards the page renders. */
 function readBoards(
   body: Record<string, unknown>,

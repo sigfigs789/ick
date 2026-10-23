@@ -882,6 +882,13 @@ h2 {
   text-transform: lowercase;
   color: var(--fg);
 }
+/* The tier's colours without the badge, as .drop-display__ceiling-word-score. */
+.yesterdays-best__score {
+  padding: 0.12rem 0.42rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
 .yesterdays-best__finders {
   color: var(--fg-faint);
 }

@@ -1007,6 +1007,29 @@ describe("api/leaderboard recent finds", () => {
   });
 });
 
+describe("api/leaderboard word finders", () => {
+  it("asks for one word's finders on one puzzle and passes their ids through", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[{ player_id: "a" }, { player_id: "b" }]]);
+    const response = await handler(get("?finders=inkling&today=2026-08-25"));
+
+    expect(rpcCall(fetchMock)?.url).toBe(
+      "https://project.supabase.co/rest/v1/rpc/leaderboard_word_finders"
+    );
+    expect(rpcCall(fetchMock)?.args).toMatchObject({ p_date: "2026-08-25", p_word: "inkling" });
+    expect(await response.json()).toEqual({ finders: ["a", "b"] });
+  });
+
+  it("refuses anything that isn't a word", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    const response = await handler(get("?finders=DROP%20TABLE&today=2026-08-25"));
+
+    expect(response.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
 describe("api/leaderboard unranked days", () => {
   it("passes the unranked flag through, so the write keeps the day off the board", async () => {
     withEnv();
