@@ -22,7 +22,6 @@ import { LEXICON_SOURCES, corpusEntry, reasonsOf } from "./corpus";
 import { isBlocked } from "./blocklist";
 import { dropForDate } from "./drop";
 import { FREEFORM_TRIAL_START, MODE_CHOICE_START } from "./mode";
-import rejectionMetadata from "../data/rejection-metadata.json";
 import {
   baseForm,
   boundBaseCandidates,
@@ -44,7 +43,52 @@ const METADATA_REASONS = [
   "dated",
 ] as const;
 type MetadataReason = (typeof METADATA_REASONS)[number];
-const metadataByReason = rejectionMetadata as Record<MetadataReason, readonly string[]>;
+type MetadataByReason = Record<MetadataReason, readonly string[]>;
+
+/*
+ * src/data/rejection-metadata.json, fetched after the app starts rather than
+ * with it.
+ *
+ * It is about 365 KB gzipped, and it never decides whether a
+ * word plays or what it scores -- only which reason a word that is already
+ * refused is given. So it stays off the first load, and the request goes out as
+ * soon as this module runs, by which point the critical chunks are in.
+ *
+ * The reason is not cosmetic, though: a named register is final, where a bare
+ * "not-a-word" sends the word to the live Merriam-Webster lookup (see
+ * `rejectionReasonFor`). So nothing may act on a "not-a-word" before the file
+ * is here. The puzzle's submit and copy paths wait on
+ * `rejectionMetadataReady`, and the views that judge words on render
+ * re-run on `useRejectionMetadataLoaded` (see hooks/).
+ */
+let metadataByReason: MetadataByReason | undefined;
+
+/** Resolves once the rejection metadata is in. Never rejects. */
+export const rejectionMetadataReady: Promise<void> = loadRejectionMetadata();
+
+async function loadRejectionMetadata(): Promise<void> {
+  // A failed fetch that does not reload the tab (see chunkRecovery) is tried
+  // once more; failing that, words are refused without their specific reason,
+  // which is how the game treats every word the metadata does not list.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const data = await import("../data/rejection-metadata.json");
+      // Undefined only while chunkRecovery reloads the tab. Waiting on the
+      // reload is better than a moment of judging words without the file.
+      if (data === undefined) return new Promise<never>(() => {});
+      metadataByReason = data.default as MetadataByReason;
+      return;
+    } catch {
+      // Fall through to the retry, then give up quietly.
+    }
+  }
+  metadataByReason = {} as MetadataByReason;
+}
+
+/** Whether `rejectionMetadataReady` has settled. */
+export function rejectionMetadataLoaded(): boolean {
+  return metadataByReason !== undefined;
+}
 
 function includesSorted(words: readonly string[], word: string): boolean {
   let low = 0;
@@ -79,7 +123,7 @@ function rejectionReasonFor(word: string, date?: string): RejectionReason | unde
   const curated = curatedRejection(word, date);
   if (curated !== undefined) return curated;
   const metadata = METADATA_REASONS.find((reason) =>
-    includesSorted(metadataByReason[reason] ?? [], word)
+    includesSorted(metadataByReason?.[reason] ?? [], word)
   );
   if (metadata !== undefined && waivesRejectionReason(metadata, date)) return undefined;
   return metadata;
