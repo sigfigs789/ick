@@ -37,21 +37,31 @@ describe("streakGoal", () => {
       streakGoal(streak({ currentStreak: 4, longestStreak: 4, bankedFreezes: 1 }))
     ).toEqual({
       headline: "Play tomorrow to make it a 5-day streak.",
-      detail: "10 days to a 2nd 🧊 streak freeze.",
+      detail: "10 days until you can hold 2 🧊 streak freezes.",
     });
   });
 
-  it("counts the freeze a holder would add, not a next one they already have", () => {
+  it("says the cap rises when it is full", () => {
     // Back on a 1-day run with a best past 3: one held, the cap rises at 14.
     expect(
       streakGoal(streak({ currentStreak: 1, longestStreak: 5, bankedFreezes: 1 })).detail
-    ).toBe("13 days to a 2nd 🧊 streak freeze.");
+    ).toBe("13 days until you can hold 2 🧊 streak freezes.");
     expect(
       streakGoal(streak({ currentStreak: 13, longestStreak: 13, bankedFreezes: 1 })).detail
-    ).toBe("Tomorrow earns a 2nd 🧊 streak freeze.");
+    ).toBe("Tomorrow you can hold 2 🧊 streak freezes, and you earn the 2nd.");
     expect(
       streakGoal(streak({ currentStreak: 20, longestStreak: 20, bankedFreezes: 2 })).detail
-    ).toBe("8 days to a 3rd 🧊 streak freeze.");
+    ).toBe("8 days until you can hold 3 🧊 streak freezes.");
+  });
+
+  it("counts the freeze a holder would add when there is room for it", () => {
+    // Cap 2 from a best of 20, one held: day 14 of this run earns the 2nd.
+    expect(
+      streakGoal(streak({ currentStreak: 8, longestStreak: 20, bankedFreezes: 1 })).detail
+    ).toBe("6 days to a 2nd 🧊 streak freeze.");
+    expect(
+      streakGoal(streak({ currentStreak: 13, longestStreak: 20, bankedFreezes: 1 })).detail
+    ).toBe("Tomorrow earns a 2nd 🧊 streak freeze.");
   });
 
   it("falls back to the best streak, then to a new record", () => {
