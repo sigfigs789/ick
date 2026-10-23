@@ -330,6 +330,10 @@ export interface Returns {
   guessers: Rate & { soFar: number };
 }
 
+/** The modes a player was in over the window: one of them, or both. */
+export const PUZZLE_TYPES = ["standard", "freeform", "both"] as const;
+export type PuzzleType = (typeof PUZZLE_TYPES)[number];
+
 /** The key numbers for one set of players over the window. */
 export interface KeyMetrics {
   players: number;
@@ -370,8 +374,11 @@ export interface AnalyticsReport {
   from: string | null;
   to: string | null;
   groups: Record<Group, KeyMetrics>;
-  /** By the puzzle type a word was banked in. */
-  modes: Record<"standard" | "freeform", { guessed: number; returned: Returns }>;
+  /**
+   * Each grouping, split by the puzzle types the player was in over the
+   * window: one of them, or both (see the 2026-10-28 migrations).
+   */
+  modes: Record<Group, Record<PuzzleType, KeyMetrics>>;
   /** Each grouping, split by whether the player opened the chat in the window. */
   chat: Record<Group, { opened: KeyMetrics; notOpened: KeyMetrics }>;
   chatSince: string | null;
@@ -397,8 +404,62 @@ export interface AnalyticsReport {
    */
   botsFiltered: number;
   daily: Array<{ date: string; closed: boolean; groups: Record<Group, DayMetrics> }>;
+  /**
+   * Weekly active and playing players, newest week first: Sunday to Saturday,
+   * the latest the week `today` is in, up to 13 weeks whatever the window (see
+   * the 2026-10-27 and 2026-10-30 migrations). New is a player whose
+   * first-ever day is in the week.
+   */
+  weekly: WeekActives[];
+  /**
+   * Retention by the week players arrived, newest first, up to 13 weeks (see
+   * the 2026-10-29 migration).
+   */
+  cohorts: Cohort[];
+  /** The window's new players by where their first visit came from, most first. */
+  sources: SourceRow[];
   /** Muse AI, which every number above leaves out (see game/visitor.ts). */
   muse: MuseReport;
+}
+
+/** One week's active players: the ones who turned up on any of its puzzles. */
+export interface WeekActives {
+  start: string;
+  end: string;
+  players: Record<Group, number>;
+  /** The week's playing players: the ones who banked a word in any of its puzzles. */
+  playing: Record<Group, number>;
+  /**
+   * Where the week's players came from: new (first-ever day that week), kept
+   * (played the week before too) or resurrected (played before, but not the
+   * week before). Lost is the week before's players who did not turn up.
+   */
+  flow: { new: number; kept: number; resurrected: number; resurrectedStayed: number; lost: number };
+  /** Whether the week after is over, so `resurrectedStayed` is final. */
+  nextWeekOver: boolean;
+  /** Players by how many of the week's puzzles they banked a word in. */
+  played: { oneDay: number; twoToThree: number; fourPlus: number };
+}
+
+/**
+ * The players whose first-ever day fell in the week starting `start`, and how
+ * many of them turned up in each later week: `weeks[0]` is the week after, and
+ * the last one is still counting up. `guessers` is the same for the ones who
+ * banked a word in their first week.
+ */
+export interface Cohort {
+  start: string;
+  players: number;
+  guessers: number;
+  weeks: Array<{ players: number; guessers: number }>;
+}
+
+/** New players from one first-touch source (see game/visits.ts). */
+export interface SourceRow {
+  source: string;
+  players: number;
+  guessed: number;
+  returned: { rate: Rate; soFar: number };
 }
 
 /** How Muse AI played in the window, by puzzle. Averages are null with no puzzles. */
@@ -533,15 +594,16 @@ function byGroup<T>(raw: unknown, read: (raw: unknown) => T): Record<Group, T> {
  */
 export function parseAnalytics(raw: unknown): AnalyticsReport {
   const r = obj(raw);
-  const modes = obj(r.modes);
-  const mode = (raw: unknown) => ({ guessed: count(obj(raw).guessed), returned: returns(obj(raw).returned) });
   return {
     today: text(r.today),
     firstDay: text(r.firstDay),
     from: text(r.from),
     to: text(r.to),
     groups: byGroup(r.groups, metrics),
-    modes: { standard: mode(modes.standard), freeform: mode(modes.freeform) },
+    modes: byGroup(r.modes, (raw) => {
+      const m = obj(raw);
+      return Object.fromEntries(PUZZLE_TYPES.map((t) => [t, metrics(m[t])])) as Record<PuzzleType, KeyMetrics>;
+    }),
     chat: byGroup(r.chat, (raw) => ({ opened: metrics(obj(raw).opened), notOpened: metrics(obj(raw).notOpened) })),
     chatSince: text(r.chatSince),
     ui: byGroup(r.ui, (raw) => ({ control: metrics(obj(raw).control), v2: metrics(obj(raw).v2) })),
@@ -570,6 +632,46 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
           };
         }),
       })),
+    weekly: list(r.weekly)
+      .filter((w) => text(w.start) && text(w.end))
+      .map((w) => ({
+        start: w.start as string,
+        end: w.end as string,
+        players: byGroup(w.groups, count),
+        playing: byGroup(w.playing, count),
+        flow: {
+          new: count(obj(w.flow).new),
+          kept: count(obj(w.flow).kept),
+          resurrected: count(obj(w.flow).resurrected),
+          resurrectedStayed: count(obj(w.flow).resurrectedStayed),
+          lost: count(obj(w.flow).lost),
+        },
+        nextWeekOver: w.nextWeekOver === true,
+        played: {
+          oneDay: count(obj(w.played).oneDay),
+          twoToThree: count(obj(w.played).twoToThree),
+          fourPlus: count(obj(w.played).fourPlus),
+        },
+      })),
+    cohorts: list(r.cohorts)
+      .filter((c) => text(c.start))
+      .map((c) => ({
+        start: c.start as string,
+        players: count(c.players),
+        guessers: count(c.guessers),
+        weeks: list(c.weeks).map((w) => ({ players: count(w.players), guessers: count(w.guessers) })),
+      })),
+    sources: list(r.sources)
+      .filter((s) => text(s.source))
+      .map((s) => {
+        const ret = obj(s.returned);
+        return {
+          source: s.source as string,
+          players: count(s.players),
+          guessed: count(s.guessed),
+          returned: { rate: { cohort: count(ret.cohort), returned: count(ret.returned) }, soFar: count(ret.soFar) },
+        };
+      }),
     muse: muse(r.muse),
   };
 }

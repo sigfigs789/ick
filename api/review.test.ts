@@ -452,6 +452,22 @@ describe("api/review", () => {
     });
   });
 
+  it("passes the v2 report through for the reader's puzzle, without a key", async () => {
+    withEnv(CONFIGURED);
+    const report = { today: "2026-10-22", daily: [] };
+    const fetchMock = stubFetch(report);
+
+    const response = await handler(get("?list=analytics-v2&today=2026-10-22"));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ report });
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+    expect(String(calls[0][0]).split("/").pop()).toBe("analytics_v2");
+    expect(JSON.parse(String(calls[0][1].body))).toEqual({ p_today: "2026-10-22" });
+    expect((await handler(get("?list=analytics-v2"))).status).toBe(400);
+    expect((await handler(get("?list=analytics-v2&today=2026-13-40"))).status).toBe(400);
+  });
+
   it("no longer serves the idle hint report on its own", async () => {
     withEnv(CONFIGURED);
     stubFetch({});

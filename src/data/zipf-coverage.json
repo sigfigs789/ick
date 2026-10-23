@@ -1,9 +1,9 @@
 {
   "words": 1217270,
   "rulesDate": "2027-01-07",
-  "measured": 506223,
+  "measured": 506215,
   "estimated": {
-    "playable": 415710,
+    "playable": 415718,
     "notPlayable": 0
   },
   "unattested": {
@@ -94,7 +94,7 @@
     {
       "date": "2026-10-15",
       "drop": "EA",
-      "estimated": 25935,
+      "estimated": 25936,
       "unattested": 0,
       "swept": "100.0%"
     },
@@ -171,7 +171,7 @@
     {
       "date": "2026-10-26",
       "drop": "SES",
-      "estimated": 9528,
+      "estimated": 9533,
       "unattested": 0,
       "swept": "100.0%"
     },
@@ -339,7 +339,7 @@
     {
       "date": "2026-11-19",
       "drop": "IES",
-      "estimated": 10629,
+      "estimated": 10630,
       "unattested": 24,
       "swept": "99.8%"
     },
@@ -416,7 +416,7 @@
     {
       "date": "2026-11-30",
       "drop": "EL",
-      "estimated": 37957,
+      "estimated": 37959,
       "unattested": 51,
       "swept": "99.9%"
     },
@@ -430,7 +430,7 @@
     {
       "date": "2026-12-02",
       "drop": "AD",
-      "estimated": 19986,
+      "estimated": 19987,
       "unattested": 28,
       "swept": "99.9%"
     },
@@ -500,7 +500,7 @@
     {
       "date": "2026-12-12",
       "drop": "NI",
-      "estimated": 25909,
+      "estimated": 25910,
       "unattested": 21259,
       "swept": "54.9%"
     },

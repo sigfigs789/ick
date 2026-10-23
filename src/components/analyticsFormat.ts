@@ -16,6 +16,39 @@ export function pct(share: number): string {
   return `${Math.round(share * 100)}%`;
 }
 
+/**
+ * The change from `before` to `now` as a signed percent, or a dash when there
+ * was nothing before to grow from.
+ */
+export function growth(now: number, before: number | undefined): string {
+  if (before === undefined || before === 0) return "–";
+  const change = Math.round(((now - before) / before) * 100);
+  return change > 0 ? `+${change}%` : change < 0 ? `−${-change}%` : "0%";
+}
+
+/**
+ * The first-touch sources a share link sets: the `s=` codes of game/share.ts,
+ * without their mode suffix (see arrivalSource in game/visits.ts).
+ */
+export const SHARE_SOURCES: ReadonlySet<string> = new Set(["share", "t"]);
+
+const SOURCE_NAMES: Record<string, string> = {
+  share: "Share link",
+  t: "Share link on X",
+  direct: "Direct (no link or referrer)",
+  google: "Google",
+  bing: "Bing",
+  duckduckgo: "DuckDuckGo",
+  reddit: "Reddit",
+  twitter: "X",
+  facebook: "Facebook",
+};
+
+/** A first-touch source as the page names it; an unknown one is its bare host or code. */
+export function sourceName(source: string): string {
+  return SOURCE_NAMES[source] ?? source;
+}
+
 /** A date `n` days from `date`, both YYYY-MM-DD. */
 export function addDays(date: string, n: number): string {
   const d = new Date(`${date}T00:00:00Z`);

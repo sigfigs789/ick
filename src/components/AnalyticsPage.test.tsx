@@ -45,8 +45,9 @@ const REPORT = {
   to: "2026-10-16",
   groups,
   modes: {
-    standard: { guessed: 35, returned: { cohort: 20, returned: 5, soFar: 12 } },
-    freeform: { guessed: 15, returned: { cohort: 0, returned: 0, soFar: 4 } },
+    all: { standard: metrics(80, 61, 30, 12, 20, 5), freeform: metrics(15, 12, 10, 4), both: metrics(5, 5, 5, 3) },
+    new: { standard: metrics(58, 40, 16, 5), freeform: metrics(10, 7, 6, 2), both: metrics(2, 2, 2, 1) },
+    returning: { standard: metrics(22, 21, 14, 7), freeform: metrics(5, 5, 4, 2), both: metrics(3, 3, 3, 2) },
   },
   chat: {
     all: { opened: metrics(10, 10, 8, 6, 5, 4), notOpened: metrics(90, 70, 42, 24, 35, 16) },
@@ -64,6 +65,39 @@ const REPORT = {
   daily: [
     { date: "2026-10-15", closed: false, groups: dayGroups(40) },
     { date: "2026-10-16", closed: false, groups: dayGroups(20) },
+  ],
+  weekly: [
+    {
+      start: "2026-10-11", end: "2026-10-17", groups: { all: 120, new: 80, returning: 40 },
+      playing: { all: 50, new: 30, returning: 20 },
+      flow: { new: 80, kept: 30, resurrected: 10, resurrectedStayed: 3, lost: 70 },
+      nextWeekOver: false,
+      played: { oneDay: 30, twoToThree: 10, fourPlus: 10 },
+    },
+    {
+      start: "2026-10-04", end: "2026-10-10", groups: { all: 100, new: 70, returning: 30 },
+      playing: { all: 25, new: 15, returning: 10 },
+      flow: { new: 70, kept: 26, resurrected: 4, resurrectedStayed: 1, lost: 0 },
+      nextWeekOver: true,
+      played: { oneDay: 20, twoToThree: 5, fourPlus: 0 },
+    },
+    { start: "2026-09-27", end: "2026-10-03", groups: { all: 0, new: 0, returning: 0 } },
+  ],
+  cohorts: [
+    { start: "2026-10-11", players: 80, guessers: 20, weeks: [] },
+    {
+      start: "2026-10-04", players: 70, guessers: 20,
+      weeks: [{ players: 14, guessers: 8 }],
+    },
+    {
+      start: "2026-09-27", players: 50, guessers: 10,
+      weeks: [{ players: 10, guessers: 5 }, { players: 5, guessers: 4 }],
+    },
+  ],
+  sources: [
+    { source: "direct", players: 50, guessed: 15, returned: { cohort: 0, returned: 0, soFar: 5 } },
+    { source: "share", players: 12, guessed: 9, returned: { cohort: 0, returned: 0, soFar: 6 } },
+    { source: "news.ycombinator.com", players: 8, guessed: 1, returned: { cohort: 0, returned: 0, soFar: 0 } },
   ],
   muse: {
     visits: 5,
@@ -168,6 +202,29 @@ describe("AnalyticsPage", () => {
     expect(screen.queryByText(/Started in/)).not.toBeInTheDocument();
   });
 
+  it("opens every section on a verdict and the marks for each", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+
+    await screen.findByRole("heading", { name: "Key numbers" });
+    // Half the window's players guessed: great, with the marks that make it so.
+    const day = within(section("Day by day"));
+    expect(day.getByText("Great")).toBeInTheDocument();
+    expect(section("Day by day")).toHaveTextContent("50% of players guessed");
+    expect(section("Day by day")).toHaveTextContent("Weak under 30% · Promising 30% to 50% · Great 50% or more");
+    // Nobody's next day is over yet, so there is nothing to judge.
+    expect(within(section("Key numbers")).getByText("Too early")).toBeInTheDocument();
+    expect(section("Key numbers")).toHaveTextContent("back for the next puzzle · needs 20 players whose next day is over");
+    // 12 new players from share links over 20 sharers.
+    expect(section("Where new players come from")).toHaveTextContent("Great0.60 new players per sharer");
+    for (const title of [
+      "Growth", "Retention by arrival week", "Core players", "Resurrected players",
+      "Puzzle type", "Play screen test", "Chat", "Idle hint test", "Muse AI",
+    ]) {
+      expect(section(title)).toHaveTextContent(/(Weak|Promising|Great|Too early)/);
+    }
+  });
+
   it("says how many automated visitors the numbers leave out", async () => {
     stubFetch();
     render(<AnalyticsPage />);
@@ -210,17 +267,113 @@ describe("AnalyticsPage", () => {
     expect(players()).toHaveTextContent("19");
   });
 
-  it("tables both puzzle types, and the chat split for every grouping", async () => {
+  it("tables weekly active and playing players, their growth and open to play for the grouping picked", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+    await screen.findByRole("heading", { name: "Growth" });
+    const growth = section("Growth");
+    const week = (name: RegExp) => within(growth).getByRole("row", { name });
+
+    expect(week(/^Oct 11 to Oct 17 so far/)).toHaveTextContent("120+20%50+100%42%");
+    // Nothing the week before to grow from.
+    expect(week(/^Oct 4 to Oct 10/)).toHaveTextContent("100–25–25%");
+    // A week from before the report carried playing players reads as none played.
+    expect(week(/^Sep 27 to Oct 3/)).toHaveTextContent("0–0––");
+    await userEvent.click(within(growth).getByRole("button", { name: "Returning players" }));
+    expect(week(/^Oct 11 to Oct 17/)).toHaveTextContent("40+33%20+100%50%");
+    await userEvent.click(within(growth).getByRole("button", { name: "New players" }));
+    expect(week(/^Oct 11 to Oct 17/)).toHaveTextContent("80+14%30+100%38%");
+  });
+
+  it("tables retention by arrival week, for everyone or the first week's guessers", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+    await screen.findByRole("heading", { name: "Retention by arrival week" });
+    const cohorts = section("Retention by arrival week");
+    const row = (name: RegExp) => within(cohorts).getByRole("row", { name });
+
+    // As many week columns as the oldest row has weeks.
+    expect(within(cohorts).getByRole("columnheader", { name: "Week 2" })).toBeInTheDocument();
+    expect(within(cohorts).queryByRole("columnheader", { name: "Week 3" })).toBeNull();
+    // The last week of each row is still counting up.
+    expect(row(/^Sep 27/)).toHaveTextContent("Sep 275020%10% so far");
+    expect(row(/^Oct 4/)).toHaveTextContent("Oct 47020% so far");
+    expect(row(/^Oct 11/)).toHaveTextContent("Oct 1180");
+    await userEvent.click(within(cohorts).getByRole("button", { name: "Guessed in their first week" }));
+    expect(row(/^Sep 27/)).toHaveTextContent("Sep 271050%40% so far");
+    expect(row(/^Oct 4/)).toHaveTextContent("Oct 42040% so far");
+  });
+
+  it("tables the core players: how many of each week's puzzles its players played", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+    await screen.findByRole("heading", { name: "Core players" });
+    const core = section("Core players");
+
+    expect(within(core).getByRole("row", { name: /^Oct 11 to Oct 17 so far/ })).toHaveTextContent(
+      "5030 60%10 20%10 20%",
+    );
+    expect(within(core).getByRole("row", { name: /^Oct 4 to Oct 10/ })).toHaveTextContent("2520 80%5 20%0 0%");
+  });
+
+  it("tables each week's new, kept, resurrected and lost players", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+    await screen.findByRole("heading", { name: "Resurrected players" });
+    const flow = section("Resurrected players");
+
+    // Stayed is still counting up while the week after is.
+    expect(within(flow).getByRole("row", { name: /^Oct 11 to Oct 17 so far/ })).toHaveTextContent(
+      "12080 67%30 25%10 8%3 30% so far70+20",
+    );
+    expect(within(flow).getByRole("row", { name: /^Oct 4 to Oct 10/ })).toHaveTextContent(
+      "10070 70%26 26%4 4%1 25%0+74",
+    );
+  });
+
+  it("tables the window's new players by source, and the new players per sharer", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+    await screen.findByRole("heading", { name: "Where new players come from" });
+    const sources = section("Where new players come from");
+
+    // 12 from share links, over the 20 players who shared.
+    expect(sources).toHaveTextContent("Share links brought 12 new players, from 20 players who shared: 0.60 per sharer.");
+    expect(within(sources).getByRole("row", { name: /^Share link/ })).toHaveTextContent("12 17%9 75%6 50%");
+    expect(within(sources).getByRole("row", { name: /^Direct/ })).toHaveTextContent("50 71%15 30%5 10%");
+    // A site the page has no name for keeps its host.
+    expect(within(sources).getByRole("rowheader", { name: "news.ycombinator.com" })).toBeInTheDocument();
+  });
+
+  it("tables the key numbers for both puzzle types, and the chat split, for every grouping", async () => {
     stubFetch();
     render(<AnalyticsPage />);
     await screen.findByRole("heading", { name: "Puzzle type" });
 
-    const standard = within(section("Puzzle type")).getByRole("row", { name: /^Standard/ });
-    expect(standard).toHaveTextContent("35");
-    expect(standard).toHaveTextContent("12 34%");
-    expect(within(section("Puzzle type")).getByRole("row", { name: /^Freeform/ })).toHaveTextContent(
-      "4 27%",
-    );
+    const types = section("Puzzle type");
+    expect(within(types).getAllByText("Standard only")).toHaveLength(3);
+    expect(within(types).getAllByText("Freeform only")).toHaveLength(3);
+    expect(within(types).getAllByText("Both")).toHaveLength(3);
+    // Each grouping's three rows sit under one label.
+    expect(within(types).getByRole("rowheader", { name: "Everyone" })).toHaveAttribute("rowspan", "3");
+    // Every key number has its column, as in Key numbers.
+    for (const name of ["Players", "Did something", "Guessed", "Completed", "Shared", "Back next day", "Back within 7 days"]) {
+      expect(within(types).getByRole("columnheader", { name })).toBeInTheDocument();
+    }
+    const standard = within(types).getByRole("row", { name: /^Everyone Standard only/ });
+    expect(standard).toHaveTextContent("80");
+    expect(standard).toHaveTextContent("61 76%");
+    expect(standard).toHaveTextContent("30 38%");
+    // Completed and shared over the players, and over the guessers.
+    expect(standard).toHaveTextContent("21 26%70% of guessers");
+    expect(standard).toHaveTextContent("12 15%40% of guessers");
+    expect(standard).toHaveTextContent("12 15%47% of guessers");
+    // The rows after it are Everyone's too, under the same label.
+    const [freeform] = within(types).getAllByRole("row", { name: /^Freeform only/ });
+    expect(freeform).toHaveTextContent("15");
+    expect(freeform).toHaveTextContent("10 67%");
+    const [both] = within(types).getAllByRole("row", { name: /^Both/ });
+    expect(both).toHaveTextContent("5 100%");
 
     const chat = section("Chat");
     expect(within(chat).getAllByText("Opened chat")).toHaveLength(3);

@@ -1,0 +1,191 @@
+import type { Day, Rate, Report, Week } from "./report";
+
+/**
+ * The scorecard: six categories, each with the three bands a small daily
+ * browser word game is held to, and where WordInk stands.
+ *
+ * The bands are as given, and leave gaps: D1 of 20% is past going nowhere
+ * (under 15%) but short of promising (25%). A number in a gap is "In between",
+ * not rounded into a band; a number past promising's top but short of great
+ * is still promising. Where the table gives words rather than numbers --
+ * sharing, and "flat" growth -- the numbers are this page's, and the row says
+ * what they are.
+ *
+ * Every row is over players, the visitors who banked a word.
+ */
+
+export type Standing = "nowhere" | "between" | "promising" | "great";
+
+export const STANDING_NAMES: Record<Standing, string> = {
+  nowhere: "Going nowhere",
+  between: "In between",
+  promising: "Promising",
+  great: "Great shape",
+};
+
+export interface Row {
+  metric: string;
+  bands: Record<"nowhere" | "promising" | "great", string>;
+  /** The number as shown, or null when there is too little to judge. */
+  value: string | null;
+  standing: Standing | null;
+  /** What the number is over, or what is missing for one. */
+  detail: string;
+  /** How it is measured. */
+  how: string;
+}
+
+/** Below `nowhere` is going nowhere, from `promising` promising, from `great` great; between the first two, in between. */
+interface Marks {
+  nowhere: number;
+  promising: number;
+  great: number;
+}
+
+/** A share as the whole percent it is shown as, so a "25%" is never judged under 25%. */
+const whole = (share: number): number => Math.round(share * 100);
+
+export function stand(share: number, marks: Marks): Standing {
+  const n = whole(share);
+  if (n >= whole(marks.great)) return "great";
+  if (n >= whole(marks.promising)) return "promising";
+  if (n >= whole(marks.nowhere)) return "between";
+  return "nowhere";
+}
+
+export function percent(share: number, signed = false): string {
+  const n = whole(share);
+  if (!signed) return `${n}%`;
+  return n > 0 ? `+${n}%` : n < 0 ? `−${-n}%` : "0%";
+}
+
+export const count = (n: number): string => n.toLocaleString("en-US");
+
+export function addDays(date: string, n: number): string {
+  const d = new Date(`${date}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+/** The Saturday that ends the last full week, Sunday to Saturday, before `today`'s. */
+export function lastSaturday(today: string): string {
+  return addDays(today, -new Date(`${today}T12:00:00Z`).getUTCDay() - 1);
+}
+
+/** The average of `field` a day over the `n` days ending `end`, or null when the report does not cover them all. */
+export function average(daily: Day[], end: string, n: number, field: "players" | "visitors" = "players"): number | null {
+  const from = addDays(end, 1 - n);
+  const span = daily.filter((d) => d.date >= from && d.date <= end);
+  return span.length === n ? span.reduce((sum, d) => sum + d[field], 0) / n : null;
+}
+
+/** The least cohort a rate is judged over; under it the row says it is too early. */
+const LEAST = 30;
+
+function retentionRow(metric: string, n: number, rate: Rate, bands: Row["bands"], marks: Marks): Row {
+  const ok = rate.cohort >= LEAST;
+  return {
+    metric,
+    bands,
+    value: ok ? percent(rate.returned / rate.cohort) : null,
+    standing: ok ? stand(rate.returned / rate.cohort, marks) : null,
+    detail: ok
+      ? `${count(rate.returned)} of ${count(rate.cohort)} new players`
+      : `needs ${LEAST} new players whose day ${n} is over`,
+    how: `Players whose first word was in a 28-day span, and who banked a word again exactly ${n} ${n === 1 ? "day" : "days"} later.`,
+  };
+}
+
+/**
+ * DAU trend: daily players averaged over the last four full weeks against the
+ * four before, as a monthly rate.
+ */
+export function dauTrend(report: Report): { change: number; recent: number; before: number } | null {
+  const end = lastSaturday(report.today);
+  const recent = average(report.daily, end, 28);
+  const before = average(report.daily, addDays(end, -28), 28);
+  if (recent === null || before === null || before === 0) return null;
+  // Four weeks is 28 days; a month is 30.44.
+  return { change: (recent / before) ** (30.44 / 28) - 1, recent, before };
+}
+
+/** The share of a week's players who banked a word on 3 or more of its 7 days. */
+export function regulars(week: Week): { regulars: number; players: number } {
+  const regular = Object.entries(week.daysPlayed)
+    .filter(([days]) => Number(days) >= 3)
+    .reduce((sum, [, n]) => sum + n, 0);
+  return { regulars: regular, players: week.players };
+}
+
+/** New players whose first visit came through a share link, and all new players, over the last 28 closed days. */
+export function sharePlayers(report: Report): { fromShares: number; all: number } {
+  const recent = report.sources;
+  return {
+    fromShares: recent.filter((s) => s.source === "share" || s.source === "t").reduce((sum, s) => sum + s.recentPlayers, 0),
+    all: recent.reduce((sum, s) => sum + s.recentPlayers, 0),
+  };
+}
+
+export function scorecard(report: Report): Row[] {
+  const r = report.retention;
+  const trend = dauTrend(report);
+  const w = report.window;
+  const shares = sharePlayers(report);
+  const shareRate = w.playerDays > 0 ? w.sharedDays / w.playerDays : 0;
+  const driven = shares.all > 0 ? shares.fromShares / shares.all : 0;
+  const lastWeek = report.weekly[1];
+  const reg = lastWeek ? regulars(lastWeek) : null;
+
+  return [
+    retentionRow("D1 retention", 1, r.d1.players, { nowhere: "Under 15%", promising: "25–35%", great: "40%+" }, {
+      nowhere: 0.15,
+      promising: 0.25,
+      great: 0.4,
+    }),
+    retentionRow("D7 retention", 7, r.d7.players, { nowhere: "Under 5%", promising: "10–15%", great: "20%+" }, {
+      nowhere: 0.05,
+      promising: 0.1,
+      great: 0.2,
+    }),
+    retentionRow("D30 retention", 30, r.d30.players, { nowhere: "Under 2%", promising: "5–8%", great: "10%+" }, {
+      nowhere: 0.02,
+      promising: 0.05,
+      great: 0.1,
+    }),
+    {
+      metric: "DAU trend over 8 weeks",
+      bands: { nowhere: "Flat or falling", promising: "Growing 5–10%/mo", great: "Growing 20%+/mo" },
+      value: trend ? `${percent(trend.change, true)}/mo` : null,
+      standing: trend ? stand(trend.change, { nowhere: 0.02, promising: 0.05, great: 0.2 }) : null,
+      detail: trend
+        ? `${trend.recent.toFixed(1)} players a day over the last 4 full weeks, from ${trend.before.toFixed(1)} the 4 before`
+        : "needs 8 full weeks of days",
+      how: "Daily players averaged over the last four full weeks against the four before, as a monthly rate. Under +2% is flat.",
+    },
+    {
+      metric: "Players sharing results",
+      bands: { nowhere: "Rarely", promising: "Consistent sharing", great: "Shares drive measurable new players" },
+      value: w.playerDays >= LEAST ? percent(shareRate) : null,
+      standing:
+        w.playerDays < LEAST
+          ? null
+          : whole(shareRate) >= 10 && whole(driven) >= 10
+            ? "great"
+            : stand(shareRate, { nowhere: 0.05, promising: 0.1, great: Infinity }),
+      detail:
+        `${percent(shareRate)} of player-days had a share; share links brought ${count(shares.fromShares)} of ` +
+        `${count(shares.all)} new players (${percent(driven)})`,
+      how:
+        "The table gives words, so these marks are the page's: rarely is under 5% of player-days shared, consistent " +
+        "is 10% or more, and great is consistent sharing with share links bringing 10% or more of new players. Last 28 days.",
+    },
+    {
+      metric: "Weekly regulars*",
+      bands: { nowhere: "Under 10%", promising: "20–30%", great: "40%+" },
+      value: reg && reg.players >= LEAST ? percent(reg.regulars / reg.players) : null,
+      standing: reg && reg.players >= LEAST ? stand(reg.regulars / reg.players, { nowhere: 0.1, promising: 0.2, great: 0.4 }) : null,
+      detail: reg ? `${count(reg.regulars)} of ${count(reg.players)} players last full week` : "needs a full week",
+      how: "*Of the last full week's players (Sunday to Saturday), the share who banked a word on 3 or more of its 7 days.",
+    },
+  ];
+}
