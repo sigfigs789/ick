@@ -427,10 +427,10 @@ export default function App() {
             yesterday, so it stays out from between the player's guesses and
             their own streak and total. Under the guesses rather than under the
             drop: it arrives with a request, and anything landing above the
-            input would push the input down the page as it did. Today's puzzle
-            only -- on an archived day "yesterday" is a day the player is not
-            looking at. */}
-        {isToday && <YesterdaysBest date={date} />}
+            input would push the input down the page as it did. On every
+            puzzle, archived ones too: it reports the day before the one being
+            played, by its date when that isn't yesterday. */}
+        <YesterdaysBest date={date} isToday={isToday} />
       </main>
 
       {/* Dev only, and pinned beside the dev date bar rather than in the

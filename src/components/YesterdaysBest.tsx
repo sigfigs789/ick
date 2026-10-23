@@ -6,7 +6,7 @@ import {
   type FoundWord,
 } from "../game/leaderboard";
 import { pageCache } from "../game/pageCache";
-import { addDays } from "../game/date";
+import { addDays, formatDateLabel } from "../game/date";
 import { dropForDate } from "../game/drop";
 import { formatRarityScore } from "../game/dictionary";
 import { handleFor } from "../game/handle";
@@ -16,8 +16,13 @@ import { useGameMode } from "../hooks/useGameMode";
 import { rarityClassName } from "./rarityStyles";
 
 interface Props {
-  /** Today's puzzle date; the line reports the day before it. */
+  /** The puzzle being played; the line reports the day before it. */
   date: string;
+  /**
+   * Whether that puzzle is today's, so the day before is "Yesterday". On an
+   * archived puzzle the day before is named by its date instead.
+   */
+  isToday: boolean;
 }
 
 /**
@@ -31,9 +36,10 @@ const yesterdayCache = pageCache<readonly FoundWord[]>();
 const findersCache = pageCache<readonly string[]>();
 
 /**
- * The rarest word anybody found on yesterday's drop, under today's puzzle.
+ * The rarest word anybody found on the previous day's drop, under the puzzle
+ * being played -- today's or an archived one.
  *
- * Yesterday's drop is not today's, so naming its best word spoils nothing here
+ * The previous day's drop is not this one, so naming its best word spoils nothing here
  * -- it shows the ceiling players actually reached, which is the thing to beat.
  * Priced by the reader's own mode like the finds page, so the score here and
  * the badge on /found-words agree.
@@ -45,7 +51,7 @@ const findersCache = pageCache<readonly string[]>();
  * found anything: it is a footnote to the puzzle, and a spinner or an error
  * under the guesses would be louder than the line itself.
  */
-export function YesterdaysBest({ date }: Props) {
+export function YesterdaysBest({ date, isToday }: Props) {
   const yesterday = addDays(date, -1);
   const [words, setWords] = useState<readonly FoundWord[] | undefined>(() =>
     yesterdayCache.get(yesterday),
@@ -110,7 +116,7 @@ export function YesterdaysBest({ date }: Props) {
   return (
     <p className="yesterdays-best">
       <span className="yesterdays-best__label">
-        Yesterday's best for {"“"}
+        {isToday ? "Yesterday" : formatDateLabel(yesterday)}'s best for {"“"}
         {dropForDate(yesterday)}
         {"”"}
       </span>{" "}

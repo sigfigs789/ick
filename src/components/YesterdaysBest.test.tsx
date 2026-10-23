@@ -6,6 +6,7 @@ import { handleFor } from "../game/handle";
 import { PLAYER_KEY } from "../game/player";
 import { forgetPageCaches } from "../game/pageCache";
 import { dropForDate } from "../game/drop";
+import { formatDateLabel } from "../game/date";
 import type { FoundWord } from "../game/leaderboard";
 
 const TODAY = "2026-10-23";
@@ -90,7 +91,7 @@ describe("the yesterday's best line", () => {
       ],
       [OTHER],
     );
-    render(<YesterdaysBest date={TODAY} />);
+    render(<YesterdaysBest date={TODAY} isToday />);
 
     expect(await screen.findByText("asphyxiate")).toBeInTheDocument();
     expect(await screen.findByText(`Found by ${handleFor(OTHER)}`)).toBeInTheDocument();
@@ -102,10 +103,24 @@ describe("the yesterday's best line", () => {
     expect(String((fetchMock.mock.calls[0] as unknown[])[0])).toContain(`today=${YESTERDAY}`);
   });
 
+  it("names the day before an archived puzzle by its date", async () => {
+    const fetchMock = stubFetch([{ word: "asphyxiate", zipf: 2.09, finders: 1, foundOn: "2026-10-21" }]);
+    render(<YesterdaysBest date={YESTERDAY} isToday={false} />);
+
+    expect(await screen.findByText("asphyxiate")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        new RegExp(`${formatDateLabel("2026-10-21")}'s best for .${dropForDate("2026-10-21")}.`),
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Yesterday's best/)).toBeNull();
+    expect(String((fetchMock.mock.calls[0] as unknown[])[0])).toContain("today=2026-10-21");
+  });
+
   it("names the reader first when they found it too", async () => {
     localStorage.setItem(PLAYER_KEY, JSON.stringify({ id: SELF }));
     stubFetch([{ word: "asphyxiate", zipf: 2.09, finders: 3, foundOn: YESTERDAY }], [OTHER, SELF]);
-    render(<YesterdaysBest date={TODAY} />);
+    render(<YesterdaysBest date={TODAY} isToday />);
 
     expect(
       await screen.findByText(`Found by ${handleFor(SELF)} and 2 other players`),
@@ -114,14 +129,14 @@ describe("the yesterday's best line", () => {
 
   it("falls back to the count when the finders can't be read", async () => {
     stubFetch([{ word: "asphyxiate", zipf: 2.09, finders: 2, foundOn: YESTERDAY }], null);
-    render(<YesterdaysBest date={TODAY} />);
+    render(<YesterdaysBest date={TODAY} isToday />);
 
     expect(await screen.findByText("Found by 2 players")).toBeInTheDocument();
   });
 
   it("stays silent when yesterday's finds can't be read", async () => {
     const fetchMock = stubFetch(null);
-    const { container } = render(<YesterdaysBest date={TODAY} />);
+    const { container } = render(<YesterdaysBest date={TODAY} isToday />);
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     expect(container).toBeEmptyDOMElement();
@@ -129,7 +144,7 @@ describe("the yesterday's best line", () => {
 
   it("stays silent for a day nobody found anything", async () => {
     const fetchMock = stubFetch([]);
-    const { container } = render(<YesterdaysBest date={TODAY} />);
+    const { container } = render(<YesterdaysBest date={TODAY} isToday />);
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     expect(container).toBeEmptyDOMElement();
