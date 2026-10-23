@@ -16,6 +16,7 @@
 // Nothing here blocks play. Until the fetch resolves every lookup answers
 // "unknown" and the caller falls through to the live lookup exactly as before.
 
+import { APP_VERSION } from "../version";
 import type { RejectionReason } from "./types";
 
 /** Where build-word-corpus.py writes, served straight out of public/. */
@@ -257,8 +258,9 @@ export function loadCorpus(): Promise<boolean> {
   //
   // It is a hash of the files' contents (computed in vite.config.ts), not the
   // app version, so a release that leaves the corpus alone leaves its URLs
-  // alone too and a returning player's browser keeps the copy it has.
-  const v = `?v=${import.meta.env.VITE_CORPUS_VERSION}`;
+  // alone too and a returning player's browser keeps the copy it has. The app
+  // and the Devvit build have no such hash and keep the app version.
+  const v = `?v=${import.meta.env.VITE_CORPUS_VERSION ?? APP_VERSION}`;
   inFlight = (async () => {
     try {
       const [metaRes, wordsRes, tagsRes, sourcesRes, zipfRes] = await Promise.all([
