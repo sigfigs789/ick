@@ -400,3 +400,35 @@ describe("GuessLog guess count", () => {
     });
   });
 });
+
+describe("GuessLog celebrations", () => {
+  const first: AcceptedWord = { word: "strut", rarity: "Uncommon", zipf: 3.2 };
+  const rarer: AcceptedWord = { word: "strophe", rarity: "Rare", zipf: 2.1 };
+  const plainer: AcceptedWord = { word: "street", rarity: "Common", zipf: 4.5 };
+
+  it("calls out a word that beats the day's earlier best, and only that one", () => {
+    const { rerender } = render(<GuessLog acceptedWords={[first]} date="2026-10-23" />);
+    // The first word of the day is the best trivially, so it is not news.
+    expect(screen.queryByText("New best!")).not.toBeInTheDocument();
+
+    rerender(<GuessLog acceptedWords={[first, rarer]} date="2026-10-23" />);
+    expect(screen.getByText("New best!")).toBeInTheDocument();
+
+    rerender(<GuessLog acceptedWords={[first, rarer, plainer]} date="2026-10-23" />);
+    expect(screen.queryByText("New best!")).not.toBeInTheDocument();
+  });
+
+  it("does not celebrate words a puzzle loads with", () => {
+    render(<GuessLog acceptedWords={[first, rarer]} date="2026-10-23" />);
+    expect(screen.queryByText("New best!")).not.toBeInTheDocument();
+    expect(document.querySelector(".rarity-badge--fresh")).toBeNull();
+  });
+
+  it("pops in the badge of a newly scored word", () => {
+    const { rerender } = render(<GuessLog acceptedWords={[first]} date="2026-10-23" />);
+    rerender(<GuessLog acceptedWords={[first, plainer]} date="2026-10-23" />);
+    const fresh = document.querySelectorAll(".rarity-badge--fresh");
+    expect(fresh).toHaveLength(1);
+    expect(fresh[0]).toHaveTextContent("COMMON");
+  });
+});

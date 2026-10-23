@@ -71,6 +71,7 @@ describe("App", () => {
       accept: vi.fn(),
       reject: vi.fn(),
       complete: vi.fn(),
+      jackpot: vi.fn(),
       applause: vi.fn(),
     });
   });
@@ -196,5 +197,49 @@ describe("the new play screen's share panel", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /^share$/i }));
     expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument();
+  });
+});
+
+describe("celebrating a good word", () => {
+  const jackpot = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    markSeen("instructions");
+    vi.mocked(useSound).mockReturnValue({
+      accept: vi.fn(),
+      reject: vi.fn(),
+      complete: vi.fn(),
+      jackpot,
+      applause: vi.fn(),
+    });
+  });
+
+  it("throws confetti for every good word, and a jackpot for the top tiers", () => {
+    const accepted = (key: number, rarity: string) => ({
+      kind: "accepted",
+      message: `accepted — ${rarity}.`,
+      rarity,
+      key,
+    });
+    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ feedback: null }) as ReturnType<typeof useDailyPuzzle>);
+    const { rerender } = render(<App />);
+    expect(document.querySelector(".confetti")).toBeNull();
+
+    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ feedback: accepted(1, "Common") }) as ReturnType<typeof useDailyPuzzle>);
+    rerender(<App />);
+    expect(document.querySelector(".confetti")).toBeNull();
+
+    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ feedback: accepted(2, "Rare") }) as ReturnType<typeof useDailyPuzzle>);
+    rerender(<App />);
+    expect(document.querySelector(".confetti")).not.toBeNull();
+    expect(document.querySelector(".confetti--grand")).toBeNull();
+
+    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ feedback: accepted(3, "Legend") }) as ReturnType<typeof useDailyPuzzle>);
+    rerender(<App />);
+    expect(document.querySelector(".confetti--grand")).not.toBeNull();
+    expect(document.querySelector(".jackpot__stamp")).toHaveTextContent("Legend!");
+    expect(jackpot).toHaveBeenCalledTimes(1);
   });
 });

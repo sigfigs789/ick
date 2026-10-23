@@ -80,6 +80,39 @@ export function playAccept(rarity: Rarity): void {
   }
 }
 
+/**
+ * The jackpot, for a Mythic or Legend: a quick run up a C-major scale into a
+ * held, shimmering chord, played over the accept chime. Bigger than the
+ * puzzle-complete arpeggio on purpose -- it is the rarest thing that can
+ * happen on a guess, and should sound like it.
+ */
+export function playJackpot(): void {
+  const c = getContext();
+  if (!c) return;
+  const now = c.currentTime + 0.2;
+  const run = [523.25, 587.33, 659.25, 783.99, 880, 1046.5]; // C5 D5 E5 G5 A5 C6
+  run.forEach((freq, i) => tone(c, freq, now + i * 0.05, 0.12, { type: "triangle", peakGain: 0.09 }));
+  const chordAt = now + run.length * 0.05;
+  [1046.5, 1318.51, 1567.98].forEach((freq) =>
+    tone(c, freq, chordAt, 0.9, { type: "triangle", peakGain: 0.07 }),
+  );
+  // A high glint that slides up into the chord's top note.
+  tone(c, 1567.98, chordAt + 0.05, 0.35, { peakGain: 0.04, glideTo: 2093 });
+}
+
+/**
+ * A buzz of the phone in the hand, on devices that have one. Silently nothing
+ * everywhere else (desktop browsers, iOS Safari), which is what we want.
+ */
+export function vibrate(pattern: number[]): void {
+  if (typeof navigator === "undefined" || typeof navigator.vibrate !== "function") return;
+  try {
+    navigator.vibrate(pattern);
+  } catch {
+    // Some embedded browsers throw rather than ignore; it is only a flourish.
+  }
+}
+
 /** A short, low, descending buzz -- deliberately unobtrusive, not punishing. */
 export function playReject(): void {
   const c = getContext();
