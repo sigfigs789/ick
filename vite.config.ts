@@ -202,6 +202,11 @@ export default defineConfig({
   // appear. Every data
   // import in src/ is a default import, which is all this mode supports.
   json: { stringify: true },
+  // vercel.json serves everything under /assets/ as `immutable` for a year,
+  // which is only safe because Vite names every file there by its content hash.
+  // Nothing else may live there: a file put in public/assets/ would keep its
+  // name across deploys and be cached, stale, for that long. (vercel.json is
+  // plain JSON, so the note lives here.)
   build: {
     rollupOptions: {
       output: { manualChunks: chunkFor },

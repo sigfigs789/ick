@@ -4,6 +4,7 @@ import { trackLeaderboardJoined, trackModeAssigned, trackUiVariantAssigned } fro
 import { AppHeader } from "./components/AppHeader";
 import { ChatBubble } from "./components/ChatBubble";
 import { FreeformModal } from "./components/FreeformModal";
+import { PageErrorBoundary } from "./components/PageErrorBoundary";
 import { InstructionsModal } from "./components/InstructionsModal";
 import { DevDateBar } from "./dev/DevDateBar";
 import { DEV_TOOLS } from "./dev/devTools";
@@ -31,7 +32,8 @@ import { useRoute } from "./routes";
  * (App) stays in the first load: it is the page nearly every visit is for, and
  * waiting on a second request for it would make the common case slower.
  *
- * See lazyPage for what happens when a chunk fails to arrive.
+ * See chunkRecovery for what happens when a chunk fails to arrive, and
+ * PageErrorBoundary for what is shown if it still does not.
  */
 const AnalyticsPage = lazyPage(
   () => import("./components/AnalyticsPage"),
@@ -356,13 +358,13 @@ export function Root() {
    * After the first paint rather than with it: the point of splitting them out
    * was to keep them off the puzzle's critical path, and an idle callback is
    * the browser telling us that path is clear. Safari has no
-   * requestIdleCallback, so it gets a plain delay instead. Failures are
-   * ignored -- the page's `lazy` import simply tries again when it is opened.
+   * requestIdleCallback, so it gets a plain delay instead. A failure is left
+   * for the page's own render to retry when it is opened.
    */
   useEffect(() => {
     const prefetch = () => {
-      void import("./components/LeaderboardPage").catch(() => {});
-      void import("./components/FoundWordsPage").catch(() => {});
+      LeaderboardPage.preload();
+      FoundWordsPage.preload();
     };
     if (typeof window.requestIdleCallback === "function") {
       const handle = window.requestIdleCallback(prefetch, { timeout: 5000 });
@@ -394,42 +396,45 @@ export function Root() {
       />
       {/* Under the header, so the header stays put while a page's chunk is
           on its way -- only the page's own area waits, and only the first
-          time that page is opened in a visit. */}
-      <Suspense fallback={<p className="app__page-loading">Loading…</p>}>
-        {route === "leaderboard" ? (
-          <LeaderboardPage />
-        ) : route === "found-words" ? (
-          <FoundWordsPage />
-        ) : route === "suggested-words" ? (
-          /* The two review pages, which no tab points at: they render under the
-             same header as everything else, because a page of this app is a page
-             of this app -- there is nothing to be gained by giving a list its own
-             frame, and the header's "?" is as welcome here as anywhere. */
-          <SuggestedWordsPage />
-        ) : route === "feedback" ? (
-          <FeedbackPage />
-        ) : route === "freeform-feedback" ? (
-          <FreeformFeedbackPage />
-        ) : route === "fold-review" ? (
-          <FoldReviewPage />
-        ) : route === "folded-live" ? (
-          <FoldedLivePage />
-        ) : route === "analytics" ? (
-          <AnalyticsPage />
-        ) : route === "analytics-v2" ? (
-          <AnalyticsV2Page />
-        ) : route === "transfer" ? (
-          <TransferPage />
-        ) : route === "leaderboard-total" ? (
-          <TotalLeaderboardPage />
-        ) : route === "dead-streaks" ? (
-          <DeadStreaksPage />
-        ) : route === "help" ? (
-          <HelpPage />
-        ) : (
-          <App />
-        )}
-      </Suspense>
+          time that page is opened in a visit. The error boundary outside it
+          keeps the header up too if the page cannot load at all. */}
+      <PageErrorBoundary resetKey={route}>
+        <Suspense fallback={<p className="app__page-loading">Loading…</p>}>
+          {route === "leaderboard" ? (
+            <LeaderboardPage />
+          ) : route === "found-words" ? (
+            <FoundWordsPage />
+          ) : route === "suggested-words" ? (
+            /* The two review pages, which no tab points at: they render under the
+               same header as everything else, because a page of this app is a page
+               of this app -- there is nothing to be gained by giving a list its own
+               frame, and the header's "?" is as welcome here as anywhere. */
+            <SuggestedWordsPage />
+          ) : route === "feedback" ? (
+            <FeedbackPage />
+          ) : route === "freeform-feedback" ? (
+            <FreeformFeedbackPage />
+          ) : route === "fold-review" ? (
+            <FoldReviewPage />
+          ) : route === "folded-live" ? (
+            <FoldedLivePage />
+          ) : route === "analytics" ? (
+            <AnalyticsPage />
+          ) : route === "analytics-v2" ? (
+            <AnalyticsV2Page />
+          ) : route === "transfer" ? (
+            <TransferPage />
+          ) : route === "leaderboard-total" ? (
+            <TotalLeaderboardPage />
+          ) : route === "dead-streaks" ? (
+            <DeadStreaksPage />
+          ) : route === "help" ? (
+            <HelpPage />
+          ) : (
+            <App />
+          )}
+        </Suspense>
+      </PageErrorBoundary>
       {/* Queued behind the instructions rather than stacked on top of them: a
           first-timer during the week is owed both sheets, and two dialogs in
           one paint is not a way to deliver either. The how-to-play comes first

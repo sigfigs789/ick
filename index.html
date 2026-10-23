@@ -52,6 +52,11 @@
       rendering until a third-party server answers, and the fonts already swap
       in when they arrive (display=swap). `media="print"` fetches it at low
       priority without applying it; onload flips it on.
+
+      The onload is an inline handler: a Content-Security-Policy added later
+      (vercel.json sets none today) has to allow it -- 'unsafe-hashes' with its
+      hash, or 'unsafe-inline' -- or the fonts silently stay on `print`. The
+      same goes for the boot screen's inline <style> and <script> below.
     -->
     <link
       href="https://fonts.googleapis.com/css2?family=Karla:ital,wght@0,400;0,500;0,700;0,800;1,400&family=Libre+Franklin:wght@600;700;800;900&display=swap"
@@ -92,11 +97,68 @@
       @media (prefers-reduced-motion: reduce) {
         .boot__status { animation: none; }
       }
+      .boot--failed .boot__status { animation: none; }
+      .boot__retry {
+        font: inherit; font-weight: 700; padding: 0.6rem 1.1rem;
+        border: none; border-radius: 0.65rem; cursor: pointer;
+        background: #1a1a1b; color: #fafafa;
+      }
       @media (prefers-color-scheme: dark) {
         body { background: #121213; color: #f4f4f5; }
         .boot__status { color: #a7aab0; }
+        .boot__retry { background: #f4f4f5; color: #121213; }
       }
     </style>
+    <!-- Without JavaScript the app never comes, so neither should its loading screen. -->
+    <noscript><style>.boot { display: none; }</style></noscript>
+
+    <!--
+      The loading screen's way of saying the app is not coming, rather than
+      pulsing "Loading…" forever over a dead page: a file of this site's first
+      load failed to arrive (its own error event, caught here in the capture
+      phase), or a script of this site threw before the app could mount. A
+      third-party failure, such as the fonts, is not one. After 20 seconds with
+      neither, it says only that it is slow -- a large first load on a poor
+      connection can take that long and still arrive, and the app replaces the
+      message the moment it does. Each only acts while the boot screen is
+      still in #root; once React has rendered, it is gone and this is inert.
+      Before the module script, so it is listening by the time that is fetched.
+    -->
+    <script>
+      (function () {
+        function ours(url) {
+          return typeof url === "string" && url.indexOf(location.origin) === 0;
+        }
+        function settle(message, final) {
+          var boot = document.querySelector("#root > .boot");
+          if (!boot || boot.classList.contains("boot--failed")) return;
+          var status = boot.querySelector(".boot__status");
+          status.textContent = message;
+          if (!final) return;
+          boot.classList.add("boot--failed");
+          boot.removeAttribute("aria-hidden");
+          status.setAttribute("role", "alert");
+          var retry = boot.querySelector(".boot__retry");
+          if (retry) return;
+          retry = document.createElement("button");
+          retry.type = "button";
+          retry.className = "boot__retry";
+          retry.textContent = "Try again";
+          retry.onclick = function () { location.reload(); };
+          boot.appendChild(retry);
+        }
+        window.addEventListener("error", function (event) {
+          var target = event.target;
+          var failed = target && target !== window
+            ? ours(target.src) || ours(target.href)
+            : ours(event.filename);
+          if (failed) settle("WordInk couldn't load.", true);
+        }, true);
+        setTimeout(function () {
+          settle("Still loading — this connection is slow.", false);
+        }, 20000);
+      })();
+    </script>
 
     <script type="application/ld+json">
       {
@@ -127,7 +189,7 @@
       -->
       <div class="boot" aria-hidden="true">
         <p class="boot__wordmark">Word<span>Ink</span></p>
-        <p class="boot__status">Loading today's drop…</p>
+        <p class="boot__status">Loading…</p>
       </div>
       <!--
         Static fallback for crawlers/clients that don't run JS. React's

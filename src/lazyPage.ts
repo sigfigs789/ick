@@ -1,52 +1,45 @@
-import { lazy, type ComponentType } from "react";
+import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 
-/** When this tab last reloaded to recover a page chunk, in sessionStorage. */
-const RELOADED_AT_KEY = "ick:chunk-reload-at";
-
-/**
- * How long after one recovery reload a second failure is let through instead.
- * Long enough that a chunk which is genuinely broken surfaces as an error
- * rather than a reload loop; short enough not to matter to a returning player.
- */
-const RELOAD_GUARD_MS = 30_000;
+/** A lazily loaded component, with a way to start fetching it early. */
+export type LazyPage<P = object> = LazyExoticComponent<ComponentType<P>> & {
+  /** Fetch the chunk now, without rendering it. Failures are left for render. */
+  preload: () => void;
+};
 
 /**
- * A page that is its own chunk, fetched the first time it renders.
+ * A component that is its own chunk, fetched the first time it renders.
  *
- * `load` resolves the page's module and `pick` takes the component out of it --
- * the pages are named exports, and `lazy` wants a default.
+ * `load` resolves the module and `pick` takes the component out of it -- the
+ * pages are named exports, and `lazy` wants a default.
  *
- * A failed fetch reloads the tab once. The usual cause is a tab left open
- * across a deploy: its chunk names are the old build's, and those files are
- * gone. A reload picks up the new build, and every bit of game state lives in
- * localStorage, so nothing is lost (the same reasoning as useForceUpdate).
- * Without it the page would throw and leave the player on a blank screen. A
- * second failure inside the guard window is thrown as normal.
+ * A failed fetch is chunkRecovery's to handle: it reloads the tab, and the
+ * import then resolves to `undefined` rather than throwing. That case is held
+ * on the Suspense fallback until the reload lands, rather than rendered as an
+ * error a moment before the page goes away anyway.
+ *
+ * `preload` starts the same fetch the first render would, and the two share it,
+ * so warming a page up ahead of a tap cannot drift from the import the page
+ * actually uses.
  */
-export function lazyPage<M>(
+export function lazyPage<M, P extends object = object>(
   load: () => Promise<M>,
-  pick: (module: M) => ComponentType,
-) {
-  return lazy(async () => {
-    try {
-      return { default: pick(await load()) };
-    } catch (error) {
-      if (reloadToRecover()) return new Promise<never>(() => {});
+  pick: (module: M) => ComponentType<P>,
+): LazyPage<P> {
+  let pending: Promise<M> | undefined;
+  const fetchModule = () =>
+    (pending ??= load().catch((error: unknown) => {
+      // Forgotten, so the next attempt asks the network again.
+      pending = undefined;
       throw error;
-    }
+    }));
+  const Page = lazy(async () => {
+    const module = await fetchModule();
+    if (module === undefined) return new Promise<never>(() => {});
+    return { default: pick(module) };
   });
-}
-
-/** Reload unless this tab already did so recently. True if it is reloading. */
-function reloadToRecover(): boolean {
-  try {
-    const last = Number(sessionStorage.getItem(RELOADED_AT_KEY) ?? 0);
-    if (Date.now() - last < RELOAD_GUARD_MS) return false;
-    sessionStorage.setItem(RELOADED_AT_KEY, String(Date.now()));
-  } catch {
-    // No sessionStorage, so no way to tell a first failure from a loop.
-    return false;
-  }
-  window.location.reload();
-  return true;
+  return Object.assign(Page, {
+    preload: () => {
+      void fetchModule().catch(() => {});
+    },
+  });
 }

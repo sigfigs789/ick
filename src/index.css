@@ -264,7 +264,9 @@ h2 {
 }
 
 /* Where a page sits while its chunk is fetched (see the lazy pages in
-   Root.tsx). Quiet and centred: it is usually up for a fraction of a second. */
+   Root.tsx), and where it says so if the chunk never comes
+   (PageErrorBoundary). Quiet and centred: it is usually up for a fraction of
+   a second. */
 .app__page-loading {
   margin: 3rem 0;
   text-align: center;

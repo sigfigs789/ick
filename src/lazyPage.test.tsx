@@ -1,7 +1,7 @@
 import { Component, Suspense, type ReactNode } from "react";
 import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { lazyPage } from "./lazyPage";
+import { lazyPage, type LazyPage } from "./lazyPage";
 
 /** Shows what the page threw, so a let-through failure is observable. */
 class Catch extends Component<{ children: ReactNode }, { error: boolean }> {
@@ -14,7 +14,7 @@ class Catch extends Component<{ children: ReactNode }, { error: boolean }> {
   }
 }
 
-function renderPage(Page: ReturnType<typeof lazyPage>) {
+function renderPage(Page: LazyPage) {
   render(
     <Catch>
       <Suspense fallback={<p>loading</p>}>
@@ -24,18 +24,12 @@ function renderPage(Page: ReturnType<typeof lazyPage>) {
   );
 }
 
-const reload = vi.fn();
-
 beforeEach(() => {
-  sessionStorage.clear();
-  reload.mockClear();
-  vi.stubGlobal("location", { ...window.location, reload });
   // React logs the error a boundary catches; it is the point of one test.
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 afterEach(() => {
-  vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
@@ -47,28 +41,48 @@ describe("lazyPage", () => {
     );
     renderPage(Page);
     expect(await screen.findByText("the page")).toBeInTheDocument();
-    expect(reload).not.toHaveBeenCalled();
   });
 
-  it("reloads the tab when the chunk fails to arrive", async () => {
+  it("holds on the fallback when the import resolves to nothing, as it does while chunkRecovery reloads", async () => {
     const Page = lazyPage(
-      () => Promise.reject(new Error("Failed to fetch dynamically imported module")),
-      () => () => null,
+      async () => undefined as unknown as { ThePage: () => null },
+      (m) => m.ThePage,
     );
     renderPage(Page);
-    await vi.waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
-    // Held on the fallback while the reload happens, not thrown.
+    await new Promise((resolve) => setTimeout(resolve, 20));
     expect(screen.getByText("loading")).toBeInTheDocument();
+    expect(screen.queryByText("failed")).not.toBeInTheDocument();
   });
 
-  it("lets a second failure through rather than reloading in a loop", async () => {
-    sessionStorage.setItem("ick:chunk-reload-at", String(Date.now()));
+  it("lets a failed import through to the error boundary", async () => {
     const Page = lazyPage(
       () => Promise.reject(new Error("still broken")),
       () => () => null,
     );
     renderPage(Page);
     expect(await screen.findByText("failed")).toBeInTheDocument();
-    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it("shares one fetch between preload and the first render", async () => {
+    const load = vi.fn(async () => ({ ThePage: () => <p>the page</p> }));
+    const Page = lazyPage(load, (m) => m.ThePage);
+    Page.preload();
+    renderPage(Page);
+    expect(await screen.findByText("the page")).toBeInTheDocument();
+    expect(load).toHaveBeenCalledTimes(1);
+  });
+
+  it("asks again after a failed preload", async () => {
+    const load = vi
+      .fn<() => Promise<{ ThePage: () => JSX.Element }>>()
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValue({ ThePage: () => <p>the page</p> });
+    const Page = lazyPage(load, (m) => m.ThePage);
+    Page.preload();
+    await vi.waitFor(() => expect(load).toHaveBeenCalledTimes(1));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    renderPage(Page);
+    expect(await screen.findByText("the page")).toBeInTheDocument();
+    expect(load).toHaveBeenCalledTimes(2);
   });
 });
