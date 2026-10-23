@@ -875,6 +875,18 @@ h2 {
   font-size: 0.82rem;
   color: var(--fg-muted);
   text-align: center;
+  animation: yesterdays-best-in 0.45s var(--ease-standard) both;
+}
+/* Fades in drifting down into place, once the whole line is ready. */
+@keyframes yesterdays-best-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .yesterdays-best__word {
   font-family: var(--font-display);

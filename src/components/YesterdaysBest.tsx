@@ -49,7 +49,9 @@ const findersCache = pageCache<readonly string[]>();
  *
  * Says nothing at all while loading, on a failed read, or for a day nobody
  * found anything: it is a footnote to the puzzle, and a spinner or an error
- * under the guesses would be louder than the line itself.
+ * under the guesses would be louder than the line itself. Held back until the
+ * finders have answered too, so it fades in once, whole, rather than gaining
+ * its "Found by" a beat later and reflowing.
  */
 export function YesterdaysBest({ date, isToday }: Props) {
   const yesterday = addDays(date, -1);
@@ -80,22 +82,29 @@ export function YesterdaysBest({ date, isToday }: Props) {
     [words, mode],
   );
   const findersKey = best ? `${yesterday}:${best.word}` : undefined;
-  // Undefined while the finders are on their way, null when they couldn't be read.
-  const [finders, setFinders] = useState<readonly string[] | null | undefined>(() =>
-    findersKey ? findersCache.get(findersKey) : undefined,
-  );
+  // The finders for the word they were read for: ids null when they couldn't
+  // be read. Tagged with their key, so a new word's line never borrows the last
+  // word's names while its own are on their way.
+  const [finders, setFinders] = useState<
+    { key: string; ids: readonly string[] | null } | undefined
+  >(() => {
+    const ids = findersKey ? findersCache.get(findersKey) : undefined;
+    return findersKey && ids ? { key: findersKey, ids } : undefined;
+  });
 
   useEffect(() => {
     if (!best || !findersKey) return;
     let current = true;
-    setFinders(findersCache.get(findersKey));
+    const cached = findersCache.get(findersKey);
+    if (cached) setFinders({ key: findersKey, ids: cached });
     fetchWordFinders(best.word, yesterday)
       .then((ids) => {
         findersCache.set(findersKey, ids);
-        if (current) setFinders(ids);
+        if (current) setFinders({ key: findersKey, ids });
       })
       .catch(() => {
-        if (current) setFinders((cached) => cached ?? null);
+        if (current)
+          setFinders((prev) => (prev?.key === findersKey ? prev : { key: findersKey, ids: null }));
       });
     return () => {
       current = false;
@@ -103,18 +112,18 @@ export function YesterdaysBest({ date, isToday }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the key names the word
   }, [findersKey]);
 
-  if (!best) return null;
+  if (!best || !finders || finders.key !== findersKey) return null;
 
   const selfId = loadPlayerId()?.toLowerCase() ?? null;
-  const named = finders ? namedFinder(finders, best.finders, selfId) : undefined;
-  let foundBy: string | undefined;
-  if (named) foundBy = foundByLabel(named.self ? selfName(named.id) : handleFor(named.id), named.others);
-  else if (finders !== undefined)
-    foundBy = `Found by ${best.finders} ${best.finders === 1 ? "player" : "players"}`;
+  const named = finders.ids ? namedFinder(finders.ids, best.finders, selfId) : undefined;
+  const foundBy = named
+    ? foundByLabel(named.self ? selfName(named.id) : handleFor(named.id), named.others)
+    : `Found by ${best.finders} ${best.finders === 1 ? "player" : "players"}`;
 
   const scoreDate = best.foundOn || yesterday;
   return (
-    <p className="yesterdays-best">
+    // Keyed by day, so stepping to another puzzle fades the new line in afresh.
+    <p className="yesterdays-best" key={yesterday}>
       <span className="yesterdays-best__label">
         {isToday ? "Yesterday" : formatDateLabel(yesterday)}'s best for {"“"}
         {dropForDate(yesterday)}
@@ -128,7 +137,7 @@ export function YesterdaysBest({ date, isToday }: Props) {
         {formatRarityScore(best.zipf, scoreDate)}
         <span className="sr-only"> {best.rarity}</span>
       </span>
-      {foundBy && <span className="yesterdays-best__finders">{foundBy}</span>}
+      <span className="yesterdays-best__finders">{foundBy}</span>
     </p>
   );
 }
