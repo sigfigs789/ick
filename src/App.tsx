@@ -34,7 +34,6 @@ import {
 } from "./game/improvement";
 import { totalRarityScore } from "./game/dictionary";
 import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/react";
 import {
   campaignSourceFromSearch,
   trackRedditArrival,
@@ -290,15 +289,10 @@ export default function App() {
         )
       )}
 
-      {/* Not mounted where reporting is off: inside a Reddit post both scripts
-          are blocked by the frame's content policy, and neither should be
+      {/* Not mounted where reporting is off: inside a Reddit post the script
+          is blocked by the frame's content policy, and it shouldn't be
           reaching a third party from there in any case. See analytics.ts. */}
-      {isReporting() && (
-        <>
-          <Analytics />
-          <SpeedInsights />
-        </>
-      )}
+      {isReporting() && <Analytics />}
       <main className={playMode ? `play play--${playMode}` : undefined}>
         {/* Below the header rather than inside it: which puzzle you are on is
             part of the puzzle, not part of the app's identity -- and the header
