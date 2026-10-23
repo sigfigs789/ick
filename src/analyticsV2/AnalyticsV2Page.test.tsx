@@ -62,4 +62,37 @@ describe("AnalyticsV2Page", () => {
     await screen.findByRole("heading", { name: "Retention" });
     expect(screen.getAllByText(/visitors not enough history/)).toHaveLength(3);
   });
+
+  it("marks each scorecard number with its change since yesterday's report", async () => {
+    // Yesterday D1 was 30 of 281 (11%), today 35 of 281 (12%); D7 is 8% both days.
+    const yesterday = {
+      ...REPORT,
+      today: "2026-10-21",
+      retention: { ...REPORT.retention, d1: { ...REPORT.retention.d1, players: { cohort: 281, returned: 30 } } },
+    };
+    const fetchMock = vi.fn(async (url: string) =>
+      new Response(JSON.stringify({ report: url.includes("today=2026-10-21") ? yesterday : REPORT }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    render(<AnalyticsV2Page />);
+
+    expect(await screen.findByLabelText("up 1 pt since yesterday")).toBeTruthy();
+    const d7 = screen.getByRole("rowheader", { name: "D7 retention" }).closest("tr")!;
+    expect(d7.querySelector('[aria-label="no change since yesterday"]')).toBeTruthy();
+  });
+
+  it("still draws the scorecard, without changes, when yesterday's report fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url.includes("today=2026-10-21")
+          ? new Response("", { status: 502 })
+          : new Response(JSON.stringify({ report: REPORT }), { status: 200 }),
+      ),
+    );
+    render(<AnalyticsV2Page />);
+
+    await screen.findByRole("heading", { name: "Scorecard" });
+    expect(screen.queryByLabelText(/since yesterday/)).toBeNull();
+  });
 });

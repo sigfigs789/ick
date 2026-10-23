@@ -28,6 +28,8 @@ export interface Row {
   bands: Record<"nowhere" | "promising" | "great", string>;
   /** The number as shown, or null when there is too little to judge. */
   value: string | null;
+  /** The same number as the whole percent it is shown as, for comparing one day's scorecard with the next. */
+  points: number | null;
   standing: Standing | null;
   /** What the number is over, or what is missing for one. */
   detail: string;
@@ -88,6 +90,7 @@ function retentionRow(metric: string, n: number, rate: Rate, bands: Row["bands"]
     metric,
     bands,
     value: ok ? percent(rate.returned / rate.cohort) : null,
+    points: ok ? whole(rate.returned / rate.cohort) : null,
     standing: ok ? stand(rate.returned / rate.cohort, marks) : null,
     detail: ok
       ? `${count(rate.returned)} of ${count(rate.cohort)} new players`
@@ -156,6 +159,7 @@ export function scorecard(report: Report): Row[] {
       metric: "DAU trend over 8 weeks",
       bands: { nowhere: "Flat or falling", promising: "Growing 5–10%/mo", great: "Growing 20%+/mo" },
       value: trend ? `${percent(trend.change, true)}/mo` : null,
+      points: trend ? whole(trend.change) : null,
       standing: trend ? stand(trend.change, { nowhere: 0.02, promising: 0.05, great: 0.2 }) : null,
       detail: trend
         ? `${trend.recent.toFixed(1)} players a day over the last 4 full weeks, from ${trend.before.toFixed(1)} the 4 before`
@@ -166,6 +170,7 @@ export function scorecard(report: Report): Row[] {
       metric: "Players sharing results",
       bands: { nowhere: "Rarely", promising: "Consistent sharing", great: "Shares drive measurable new players" },
       value: w.playerDays >= LEAST ? percent(shareRate) : null,
+      points: w.playerDays >= LEAST ? whole(shareRate) : null,
       standing:
         w.playerDays < LEAST
           ? null
@@ -183,9 +188,23 @@ export function scorecard(report: Report): Row[] {
       metric: "Weekly regulars*",
       bands: { nowhere: "Under 10%", promising: "20–30%", great: "40%+" },
       value: reg && reg.players >= LEAST ? percent(reg.regulars / reg.players) : null,
+      points: reg && reg.players >= LEAST ? whole(reg.regulars / reg.players) : null,
       standing: reg && reg.players >= LEAST ? stand(reg.regulars / reg.players, { nowhere: 0.1, promising: 0.2, great: 0.4 }) : null,
       detail: reg ? `${count(reg.regulars)} of ${count(reg.players)} players last full week` : "needs a full week",
       how: "*Of the last full week's players (Sunday to Saturday), the share who banked a word on 3 or more of its 7 days.",
     },
   ];
+}
+
+/**
+ * How a row moved since yesterday's scorecard, in the percentage points it is
+ * shown in, so the change always agrees with the two numbers a reader could
+ * compare. Null when either day had too little to judge.
+ *
+ * The rows over the last full week (DAU trend, weekly regulars) only move on a
+ * Sunday; the rest move every day as their windows slide.
+ */
+export function moved(now: Row, before: Row | undefined): number | null {
+  if (now.points === null || before?.points == null) return null;
+  return now.points - before.points;
 }
