@@ -1,12 +1,10 @@
-name: Daily fold check
+name: Weekly fold check
 
-# Keeps two weeks of puzzles checked ahead for answers whose Standard-mode fold
-# lands on a word of a different meaning -- `rehearse` scored as `hearse`,
-# `scowly` as `scow` -- and opens a draft PR fixing them.
-#
-# Runs every morning, but only does anything once fewer than two weeks of
-# puzzles past the three-day floor (Mountain Time) are checked. Then it checks
-# the next 14 puzzles after the last checked date in one go:
+# Once a week, checks the next 14 puzzles after the last checked date for
+# answers whose Standard-mode fold lands on a word of a different meaning --
+# `rehearse` scored as `hearse`, `scowly` as `scow` -- and opens a draft PR
+# fixing them. It never starts closer than three days out (Mountain Time).
+# Fourteen puzzles a week keeps the checked range moving ahead of the calendar.
 #
 #   1. plan: scripts/fold-audit/dump-folds.ts lists every playable answer for
 #      each of the 14 drops whose fold lowers its score -- each word through the
@@ -43,10 +41,9 @@ name: Daily fold check
 
 on:
   schedule:
-    # 14:17 UTC is 7-8am in Denver, so the three-day floor is the same puzzle
-    # whichever side of DST it is. Off the hour because GitHub drops :00
-    # schedules under load (the first one, 2026-10-07, never fired).
-    - cron: "17 14 * * *"
+    # Mondays at 14:17 UTC, 7-8am in Denver. Off the hour because GitHub drops
+    # :00 schedules under load (the first one, 2026-10-07, never fired).
+    - cron: "17 14 * * 1"
   workflow_dispatch:
     inputs:
       date:
@@ -141,11 +138,6 @@ jobs:
             start="$(date -d "$through +1 day" +%F)"
             floor="$(TZ=America/Denver date -d '+3 days' +%F)"
             if [[ "$floor" > "$start" ]]; then start="$floor"; fi
-            # Still two weeks checked past the floor: nothing to do today.
-            if [[ "$start" > "$(date -d "$floor +$((INPUT_DAYS - 1)) days" +%F)" ]]; then
-              echo "Checked through $through, two weeks past $floor; nothing to check today." | tee -a "$GITHUB_STEP_SUMMARY"
-              exit 0
-            fi
           fi
           if ! [[ "$start" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
             echo "::error::Bad date '$start'; use YYYY-MM-DD."

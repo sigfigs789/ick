@@ -1,4 +1,4 @@
-# Daily fold check
+# Weekly fold check
 
 What Claude does in `.github/workflows/daily-fold-check.yml`. The workflow has
 already dumped two weeks of puzzles' folds, kept each word once, and split them
