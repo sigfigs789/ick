@@ -281,13 +281,14 @@ describe("the mode switch", () => {
     expect(
       screen.queryByRole("button", { name: /switch to/i }),
     ).not.toBeInTheDocument();
+    expect(screen.queryByRole("radiogroup", { name: "Mode" })).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /freeform week/i }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText(/change mode/i)).not.toBeInTheDocument();
   });
 
-  it("names the mode you are in and where pressing goes", async () => {
+  it("is a Standard | Freeform toggle in the menu, with the current one checked", async () => {
     const onModeChange = vi.fn();
     render(
       <AppHeader
@@ -298,16 +299,20 @@ describe("the mode switch", () => {
       />,
     );
     // Tucked in the "?" menu, out of the puzzle's way.
-    expect(screen.queryByRole("button", { name: /switch to/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radiogroup", { name: "Mode" })).not.toBeInTheDocument();
     await openMenu();
-    // The label is where you are; the accessible name carries the destination,
-    // which is the half a screen reader needs and the glyph cannot give.
-    const button = screen.getByRole("button", {
-      name: "Mode: Standard. Switch to Freeform.",
-    });
-    expect(button).toHaveTextContent("Standard");
-    await userEvent.click(button);
+    const standard = screen.getByRole("radio", { name: "Standard" });
+    const freeform = screen.getByRole("radio", { name: "Freeform" });
+    expect(standard).toHaveAttribute("aria-checked", "true");
+    expect(freeform).toHaveAttribute("aria-checked", "false");
+
+    // Picking the mode you are in is nothing; picking the other one switches,
+    // and the menu stays open to show it.
+    await userEvent.click(standard);
+    expect(onModeChange).not.toHaveBeenCalled();
+    await userEvent.click(freeform);
     expect(onModeChange).toHaveBeenCalledWith("freeform");
+    expect(screen.getByRole("radiogroup", { name: "Mode" })).toBeInTheDocument();
   });
 
   it("switches back the other way from Freeform", async () => {
@@ -321,9 +326,7 @@ describe("the mode switch", () => {
       />,
     );
     await openMenu();
-    await userEvent.click(
-      screen.getByRole("button", { name: /switch to standard/i }),
-    );
+    await userEvent.click(screen.getByRole("radio", { name: "Standard" }));
     expect(onModeChange).toHaveBeenCalledWith("standard");
   });
 
@@ -338,9 +341,7 @@ describe("the mode switch", () => {
       />,
     );
     await openMenu();
-    expect(
-      screen.getByRole("button", { name: /switch to freeform/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("radiogroup", { name: "Mode" })).toBeInTheDocument();
     expect(screen.queryByText(/two ways to play/i)).toBeNull();
   });
 });

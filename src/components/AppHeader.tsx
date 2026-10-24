@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { trackFoundWordsOpened, trackLeaderboardOpened, trackStatsOpened } from "../analytics";
 import { navigate, pathFor, type Route } from "../routes";
-import { ModeToggle } from "./ModeToggle";
+import { ModeSegments, ModeToggle } from "./ModeToggle";
 import type { GameMode } from "../game/mode";
 import type { MenuSheet } from "./MenuSheetModal";
 
@@ -437,7 +437,7 @@ export function AppHeader({
               )}
               {mode && onModeChange && (
                 <div className="app__menu-mode">
-                  <ModeToggle mode={mode} onChange={changeMode} />
+                  <ModeSegments mode={mode} onChange={onModeChange} />
                 </div>
               )}
             </div>
