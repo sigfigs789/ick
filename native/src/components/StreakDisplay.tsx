@@ -148,6 +148,7 @@ export function StreakDisplay({
             <RestDayBadge
               played={week.played}
               reachable={week.reachable}
+              sundayOnly={week.sundayOnly}
               fontSize={TEXT_SIZE}
               style={styles.week}
             />

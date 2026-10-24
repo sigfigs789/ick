@@ -734,8 +734,8 @@ interface StreakReport {
   saved: number;
   lastPlayed: string;
   /**
-   * The Saturday ending `lastPlayed`'s week, when that week's play earned its
-   * weekend off: that Saturday and the Sunday after rest.
+   * The Saturday of `lastPlayed`'s week, when that week's play earned its
+   * Sunday off: that Saturday, unless played, and the Sunday after rest.
    */
   restDay: string | null;
 }
@@ -777,16 +777,18 @@ function readStreakReport(raw: unknown): StreakReport | null {
 
 /**
  * The Saturday opening the earned weekend off, or null. It can only be the
- * Saturday that ends `lastPlayed`'s week, which is `lastPlayed` itself when
- * that is a Saturday, its Sunday still to rest (see `streakReport` in
- * src/game/streakFreeze.ts); anything else is dropped, and the run is judged
- * as if none was earned.
+ * Saturday of `lastPlayed`'s week (Monday to Sunday), which is `lastPlayed`
+ * itself when that is a Saturday, its Sunday still to rest (see
+ * `streakReport` in src/game/streakFreeze.ts). A Sunday played has no
+ * weekend left to rest. Anything else is dropped, and the run is judged as
+ * if none was earned.
  */
 function readRestDay(raw: unknown, lastPlayed: string): string | null {
   // Not `validPuzzleDate`: the Saturday is usually still ahead. Pinning it to
   // the already-checked `lastPlayed` bounds it instead.
   if (typeof raw !== "string" || !DATE_RE.test(raw)) return null;
   const lastPlayedDay = new Date(`${lastPlayed}T00:00:00Z`).getUTCDay();
+  if (lastPlayedDay === 0) return null;
   const saturday = new Date(Date.parse(`${lastPlayed}T00:00:00Z`) + (6 - lastPlayedDay) * 86_400_000)
     .toISOString()
     .slice(0, 10);

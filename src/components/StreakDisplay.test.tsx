@@ -92,7 +92,7 @@ describe("StreakDisplay", () => {
       "can't break the streak"
     );
 
-    // Played: fire again, and Saturday counts towards the next weekend.
+    // Played: fire again, with Sunday still to snooze through.
     rerender(
       <StreakDisplay
         streak={{ ...friday, lastCompletedDate: "2026-10-31", playedDates: [...friday.playedDates!, "2026-10-31"] }}
@@ -100,7 +100,7 @@ describe("StreakDisplay", () => {
         isToday
       />
     );
-    expect(screen.getByRole("button", { name: /Lazy weekend/ })).toHaveAccessibleName(/1 of 3 so far/);
+    expect(screen.getByRole("button", { name: /Lazy weekend/ })).toHaveAccessibleName(/Unlocked: Sunday's for snoozing/);
     expect(flame()).toBe("🔥");
 
     // Sunday after a skipped Saturday: still 😴, no freeze covering anything.
@@ -113,11 +113,13 @@ describe("StreakDisplay", () => {
     expect(flame()).toBe("🔥");
 
     // Not earned: an ordinary day, where the streak has missed nothing yet,
-    // counting towards the next weekend.
+    // and playing it as the third would rest Sunday.
     rerender(
-      <StreakDisplay streak={{ ...friday, playedDates: ["2026-10-30"] }} date="2026-10-31" isToday />
+      <StreakDisplay streak={{ ...friday, playedDates: ["2026-10-29", "2026-10-30"] }} date="2026-10-31" isToday />
     );
-    expect(screen.getByRole("button", { name: /Lazy weekend/ })).toHaveAccessibleName(/0 of 3 so far/);
+    expect(screen.getByRole("button", { name: /Lazy weekend/ })).toHaveAccessibleName(
+      /by Saturday and snooze through Sunday.*2 of 3 so far/
+    );
     expect(flame()).toBe("🔥");
   });
 
@@ -152,7 +154,7 @@ describe("StreakDisplay", () => {
         isToday
       />
     );
-    expect(screen.getByRole("button", { name: /Lazy weekend: Play any 3 days by Friday and unlock a lazy weekend 😴/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Lazy weekend: Play any 3 days by Friday for a lazy weekend 😴/ })).toBeInTheDocument();
   });
 
   it("hides the flame until a streak reaches two days", () => {

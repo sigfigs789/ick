@@ -1,13 +1,13 @@
--- An earned rest day is now the whole weekend: three days played from the
--- Saturday before to the Friday, each on its own day, rest the Saturday after
--- that Friday and the Sunday after it
+-- An earned rest day is now the whole weekend. The week runs Monday to
+-- Sunday: three days played from the Monday, each on its own day, rest each
+-- weekend day after them -- so three by Friday rest the Saturday and the
+-- Sunday, and a Saturday played as the third rests the Sunday
 -- (see `isRestDay` in src/game/streakFreeze.ts).
 --
 -- The game still sends one date, the Saturday (`restDay` in `streakReport`),
--- and the board rests it and the day after. That Sunday opens the next week,
--- but no play of that week can have earned anything by then, so the one date
--- is still all the board needs. A Saturday played now names itself, since
--- its Sunday is still to rest.
+-- and the board rests it and the day after, less any played: a Saturday
+-- played is `last_played` itself, so only its Sunday is taken off the gap.
+-- A Sunday played ends its week, so it never sends one.
 --
 -- An unearned weekend is two missed days like any other.
 

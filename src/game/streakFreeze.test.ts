@@ -103,7 +103,7 @@ describe("applyFreezes", () => {
   });
 });
 
-// 2026-10-31 is the first Saturday that can be a rest day; its days played are 10-24 to 10-30.
+// 2026-10-31 is the first Saturday that can be a rest day; its week runs 10-26 to 11-01.
 const WEEK_PLAYED = ["2026-10-26", "2026-10-28", "2026-10-29"];
 
 describe("Weekend rest days", () => {
@@ -131,20 +131,28 @@ describe("Weekend rest days", () => {
     expect(isRestDay(earned, "2026-11-02")).toBe(false);
     expect(isRestDay(earned, "2026-11-07")).toBe(false);
     expect(isRestDay(earned, "2026-11-08")).toBe(false);
-    // A played weekend counts towards the next one, not its own.
+    // A weekend played counts towards its own week's: a Sunday towards none.
     const withWeekend = streakOf({ playedDates: [...WEEK_PLAYED, "2026-10-31", "2026-11-01"] });
-    expect(weekPlays(withWeekend, "2026-10-31")).toBe(3);
-    expect(weekPlays(withWeekend, "2026-11-07")).toBe(2);
+    expect(weekPlays(withWeekend, "2026-10-31")).toBe(4);
+    expect(weekPlays(withWeekend, "2026-11-07")).toBe(0);
   });
 
-  it("count a Saturday played towards the next weekend", () => {
-    // Saturday, Sunday and Monday earn the weekend after.
-    const earned = streakOf({ playedDates: ["2026-10-24", "2026-10-25", "2026-10-26"] });
+  it("start the week on Monday, so the Sunday before counts for nothing", () => {
+    const fromSunday = streakOf({ playedDates: ["2026-10-25", "2026-10-26", "2026-10-27"] });
+    expect(weekPlays(fromSunday, "2026-10-31")).toBe(2);
+    expect(isRestDay(fromSunday, "2026-10-31")).toBe(false);
+    expect(isRestDay(fromSunday, "2026-11-01")).toBe(false);
+  });
+
+  it("count a Saturday played towards its own Sunday", () => {
+    // Two weekdays, then Saturday as the third: Sunday rests, Saturday was played.
+    const earned = streakOf({ playedDates: ["2026-10-27", "2026-10-29", "2026-10-31"] });
     expect(weekPlays(earned, "2026-10-31")).toBe(3);
-    expect(isRestDay(earned, "2026-10-31")).toBe(true);
+    expect(isRestDay(earned, "2026-10-31")).toBe(false);
     expect(isRestDay(earned, "2026-11-01")).toBe(true);
-    // The Saturday before does not count twice.
-    expect(weekPlays(streakOf({ playedDates: ["2026-10-24"] }), "2026-11-07")).toBe(0);
+    expect(missedDays(earned, "2026-10-31", "2026-11-02")).toEqual([]);
+    // Saturday unplayed, two weekdays leave both days ordinary.
+    expect(isRestDay(streakOf({ playedDates: ["2026-10-27", "2026-10-29"] }), "2026-11-01")).toBe(false);
   });
 
   it("are not missed days, but an unearned weekend is", () => {
@@ -221,62 +229,89 @@ describe("weekdayRestProgress", () => {
     expect(weekdayRestProgress(streakOf({ playedDates: ["2026-10-26", "2026-10-27"] }), "2026-10-28")).toEqual({
       played: 2,
       reachable: true,
+      sundayOnly: false,
     });
     expect(weekdayRestProgress(streakOf({ playedDates: WEEK_PLAYED }), "2026-10-30")).toEqual({
       played: 3,
       reachable: true,
+      sundayOnly: false,
     });
-    // Friday, one played and today not yet: still shown, out of reach.
+    // Friday, one played and today not yet: today and Saturday make three, for Sunday.
     expect(weekdayRestProgress(streakOf({ playedDates: ["2026-10-26"] }), "2026-10-30")).toEqual({
       played: 1,
+      reachable: true,
+      sundayOnly: true,
+    });
+    // Friday, none played: still shown, out of reach.
+    expect(weekdayRestProgress(streakOf({ playedDates: [] }), "2026-10-30")).toMatchObject({
+      played: 0,
       reachable: false,
     });
     // Thursday, one played and today not yet: today and Friday make three.
-    expect(weekdayRestProgress(streakOf({ playedDates: ["2026-10-26"] }), "2026-10-29")?.reachable).toBe(true);
+    expect(weekdayRestProgress(streakOf({ playedDates: ["2026-10-26"] }), "2026-10-29")).toMatchObject({
+      reachable: true,
+      sundayOnly: false,
+    });
     // An earned Saturday shows 😴 itself, and weeks before rest days began show nothing.
     expect(weekdayRestProgress(streakOf({ playedDates: WEEK_PLAYED }), "2026-10-31")).toBeNull();
-    // Once played, it counts towards the next weekend, with the week ahead to reach it.
+    expect(weekdayRestProgress(streakOf({ playedDates: [] }), "2026-10-20")).toBeNull();
+    expect(weekdayRestProgress(streakOf({ playedDates: [] }), "2026-10-24")).toBeNull();
+    // An unearned Saturday with two played: today makes three, for Sunday.
+    const two = ["2026-10-27", "2026-10-29"];
+    expect(weekdayRestProgress(streakOf({ playedDates: two }), "2026-10-31")).toEqual({
+      played: 2,
+      reachable: true,
+      sundayOnly: true,
+    });
+    // And once played as the third, Sunday is unlocked.
     expect(
       weekdayRestProgress(
-        streakOf({ lastCompletedDate: "2026-10-31", playedDates: [...WEEK_PLAYED, "2026-10-31"] }),
+        streakOf({ lastCompletedDate: "2026-10-31", playedDates: [...two, "2026-10-31"] }),
         "2026-10-31"
       )
-    ).toEqual({ played: 1, reachable: true });
-    // An unearned Saturday not played yet shows the count towards the next weekend.
-    expect(weekdayRestProgress(streakOf({ playedDates: ["2026-10-30"] }), "2026-10-31")).toEqual({
-      played: 0,
-      reachable: true,
-    });
-    // So does an earned Sunday until it is played, when the new week's count shows.
+    ).toEqual({ played: 3, reachable: true, sundayOnly: true });
+    // An earned Sunday shows 😴 until it is played, when next week's count shows.
     const sunday = streakOf({ lastCompletedDate: "2026-10-30", playedDates: WEEK_PLAYED });
     expect(weekdayRestProgress(sunday, "2026-11-01")).toBeNull();
     expect(
       weekdayRestProgress({ ...sunday, lastCompletedDate: "2026-11-01", playedDates: [...WEEK_PLAYED, "2026-11-01"] }, "2026-11-01")
-    ).toEqual({ played: 1, reachable: true });
-    expect(weekdayRestProgress(streakOf({ playedDates: [] }), "2026-10-20")).toBeNull();
-    // 2026-10-24 counts towards the first weekend that can be earned.
-    expect(weekdayRestProgress(streakOf({ playedDates: [] }), "2026-10-24")).toEqual({ played: 0, reachable: true });
+    ).toEqual({ played: 0, reachable: true, sundayOnly: false });
   });
 });
 
 describe("restDayProgress", () => {
   it("counts down the plays the weekend off still needs while the week has room", () => {
-    // Sunday played: two more of the five days left.
-    expect(restDayProgress(streakOf({ playedDates: ["2026-10-25"] }), "2026-10-25")).toEqual({
+    // Monday played: two more of the four weekdays left.
+    expect(restDayProgress(streakOf({ playedDates: ["2026-10-26"] }), "2026-10-26")).toEqual({
       saturday: "2026-10-31",
       needed: 2,
+      sundayOnly: false,
     });
-    // Thursday with one played: two needed, one day left.
-    expect(restDayProgress(streakOf({ playedDates: ["2026-10-29"] }), "2026-10-29")).toBeNull();
+    // Thursday with one played: two needed, Friday and Saturday left, for Sunday.
+    expect(restDayProgress(streakOf({ playedDates: ["2026-10-29"] }), "2026-10-29")).toEqual({
+      saturday: "2026-10-31",
+      needed: 2,
+      sundayOnly: true,
+    });
+    // Friday with one played: two needed, one day left.
+    expect(restDayProgress(streakOf({ playedDates: ["2026-10-30"] }), "2026-10-30")).toBeNull();
     // Earned.
     expect(restDayProgress(streakOf({ playedDates: WEEK_PLAYED }), "2026-10-30")).toEqual({
       saturday: "2026-10-31",
       needed: 0,
+      sundayOnly: false,
     });
-    // A Saturday played counts towards the next weekend.
-    expect(restDayProgress(streakOf({ playedDates: [...WEEK_PLAYED, "2026-10-31"] }), "2026-10-31")).toEqual({
+    // A Saturday played as the third has earned its Sunday.
+    expect(
+      restDayProgress(streakOf({ playedDates: ["2026-10-27", "2026-10-29", "2026-10-31"] }), "2026-10-31")
+    ).toMatchObject({ saturday: "2026-10-31", needed: 0 });
+    // A Saturday played short of three has nothing left to earn.
+    expect(restDayProgress(streakOf({ playedDates: ["2026-10-31"] }), "2026-10-31")).toBeNull();
+    // A Sunday played looks to the next week.
+    expect(restDayProgress(streakOf({ playedDates: ["2026-11-01"] }), "2026-11-01")).toEqual({
       saturday: "2026-11-07",
-      needed: 2,
+      needed: 3,
+      sundayOnly: false,
     });
     // Before rest days began.
     expect(restDayProgress(streakOf({ playedDates: ["2026-10-19"] }), "2026-10-19")).toBeNull();
@@ -410,7 +445,13 @@ describe("streakReport", () => {
     expect(streakReport({ ...thursday, playedDates: ["2026-10-29"] })?.restDay).toBeUndefined();
     // A Saturday played names itself: its Sunday is still to rest.
     expect(streakReport({ ...thursday, lastCompletedDate: "2026-10-31" })?.restDay).toBe("2026-10-31");
-    // A Sunday played: next week's weekend is not earned yet.
+    // So does a Saturday played as the third, which earned only the Sunday.
+    expect(
+      streakReport(
+        streakOf({ lastCompletedDate: "2026-10-31", playedDates: ["2026-10-27", "2026-10-29", "2026-10-31"] })
+      )?.restDay
+    ).toBe("2026-10-31");
+    // A Sunday played ends its week, with nothing of its weekend left to rest.
     expect(streakReport({ ...thursday, lastCompletedDate: "2026-11-01" })?.restDay).toBeUndefined();
   });
 });

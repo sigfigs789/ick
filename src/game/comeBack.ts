@@ -85,8 +85,11 @@ export function streakGoal(
   // Only for a streak worth resting: a lost one has nothing for the weekend to keep.
   const rest = days > 0 ? restDayProgress(streak, today) : null;
   if (rest && rest.needed > 0) {
-    const line =
-      rest.needed === 1
+    const line = rest.sundayOnly
+      ? rest.needed === 1
+        ? "Play tomorrow for a lazy Sunday 😴"
+        : `${rest.needed} more days by Saturday unlocks a lazy Sunday 😴`
+      : rest.needed === 1
         ? "Play tomorrow for a lazy weekend 😴"
         : `${rest.needed} more days by Friday unlocks a lazy weekend 😴`;
     goals.push({ away: rest.needed, rank: 1, line });

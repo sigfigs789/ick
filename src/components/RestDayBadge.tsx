@@ -4,11 +4,22 @@ import { REST_DAY_PLAYS } from "../game/streakFreeze";
 /** What the 😴 means on a day of the weekend itself, for its hover text and popup. */
 const REST_DAY_RULE = "3 days played, so the weekend's all yours: skipping today can't break the streak.";
 
-/** What the badge means on a weekday, with `played` of the week's days played. */
-function weekdayRule(played: number, reachable: boolean): string {
-  if (played >= REST_DAY_PLAYS) return "Unlocked: kick back all weekend, skipping Saturday and Sunday can't break your streak.";
-  if (!reachable) return "Play any 3 days by Friday and unlock a lazy weekend 😴 that protects your streak all Saturday and Sunday";
-  return `Play 3 days by Friday and snooze through the weekend: skipping it can't break your streak. ${played} of 3 so far.`;
+/**
+ * What the badge means before the weekend is taken, with `played` of the
+ * week's days played; `sundayOnly` when three would now earn only Sunday.
+ */
+function weekdayRule(played: number, reachable: boolean, sundayOnly: boolean): string {
+  if (played >= REST_DAY_PLAYS) {
+    return sundayOnly
+      ? "Unlocked: Sunday's for snoozing, skipping it can't break your streak."
+      : "Unlocked: kick back all weekend, skipping Saturday and Sunday can't break your streak.";
+  }
+  if (!reachable) {
+    return "Play any 3 days by Friday for a lazy weekend 😴, or by Saturday for a lazy Sunday: skipping them can't break your streak.";
+  }
+  return sundayOnly
+    ? `Play 3 days by Saturday and snooze through Sunday: skipping it can't break your streak. ${played} of 3 so far.`
+    : `Play 3 days by Friday and snooze through the weekend: skipping it can't break your streak. ${played} of 3 so far.`;
 }
 
 /** A pie a third full for each day played, drawn in the text colour. */
@@ -33,7 +44,7 @@ function WeekPie({ played }: { played: number }) {
 /**
  * The lazy weekend badge. On the weekend itself (no `played`), the 😴 shown
  * on a streak taking a day of the weekend off its week's play earned (see `resting`
- * in game/streakFreeze.ts). On a weekday, given the week's days `played`, a
+ * in game/streakFreeze.ts). Before it, given the week's days `played`, a
  * pie filling a third a day that turns 😴 on the third (see `isRestDay`).
  * Hovering it with a mouse opens a popup with the rule while the pointer stays
  * on it; selecting it pins the popup open, and selecting it again, anywhere
@@ -43,13 +54,16 @@ export function RestDayBadge({
   className,
   played,
   reachable = true,
+  sundayOnly = false,
 }: {
   className?: string;
   played?: number;
   /** Whether three days can still be played this week; the rule then speaks of next week. */
   reachable?: boolean;
+  /** Whether three days would now earn only Sunday, Friday being past or out of reach. */
+  sundayOnly?: boolean;
 }) {
-  const rule = played === undefined ? REST_DAY_RULE : weekdayRule(played, reachable);
+  const rule = played === undefined ? REST_DAY_RULE : weekdayRule(played, reachable, sundayOnly);
   const unlocked = played === undefined || played >= REST_DAY_PLAYS;
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState(false);

@@ -101,61 +101,65 @@ describe("streakGoal", () => {
   });
 
   describe("Weekend off", () => {
-    // 2026-10-31 is the first Saturday that can be earned; its days played are 10-24 to 10-30.
+    // 2026-10-31 is the first Saturday that can be earned; its week runs 10-26 to 11-01.
     const run = (playedDates: string[]) =>
       streak({ currentStreak: 8, longestStreak: 20, bankedFreezes: 2, playedDates });
 
     it("counts down the days still needed while the week has room", () => {
-      expect(streakGoal(run(["2026-10-25"]), "2026-10-25")).toBe("2 more days by Friday unlocks a lazy weekend 😴");
+      expect(streakGoal(run(["2026-10-26"]), "2026-10-26")).toBe("2 more days by Friday unlocks a lazy weekend 😴");
       expect(streakGoal(run(["2026-10-27", "2026-10-28"]), "2026-10-28")).toBe(
         "Play tomorrow for a lazy weekend 😴"
       );
-      // A Saturday played counts towards the next weekend.
-      expect(streakGoal(run(["2026-10-31"]), "2026-10-31")).toBe("2 more days by Friday unlocks a lazy weekend 😴");
+      // Too late for the whole weekend: Saturday played as the third still rests Sunday.
+      expect(streakGoal(run(["2026-10-27", "2026-10-30"]), "2026-10-30")).toBe("Play tomorrow for a lazy Sunday 😴");
+      expect(streakGoal(run(["2026-10-29"]), "2026-10-29")).toBe("2 more days by Saturday unlocks a lazy Sunday 😴");
+      // A Sunday played looks to the next week.
+      expect(streakGoal(run(["2026-11-01"]), "2026-11-01")).toBe("3 more days by Friday unlocks a lazy weekend 😴");
     });
 
     it("is not mentioned once unlocked", () => {
       // Cap full and the best streak 12 days off: nothing nearer to say instead.
-      expect(streakGoal(run(["2026-10-25", "2026-10-26", "2026-10-27"]), "2026-10-27")).toBe(
+      expect(streakGoal(run(["2026-10-26", "2026-10-27", "2026-10-28"]), "2026-10-28")).toBe(
         "13 days to beat your best streak of 20."
       );
       expect(streakGoal(run(["2026-10-26", "2026-10-28", "2026-10-30"]), "2026-10-30")).not.toMatch(/lazy weekend/);
     });
 
     it("does not promise one the week has no room left for", () => {
-      expect(streakGoal(run(["2026-10-30"]), "2026-10-30")).not.toMatch(/lazy weekend/);
+      expect(streakGoal(run(["2026-10-30"]), "2026-10-30")).not.toMatch(/lazy/);
+      expect(streakGoal(run(["2026-10-31"]), "2026-10-31")).not.toMatch(/lazy/);
     });
 
     it("is ranked by how soon it lands, a tie going to the freeze", () => {
       // Both two days away: the freeze.
       expect(
-        streakGoal(streak({ currentStreak: 1, longestStreak: 1, playedDates: ["2026-10-25"] }), "2026-10-25")
+        streakGoal(streak({ currentStreak: 1, longestStreak: 1, playedDates: ["2026-10-26"] }), "2026-10-26")
       ).toBe("2 days to your next 🧊 streak freeze.");
       // Two days to a lazy weekend, four to the cap rising at 14.
       expect(
         streakGoal(
-          streak({ currentStreak: 10, longestStreak: 10, bankedFreezes: 1, playedDates: ["2026-10-25"] }),
-          "2026-10-25"
+          streak({ currentStreak: 10, longestStreak: 10, bankedFreezes: 1, playedDates: ["2026-10-26"] }),
+          "2026-10-26"
         )
       ).toBe("2 more days by Friday unlocks a lazy weekend 😴");
       // Tied with beating the best: the lazy weekend, which lapses.
       expect(
         streakGoal(
-          streak({ currentStreak: 8, longestStreak: 9, bankedFreezes: 2, playedDates: ["2026-10-25"] }),
-          "2026-10-25"
+          streak({ currentStreak: 8, longestStreak: 9, bankedFreezes: 2, playedDates: ["2026-10-26"] }),
+          "2026-10-26"
         )
       ).toBe("2 more days by Friday unlocks a lazy weekend 😴");
     });
 
     it("comes after a freeze tomorrow earns", () => {
       expect(
-        streakGoal(streak({ currentStreak: 2, longestStreak: 2, playedDates: ["2026-10-25"] }), "2026-10-25")
+        streakGoal(streak({ currentStreak: 2, longestStreak: 2, playedDates: ["2026-10-26"] }), "2026-10-26")
       ).toMatch(/^Tomorrow earns a 🧊 freeze/);
     });
   });
 
   describe("with nothing else ahead", () => {
-    // Cap full, no lazy weekend (a Saturday), and the best streak is this one.
+    // Cap full, no lazy weekend, and the best streak is this one.
     const maxed = streak({ currentStreak: 30, longestStreak: 30, bankedFreezes: 2 });
     const locked = ACHIEVEMENTS.slice(0, 3).map((achievement) => ({ achievement, earnedOn: null }));
 

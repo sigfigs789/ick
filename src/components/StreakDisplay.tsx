@@ -159,7 +159,12 @@ export function StreakDisplay({
           <span className="streak-display__unit">day streak</span>
           {showFreezes && <FreezeBadge banked={banked} cap={cap} />}
           {week && (
-            <RestDayBadge played={week.played} reachable={week.reachable} className="streak-display__week" />
+            <RestDayBadge
+              played={week.played}
+              reachable={week.reachable}
+              sundayOnly={week.sundayOnly}
+              className="streak-display__week"
+            />
           )}
         </div>
       )}

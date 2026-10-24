@@ -142,9 +142,9 @@ describe("api/leaderboard submissions", () => {
     });
   });
 
-  it("records the Saturday off only when it ends the last played day's week", async () => {
+  it("records the Saturday off only when it is in the last played day's week", async () => {
     withEnv();
-    // SUNDAY's week ends on 2026-08-29.
+    // The Monday after SUNDAY, whose week's Saturday is 2026-08-29.
     for (const [restDay, expected] of [
       ["2026-08-29", "2026-08-29"],
       ["2026-09-05", null], // a later Saturday, which no play has earned
@@ -152,7 +152,7 @@ describe("api/leaderboard submissions", () => {
       ["soon", null],
     ]) {
       const fetchMock = stubFetch([[], []]);
-      const streak = { current: 40, best: 52, saved: 2, lastPlayed: SUNDAY, restDay };
+      const streak = { current: 40, best: 52, saved: 2, lastPlayed: "2026-08-24", restDay };
       await handler(post({ ...score(), streak }));
       expect(rpcCall(fetchMock, 1)?.args).toMatchObject({ p_rest_day: expected });
     }
@@ -168,6 +168,16 @@ describe("api/leaderboard submissions", () => {
       const streak = { current: 40, best: 52, saved: 2, lastPlayed: "2026-08-29", restDay };
       await handler(post({ ...score(), streak }));
       expect(rpcCall(fetchMock, 1)?.args).toMatchObject({ p_rest_day: expected });
+    }
+  });
+
+  it("records no weekend off for a Sunday played, which ends its week", async () => {
+    withEnv();
+    for (const restDay of ["2026-08-22", "2026-08-29"]) {
+      const fetchMock = stubFetch([[], []]);
+      const streak = { current: 40, best: 52, saved: 2, lastPlayed: SUNDAY, restDay };
+      await handler(post({ ...score(), streak }));
+      expect(rpcCall(fetchMock, 1)?.args).toMatchObject({ p_rest_day: null });
     }
   });
 
