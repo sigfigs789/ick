@@ -24,7 +24,7 @@ export interface Day {
 }
 
 export interface Cohort {
-  /** The Sunday the week starts on. */
+  /** The Monday the week starts on. */
   start: string;
   /** Players whose first word was in the week. */
   players: number;

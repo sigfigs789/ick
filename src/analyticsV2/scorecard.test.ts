@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseReport, type Report } from "./report";
-import { addDays, dauTrend, lastSaturday, scorecard, stand } from "./scorecard";
+import { addDays, dauTrend, lastSunday, scorecard, stand } from "./scorecard";
 
 const TODAY = "2026-10-22"; // a Thursday
 
@@ -30,10 +30,11 @@ describe("bands", () => {
 });
 
 describe("weeks", () => {
-  it("run Sunday to Saturday", () => {
-    expect(lastSaturday(TODAY)).toBe("2026-10-17");
-    expect(lastSaturday("2026-10-18")).toBe("2026-10-17");
-    expect(lastSaturday("2026-10-17")).toBe("2026-10-10");
+  it("run Monday to Sunday", () => {
+    expect(lastSunday(TODAY)).toBe("2026-10-18");
+    expect(lastSunday("2026-10-19")).toBe("2026-10-18");
+    expect(lastSunday("2026-10-18")).toBe("2026-10-11");
+    expect(lastSunday("2026-10-24")).toBe("2026-10-18");
   });
 });
 
@@ -64,7 +65,7 @@ describe("scorecard", () => {
   });
 
   it("reads the DAU trend from the last four full weeks against the four before, as a monthly rate", () => {
-    const end = lastSaturday(TODAY);
+    const end = lastSunday(TODAY);
     const growing = report((date) => (date > addDays(end, -28) ? 12 : 10));
     const trend = dauTrend(growing);
     expect(trend?.recent).toBe(12);

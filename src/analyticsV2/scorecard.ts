@@ -77,9 +77,10 @@ export function addDays(date: string, n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-/** The Saturday that ends the last full week, Sunday to Saturday, before `today`'s. */
-export function lastSaturday(today: string): string {
-  return addDays(today, -new Date(`${today}T12:00:00Z`).getUTCDay() - 1);
+/** The Sunday that ends the last full week, Monday to Sunday, before `today`'s. */
+export function lastSunday(today: string): string {
+  // getUTCDay is 0 on a Sunday, so this steps back to the Monday on or before today, then one more.
+  return addDays(today, -((new Date(`${today}T12:00:00Z`).getUTCDay() + 6) % 7) - 1);
 }
 
 /** The average of `field` a day over the `n` days ending `end`, or null when the report does not cover them all. */
@@ -112,7 +113,7 @@ function retentionRow(metric: string, n: number, rate: Rate, bands: Row["bands"]
  * four before, as a monthly rate.
  */
 export function dauTrend(report: Report): { change: number; recent: number; before: number } | null {
-  const end = lastSaturday(report.today);
+  const end = lastSunday(report.today);
   const recent = average(report.daily, end, 28);
   const before = average(report.daily, addDays(end, -28), 28);
   if (recent === null || before === null || before === 0) return null;
@@ -205,7 +206,7 @@ export function scorecard(report: Report): Row[] {
       points: reg && reg.players >= LEAST ? whole(reg.regulars / reg.players) : null,
       standing: reg && reg.players >= LEAST ? stand(reg.regulars / reg.players, { nowhere: 0.1, promising: 0.2, great: 0.4 }) : null,
       detail: reg ? `${count(reg.regulars)} of ${count(reg.players)} players last full week` : "needs a full week",
-      how: "*Of the last full week's players (Sunday to Saturday), the share who banked a word on 3 or more of its 7 days.",
+      how: "*Of the last full week's players (Monday to Sunday), the share who banked a word on 3 or more of its 7 days.",
     },
   ];
 }
@@ -216,7 +217,7 @@ export function scorecard(report: Report): Row[] {
  * compare. Null when either day had too little to judge.
  *
  * The rows over the last full week (DAU trend, weekly regulars) only move on a
- * Sunday; the rest move every day as their windows slide.
+ * Monday; the rest move every day as their windows slide.
  */
 export function moved(now: Row, before: Row | undefined): number | null {
   if (now.points === null || before?.points == null) return null;
