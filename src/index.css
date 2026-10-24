@@ -6619,6 +6619,12 @@ h2 {
   /* The badge's ring is for a dot; on a bar it reads as a stray cap. */
   box-shadow: none;
 }
+/* Legend's dot is near-white to sit on its black badge, which leaves it the
+   colour of the light theme's track. Its bar takes the text colour instead:
+   still monochrome, and dark or light against whichever track it is on. */
+.stats__bar-track .stats__bar-fill.rarity--legend .rarity-badge__dot {
+  background: var(--fg);
+}
 .stats__bar-count {
   text-align: right;
   font-variant-numeric: tabular-nums;
