@@ -287,7 +287,7 @@ describe("StreakDisplay", () => {
     const popup = screen.getByRole("dialog", { name: "Streak freezes" });
     expect(popup.querySelector("strong")?.textContent).toBe("1 of 2 🧊 acquired");
     // Past day 3 and at the top cap: neither rule applies any more.
-    expect(popup.textContent).toContain("Earn one every 7 days. Hold up to 2.");
+    expect(popup.textContent).toContain("You get another one every 7 days of your streak (day 7, 14, 21, and so on). You can save up to 2 at a time.");
     expect(popup.textContent).not.toContain("day 3");
     expect(popup.textContent).not.toContain("14 day");
 
@@ -310,15 +310,18 @@ describe("StreakDisplay", () => {
 
     // Before day 3, with no cap yet.
     expect(rules({ ...streak, currentStreak: 2, longestStreak: 2 })).toContain(
-      "Earn one on day 3, then every 7 days. Hold 1. Increase your limit to 2 on a 14 day streak."
+      "You get your first one on day 3 of your streak, then another every 7 days of your streak (day 7, 14, 21, and so on). " +
+        "You can only save 1 at a time. Reach a 14 day streak to save up to 2."
     );
     // Day 3's freeze earned, the cap still 1.
     expect(rules({ ...streak, currentStreak: 5, longestStreak: 5 })).toContain(
-      "Earn one every 7 days. Hold 1. Increase your limit to 2 on a 14 day streak."
+      "You get another one every 7 days of your streak (day 7, 14, 21, and so on). " +
+        "You can only save 1 at a time. Reach a 14 day streak to save up to 2."
     );
     // A new streak before day 3, the cap already 2 from a past one.
     expect(rules({ ...streak, currentStreak: 1, longestStreak: 20 })).toContain(
-      "Earn one on day 3, then every 7 days. Hold up to 2."
+      "You get your first one on day 3 of your streak, then another every 7 days of your streak (day 7, 14, 21, and so on). " +
+        "You can save up to 2 at a time."
     );
   });
 

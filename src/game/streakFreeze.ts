@@ -167,15 +167,17 @@ export function freezeCap(days: number): number {
  * and the limit rising to 2 until `cap` has.
  */
 export function freezeRules(currentStreak: number, cap: number): string {
+  const n = DAYS_PER_EARNED_FREEZE;
+  const everyN = `every ${n} days of your streak (day ${n}, ${n * 2}, ${n * 3}, and so on)`;
   const earn =
     currentStreak < FIRST_FREEZE_DAY
-      ? `Earn one on day ${FIRST_FREEZE_DAY}, then every ${DAYS_PER_EARNED_FREEZE} days.`
-      : `Earn one every ${DAYS_PER_EARNED_FREEZE} days.`;
+      ? `You get your first one on day ${FIRST_FREEZE_DAY} of your streak, then another ${everyN}.`
+      : `You get another one ${everyN}.`;
   const hold =
     cap < MAX_FREEZE_CAP
-      ? `Hold 1. Increase your limit to ${MAX_FREEZE_CAP} on a ${MAX_CAP_STREAK} day streak.`
-      : `Hold up to ${MAX_FREEZE_CAP}.`;
-  return `🧊 saves your streak on a missed day. ${earn} ${hold}`;
+      ? `You can only save 1 at a time. Reach a ${MAX_CAP_STREAK} day streak to save up to ${MAX_FREEZE_CAP}.`
+      : `You can save up to ${MAX_FREEZE_CAP} at a time.`;
+  return `A streak freeze 🧊 keeps your streak going if you miss a day. ${earn} ${hold}`;
 }
 
 /** The cap for this player: set by the longest streak they have ever had. */
