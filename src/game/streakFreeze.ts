@@ -44,7 +44,7 @@ import type { FreezeCount, StreakState } from "./types";
 const FROZEN_DATES_KEPT_DAYS = 62;
 
 /** The first Saturday that is a rest day. Earlier Saturdays were missed like any day. */
-export const REST_DAY_START = "2026-10-24";
+export const REST_DAY_START = "2026-10-31";
 
 const SATURDAY = 6;
 

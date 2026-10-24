@@ -205,17 +205,17 @@ describe("loadStreak", () => {
 
 describe("Saturday rest days", () => {
   it("carry the streak from Friday to Sunday without counting Saturday", () => {
-    setToday("2026-10-23");
-    recordAcceptedWord(newProgress("2026-10-23", "str"), word("strange"));
-    setToday("2026-10-24");
+    setToday("2026-10-30");
+    recordAcceptedWord(newProgress("2026-10-30", "str"), word("strange"));
+    setToday("2026-10-31");
     expect(loadStreak().currentStreak).toBe(1);
-    setToday("2026-10-25");
-    recordAcceptedWord(newProgress("2026-10-25", "str"), word("strange"));
-    expect(loadStreak()).toMatchObject({ currentStreak: 2, lastCompletedDate: "2026-10-25" });
+    setToday("2026-11-01");
+    recordAcceptedWord(newProgress("2026-11-01", "str"), word("strange"));
+    expect(loadStreak()).toMatchObject({ currentStreak: 2, lastCompletedDate: "2026-11-01" });
   });
 
   it("count when played", () => {
-    for (const date of ["2026-10-23", "2026-10-24", "2026-10-25"]) {
+    for (const date of ["2026-10-30", "2026-10-31", "2026-11-01"]) {
       setToday(date);
       recordAcceptedWord(newProgress(date, "str"), word("strange"));
     }
