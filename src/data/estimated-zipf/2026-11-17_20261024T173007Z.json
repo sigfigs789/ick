@@ -1,0 +1,14 @@
+{
+  "since": "2026-11-17",
+  "drop": "ACH",
+  "model": "claude-opus-5-5",
+  "source": "claude",
+  "run": "https://github.com/sigfigs789/ick/actions/runs/40116334844",
+  "estimatedAt": "2026-10-24T17:30:07Z",
+  "zipf": {
+    "hexachloroantimonates": -0.7,
+    "hexachlorocyclohexene": -0.1,
+    "hysterotrachelectomy": -0.2,
+    "laryngotracheotomies": -0.5
+  }
+}
