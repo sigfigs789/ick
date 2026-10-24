@@ -1046,6 +1046,25 @@ describe("api/leaderboard word finders", () => {
   });
 });
 
+describe("api/leaderboard best-word wins", () => {
+  it("asks for the tally before one puzzle and hands it back by player", async () => {
+    withEnv();
+    const fetchMock = stubFetch([
+      [
+        { player_id: "AAAA", wins: 3 },
+        { player_id: "bbbb", wins: "1" },
+      ],
+    ]);
+    const response = await handler(get("?bestWins=1&today=2026-08-25"));
+
+    expect(rpcCall(fetchMock)?.url).toBe(
+      "https://project.supabase.co/rest/v1/rpc/leaderboard_best_word_wins"
+    );
+    expect(rpcCall(fetchMock)?.args).toEqual({ p_before: "2026-08-25" });
+    expect(await response.json()).toEqual({ wins: { aaaa: 3, bbbb: 1 } });
+  });
+});
+
 describe("api/leaderboard unranked days", () => {
   it("passes the unranked flag through, so the write keeps the day off the board", async () => {
     withEnv();
