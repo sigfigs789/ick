@@ -93,8 +93,8 @@
       ]
     },
     {
-      "reviewed_at": "2026-10-24T22:30:00Z",
-      "reviewed_through": "2026-10-24T22:00:00Z",
+      "reviewed_at": "2026-10-24T21:37:00Z",
+      "reviewed_through": "2026-10-24T19:37:21.452139+00:00",
       "sources": [
         "suggested_words (16 rows, 8 untriaged)",
         "analytics_events.answer_rejected since 2026-08-23 (6,338 distinct words; re-checked under 2026-10-24 rules: 4,963 still not a word, 133 refused as obsolete/archaic/dated/misspelling)"
