@@ -93,7 +93,7 @@ export function StreakDisplay({
   hasWords = true,
 }: Props) {
   // One icon for how the streak stands, as the streak board marks it (see
-  // components/LeaderboardPage.tsx): 🕺 or 💃 on a Saturday not played yet,
+  // components/LeaderboardPage.tsx): 🕺, 💃 or 😴 on a Saturday not played yet,
   // which cannot end the streak; ⏳ when missing today ends the streak,
   // every saved freeze spent; 🧊 while a saved freeze is covering a missed day
   // with one left for today, until today is played; 🔥 otherwise. A past

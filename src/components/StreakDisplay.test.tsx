@@ -60,7 +60,7 @@ describe("StreakDisplay", () => {
     const friday: StreakState = { ...streak, currentStreak: 5, lastCompletedDate: "2026-10-23" };
     const { rerender } = render(<StreakDisplay streak={friday} date="2026-10-24" isToday />);
     const dancer = screen.getByRole("button", { name: /Saturday rest day/ });
-    expect(dancer.textContent).toMatch(/🕺|💃/u);
+    expect(dancer.textContent).toMatch(/🕺|💃|😴/u);
     expect(dancer).toHaveAttribute("title", expect.stringContaining("Saturdays don't break streaks"));
     fireEvent.click(dancer);
     expect(screen.getByRole("dialog", { name: "Saturday rest day" })).toHaveTextContent(

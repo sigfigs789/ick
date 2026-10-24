@@ -28,7 +28,7 @@
  *
  * Saturdays are rest days (from REST_DAY_START): a Saturday left unplayed
  * spends no freeze and ends no streak, and a Saturday played counts like any
- * other day. While Saturday is unplayed the streak shows 🕺 or 💃 (see
+ * other day. While Saturday is unplayed the streak shows 🕺, 💃 or 😴 (see
  * `resting` and components/RestDayBadge.tsx). Every rule below that counts
  * missed days skips rest days (`missedDays`).
  */
@@ -290,7 +290,7 @@ export function atRisk(streak: StreakState, today: string): boolean {
 
 /**
  * Whether today is a rest day the streak is taking: a live streak on a
- * Saturday not played yet. The game and the streak board show 🕺 or 💃 for it.
+ * Saturday not played yet. The game and the streak board show 🕺, 💃 or 😴 for it.
  */
 export function resting(streak: StreakState, today: string): boolean {
   return isRestDay(today) && streak.currentStreak > 0 && streak.lastCompletedDate !== today;

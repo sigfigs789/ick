@@ -1119,7 +1119,7 @@ function StreakRow({ entry, isYou }: { entry: StreakEntry; isYou: boolean }) {
       </span>
       <span className="leaderboard__score">
         {/* One icon for how the run stands, as the game marks it (see
-            components/StreakDisplay.tsx): 🕺 or 💃 on a Saturday not played
+            components/StreakDisplay.tsx): 🕺, 💃 or 😴 on a Saturday not played
             yet, which cannot end the run, tapped to say so; ⏳ when missed days have spent
             every saved freeze, so missing today ends it; 🧊 while a saved
             freeze is covering it with one left for today; 💀 for a run that

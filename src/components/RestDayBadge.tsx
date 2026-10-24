@@ -3,14 +3,17 @@ import { useEffect, useId, useRef, useState } from "react";
 /** What the dancer means, for its hover text and popup. */
 const REST_DAY_RULE = "Saturdays don't break streaks. Skip today and your streak is safe.";
 
+/** The Saturday faces, one per player. */
+const REST_DAY_ICONS = ["🕺", "💃", "😴"] as const;
+
 /**
- * 🕺 or 💃 for a player, the same one every Saturday: chosen from the player
- * id, so the board shows a mix and a player always sees their own dancer.
+ * 🕺, 💃 or 😴 for a player, the same one every Saturday: chosen from the
+ * player id, so the board shows a mix and a player always sees their own.
  */
-function restDayDancer(playerId: string): "🕺" | "💃" {
+function restDayDancer(playerId: string): (typeof REST_DAY_ICONS)[number] {
   let sum = 0;
   for (const char of playerId) sum += char.charCodeAt(0);
-  return sum % 2 === 0 ? "🕺" : "💃";
+  return REST_DAY_ICONS[sum % REST_DAY_ICONS.length];
 }
 
 /**

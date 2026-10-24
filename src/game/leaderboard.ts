@@ -98,7 +98,7 @@ export interface StreakEntry {
   lost: boolean;
   /**
    * Today is a Saturday rest day the run has not played yet: missing it cannot
-   * end the run, and the board shows 🕺 or 💃 (see `resting` in
+   * end the run, and the board shows 🕺, 💃 or 😴 (see `resting` in
    * game/streakFreeze.ts). Playing turns it back to 🔥.
    */
   resting: boolean;

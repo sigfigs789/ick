@@ -333,10 +333,10 @@ describe("the leaderboard page", () => {
     await waitFor(() => expect(boardRows("Streaks")).toHaveLength(3));
     // Played today: fire, as on any day.
     expect(boardRows("Streaks")[0]).toHaveTextContent("🔥");
-    expect(boardRows("Streaks")[0]).not.toHaveTextContent(/🕺|💃/u);
+    expect(boardRows("Streaks")[0]).not.toHaveTextContent(/🕺|💃|😴/u);
     // Resting, even under a freeze and even on a one-day run: the dancer alone.
     for (const row of boardRows("Streaks").slice(1)) {
-      expect(row).toHaveTextContent(/🕺|💃/u);
+      expect(row).toHaveTextContent(/🕺|💃|😴/u);
       expect(row).not.toHaveTextContent(/🔥|🧊|⏳/u);
     }
     const dancer = within(boardRows("Streaks")[1]).getByRole("button", { name: /Saturday rest day/ });

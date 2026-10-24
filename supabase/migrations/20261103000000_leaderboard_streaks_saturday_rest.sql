@@ -6,7 +6,7 @@
 -- between, and nothing else about how a run survives changes.
 --
 -- On a Saturday itself, a live run not played yet is `resting`: the board
--- shows it 🕺 or 💃 instead of 🔥, 🧊 or ⏳, and it is never `at_risk`, as
+-- shows it 🕺, 💃 or 😴 instead of 🔥, 🧊 or ⏳, and it is never `at_risk`, as
 -- missing today cannot end it. Playing turns it back to 🔥.
 --
 -- Saturdays in (last_played, p_today - 1] are counted in closed form against
