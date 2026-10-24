@@ -25,8 +25,8 @@ function earnsFreezeOn(days: number): boolean {
  * only buried the reward that was actually news.
  *
  * Most motivating first: a freeze tomorrow itself, then Saturday off (see
- * `restDayProgress` in game/streakFreeze.ts) -- earned by tomorrow, already
- * earned on a Friday, or a few days away -- since it lapses with its week
+ * `restDayProgress` in game/streakFreeze.ts) -- already unlocked, unlocked by
+ * tomorrow, or a few days away -- since it lapses with its week
  * while a freeze keeps; then whichever is nearer of the next freeze that would
  * fit under the cap and beating the best streak (a tie goes to the freeze,
  * the thing they keep), then a record run, and only with nothing else to say,
@@ -59,8 +59,12 @@ export function streakGoal(streak: StreakState, today: string): string {
 
   // Only for a streak worth resting: a lost one has nothing for Saturday to keep.
   const rest = days > 0 ? restDayProgress(streak, today) : null;
-  if (rest?.needed === 0 && rest.saturday === addDays(today, 1)) {
-    return "Lazy Saturday unlocked: skip tomorrow and your streak is safe.";
+  // Once unlocked, said every weekday left, so the day it unlocks is never
+  // silent: it lapses on Saturday, where the far-off goals below can wait.
+  if (rest?.needed === 0) {
+    return rest.saturday === addDays(today, 1)
+      ? "Lazy Saturday unlocked: skip tomorrow and your streak is safe."
+      : "Lazy Saturday unlocked 😴 Skip Saturday and your streak is safe.";
   }
   if (rest?.needed === 1) return "Play tomorrow for a lazy Saturday 😴";
   if (rest && rest.needed > 1) return `${rest.needed} more days by Friday unlocks a lazy Saturday 😴`;
