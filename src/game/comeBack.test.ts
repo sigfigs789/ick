@@ -44,9 +44,16 @@ describe("streakGoal", () => {
     expect(
       streakGoal(streak({ currentStreak: 13, longestStreak: 13, bankedFreezes: 1 }))
     ).toBe("Tomorrow your 🧊 freeze limit goes up to 2, and you earn a freeze to fill it.");
+    // Two is the most the cap ever reaches, so a full one past 14 days never rises.
     expect(
       streakGoal(streak({ currentStreak: 20, longestStreak: 20, bankedFreezes: 2 }))
-    ).toBe("8 days until your 🧊 freeze limit goes up to 3.");
+    ).toBe("This is your longest streak yet.");
+  });
+
+  it("promises no freeze to a player still holding three from the old cap", () => {
+    expect(
+      streakGoal(streak({ currentStreak: 27, longestStreak: 40, bankedFreezes: 3 }))
+    ).toBe("14 days to beat your best streak of 40.");
   });
 
   it("counts the freeze a holder would add when there is room for it", () => {

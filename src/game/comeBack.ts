@@ -41,7 +41,8 @@ export function streakGoal(streak: StreakState): string {
   const banked = streak.bankedFreezes ?? 0;
   const keeps = (on: number) => earnsFreezeOn(on) && banked < freezeCap(Math.max(best, on));
 
-  // Only up to three are ever held, so the next is at most the 3rd.
+  // Only up to two are ever earned, so the next is at most the 2nd. (A player
+  // still holding three from the old limit has a full cap, so is never told one.)
   const nth = ["", "", "2nd", "3rd"][banked + 1];
   const capFull = banked > 0 && banked >= freezeCap(best);
 
@@ -51,8 +52,8 @@ export function streakGoal(streak: StreakState): string {
     return "Tomorrow earns a 🧊 freeze, which saves your streak on a day you miss.";
   }
 
-  // A full cap only rises at 14 and 28 days, so four weeks out is as far as a
-  // kept freeze can be.
+  // A full cap only rises at 14 days, and a kept freeze is never more than
+  // four weeks out.
   let freezeAway: number | undefined;
   for (let freezeDay = next + 1; freezeDay <= next + 28; freezeDay++) {
     if (keeps(freezeDay)) {
