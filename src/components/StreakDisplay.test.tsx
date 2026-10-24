@@ -286,7 +286,10 @@ describe("StreakDisplay", () => {
     fireEvent.click(badge);
     const popup = screen.getByRole("dialog", { name: "Streak freezes" });
     expect(popup.querySelector("strong")?.textContent).toBe("1 of 2 🧊 acquired");
-    expect(popup.textContent).toContain("Earn one on day 3, then every 7 days.");
+    // Past day 3 and at the top cap: neither rule applies any more.
+    expect(popup.textContent).toContain("Earn one every 7 days. Hold up to 2.");
+    expect(popup.textContent).not.toContain("day 3");
+    expect(popup.textContent).not.toContain("14 day");
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -294,6 +297,29 @@ describe("StreakDisplay", () => {
     fireEvent.click(badge);
     fireEvent.pointerDown(document.body);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("tells only the freeze rules still ahead of the player", () => {
+    const rules = (s: StreakState) => {
+      const { unmount } = render(<StreakDisplay streak={s} />);
+      fireEvent.click(screen.getByRole("button", { name: /streak freezes/i }));
+      const text = screen.getByRole("dialog", { name: "Streak freezes" }).textContent;
+      unmount();
+      return text;
+    };
+
+    // Before day 3, with no cap yet.
+    expect(rules({ ...streak, currentStreak: 2, longestStreak: 2 })).toContain(
+      "Earn one on day 3, then every 7 days. Hold 1. Increase your limit to 2 on a 14 day streak."
+    );
+    // Day 3's freeze earned, the cap still 1.
+    expect(rules({ ...streak, currentStreak: 5, longestStreak: 5 })).toContain(
+      "Earn one every 7 days. Hold 1. Increase your limit to 2 on a 14 day streak."
+    );
+    // A new streak before day 3, the cap already 2 from a past one.
+    expect(rules({ ...streak, currentStreak: 1, longestStreak: 20 })).toContain(
+      "Earn one on day 3, then every 7 days. Hold up to 2."
+    );
   });
 
   it("shows a past puzzle the freezes held on its day, and today the ones held now", () => {
