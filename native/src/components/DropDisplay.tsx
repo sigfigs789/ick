@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { revealGatedFor } from '../../../src/game/constants';
 import { formatDateLabel } from '../../../src/game/date';
 import {
@@ -11,6 +11,7 @@ import { useWordDataLoaded } from '../../../src/hooks/useWordDataLoaded';
 import { signalTap } from '../host/feedback';
 import { radius, space } from '../theme/tokens';
 import { rarityPalette, useTheme } from '../theme/useTheme';
+import { PUZZLE_NAV_LABEL_WIDTH, PUZZLE_NAV_ROW_HEIGHT, PuzzleNavSlot } from './PuzzleNav';
 import { Sheet } from './Sheet';
 
 interface Props {
@@ -27,6 +28,13 @@ interface Props {
   retryOffered?: boolean;
   /** Spend the retry to see the word. */
   onReveal?: () => void;
+  /**
+   * The word of the day section at all, button or word. The website hides it
+   * from one arm of an experiment (see src/game/wordOfDay.ts); the app is
+   * always the shown arm, so this defaults on and the play screen need not
+   * pass it.
+   */
+  wordOfDay?: boolean;
 }
 
 /** The day's letters, and -- once it is over -- the word they were hiding. */
@@ -37,8 +45,11 @@ export function DropDisplay({
   completed = false,
   retryOffered = false,
   onReveal,
+  wordOfDay = true,
 }: Props) {
   const theme = useTheme();
+  // Between PuzzleNav's arrows, the label sits on their row (see PuzzleNav).
+  const inNav = useContext(PuzzleNavSlot);
 
   // A full dictionary scan, so it is memoised against the drop rather than
   // re-run whenever an unrelated piece of the screen changes. Not before the
@@ -82,33 +93,29 @@ export function DropDisplay({
   const palette = reveal ? rarityPalette(theme, reveal.rarity, date) : undefined;
 
   return (
-    <View style={styles.wrap}>
-      <Text style={[styles.label, { color: theme.fgMuted }]}>
-        {!isToday && date ? `${formatDateLabel(date)}'s drop` : "Today's drop"}
-      </Text>
+    <View style={inNav ? styles.wrapInNav : styles.wrap}>
+      <View style={inNav ? styles.labelRowInNav : undefined}>
+        <Text
+          style={[styles.label, inNav && styles.labelInNav, { color: theme.fgFaint }]}
+          numberOfLines={inNav ? 1 : undefined}
+        >
+          {!isToday && date ? `${formatDateLabel(date)}'s drop` : "Today's drop"}
+        </Text>
+      </View>
 
       <View
-        style={styles.letters}
+        style={[styles.letters, inNav && styles.lettersInNav]}
         accessibilityRole="text"
         // Spelled out, because a screen reader handed "STR" as one string says
         // "stir". The letters are the puzzle; they have to arrive as letters.
         accessibilityLabel={`The drop is ${drop.toUpperCase().split('').join(', ')}`}
       >
         {drop.split('').map((character, index) => (
-          <View
-            key={index}
-            style={[styles.tile, { backgroundColor: theme.accent }]}
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
-          >
-            <Text style={[styles.tileText, { color: theme.accentFg }]}>
-              {character.toUpperCase()}
-            </Text>
-          </View>
+          <Tile key={`${drop}:${index}`} character={character} />
         ))}
       </View>
 
-      {completed && reveal && hidden && (
+      {wordOfDay && completed && reveal && hidden && (
         <View style={styles.reveal}>
           <Pressable
             onPress={() => {
@@ -118,15 +125,16 @@ export function DropDisplay({
             accessibilityRole="button"
             style={({ pressed }) => [
               styles.revealButton,
-              { borderColor: theme.borderStrong, opacity: pressed ? 0.6 : 1 },
+              {
+                borderColor: theme.border,
+                backgroundColor: pressed ? theme.cardBg : theme.bgInset,
+              },
             ]}
           >
             <Text style={[styles.revealButtonText, { color: theme.fg }]}>Word of the day</Text>
           </Pressable>
-          {/* The cost is stated before the button is pressed as well as inside
-              the confirmation: deciding whether to tap should not require
-              tapping to find out what it costs. */}
-          <Text style={[styles.revealCost, { color: theme.fgFaint }]}>Uses your retry</Text>
+          {/* The cost is said in the sheet the button opens, before anything
+              is spent, so the button needs no caption of its own. */}
 
           <Sheet
             open={confirmingReveal}
@@ -167,15 +175,19 @@ export function DropDisplay({
         </View>
       )}
 
-      {completed && reveal && !hidden && palette && (
+      {wordOfDay && completed && reveal && !hidden && palette && (
         <View style={styles.reveal}>
+          <FadeDown delay={150}>
           <Pressable
             onPress={definition ? () => setDefinitionOpen((open) => !open) : undefined}
             disabled={!definition}
             accessibilityRole={definition ? 'button' : 'text'}
             accessibilityState={definition ? { expanded: definitionOpen } : undefined}
             accessibilityLabel={`Word of the day: ${reveal.word}, ${reveal.rarity}, score ${formatRarityScore(reveal.zipf, date)}`}
-            style={({ pressed }) => [styles.wordRow, { opacity: pressed ? 0.6 : 1 }]}
+            style={({ pressed }) => [
+              styles.wordRow,
+              { backgroundColor: pressed && definition ? theme.bgInset : 'transparent' },
+            ]}
           >
             <Text style={[styles.word, { color: theme.fg }]}>{reveal.word}</Text>
             {/* The score alone, wearing its tier's colours. The badge's tag and
@@ -190,8 +202,11 @@ export function DropDisplay({
               </Text>
             )}
           </Pressable>
+          </FadeDown>
           {definition && definitionOpen && (
-            <Text style={[styles.definition, { color: theme.fgMuted }]}>{definition}</Text>
+            <FadeDown delay={300}>
+              <Text style={[styles.definition, { color: theme.fgMuted }]}>{definition}</Text>
+            </FadeDown>
           )}
         </View>
       )}
@@ -199,78 +214,158 @@ export function DropDisplay({
   );
 }
 
+/**
+ * One letter of the drop. There from the first frame and settling into place
+ * (the website's tile-settle), rather than fading up from nothing: a paused
+ * animation must never leave the drop blank under its label.
+ */
+function Tile({ character }: { character: string }) {
+  const theme = useTheme();
+  const [scale] = useState(() => new Animated.Value(0.92));
+  useEffect(() => {
+    Animated.timing(scale, {
+      toValue: 1,
+      duration: 420,
+      easing: Easing.bezier(0.2, 0.8, 0.2, 1),
+      useNativeDriver: true,
+    }).start();
+  }, [scale]);
+  return (
+    <Animated.View
+      style={[
+        styles.tile,
+        {
+          backgroundColor: theme.cardBg,
+          borderColor: theme.borderStrong,
+          transform: [{ scale }],
+        },
+      ]}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <Text style={[styles.tileText, { color: theme.fg }]}>{character.toUpperCase()}</Text>
+    </Animated.View>
+  );
+}
+
+/** The reveal's word and definition arrive dropping 6pt into place, as on the website. */
+function FadeDown({ delay, children }: { delay: number; children: ReactNode }) {
+  const [progress] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    Animated.timing(progress, {
+      toValue: 1,
+      duration: 400,
+      delay,
+      easing: Easing.bezier(0.2, 0.8, 0.2, 1),
+      useNativeDriver: true,
+    }).start();
+  }, [progress, delay]);
+  return (
+    <Animated.View
+      style={{
+        opacity: progress,
+        transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [-6, 0] }) }],
+      }}
+    >
+      {children}
+    </Animated.View>
+  );
+}
+
 const styles = StyleSheet.create({
+  /* .drop-display: centred, 1.75rem under it. */
   wrap: {
     alignItems: 'center',
-    gap: space.sm,
-    paddingVertical: space.lg,
+    marginBottom: 28,
+  },
+  /* Between PuzzleNav's arrows the nav carries the margin. */
+  wrapInNav: {
+    alignItems: 'center',
   },
   label: {
-    fontSize: 12,
+    marginBottom: 10,
+    fontSize: 11.5,
     fontWeight: '700',
-    letterSpacing: 1,
+    letterSpacing: 1.4,
     textTransform: 'uppercase',
+  },
+  /* The middle column of the arrows' row: 7rem wide, one line, centred on
+     the arrows. */
+  labelRowInNav: {
+    width: PUZZLE_NAV_LABEL_WIDTH,
+    height: PUZZLE_NAV_ROW_HEIGHT,
+    justifyContent: 'center',
+  },
+  labelInNav: {
+    marginBottom: 0,
+    textAlign: 'center',
   },
   letters: {
     flexDirection: 'row',
-    gap: space.sm,
+    justifyContent: 'center',
+    gap: 8,
   },
+  lettersInNav: {
+    marginTop: 10,
+  },
+  /* .drop-display__letter: a 3.1rem card-coloured tile with a strong border. */
   tile: {
-    minWidth: 54,
-    paddingHorizontal: space.sm,
-    paddingVertical: space.md,
-    borderRadius: radius.md,
+    width: 50,
+    height: 50,
+    borderWidth: 2,
+    borderRadius: 10.4,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tileText: {
-    fontSize: 34,
+    fontSize: 29.6,
     fontWeight: '800',
-    letterSpacing: 2,
   },
   reveal: {
     alignItems: 'center',
-    gap: space.xs,
-    marginTop: space.xs,
   },
   revealButton: {
-    paddingHorizontal: space.lg,
-    paddingVertical: space.sm,
+    marginTop: 6.4,
+    paddingHorizontal: 12.8,
+    paddingVertical: 4.8,
     borderRadius: radius.pill,
     borderWidth: 1,
   },
   revealButtonText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  revealCost: {
-    fontSize: 11,
+    fontSize: 14.4,
+    fontWeight: '800',
   },
   wordRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space.sm,
+    gap: 6.4,
+    marginTop: 6.4,
+    paddingVertical: 1.6,
+    paddingHorizontal: 5.6,
+    borderRadius: 6,
   },
   word: {
-    fontSize: 22,
+    fontSize: 15.2,
     fontWeight: '800',
+    textTransform: 'lowercase',
   },
   wordScore: {
-    fontSize: 12,
-    fontWeight: '800',
+    fontSize: 12.8,
+    fontWeight: '700',
     overflow: 'hidden',
     borderRadius: radius.pill,
-    paddingHorizontal: space.sm,
+    paddingHorizontal: 6.7,
     paddingVertical: 2,
   },
   caret: {
-    fontSize: 12,
+    fontSize: 11.2,
   },
   definition: {
-    fontSize: 13,
+    marginTop: 3.2,
+    maxWidth: 448,
+    fontSize: 13.1,
     lineHeight: 19,
-    textAlign: 'center',
-    paddingHorizontal: space.lg,
+    textAlign: 'left',
   },
   confirmCopy: {
     fontSize: 15,

@@ -16,8 +16,8 @@ and nothing to buy.
    word-frequency data rather than on length or difficulty. The score is a
    number out of ten and a tier, from Common up to Legend.
 4. Your best word and your total go on the board, and every word anybody found
-   shows up in the finds feed. Three tabs across the top: **Play**,
-   **Words found**, and **Leaderboards**.
+   shows up in the finds feed. Tabs across the top: **Play**,
+   **Words found**, **Stats** (once you have played), and **Leaderboards**.
 
 Old puzzles are playable by stepping back with the arrows. They do not count
 towards the board or the streak, for the obvious reason that the answers are

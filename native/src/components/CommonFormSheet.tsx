@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { foldAffixGroups } from '../../../src/game/dictionary';
+import type { GameMode } from '../../../src/game/mode';
 import { font, space } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 import { Sheet } from './Sheet';
@@ -9,6 +10,8 @@ interface Props {
   word?: { word: string; base: string };
   /** The puzzle being played, which decides which affixes folded that day. */
   date?: string;
+  /** The rules whose affixes to list; the stored mode's when not given. */
+  mode?: GameMode;
   onClose: () => void;
 }
 
@@ -25,9 +28,9 @@ interface Props {
  * prefix list it was actually scored with, and a retired family leaves the
  * panel when it leaves the engine.
  */
-export function CommonFormSheet({ word, date, onClose }: Props) {
+export function CommonFormSheet({ word, date, mode, onClose }: Props) {
   const theme = useTheme();
-  const groups = foldAffixGroups(date);
+  const groups = foldAffixGroups(date, mode);
 
   return (
     <Sheet open={word !== undefined} title="Common forms" onClose={onClose}>
@@ -40,15 +43,10 @@ export function CommonFormSheet({ word, date, onClose }: Props) {
             <Text style={[styles.arrow, { color: theme.fgMuted }]}>→</Text>
             <Text style={[styles.pairWord, { color: theme.fg }]}>{word.base}</Text>
           </View>
+          {/* True in both directions: "abaci" folds up to "abacus" on the
+              archived puzzles that still capped at a longer form. */}
           <Text style={[styles.copy, { color: theme.fg }]}>
-            Scores come from how often a word gets used. “{word.word}” is “{word.base}”
-            wearing an affix, so it scores as “{word.base}” — a familiar word in an
-            unfamiliar shape isn't a rarer word.
-          </Text>
-          <Text style={[styles.copy, { color: theme.fg }]}>
-            These are the affixes the scoring reads through. A word only moves if the form
-            underneath is a real word and a more common one, so a score is only ever pulled
-            toward the common form, never away from it.
+            “{word.word}” scores as “{word.base}”, its more common form.
           </Text>
 
           {groups.map((group) => (
