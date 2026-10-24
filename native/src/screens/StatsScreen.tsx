@@ -8,7 +8,7 @@ import {
 import { formatDateLabel } from '../../../src/game/date';
 import { formatTotal } from '../../../src/game/dictionary';
 import { MODE_LABELS } from '../../../src/game/mode';
-import { CURRENT_TIERS, loadStats, type PlayerStats } from '../../../src/game/stats';
+import { CURRENT_TIERS, loadStats, TOP_WORDS, type PlayerStats } from '../../../src/game/stats';
 import { loadStreak } from '../../../src/game/storage';
 import type { Rarity } from '../../../src/game/types';
 import { PAGE_GUTTER, PageHead, PageNote } from '../components/PageChrome';
@@ -161,16 +161,30 @@ function RarityBars({ byRarity }: { byRarity: PlayerStats['byRarity'] }) {
   );
 }
 
-/** The rarest finds, with the day they were found. */
+/** The rarest finds, newest first on a tie, with the day they were found. */
 function BestWords({ stats }: { stats: PlayerStats }) {
   const theme = useTheme();
+  const [shown, setShown] = useState(stats.bestWordsShown);
   // Empty when every word found was on a legacy-scored puzzle (see game/stats.ts).
   if (stats.topWords.length === 0) return null;
+  const total = stats.topWords.length;
+  const moreLink = (label: string, onPress: () => void) => (
+    <Text
+      onPress={() => {
+        signalTap();
+        onPress();
+      }}
+      accessibilityRole="button"
+      style={[styles.link, styles.moreLink, { color: theme.fg }]}
+    >
+      {label}
+    </Text>
+  );
   return (
     <View style={styles.section}>
       <Heading>Best words</Heading>
       <View>
-        {stats.topWords.map((word) => (
+        {stats.topWords.slice(0, shown).map((word) => (
           <View key={`${word.word}-${word.date}`} style={[styles.word, { borderBottomColor: theme.border }]}>
             <View style={styles.wordText}>
               <Text style={[styles.wordName, { color: theme.fg }]}>{word.word}</Text>
@@ -183,6 +197,15 @@ function BestWords({ stats }: { stats: PlayerStats }) {
           </View>
         ))}
       </View>
+      {(shown < total || shown > stats.bestWordsShown) && (
+        <View style={styles.more}>
+          {shown < total && moreLink('Show more', () => setShown((n) => Math.min(total, n + TOP_WORDS)))}
+          {shown > stats.bestWordsShown && moreLink('Show fewer', () => setShown(stats.bestWordsShown))}
+          <Text style={[styles.moreCount, { color: theme.fgFaint }]}>
+            {shown} of {total}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -423,6 +446,21 @@ const styles = StyleSheet.create({
   },
   wordDate: {
     fontSize: 12,
+  },
+  /* `.stats__more`. */
+  more: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 16,
+    marginTop: 12,
+  },
+  moreLink: {
+    fontSize: 13.6,
+  },
+  moreCount: {
+    marginLeft: 'auto',
+    fontSize: 12,
+    fontVariant: ['tabular-nums'],
   },
   tableRow: {
     flexDirection: 'row',
