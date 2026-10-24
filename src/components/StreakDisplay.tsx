@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import {
   atRisk,
+  freezeRules,
   freezesOn,
   resting,
   savedFreezeCovering,
@@ -9,11 +10,6 @@ import {
 } from "../game/streakFreeze";
 import type { StreakState } from "../game/types";
 import { RestDayBadge } from "./RestDayBadge";
-
-/** How saved freezes work, for the freeze badge's popup. */
-const FREEZE_RULES =
-  "🧊 saves your streak on a missed day. Earn one on day 3, then every 7 days. " +
-  "Hold 1, or 2 after a 14 day streak.";
 
 function freezeSummary(banked: number, cap: number): string {
   if (banked === 0) return "No 🧊 acquired";
@@ -26,7 +22,7 @@ function freezeSummary(banked: number, cap: number): string {
  * The 🧊 saved/max badge. Selecting it opens a popup with the count and the
  * rules; selecting it again, anywhere outside it, or Escape closes it.
  */
-function FreezeBadge({ banked, cap }: { banked: number; cap: number }) {
+function FreezeBadge({ banked, cap, currentStreak }: { banked: number; cap: number; currentStreak: number }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLSpanElement>(null);
   const popupId = useId();
@@ -65,7 +61,7 @@ function FreezeBadge({ banked, cap }: { banked: number; cap: number }) {
       {open && (
         <span className="streak-display__freeze-popup" id={popupId} role="dialog" aria-label="Streak freezes">
           <strong>{freezeSummary(banked, cap)}</strong>
-          <span>{FREEZE_RULES}</span>
+          <span>{freezeRules(currentStreak, cap)}</span>
         </span>
       )}
     </span>
@@ -157,7 +153,7 @@ export function StreakDisplay({
           )}
           <span className="streak-display__count">{streak.currentStreak}</span>
           <span className="streak-display__unit">day streak</span>
-          {showFreezes && <FreezeBadge banked={banked} cap={cap} />}
+          {showFreezes && <FreezeBadge banked={banked} cap={cap} currentStreak={streak.currentStreak} />}
           {week && (
             <RestDayBadge
               played={week.played}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import {
   atRisk,
+  freezeRules,
   freezesOn,
   resting,
   savedFreezeCovering,
@@ -11,11 +12,6 @@ import {
 import type { StreakState } from '../../../src/game/types';
 import { useTheme } from '../theme/useTheme';
 import { BadgePopup, RestDayBadge } from './RestDayBadge';
-
-/** How saved freezes work, for the freeze badge's popup. */
-const FREEZE_RULES =
-  '🧊 saves your streak on a missed day. Earn one on day 3, then every 7 days. ' +
-  'Hold 1, or 2 after a 14 day streak.';
 
 function freezeSummary(banked: number, cap: number): string {
   if (banked === 0) return 'No 🧊 acquired';
@@ -31,7 +27,7 @@ const TEXT_SIZE = 14.4;
  * The 🧊 saved/max badge. Pressing it opens a popup with the count and the
  * rules; pressing it, or the popup, again closes it.
  */
-function FreezeBadge({ banked, cap }: { banked: number; cap: number }) {
+function FreezeBadge({ banked, cap, currentStreak }: { banked: number; cap: number; currentStreak: number }) {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
   return (
@@ -40,7 +36,7 @@ function FreezeBadge({ banked, cap }: { banked: number; cap: number }) {
       onToggle={() => setOpen((was) => !was)}
       maxWidth={272}
       title={freezeSummary(banked, cap)}
-      text={FREEZE_RULES}
+      text={freezeRules(currentStreak, cap)}
       accessibilityLabel={`Streak freezes: ${banked} of ${cap}`}
       style={styles.freezes}
     >
@@ -143,7 +139,7 @@ export function StreakDisplay({
             <Text style={[styles.count, { color: theme.fg }]}>{streak.currentStreak}</Text>
             <Text style={[styles.text, { color: theme.fgMuted }]}>day streak</Text>
           </View>
-          {showFreezes && <FreezeBadge banked={banked} cap={cap} />}
+          {showFreezes && <FreezeBadge banked={banked} cap={cap} currentStreak={streak.currentStreak} />}
           {week && (
             <RestDayBadge
               played={week.played}

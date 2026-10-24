@@ -142,6 +142,10 @@ const FIRST_FREEZE_DAY = 3;
 /** After that, one is earned on every seventh day played in a streak. */
 const DAYS_PER_EARNED_FREEZE = 7;
 
+/** The most saved freezes any player can hold, and the longest streak that raises the cap to it. */
+const MAX_FREEZE_CAP = 2;
+const MAX_CAP_STREAK = 14;
+
 /**
  * The most saved freezes a player whose longest streak is `days` can hold:
  * none in the first two days, one from 3 days, two from 14. A freeze earned
@@ -152,9 +156,27 @@ const DAYS_PER_EARNED_FREEZE = 7;
  * adds up to the cap -- so they show as 3/2 until they spend one.
  */
 export function freezeCap(days: number): number {
-  if (days >= 14) return 2;
+  if (days >= MAX_CAP_STREAK) return MAX_FREEZE_CAP;
   if (days >= FIRST_FREEZE_DAY) return 1;
   return 0;
+}
+
+/**
+ * How saved freezes work, for the freeze badge's popup: only the rules still
+ * ahead of the player. Day 3's freeze is told until this streak has passed it,
+ * and the limit rising to 2 until `cap` has.
+ */
+export function freezeRules(currentStreak: number, cap: number): string {
+  const everyN = `every ${DAYS_PER_EARNED_FREEZE} days of your streak`;
+  const earn =
+    currentStreak < FIRST_FREEZE_DAY
+      ? `You get your first one on day ${FIRST_FREEZE_DAY} of your streak, then another ${everyN}.`
+      : `You get another one ${everyN}.`;
+  const hold =
+    cap < MAX_FREEZE_CAP
+      ? `You can only save 1 at a time. Reach a ${MAX_CAP_STREAK} day streak to save up to ${MAX_FREEZE_CAP}.`
+      : `You can save up to ${MAX_FREEZE_CAP} at a time.`;
+  return `A streak freeze 🧊 keeps your streak going if you miss a day. ${earn} ${hold}`;
 }
 
 /** The cap for this player: set by the longest streak they have ever had. */
