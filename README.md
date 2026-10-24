@@ -454,7 +454,9 @@ lives in `supabase/migrations/`.
   focusing the box ends it too -- or, before the clock runs out, keeps it from
   ever starting on that puzzle. The clock waits for How to play (or any dialog)
   to close. Add `?idle-hint=treatment` (or `=control`) to the URL to
-  force an arm while testing; a forced arm is never stored or reported. Each
+  force an arm while testing; a forced arm is never stored or reported. A
+  Vercel preview, which reports nothing, shows the hint without the
+  parameter. Each
   of the two experiments is its own sticky 50/50 split. Both arms send
   `idle_hint_triggered` when the clock runs out (control
   just sees nothing). The "Idle hint test" section of `/analytics` shows the

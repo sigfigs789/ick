@@ -124,7 +124,13 @@ export function useIdleHint({ drop, date, acceptedWords, value, disabled, focuse
       setArm({ experiment: idleHintExperiment(), variant: forced });
       return;
     }
-    if (!isReporting()) return;
+    // A host that reports nothing has no experiment for a draw to count
+    // towards -- a Vercel preview is the people building the game, trying it
+    // out -- so it gets the hint, the way the Reddit post and the app do.
+    if (!isReporting()) {
+      setArm({ experiment: idleHintExperiment(), variant: "treatment" });
+      return;
+    }
     const drawn = assignIdleHintArm();
     if (!drawn) return;
     if (drawn.fresh && assignDate.current) {

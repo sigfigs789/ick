@@ -4,6 +4,7 @@ import { SubmitForm } from "./SubmitForm";
 import { IDLE_HINT_GAP_MS, IDLE_HINT_HOLD_MS, idleHintText, idleHintWords } from "../game/idleHint";
 import { IDLE_HINT_ERASE_MS, IDLE_HINT_TYPE_MS } from "../hooks/useIdleHint";
 import { recordVisit } from "../game/visits";
+import { setReporting } from "../analytics";
 import type { AcceptedWord } from "../game/types";
 
 const track = vi.hoisted(() => vi.fn());
@@ -249,6 +250,21 @@ describe("the idle hint", () => {
     expect(input.placeholder).toBe(idleHintText(HINT.word));
     expect(localStorage.getItem("ick:idle-hint")).toBeNull();
     expect(track).not.toHaveBeenCalled();
+  });
+
+  it("shows the hint on a host that reports nothing, such as a Vercel preview", async () => {
+    setReporting(false);
+    try {
+      const input = renderForm();
+
+      await wait(DELAY);
+      await wait(typeMs(HINT.word) + 20);
+      expect(input.placeholder).toBe(idleHintText(HINT.word));
+      expect(localStorage.getItem("ick:idle-hint")).toBeNull();
+      expect(track).not.toHaveBeenCalled();
+    } finally {
+      setReporting(true);
+    }
   });
 
   it("runs the same clock in control and reports it, but shows and plays nothing", async () => {
