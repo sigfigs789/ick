@@ -26,6 +26,12 @@ const WORDS = (await import("../data/dictionary.json")).default as string[];
 
 const DROP = dropForDate(DATE);
 
+/** A day banked in `mode`, so the player counts as having played it. */
+function seedPlayed(date: string, mode: "standard" | "freeform") {
+  const key = `ick:progress:${date}${mode === "freeform" ? ":freeform" : ""}`;
+  localStorage.setItem(key, JSON.stringify({ date, acceptedWords: [{ word: "seed" }] }));
+}
+
 /** A word for today's drop that both modes take but price differently. */
 const WORD = WORDS.find((word) => {
   if (!word.includes(DROP.toLowerCase()) || word === DROP.toLowerCase()) return false;
@@ -40,6 +46,8 @@ beforeEach(() => {
   resetModeCache();
   setMode("standard");
   track.mockClear();
+  // The offer is only for a player who has played both modes lately.
+  seedPlayed("2026-09-30", "freeform");
 });
 
 function copyEvents() {
@@ -103,5 +111,14 @@ describe("copying a word into the other mode", () => {
     });
     expect(loadProgressInMode(DATE, DROP, "freeform").acceptedWords).toHaveLength(1);
     expect(copyEvents()).toHaveLength(1);
+  });
+
+  it("offers nothing to a player who has only played this mode", async () => {
+    localStorage.clear();
+    const { result } = renderHook(() => useDailyPuzzle());
+    await act(async () => {
+      await result.current.submitWord(WORD);
+    });
+    expect(result.current.crossMode).toEqual({});
   });
 });
