@@ -80,7 +80,9 @@ as $$
       (p_today - 1) - s.last_played - (
         case when s.rest_day > s.last_played and s.rest_day <= p_today - 1 then 1 else 0 end
       ) as missed,
-      s.rest_day = p_today and s.last_played < p_today as resting
+      -- Coalesced: a run with no earned Saturday has a null rest_day, and a
+      -- null here would leave at_risk null too.
+      coalesce(s.rest_day = p_today, false) and s.last_played < p_today as resting
     from public.leaderboard_player_streaks s
   ),
   listed as (
