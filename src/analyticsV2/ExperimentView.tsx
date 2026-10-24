@@ -32,7 +32,8 @@ export function ExperimentView({
         {experiment.since ? ` Drawn since ${experiment.since}; ` : " "}
         every number counts from the day a player was drawn. The call rests on D1 for everyone drawn; 7-day return
         breaks a tie. Sharing and finishing later puzzles are guardrails: a big drop there is worth a look even when D1
-        is level. A gap marked * is a real one (p &lt; 0.05).
+        is level. Activation is n/a: a player is drawn only once they have banked a word, so everyone in either arm is
+        already activated and the arms cannot differ on it. A gap marked * is a real one (p &lt; 0.05).
       </p>
     </>
   );
@@ -53,6 +54,8 @@ function ArmTable({ experiment, segment, subject }: { experiment: Experiment; se
   const finishRate = (a: Arm): Rate => ({ cohort: a.laterDays, returned: a.laterCompleted });
   const rows: [string, ReactNode, ReactNode, ReactNode][] = [
     ["Players drawn", count(shown.assigned), count(hidden.assigned), ""],
+    // The scorecard's first row, kept so the measures line up with it; see the note.
+    ["Activation", "n/a", "n/a", "–"],
     rateRow("D1 retention", shown.d1, hidden.d1, s.d1, h.d1),
     rateRow("D7 retention", shown.d7, hidden.d7, s.d7, h.d7),
     rateRow("Back within a week", shown.week, hidden.week),
