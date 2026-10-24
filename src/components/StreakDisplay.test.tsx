@@ -111,6 +111,31 @@ describe("StreakDisplay", () => {
     expect(flame()).toBe("🔥");
   });
 
+  it("shows the week's progress to a lazy Saturday on a weekday, then 😴", () => {
+    const wednesday: StreakState = {
+      ...streak,
+      currentStreak: 5,
+      lastCompletedDate: "2026-10-27",
+      playedDates: ["2026-10-26", "2026-10-27"],
+    };
+    const { rerender } = render(<StreakDisplay streak={wednesday} date="2026-10-28" isToday />);
+    const pie = screen.getByRole("button", { name: /Lazy Saturday/ });
+    expect(pie.querySelector("svg")).not.toBeNull();
+    fireEvent.click(pie);
+    expect(screen.getByRole("dialog", { name: "Lazy Saturday" })).toHaveTextContent("2 of 3 so far");
+    // The streak icon is untouched on a weekday.
+    expect(flame()).toBe("🔥");
+
+    rerender(
+      <StreakDisplay
+        streak={{ ...wednesday, lastCompletedDate: "2026-10-28", playedDates: [...wednesday.playedDates!, "2026-10-28"] }}
+        date="2026-10-28"
+        isToday
+      />
+    );
+    expect(screen.getByRole("button", { name: /Lazy Saturday: Unlocked/ }).textContent).toBe("😴");
+  });
+
   it("hides the flame until a streak reaches two days", () => {
     const { rerender } = render(<StreakDisplay streak={streak} />);
     expect(screen.queryByText("🔥")).not.toBeInTheDocument();

@@ -1,16 +1,46 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { REST_DAY_PLAYS } from "../game/streakFreeze";
 
-/** What the 😴 means, for its hover text and popup. */
-const REST_DAY_RULE =
-  "3 days played this week, so skipping today can't break the streak.";
+/** What the 😴 means on the Saturday itself, for its hover text and popup. */
+const REST_DAY_RULE = "3 days played this week, so skipping today can't break the streak.";
+
+/** What the badge means on a weekday, with `played` of the week's days played. */
+function weekdayRule(played: number): string {
+  if (played >= REST_DAY_PLAYS) return "Unlocked: skipping Saturday can't break your streak.";
+  return `Play 3 days by Friday and skipping Saturday can't break your streak. ${played} of 3 so far.`;
+}
+
+/** A pie a third full for each day played, drawn in the text colour. */
+function WeekPie({ played }: { played: number }) {
+  const r = 7;
+  const angle = (played / REST_DAY_PLAYS) * 2 * Math.PI;
+  const x = 8 + r * Math.sin(angle);
+  const y = 8 - r * Math.cos(angle);
+  return (
+    <svg className="rest-day__pie" viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true">
+      <circle cx="8" cy="8" r={r} fill="none" stroke="currentColor" strokeWidth="1.5" />
+      {played > 0 && (
+        <path
+          d={`M8 8 L8 ${8 - r} A${r} ${r} 0 ${angle > Math.PI ? 1 : 0} 1 ${x.toFixed(2)} ${y.toFixed(2)} Z`}
+          fill="currentColor"
+        />
+      )}
+    </svg>
+  );
+}
 
 /**
- * The 😴 shown on a streak taking the Saturday off its week's play earned
- * (see `resting` in game/streakFreeze.ts). Hovering it with a mouse opens a
- * popup with the rule while the pointer stays on it; selecting it pins the
- * popup open, and selecting it again, anywhere outside it, or Escape closes it.
+ * The lazy Saturday badge. On the Saturday itself (no `played`), the 😴 shown
+ * on a streak taking the Saturday off its week's play earned (see `resting`
+ * in game/streakFreeze.ts). On a weekday, given the week's days `played`, a
+ * pie filling a third a day that turns 😴 on the third (see `isRestDay`).
+ * Hovering it with a mouse opens a popup with the rule while the pointer stays
+ * on it; selecting it pins the popup open, and selecting it again, anywhere
+ * outside it, or Escape closes it.
  */
-export function RestDayBadge({ className }: { className?: string }) {
+export function RestDayBadge({ className, played }: { className?: string; played?: number }) {
+  const rule = played === undefined ? REST_DAY_RULE : weekdayRule(played);
+  const unlocked = played === undefined || played >= REST_DAY_PLAYS;
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
   const wrapRef = useRef<HTMLSpanElement>(null);
@@ -45,15 +75,15 @@ export function RestDayBadge({ className }: { className?: string }) {
         className="rest-day__button"
         aria-expanded={open || hovered}
         aria-controls={popupId}
-        aria-label={`Lazy Saturday: ${REST_DAY_RULE}`}
+        aria-label={`Lazy Saturday: ${rule}`}
         onClick={() => setOpen((was) => !was)}
       >
-        😴
+        {unlocked ? "😴" : <WeekPie played={played} />}
       </button>
       {(open || hovered) && (
         <span className="rest-day__popup" id={popupId} role="dialog" aria-label="Lazy Saturday">
           <strong>Lazy Saturday</strong>
-          <span>{REST_DAY_RULE}</span>
+          <span>{rule}</span>
         </span>
       )}
     </span>

@@ -338,6 +338,22 @@ export function resting(streak: StreakState, today: string): boolean {
 }
 
 /**
+ * The week's days played towards Saturday off, for the weekday badge (see
+ * components/RestDayBadge.tsx): on Sunday to Friday of a week that can earn
+ * one, while it is earned or can still be -- counting today if it is not
+ * played yet. Null otherwise, and on a Saturday, which shows 😴 itself.
+ */
+export function weekdayRestProgress(streak: StreakState, today: string): number | null {
+  const dow = dayOfWeek(today);
+  if (dow === SATURDAY || weekSaturday(today) < REST_DAY_START) return null;
+  const played = weekPlays(streak, weekSaturday(today));
+  if (played >= REST_DAY_PLAYS) return played;
+  const playedToday = (streak.playedDates ?? []).includes(today);
+  const daysLeft = SATURDAY - dow - (playedToday ? 1 : 0);
+  return REST_DAY_PLAYS - played <= daysLeft ? played : null;
+}
+
+/**
  * The next Saturday after `date` and what earning it off still takes, for a
  * player who has played `date`: the plays still needed by Friday (0 once it
  * is earned). Null when it can no longer be earned -- too few days are left

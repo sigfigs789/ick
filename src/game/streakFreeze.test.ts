@@ -17,6 +17,7 @@ import {
   savedFreezeCovering,
   startStreak,
   streakReport,
+  weekdayRestProgress,
   weekPlays,
   welcomeBack,
 } from "./streakFreeze";
@@ -183,6 +184,24 @@ describe("recordPlayed", () => {
     const played = recordPlayed(streakOf({ playedDates: ["2026-10-01", "2026-10-20"] }), "2026-10-26");
     expect(played.playedDates).toEqual(["2026-10-20", "2026-10-26"]);
     expect(recordPlayed(played, "2026-10-26").playedDates).toEqual(["2026-10-20", "2026-10-26"]);
+  });
+});
+
+describe("weekdayRestProgress", () => {
+  it("counts the week's days played while a lazy Saturday is earned or reachable", () => {
+    // Wednesday, two played, today not yet: reachable.
+    expect(weekdayRestProgress(streakOf({ playedDates: ["2026-10-26", "2026-10-27"] }), "2026-10-28")).toBe(2);
+    // Earned.
+    expect(weekdayRestProgress(streakOf({ playedDates: WEEK_PLAYED }), "2026-10-30")).toBe(3);
+    // Friday, one played and today not yet: two short with one day left.
+    expect(weekdayRestProgress(streakOf({ playedDates: ["2026-10-26"] }), "2026-10-30")).toBeNull();
+    // Friday, nothing yet: one day left, three needed.
+    expect(weekdayRestProgress(streakOf({ playedDates: [] }), "2026-10-30")).toBeNull();
+    // Thursday, one played and today not yet: today and Friday make three.
+    expect(weekdayRestProgress(streakOf({ playedDates: ["2026-10-26"] }), "2026-10-29")).toBe(1);
+    // Saturday shows 😴 itself, and weeks before rest days began show nothing.
+    expect(weekdayRestProgress(streakOf({ playedDates: WEEK_PLAYED }), "2026-10-31")).toBeNull();
+    expect(weekdayRestProgress(streakOf({ playedDates: [] }), "2026-10-20")).toBeNull();
   });
 });
 
