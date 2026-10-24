@@ -63,11 +63,7 @@ function Headline({ stats }: { stats: PlayerStats }) {
     { label: "Longest streak", value: String(stats.longestStreak), note: "days" },
     { label: "Days played", value: String(stats.daysPlayed) },
     { label: "Words found", value: String(stats.wordsFound) },
-    {
-      label: "Win rate",
-      value: stats.winRate === null ? "–" : `${Math.round(stats.winRate * 100)}%`,
-      note: stats.finished ? `${stats.won} of ${stats.finished} finished` : undefined,
-    },
+    { label: "Puzzles finished", value: String(stats.finished) },
     {
       label: "Longest word",
       value: stats.longestWord ? String(stats.longestWord.word.length) : "–",

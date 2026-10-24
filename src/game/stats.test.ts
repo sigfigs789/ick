@@ -26,13 +26,11 @@ describe("computeStats", () => {
     day("2026-10-22", [word("ink", "Common", 4.5)], { mode: "standard", completed: false }),
   ];
 
-  it("counts days, words and the win rate over finished puzzles", () => {
+  it("counts days, words and finished puzzles", () => {
     const stats = computeStats(history, streak);
     expect(stats.daysPlayed).toBe(3);
     expect(stats.wordsFound).toBe(5);
     expect(stats.finished).toBe(3);
-    expect(stats.won).toBe(2);
-    expect(stats.winRate).toBeCloseTo(2 / 3);
     expect(stats.currentStreak).toBe(2);
     expect(stats.longestStreak).toBe(5);
   });
@@ -60,9 +58,9 @@ describe("computeStats", () => {
     expect(modes[0].best).toBeGreaterThanOrEqual(modes[0].average!);
   });
 
-  it("has no win rate before anything is finished", () => {
+  it("has no average before anything is finished", () => {
     const stats = computeStats([day("2026-10-22", [word("ink", "Common", 4.5)], { completed: false })], streak);
-    expect(stats.winRate).toBeNull();
+    expect(stats.finished).toBe(0);
     expect(stats.modes[0].average).toBeNull();
   });
 });
