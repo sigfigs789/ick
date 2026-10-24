@@ -355,7 +355,8 @@ h2 {
   top: calc(100% + 0.4rem);
   right: 0;
   z-index: 20;
-  min-width: 13rem;
+  /* As wide as its longest item, so a short menu is not padded out. */
+  width: max-content;
   display: flex;
   flex-direction: column;
   padding: 0.3rem;
@@ -378,6 +379,7 @@ h2 {
   font: inherit;
   font-weight: 600;
   text-align: left;
+  white-space: nowrap;
   cursor: pointer;
 }
 button.app__menu-item:hover {
