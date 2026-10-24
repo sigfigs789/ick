@@ -1,5 +1,4 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { loadPlayerId } from "../game/player";
 import { atRisk, freezesOn, resting, savedFreezeCovering, wasFrozen } from "../game/streakFreeze";
 import type { StreakState } from "../game/types";
 import { RestDayBadge } from "./RestDayBadge";
@@ -96,7 +95,7 @@ export function StreakDisplay({
   hasWords = true,
 }: Props) {
   // One icon for how the streak stands, as the streak board marks it (see
-  // components/LeaderboardPage.tsx): 🕺, 💃 or 😴 on an earned Saturday not
+  // components/LeaderboardPage.tsx): 😴 on an earned Saturday not
   // played yet, which cannot end the streak; ⏳ when missing today ends the streak,
   // every saved freeze spent; 🧊 while a saved freeze is covering a missed day
   // with one left for today, until today is played; 🔥 otherwise. A past
@@ -141,7 +140,7 @@ export function StreakDisplay({
       {showStreak && (
         <div className="streak-display__row">
           {restDay ? (
-            <RestDayBadge playerId={loadPlayerId() ?? ""} className="streak-display__flame" />
+            <RestDayBadge className="streak-display__flame" />
           ) : icon && (
             <span className="streak-display__flame" aria-hidden="true" title={iconTitle}>
               {icon}

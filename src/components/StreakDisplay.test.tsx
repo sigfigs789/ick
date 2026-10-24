@@ -67,7 +67,7 @@ describe("StreakDisplay", () => {
     expect(screen.getByText("Total")).toBeInTheDocument();
   });
 
-  it("dances on an earned Saturday not played yet, and says it can't break the streak", () => {
+  it("shows 😴 on an earned Saturday not played yet, and says it can't break the streak", () => {
     // 2026-10-31 is the first Saturday that can be earned; three days that week were played.
     const friday: StreakState = {
       ...streak,
@@ -77,7 +77,7 @@ describe("StreakDisplay", () => {
     };
     const { rerender } = render(<StreakDisplay streak={friday} date="2026-10-31" isToday />);
     const dancer = screen.getByRole("button", { name: /Lazy Saturday/ });
-    expect(dancer.textContent).toMatch(/🕺|💃|😴/u);
+    expect(dancer.textContent).toBe("😴");
     // Hovering with a mouse opens the popup, and leaving closes it.
     const badge = dancer.parentElement as HTMLElement;
     fireEvent.pointerEnter(badge, { pointerType: "mouse" });
