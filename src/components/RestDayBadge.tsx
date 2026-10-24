@@ -7,7 +7,7 @@ const REST_DAY_RULE = "3 days played this week, so skipping today can't break th
 /** What the badge means on a weekday, with `played` of the week's days played. */
 function weekdayRule(played: number, reachable: boolean): string {
   if (played >= REST_DAY_PLAYS) return "Unlocked: skipping Saturday can't break your streak.";
-  if (!reachable) return "Play 3 days Sunday to Friday and skipping Saturday can't break your streak.";
+  if (!reachable) return "Play 3 days Sunday to Friday and unlock a lazy Saturday 😴 that protects your streak on Saturdays";
   return `Play 3 days by Friday and skipping Saturday can't break your streak. ${played} of 3 so far.`;
 }
 

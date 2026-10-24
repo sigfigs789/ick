@@ -142,7 +142,7 @@ describe("StreakDisplay", () => {
         isToday
       />
     );
-    expect(screen.getByRole("button", { name: /Lazy Saturday: Play 3 days Sunday to Friday/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Lazy Saturday: Play 3 days Sunday to Friday and unlock a lazy Saturday 😴/ })).toBeInTheDocument();
   });
 
   it("hides the flame until a streak reaches two days", () => {
