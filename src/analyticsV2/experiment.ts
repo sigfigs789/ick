@@ -2,7 +2,7 @@ import type { Rate } from "./report";
 import { count, D1_MARKS, D7_MARKS, LEAST, percent, SHARE_MARKS, stand, type Marks, type Standing } from "./scorecard";
 
 /**
- * An experiment on /analyticsV2 -- the word of the day, the come-back line --
+ * An experiment on /experimentsV2 -- the word of the day, the come-back line --
  * as `analytics_v2_experiment` returns it (see the 2026-11-01 migrations, where
  * every number is defined), and the call it points to: keep the thing tested,
  * or take it out.
@@ -14,7 +14,8 @@ import { count, D1_MARKS, D7_MARKS, LEAST, percent, SHARE_MARKS, stand, type Mar
  */
 
 export type Variant = "shown" | "hidden";
-export type Segment = "all" | "new";
+/** Everyone drawn; those drawn on the day of their first word; and everyone else. */
+export type Segment = "all" | "new" | "returning";
 
 export interface Arm {
   variant: Variant;
@@ -42,13 +43,22 @@ const obj = (raw: unknown): Json => (raw && typeof raw === "object" && !Array.is
 const num = (raw: unknown): number => (typeof raw === "number" && Number.isFinite(raw) ? raw : 0);
 const rate = (raw: unknown): Rate => ({ cohort: num(obj(raw).cohort), returned: num(obj(raw).returned) });
 
-/** The experiment as typed values, or null when the database sent none. */
+/**
+ * The experiment as typed values, or null when the database sent none.
+ *
+ * The database sends `all` and `new`; `returning` is the difference, which is
+ * exact because every number in an arm is a count or a sum over its players.
+ */
 export function parseExperiment(raw: unknown): Experiment | null {
   if (!raw || typeof raw !== "object") return null;
   const r = obj(raw);
-  const arms = (Array.isArray(r.arms) ? r.arms : [])
+  const arms: Arm[] = (Array.isArray(r.arms) ? r.arms : [])
     .map(obj)
-    .filter((a) => (a.variant === "shown" || a.variant === "hidden") && (a.segment === "all" || a.segment === "new"))
+    .filter(
+      (a) =>
+        (a.variant === "shown" || a.variant === "hidden") &&
+        (a.segment === "all" || a.segment === "new" || a.segment === "returning"),
+    )
     .map((a) => ({
       variant: a.variant as Variant,
       segment: a.segment as Segment,
@@ -61,7 +71,30 @@ export function parseExperiment(raw: unknown): Experiment | null {
       laterDays: num(a.laterDays),
       laterCompleted: num(a.laterCompleted),
     }));
-  return { since: typeof r.since === "string" ? r.since : null, arms };
+  const experiment = { since: typeof r.since === "string" ? r.since : null, arms };
+  for (const variant of ["shown", "hidden"] as const) {
+    if (arms.some((a) => a.variant === variant && a.segment === "returning")) continue;
+    if (!arms.some((a) => a.variant === variant && a.segment === "all")) continue;
+    arms.push(less(arm(experiment, variant, "all"), arm(experiment, variant, "new")));
+  }
+  return experiment;
+}
+
+/** Everyone in `all` who is not in `part`, as the returning segment. */
+function less(all: Arm, part: Arm): Arm {
+  const minus = (a: Rate, b: Rate): Rate => ({ cohort: a.cohort - b.cohort, returned: a.returned - b.returned });
+  return {
+    variant: all.variant,
+    segment: "returning",
+    assigned: all.assigned - part.assigned,
+    d1: minus(all.d1, part.d1),
+    d7: minus(all.d7, part.d7),
+    week: { ...minus(all.week, part.week), days: all.week.days - part.week.days },
+    playerDays: all.playerDays - part.playerDays,
+    sharedDays: all.sharedDays - part.sharedDays,
+    laterDays: all.laterDays - part.laterDays,
+    laterCompleted: all.laterCompleted - part.laterCompleted,
+  };
 }
 
 /** An arm with nothing in it, for a segment the database had no rows for. */

@@ -98,9 +98,12 @@ export interface Report {
   sources: Source[];
   window: Window;
   scores: { tiers: Tier[]; buckets: Record<number, number> };
-  /** The experiments, when they were asked for (see experiment.ts). */
-  wordOfDay?: Experiment | null;
-  comeBack?: Experiment | null;
+}
+
+/** The experiments on /experimentsV2 (see experiment.ts); null for one the database sent nothing for. */
+export interface Experiments {
+  wordOfDay: Experiment | null;
+  comeBack: Experiment | null;
 }
 
 type Json = Record<string, unknown>;
@@ -227,9 +230,14 @@ async function readReport(url: string): Promise<Json> {
   }
 }
 
-/** The report for the puzzle the reader is on, with the experiments when `experiments` asks for them. */
-export async function fetchReport(today: string, experiments = false): Promise<Report> {
-  const body = await readReport(`/api/review?list=analytics-v2&today=${today}${experiments ? "&experiments=1" : ""}`);
-  if (!experiments) return parseReport(body.report);
-  return { ...parseReport(body.report), wordOfDay: parseExperiment(body.wordOfDay), comeBack: parseExperiment(body.comeBack) };
+/** The report for the puzzle the reader is on. */
+export async function fetchReport(today: string): Promise<Report> {
+  const body = await readReport(`/api/review?list=analytics-v2&today=${today}`);
+  return parseReport(body.report);
+}
+
+/** The experiments, counted up to the puzzle the reader is on. */
+export async function fetchExperiments(today: string): Promise<Experiments> {
+  const body = await readReport(`/api/review?list=experiments-v2&today=${today}`);
+  return { wordOfDay: parseExperiment(body.wordOfDay), comeBack: parseExperiment(body.comeBack) };
 }
