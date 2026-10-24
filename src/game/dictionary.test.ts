@@ -56,29 +56,97 @@ const explicitlyCuratedWords = [
 // scored. Appended automatically by scripts/manage-extra-word.py record-word.
 // [word, rarity, zipf]
 const curatedWordScores: ReadonlyArray<[string, string, number]> = [
+  ["epstein", "Uncommon", 3.39],
   ["invictus", "Rare", 2.5],
 ];
 const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
+  ["accenture", "Rare", 2.71],
+  ["accor", "Extremely Rare", 2.16],
+  ["activision", "Rare", 2.95],
   // Recorded as Elusive 1.52 (the score of its base "aggrandize"). From the
   // 2026-08-24 cutover the fold also runs toward a word's own inflections, and
   // the paradigm's most common member is "aggrandizing" (2.05), which the whole
   // family now caps at -- so the recorded row moves with it.
   ["aggrandization", "Extremely Rare", 2.05],
+  ["aritzia", "Mythic", 1.26],
+  ["behance", "Extremely Rare", 1.75],
+  ["bojangles", "Extremely Rare", 2.3],
+  ["camlock", "Elusive", 1.5],
+  ["campagnolo", "Extremely Rare", 1.78],
+  ["camscanner", "Mythic", 1.17],
   ["caprylate", "Mythic", 1.1],
+  ["casio", "Rare", 2.73],
+  ["chainsmokers", "Extremely Rare", 2.25],
+  ["charizard", "Rare", 2.53],
+  ["charmander", "Extremely Rare", 2.32],
   // Recorded as Mythic 1.25, the score of the base its override pins it to
   // ("discombobulate"). From 2026-08-24 that base is itself capped at its own
   // most common inflection, "discombobulated" (2.07), and the override's word
   // follows it down the chain.
   ["combobulate", "Extremely Rare", 2.07],
   ["conization", "Extremely Rare", 1.8],
+  ["diggory", "Extremely Rare", 1.88],
+  ["digiorno", "Elusive", 1.62],
+  ["digory", "Elusive", 1.41],
+  ["envisionable", "Uncommon", 3.37],
+  ["erebor", "Extremely Rare", 1.84],
+  ["erewhon", "Elusive", 1.57],
+  ["fergalicious", "Mythic", 1.24],
+  ["ferngully", "Mythic", 1.33],
+  ["flatwound", "Elusive", 1.4],
+  ["freestall", "Legend", 0.9],
+  ["frutiger", "Elusive", 1.35],
+  ["galactica", "Rare", 2.9],
+  ["garchomp", "Elusive", 1.36],
+  ["gillyweed", "Legend", 1.0],
+  ["gracchi", "Elusive", 1.48],
+  ["harald", "Rare", 2.83],
+  ["harambe", "Rare", 2.49],
+  ["hopalong", "Extremely Rare", 1.85],
   ["inosinate", "Legend", 0.79],
+  ["instax", "Extremely Rare", 1.85],
+  ["joffrey", "Rare", 3.0],
+  ["kaladin", "Mythic", 1.16],
+  ["kinesiologically", "Mythic", 1.32],
+  ["lamictal", "Extremely Rare", 1.77],
+  ["latuda", "Elusive", 1.5],
+  ["lestrange", "Extremely Rare", 1.93],
+  ["lonestar", "Extremely Rare", 2.19],
+  ["macbook", "Uncommon", 3.41],
+  ["mowgli", "Rare", 2.47],
+  ["nesquik", "Elusive", 1.66],
+  ["ninjago", "Extremely Rare", 2.23],
+  ["opendoor", "Mythic", 1.18],
+  ["pancho", "Rare", 2.69],
+  ["paris", "Common", 4.82],
+  ["porthos", "Extremely Rare", 2.12],
+  ["quavo", "Extremely Rare", 2.16],
+  ["refracking", "Legend", 0.7],
   // Recorded as Extremely Rare 1.88; capped at "reoxygenated" (2.55) from
   // 2026-08-24, the same second-direction fold as the two rows above.
   ["reoxygenate", "Rare", 2.55],
+  ["rodin", "Rare", 2.66],
+  ["roundwound", "Legend", 0.8],
+  ["rupaul", "Rare", 2.48],
+  ["shotcaller", "Legend", -0.7],
   // Recorded at its base "skate" (3.74); "skating" (3.84) is the paradigm's most
   // common member from 2026-08-24. Same tier, a tenth of a Zipf apart.
   ["skateable", "Uncommon", 3.84],
+  ["stellaris", "Extremely Rare", 1.88],
+  ["stellarium", "Mythic", 1.31],
+  ["svedka", "Mythic", 1.24],
+  ["talisker", "Extremely Rare", 1.91],
+  ["tamarindo", "Elusive", 1.7],
+  ["tintin", "Rare", 2.7],
+  ["towelie", "Elusive", 1.43],
+  ["uninteractive", "Common", 4.06],
+  ["univision", "Rare", 2.78],
   ["uridylate", "Legend", 0.68],
+  ["vaporeon", "Extremely Rare", 1.99],
+  ["wandavision", "Elusive", 1.5],
+  ["wonka", "Rare", 2.91],
+  ["wordink", "Legend", 0.0],
+  ["wormtail", "Elusive", 1.59],
 ];
 // Rare words discovered online for an upcoming drop and added via the "Add rare
 // words found online" GitHub Action (list=online). Appended automatically by
@@ -108,8 +176,8 @@ const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scient
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    // 225,483 since `floterial` was accepted off the review queue on 2026-09-11.
-    expect(dictionaryWords).toHaveLength(225_483);
+    // 225,551 since the 2026-10-24 review-queue pass added 68 words.
+    expect(dictionaryWords).toHaveLength(225_551);
   });
 
   it("accepts a common real word", () => {
