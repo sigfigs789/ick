@@ -56,6 +56,7 @@ const explicitlyCuratedWords = [
 // scored. Appended automatically by scripts/manage-extra-word.py record-word.
 // [word, rarity, zipf]
 const curatedWordScores: ReadonlyArray<[string, string, number]> = [
+  ["epstein", "Uncommon", 3.39],
   ["invictus", "Rare", 2.5],
 ];
 const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
@@ -64,6 +65,7 @@ const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
   // the paradigm's most common member is "aggrandizing" (2.05), which the whole
   // family now caps at -- so the recorded row moves with it.
   ["aggrandization", "Extremely Rare", 2.05],
+  ["camlock", "Elusive", 1.5],
   ["caprylate", "Mythic", 1.1],
   // Recorded as Mythic 1.25, the score of the base its override pins it to
   // ("discombobulate"). From 2026-08-24 that base is itself capped at its own
@@ -71,13 +73,21 @@ const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
   // follows it down the chain.
   ["combobulate", "Extremely Rare", 2.07],
   ["conization", "Extremely Rare", 1.8],
+  ["envisionable", "Uncommon", 3.37],
+  ["flatwound", "Elusive", 1.4],
+  ["freestall", "Legend", 0.9],
   ["inosinate", "Legend", 0.79],
+  ["kinesiologically", "Mythic", 1.32],
+  ["refracking", "Legend", 0.7],
   // Recorded as Extremely Rare 1.88; capped at "reoxygenated" (2.55) from
   // 2026-08-24, the same second-direction fold as the two rows above.
   ["reoxygenate", "Rare", 2.55],
+  ["roundwound", "Legend", 0.8],
+  ["shotcaller", "Legend", -0.7],
   // Recorded at its base "skate" (3.74); "skating" (3.84) is the paradigm's most
   // common member from 2026-08-24. Same tier, a tenth of a Zipf apart.
   ["skateable", "Uncommon", 3.84],
+  ["uninteractive", "Common", 4.06],
   ["uridylate", "Legend", 0.68],
 ];
 // Rare words discovered online for an upcoming drop and added via the "Add rare
@@ -108,8 +118,8 @@ const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scient
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    // 225,483 since `floterial` was accepted off the review queue on 2026-09-11.
-    expect(dictionaryWords).toHaveLength(225_483);
+    // 225,493 since the 2026-10-24 review-queue pass added ten words.
+    expect(dictionaryWords).toHaveLength(225_493);
   });
 
   it("accepts a common real word", () => {

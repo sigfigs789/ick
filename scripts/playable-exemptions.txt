@@ -86,3 +86,12 @@ godown
 dreamboat
 metrosexual
 palmtop
+
+# Curated words the 2026-08-24 out-of-use pass filed off one dead sense, kept by
+# the 2026-10-24 review-queue pass: players typed each, and each is current.
+# "extenuate" (extenuating circumstances), "arrant" (arrant nonsense), "whomst"
+# (current slang, not the archaic pronoun), "amylaceous" (botany, starchy).
+extenuate
+arrant
+whomst
+amylaceous

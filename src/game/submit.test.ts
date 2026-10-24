@@ -234,7 +234,7 @@ describe("rejection metadata coverage", () => {
     misspelling: 7,
     "name-or-abbreviation": 11588,
     obsolete: 63353,
-    "proper-noun": 18242,
+    "proper-noun": 18241,
   };
   const metadata = rejectionMetadata as Record<string, readonly string[]>;
 
@@ -247,7 +247,7 @@ describe("rejection metadata coverage", () => {
 
   it("pins the total number of words with a rejection reason", () => {
     const total = Object.values(metadata).reduce((sum, words) => sum + words.length, 0);
-    expect(total).toBe(107_428);
+    expect(total).toBe(107_427);
   });
 
   // These six carried no frequency from any corpus, so they scored the
