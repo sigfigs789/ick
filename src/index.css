@@ -299,11 +299,12 @@ h2 {
 .app__wordmark-ink {
   color: var(--rarity-mythic-dot);
 }
-/* On a phone the wordmark shares its line with the page icons and the "?", so
-   the type follows the screen's width, from 1.6rem on anything 460px or wider
-   down to 1.25rem on the narrowest phone, and never wraps. */
+/* Sized so its capitals stand as tall as the page icons beside it (about
+   15px of letter against their 22px drawings), at every width: the bar reads
+   as one row of equals, and it leaves the icons room on the narrowest phone.
+   Never wraps. */
 .app__wordmark {
-  font-size: clamp(1.25rem, 5.6vw, 1.6rem);
+  font-size: 1.25rem;
   white-space: nowrap;
 }
 /* The pages, as icons beside the "?" (see AppHeader). The current one is
