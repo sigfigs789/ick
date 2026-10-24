@@ -4,14 +4,14 @@
  * Read straight off the streak rather than kept as a record of its own. The
  * streak already is the answer -- it counts consecutive days ending on
  * `lastCompletedDate`, and it only ever advances on today's puzzle (see
- * storage.updateStreakOnValidAnswer), never out of the archive. So on the last
+ * storage.updateStreakOnSubmission), never out of the archive. So on the last
  * day of a month, a streak that reaches back to the first is a month with no
  * day missing. The one exception is a day a streak freeze covered, which keeps
  * the streak going without being played (see game/streakFreeze.ts), so those
  * are checked against the month too.
  *
- * "Played" means what it means everywhere else in this game: the day's first
- * accepted word, which is the moment the streak banks. A player does not have
+ * "Played" means what it means to the streak: the day's first submission,
+ * accepted or not, which is the moment the streak banks. A player does not have
  * to spend every guess or lock in to have played the day.
  *
  * Only the last day can finish a month, so the celebration lands once, on the
