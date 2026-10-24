@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { AnalyticsV2Page } from "./AnalyticsV2Page";
 
 vi.mock("../game/date", async (importOriginal) => ({
@@ -81,6 +81,34 @@ describe("AnalyticsV2Page", () => {
     expect(await screen.findByLabelText("up 1 pt since yesterday")).toBeTruthy();
     const d7 = screen.getByRole("rowheader", { name: "D7 retention" }).closest("tr")!;
     expect(d7.querySelector('[aria-label="no change since yesterday"]')).toBeTruthy();
+  });
+
+  it("tries a failed read once more by itself before showing Try again", async () => {
+    let calls = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => (++calls === 1 ? new Response("", { status: 504 }) : new Response(JSON.stringify({ report: REPORT }), { status: 200 }))),
+    );
+    render(<AnalyticsV2Page />);
+
+    expect(await screen.findByRole("heading", { name: "Scorecard" })).toBeTruthy();
+  });
+
+  it("asks for yesterday's report only once today's has arrived", async () => {
+    let answerToday: (r: Response) => void = () => {};
+    const fetchMock = vi.fn((url: string) =>
+      url.includes("today=2026-10-22")
+        ? new Promise<Response>((resolve) => (answerToday = resolve))
+        : Promise.resolve(new Response(JSON.stringify({ report: REPORT }), { status: 200 })),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    render(<AnalyticsV2Page />);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    answerToday(new Response(JSON.stringify({ report: REPORT }), { status: 200 }));
+    await screen.findByRole("heading", { name: "Scorecard" });
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    expect(String(fetchMock.mock.calls[1][0])).toContain("today=2026-10-21");
   });
 
   it("still draws the scorecard, without changes, when yesterday's report fails", async () => {

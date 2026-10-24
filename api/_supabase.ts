@@ -86,7 +86,12 @@ export function rpcMissing(error: unknown): boolean {
  * client shows as "couldn't load" rather than an empty board, which would read
  * as "nobody has played".
  */
-export async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
+export async function rpc<T>(
+  fn: string,
+  args: Record<string, unknown>,
+  /** Longer for a read nobody is waiting on mid-puzzle, like the analytics reports. */
+  timeoutMs = SUPABASE_TIMEOUT_MS,
+): Promise<T> {
   const base = (process.env.SUPABASE_URL ?? "").replace(/\/+$/, "");
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
   const response = await fetch(`${base}/rest/v1/rpc/${fn}`, {
@@ -97,7 +102,7 @@ export async function rpc<T>(fn: string, args: Record<string, unknown>): Promise
       "content-type": "application/json",
     },
     body: JSON.stringify(args),
-    signal: AbortSignal.timeout(SUPABASE_TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
