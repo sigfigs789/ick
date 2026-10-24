@@ -368,6 +368,26 @@ h2 {
 .app__nav-label {
   white-space: nowrap;
 }
+/* The short label waits for a crowded phone (see Tab.short in AppHeader). */
+.app__nav-label--short {
+  display: none;
+}
+/* Four tabs on a phone: the long labels swap for short ones, and the columns
+   go equal. Four full labels left no gap between one tab and the next, and
+   columns each as wide as their own label put the underline under "Play" at
+   twice the width of the one under "Stats". With short labels every tab fits
+   a quarter of the row, so the row can be divided evenly. */
+@media (max-width: 429px) {
+  .app__nav--crowded {
+    grid-auto-columns: minmax(0, 1fr);
+  }
+  .app__nav--crowded .app__nav-label--full {
+    display: none;
+  }
+  .app__nav--crowded .app__nav-label--short {
+    display: inline;
+  }
+}
 .app__beta {
   display: inline-block;
   margin-left: 0.4rem;

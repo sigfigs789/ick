@@ -36,6 +36,13 @@ const DOCKED_SWITCH_ROUTES: readonly Route[] = ["leaderboard", "found-words"];
 interface Tab {
   route: Route;
   label: string;
+  /**
+   * What it is called on a phone once Stats has joined the row. Four full
+   * labels need more than a phone's width, and squeezed into it they ran
+   * together with no gap between one tab and the next. The full label stays
+   * the tab's accessible name either way.
+   */
+  short?: string;
 }
 
 /**
@@ -54,11 +61,11 @@ const TABS: readonly Tab[] = [
   // today's -- it opens there, but stepping back a day is a thing it offers,
   // and a tab that promises today then shows Tuesday has misnamed itself. The
   // heading on the page is the one that says which day you are looking at.
-  { route: "found-words", label: "Words found" },
+  { route: "found-words", label: "Words found", short: "Words" },
   // The player's own numbers, beside the words they found. Only once there are
   // any (see `showStats`).
   { route: "stats", label: "Stats" },
-  { route: "leaderboard", label: "Leaderboards" },
+  { route: "leaderboard", label: "Leaderboards", short: "Boards" },
 ];
 
 /**
@@ -211,6 +218,8 @@ export function AppHeader({
     onFreeform?.();
   }
 
+  const tabs = TABS.filter((tab) => tab.route !== "stats" || showStats || route === "stats");
+
   function go(tab: Tab) {
     if (tab.route === route) return;
     if (tab.route === "leaderboard") trackLeaderboardOpened("header");
@@ -320,8 +329,11 @@ export function AppHeader({
       {/* Under the wordmark rather than beside it: three labelled destinations
           do not fit a phone's width next to a wordmark, and a row of its own
           lets each tab be a real target with its name under it. */}
-      <nav className="app__nav" aria-label="Pages">
-        {TABS.filter((tab) => tab.route !== "stats" || showStats || route === "stats").map((tab) => {
+      <nav
+        className={`app__nav${tabs.length > 3 ? " app__nav--crowded" : ""}`}
+        aria-label="Pages"
+      >
+        {tabs.map((tab) => {
           const current = tab.route === route;
           return (
             <button
@@ -330,8 +342,18 @@ export function AppHeader({
               className={`app__nav-item${current ? " app__nav-item--current" : ""}`}
               onClick={() => go(tab)}
               aria-current={current ? "page" : undefined}
+              // Named here rather than by its text, which on a phone may be
+              // the short label alone.
+              aria-label={tab.label}
             >
-              <span className="app__nav-label">{tab.label}</span>
+              <span className={`app__nav-label${tab.short ? " app__nav-label--full" : ""}`}>
+                {tab.label}
+              </span>
+              {tab.short && (
+                <span className="app__nav-label app__nav-label--short" aria-hidden="true">
+                  {tab.short}
+                </span>
+              )}
             </button>
           );
         })}

@@ -51,7 +51,7 @@ describe("the header", () => {
 
     const labels = screen
       .getAllByRole("button", { name: /^(Play|Words found|Leaderboards)$/ })
-      .map((tab) => tab.textContent);
+      .map((tab) => tab.getAttribute("aria-label"));
     expect(labels).toEqual(["Play", "Words found", "Leaderboards"]);
   });
 
@@ -80,12 +80,27 @@ describe("the header", () => {
     rerender(<AppHeader route="game" onHowToPlay={howToPlay} showStats />);
     const labels = screen
       .getAllByRole("button", { name: /^(Play|Words found|Stats|Leaderboards)$/ })
-      .map((tab) => tab.textContent);
+      .map((tab) => tab.getAttribute("aria-label"));
     expect(labels).toEqual(["Play", "Words found", "Stats", "Leaderboards"]);
 
     await userEvent.click(screen.getByRole("button", { name: "Stats" }));
     expect(window.location.pathname).toBe("/stats");
     expect(trackStatsOpened).toHaveBeenCalledWith("header");
+  });
+
+  it("carries short labels for a phone only once four tabs share the row", () => {
+    const { rerender } = render(<AppHeader route="game" onHowToPlay={howToPlay} />);
+    const nav = screen.getByRole("navigation", { name: "Pages" });
+    // Three tabs fit a phone with their full names, so nothing is shortened.
+    expect(nav).not.toHaveClass("app__nav--crowded");
+
+    rerender(<AppHeader route="game" onHowToPlay={howToPlay} showStats />);
+    expect(nav).toHaveClass("app__nav--crowded");
+    // The short words are what a phone shows; the stylesheet picks between
+    // them. Hidden from screen readers, which hear the full name either way.
+    expect(screen.getByText("Words")).toHaveAttribute("aria-hidden", "true");
+    expect(screen.getByText("Boards")).toHaveAttribute("aria-hidden", "true");
+    expect(screen.getByRole("button", { name: "Leaderboards" })).toBeInTheDocument();
   });
 
   it("keeps the Stats tab on the Stats page itself", () => {
