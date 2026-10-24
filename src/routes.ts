@@ -61,6 +61,10 @@ import { startTransition, useEffect, useState } from "react";
  * longest streak first. Unlinked from the game: it is a page about the players
  * who left, not one for the players still here.
  *
+ * `/stats` is the player's own numbers and achievements, read from this
+ * browser's record. It has a tab, after "Words found", but only once there is
+ * something to show: a player with no banked word has no stats.
+ *
  * `/help` is the index of all of the above, because nine pages, most of them
  * linked from nowhere, is more URLs than anyone remembers. Unlinked for the
  * same reason the curator pages are: it is mostly a list of them.
@@ -86,7 +90,8 @@ export type Route =
   | "transfer"
   | "help"
   | "leaderboard-total"
-  | "dead-streaks";
+  | "dead-streaks"
+  | "stats";
 
 export const LEADERBOARD_PATH = "/leaderboard";
 export const FOUND_WORDS_PATH = "/found-words";
@@ -101,6 +106,7 @@ export const TRANSFER_PATH = "/transfer";
 export const HELP_PATH = "/help";
 export const LEADERBOARD_TOTAL_PATH = "/leaderboard-total";
 export const DEAD_STREAKS_PATH = "/dead-streaks";
+export const STATS_PATH = "/stats";
 
 /**
  * Whether the route lives in memory rather than in the address bar, and what it
@@ -155,6 +161,7 @@ export function routeFor(pathname: string): Route {
   if (path === HELP_PATH) return "help";
   if (path === LEADERBOARD_TOTAL_PATH) return "leaderboard-total";
   if (path === DEAD_STREAKS_PATH) return "dead-streaks";
+  if (path === STATS_PATH) return "stats";
   return "game";
 }
 
@@ -173,6 +180,7 @@ export function pathFor(route: Route): string {
   if (route === "help") return HELP_PATH;
   if (route === "leaderboard-total") return LEADERBOARD_TOTAL_PATH;
   if (route === "dead-streaks") return DEAD_STREAKS_PATH;
+  if (route === "stats") return STATS_PATH;
   return "/";
 }
 

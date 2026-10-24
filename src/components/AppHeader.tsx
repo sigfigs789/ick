@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { trackFoundWordsOpened, trackLeaderboardOpened } from "../analytics";
+import { trackFoundWordsOpened, trackLeaderboardOpened, trackStatsOpened } from "../analytics";
 import { navigate, type Route } from "../routes";
 import { ModeToggle } from "./ModeToggle";
 import type { GameMode } from "../game/mode";
@@ -55,6 +55,9 @@ const TABS: readonly Tab[] = [
   // and a tab that promises today then shows Tuesday has misnamed itself. The
   // heading on the page is the one that says which day you are looking at.
   { route: "found-words", label: "Words found" },
+  // The player's own numbers, beside the words they found. Only once there are
+  // any (see `showStats`).
+  { route: "stats", label: "Stats" },
   { route: "leaderboard", label: "Leaderboards" },
 ];
 
@@ -78,6 +81,7 @@ export function AppHeader({
   badge = true,
   badgeLabel,
   onBadgeDone,
+  showStats = false,
 }: {
   route: Route;
   onHowToPlay: () => void;
@@ -129,6 +133,12 @@ export function AppHeader({
    * announcement's state.
    */
   onBadgeDone?: () => void;
+  /**
+   * Whether the Stats tab is offered: once this browser has banked a word. A
+   * player with no record has no stats, and a tab that opens on zeros is one
+   * more thing on a first visit's header to read past.
+   */
+  showStats?: boolean;
 }) {
   // Whether this header has the trial's button, the only thing a badge sits
   // under. The mode switch that replaced it wears none.
@@ -205,6 +215,7 @@ export function AppHeader({
     if (tab.route === route) return;
     if (tab.route === "leaderboard") trackLeaderboardOpened("header");
     if (tab.route === "found-words") trackFoundWordsOpened("header");
+    if (tab.route === "stats") trackStatsOpened("header");
     navigate(tab.route);
   }
 
@@ -310,7 +321,7 @@ export function AppHeader({
           do not fit a phone's width next to a wordmark, and a row of its own
           lets each tab be a real target with its name under it. */}
       <nav className="app__nav" aria-label="Pages">
-        {TABS.map((tab) => {
+        {TABS.filter((tab) => tab.route !== "stats" || showStats || route === "stats").map((tab) => {
           const current = tab.route === route;
           return (
             <button

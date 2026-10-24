@@ -745,6 +745,11 @@ export function trackFoundWordsOpened(from: "header" | "results") {
   markLooked("found_words");
 }
 
+/** The player opened their Stats page. */
+export function trackStatsOpened(from: "header") {
+  send("stats_opened", { from, puzzle_date: todayDateString() });
+}
+
 /**
  * The chat room, in four events. Every one carries the live `puzzle_date`, so
  * the report counts chat per puzzle the way it counts everything else, and

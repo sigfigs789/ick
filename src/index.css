@@ -321,11 +321,15 @@ h2 {
   }
 }
 /* The tabs. Evenly divided rather than packed to one side: they are the whole
-   width of the app's navigation, and three equal targets are easier to hit
-   without looking than three of whatever width their labels came to. */
+   width of the app's navigation, and wide targets are easier to hit without
+   looking. One column per tab, three or four (Stats joins once the player has
+   a record): each as wide as its label, then the spare width shared out
+   equally, because four equal quarters of a phone are narrower than
+   "Leaderboards". */
 .app__nav {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-auto-columns: auto;
+  grid-auto-flow: column;
   gap: 0.25rem;
   margin-top: 0.85rem;
 }
@@ -6498,4 +6502,259 @@ h2 {
 .come-back__goal {
   margin: 0;
   font-weight: 600;
+}
+
+/*
+ * The player's Stats page at /stats: headline tiles, the rarity bars, best
+ * words, the mode table, then the achievements. Built from the shared tokens
+ * and the rarity palette, so both themes come for free.
+ */
+.stats__empty {
+  color: var(--fg-muted);
+}
+.stats__link {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.stats__tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1.75rem;
+}
+@media (max-width: 429px) {
+  .stats__tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.stats__tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--card-bg);
+}
+.stats__tile-label {
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.stats__tile-value {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 900;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.stats__tile-note {
+  overflow: hidden;
+  color: var(--fg-faint);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stats__section {
+  margin-bottom: 1.9rem;
+}
+.stats__heading {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.stats__heading-note {
+  margin-left: 0.45rem;
+  color: var(--fg-faint);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.stats__bars {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stats__bar-row {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr) 2.5rem;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+}
+.stats__bar-label {
+  color: var(--fg-muted);
+  font-weight: 700;
+}
+.stats__bar-track {
+  height: 0.6rem;
+  border-radius: 999px;
+  background: var(--bg-inset);
+  overflow: hidden;
+}
+.stats__bar-track .stats__bar-fill {
+  display: block;
+  height: 100%;
+  min-width: 0;
+  background: transparent;
+}
+.stats__bar-track .stats__bar-fill .rarity-badge__dot {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* The badge's ring is for a dot; on a bar it reads as a stray cap. */
+  box-shadow: none;
+}
+.stats__bar-count {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.stats__words {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stats__word {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "word badge"
+    "date badge";
+  align-items: center;
+  column-gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.stats__word-text {
+  grid-area: word;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+.stats__word-date {
+  grid-area: date;
+  color: var(--fg-faint);
+  font-size: 0.75rem;
+}
+.stats__word .rarity-badge {
+  grid-area: badge;
+}
+.stats__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.stats__table th,
+.stats__table td {
+  padding: 0.45rem 0.25rem;
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+}
+.stats__table th:first-child {
+  text-align: left;
+}
+.stats__table thead th {
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+}
+.stats__footnote {
+  margin: 0.5rem 0 0;
+  color: var(--fg-faint);
+  font-size: 0.75rem;
+}
+.stats__group + .stats__group {
+  margin-top: 1rem;
+}
+.stats__group-heading {
+  margin: 0 0 0.5rem;
+  color: var(--fg-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.stats__achievements {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stats__achievement {
+  display: flex;
+  gap: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px dashed var(--border);
+  border-radius: 0.75rem;
+  background: var(--bg-inset);
+  color: var(--fg-muted);
+}
+.stats__achievement--earned {
+  border-style: solid;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  color: var(--fg);
+}
+.stats__achievement-icon {
+  flex: none;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+.stats__achievement--earned .stats__achievement-icon {
+  filter: none;
+  opacity: 1;
+}
+.stats__achievement-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.stats__achievement-title {
+  font-weight: 800;
+}
+.stats__achievement-text {
+  font-size: 0.8rem;
+}
+.stats__achievement-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+  color: var(--fg-faint);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+.stats__achievement--earned .stats__achievement-meta {
+  color: var(--success-fg);
+  font-weight: 700;
+}
+.stats__progress {
+  flex: 1;
+  max-width: 6rem;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+.stats__progress-fill {
+  display: block;
+  height: 100%;
+  background: var(--fg-muted);
 }

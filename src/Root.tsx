@@ -15,7 +15,7 @@ import { useGameMode } from "./hooks/useGameMode";
 import { takeFreshAssignment } from "./game/onboarding";
 import { syncHistoryWhenReady } from "./game/leaderboard";
 import { hasJoined, joinBoard } from "./game/player";
-import { playedPuzzleCount } from "./game/storage";
+import { PROGRESS_SAVED_EVENT, playedPuzzleCount } from "./game/storage";
 import { hasSeen, headerBadgeFor, markSeen } from "./game/whatsNew";
 import { takesPlayerMessages } from "./game/playerMessages";
 import { lazyPage } from "./lazyPage";
@@ -57,6 +57,10 @@ const FoldReviewPage = lazyPage(
 const FoldedLivePage = lazyPage(
   () => import("./components/FoldedLivePage"),
   (m) => m.FoldedLivePage,
+);
+const StatsPage = lazyPage(
+  () => import("./components/StatsPage"),
+  (m) => m.StatsPage,
 );
 const FoundWordsPage = lazyPage(
   () => import("./components/FoundWordsPage"),
@@ -349,6 +353,21 @@ export function Root() {
   }, []);
 
   /**
+   * Whether this browser has banked a word, which is what puts the Stats tab on
+   * the header. Rechecked whenever a puzzle is saved until it is true, so the
+   * tab appears with a first-timer's first word rather than on their next visit.
+   */
+  const [hasPlayed, setHasPlayed] = useState(() => playedPuzzleCount() > 0);
+  useEffect(() => {
+    if (hasPlayed) return;
+    const check = () => {
+      if (playedPuzzleCount() > 0) setHasPlayed(true);
+    };
+    window.addEventListener(PROGRESS_SAVED_EVENT, check);
+    return () => window.removeEventListener(PROGRESS_SAVED_EVENT, check);
+  }, [hasPlayed]);
+
+  /**
    * Fetch the two pages the header's tabs lead to once the browser is idle, so
    * tapping a tab does not wait on a download.
    *
@@ -390,6 +409,7 @@ export function Root() {
         badge={freeformBadge}
         badgeLabel={badge?.label}
         onBadgeDone={retireBadge}
+        showStats={hasPlayed}
       />
       {/* Under the header, so the header stays put while a page's chunk is
           on its way -- only the page's own area waits, and only the first
@@ -401,6 +421,8 @@ export function Root() {
             <LeaderboardPage />
           ) : route === "found-words" ? (
             <FoundWordsPage />
+          ) : route === "stats" ? (
+            <StatsPage />
           ) : route === "suggested-words" ? (
             /* The two review pages, which no tab points at: they render under the
                same header as everything else, because a page of this app is a page
