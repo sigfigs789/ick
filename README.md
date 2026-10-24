@@ -446,14 +446,17 @@ lives in `supabase/migrations/`.
   inserts it.
 
 - **The idle hint test** (`src/game/idleHint.ts`) — an A/B test of typing
-  hints into the empty word box once it has sat empty for 5 seconds, in a
-  first-ever session and in later ones alike. A hint (`...strong`) is
+  hints into the empty word box once it has sat empty for 7 seconds in a
+  first-ever session, or 12 seconds in a later one. A hint (`...strong`) is
   typed into the placeholder a character at a time with a keystroke sound,
   held 2s and erased; the next follows 1s later, three in all, each a
-  Common word with the drop that the puzzle would accept. The first letter the player types ends the loop. The
-  clock waits for How to play (or any dialog) to close, and focusing the box
-  does not stop it. Add `?idle-hint=treatment` (or `=control`) to the URL to
-  force an arm while testing; a forced arm is never stored or reported. Each
+  Common word with the drop that the puzzle would accept. The first letter the player types ends the loop, and
+  focusing the box ends it too -- or, before the clock runs out, keeps it from
+  ever starting on that puzzle. The clock waits for How to play (or any dialog)
+  to close. Add `?idle-hint=treatment` (or `=control`) to the URL to
+  force an arm while testing; a forced arm is never stored or reported. A
+  Vercel preview, which reports nothing, shows the hint without the
+  parameter. Each
   of the two experiments is its own sticky 50/50 split. Both arms send
   `idle_hint_triggered` when the clock runs out (control
   just sees nothing). The "Idle hint test" section of `/analytics` shows the

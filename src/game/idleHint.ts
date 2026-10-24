@@ -15,11 +15,13 @@ import type { AcceptedWord, Rarity } from "./types";
  * Common words that contain the drop and that the puzzle would
  * accept (see `useIdleHint` for the rhythm). They are a way in, not a
  * giveaway: those are the bottom of the scale, and the player still has to
- * find something rarer to do well. The first keystroke ends the loop.
+ * find something rarer to do well. The first keystroke ends the loop, and so
+ * does focusing the box -- before the hint starts or while it runs.
  *
- * Two experiments, each split 50/50 on its own, both hinted after 5 seconds:
- *   - `new`: a first-ever session.
- *   - `returning`: any later session.
+ * Two experiments, each split 50/50 on its own:
+ *   - `new`: a first-ever session, hinted after 7 seconds.
+ *   - `returning`: any later session, hinted after 12 seconds -- a player who
+ *     has been here before gets longer to find their own way in.
  *
  * A player is placed in each experiment the first time they reach the play page
  * as that kind of player, and keeps the arm for good. The two draws are
@@ -44,8 +46,8 @@ export interface IdleHintArm {
 
 /** How long the box has to sit empty, per experiment. */
 export const IDLE_HINT_DELAY_MS: Record<IdleHintExperiment, number> = {
-  new: 5_000,
-  returning: 5_000,
+  new: 7_000,
+  returning: 12_000,
 };
 
 /** The tiers a hint is drawn from. */

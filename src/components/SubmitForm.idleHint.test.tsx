@@ -4,6 +4,7 @@ import { SubmitForm } from "./SubmitForm";
 import { IDLE_HINT_GAP_MS, IDLE_HINT_HOLD_MS, idleHintText, idleHintWords } from "../game/idleHint";
 import { IDLE_HINT_ERASE_MS, IDLE_HINT_TYPE_MS } from "../hooks/useIdleHint";
 import { recordVisit } from "../game/visits";
+import { setReporting } from "../analytics";
 import type { AcceptedWord } from "../game/types";
 
 const track = vi.hoisted(() => vi.fn());
@@ -16,6 +17,8 @@ const DROP = "str";
 const HINTS = idleHintWords(DROP, DATE, []);
 const [HINT] = HINTS;
 const DEFAULT = "type a word…";
+/** How long a new player's box sits empty first. */
+const DELAY = 7_000;
 /** Typing a hint out, holding it and erasing it, end to end. */
 const showMs = (word: string) =>
   idleHintText(word).length * (IDLE_HINT_TYPE_MS + IDLE_HINT_ERASE_MS) + IDLE_HINT_HOLD_MS;
@@ -89,7 +92,7 @@ describe("the idle hint", () => {
     const input = renderForm();
     expect(HINTS).toHaveLength(3);
 
-    await wait(4_900);
+    await wait(DELAY - 100);
     expect(input.placeholder).toBe(DEFAULT);
     expect(events("idle_hint_triggered")).toHaveLength(0);
 
@@ -99,7 +102,7 @@ describe("the idle hint", () => {
         experiment: "new",
         variant: "treatment",
         shown: true,
-        delay_ms: 5_000,
+        delay_ms: DELAY,
         word: HINT.word,
         words: HINTS.map((w) => w.word).join(","),
         rarity: HINT.rarity,
@@ -142,7 +145,7 @@ describe("the idle hint", () => {
     inArm("new", "treatment");
     const input = renderForm();
 
-    await wait(5_000 + 500);
+    await wait(DELAY + 500);
     expect(input.placeholder).not.toBe(DEFAULT);
     fireEvent.change(input, { target: { value: "s" } });
     expect(events("idle_hint_typed")).toEqual([
@@ -158,18 +161,43 @@ describe("the idle hint", () => {
     expect(events("idle_hint_triggered")).toHaveLength(1);
   });
 
-  it("keeps the clock going, and types the hint, while the box is focused", async () => {
+  it("never starts the hint once the box has been focused", async () => {
     inArm("new", "treatment");
     const input = renderForm();
 
     await wait(3_000);
     act(() => input.focus());
-    fireEvent.focus(input);
     expect(document.activeElement).toBe(input);
-    await wait(2_000);
+    await wait(30_000);
+    expect(events("idle_hint_triggered")).toHaveLength(0);
+    expect(input.placeholder).toBe(DEFAULT);
+
+    // Not after the player leaves the box again either.
+    act(() => input.blur());
+    await wait(30_000);
+    expect(events("idle_hint_triggered")).toHaveLength(0);
+    expect(input.placeholder).toBe(DEFAULT);
+  });
+
+  it("ends a running loop when the box is focused, and still reports the first letter", async () => {
+    inArm("new", "treatment");
+    const input = renderForm();
+
+    await wait(DELAY + 500);
+    expect(input.placeholder).not.toBe(DEFAULT);
+    act(() => input.focus());
+    expect(input.placeholder).toBe(DEFAULT);
+    const keys = playKeystroke.mock.calls.length;
+
+    act(() => input.blur());
+    await wait(30_000);
+    expect(input.placeholder).toBe(DEFAULT);
+    expect(playKeystroke).toHaveBeenCalledTimes(keys);
+
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: "s" } });
+    expect(events("idle_hint_typed")).toHaveLength(1);
     expect(events("idle_hint_triggered")).toHaveLength(1);
-    await wait(typeMs(HINT.word) + 20);
-    expect(input.placeholder).toBe(idleHintText(HINT.word));
   });
 
   it("holds the clock while a dialog is open and starts it once the dialog closes", async () => {
@@ -185,7 +213,7 @@ describe("the idle hint", () => {
     await act(async () => {
       dialog.remove();
     });
-    await wait(4_900);
+    await wait(DELAY - 100);
     expect(events("idle_hint_triggered")).toHaveLength(0);
     await wait(100);
     expect(events("idle_hint_triggered")).toHaveLength(1);
@@ -195,7 +223,7 @@ describe("the idle hint", () => {
     inArm("new", "treatment");
     const input = renderForm();
 
-    await wait(5_000 + 3 * IDLE_HINT_TYPE_MS + 30);
+    await wait(DELAY + 3 * IDLE_HINT_TYPE_MS + 30);
     const shown = input.placeholder;
     expect(shown).toBe("...");
     const dialog = document.createElement("div");
@@ -217,18 +245,33 @@ describe("the idle hint", () => {
     window.history.replaceState(null, "", "/?idle-hint=treatment");
     const input = renderForm();
 
-    await wait(5_000);
+    await wait(DELAY);
     await wait(typeMs(HINT.word) + 20);
     expect(input.placeholder).toBe(idleHintText(HINT.word));
     expect(localStorage.getItem("ick:idle-hint")).toBeNull();
     expect(track).not.toHaveBeenCalled();
   });
 
+  it("shows the hint on a host that reports nothing, such as a Vercel preview", async () => {
+    setReporting(false);
+    try {
+      const input = renderForm();
+
+      await wait(DELAY);
+      await wait(typeMs(HINT.word) + 20);
+      expect(input.placeholder).toBe(idleHintText(HINT.word));
+      expect(localStorage.getItem("ick:idle-hint")).toBeNull();
+      expect(track).not.toHaveBeenCalled();
+    } finally {
+      setReporting(true);
+    }
+  });
+
   it("runs the same clock in control and reports it, but shows and plays nothing", async () => {
     inArm("new", "control");
     const input = renderForm();
 
-    await wait(5_000);
+    await wait(DELAY);
     for (const hint of HINTS) {
       await wait(showMs(hint.word) + 100);
       expect(input.placeholder).toBe(DEFAULT);
@@ -240,15 +283,15 @@ describe("the idle hint", () => {
     ]);
   });
 
-  it("waits 5 seconds for a returning player too", async () => {
+  it("waits 12 seconds for a returning player", async () => {
     inArm("returning", "treatment");
     renderForm();
 
-    await wait(4_900);
+    await wait(11_900);
     expect(events("idle_hint_triggered")).toHaveLength(0);
     await wait(100);
     expect(events("idle_hint_triggered")).toEqual([
-      expect.objectContaining({ experiment: "returning", delay_ms: 5_000 }),
+      expect.objectContaining({ experiment: "returning", delay_ms: 12_000 }),
     ]);
   });
 
@@ -262,7 +305,7 @@ describe("the idle hint", () => {
     expect(events("idle_hint_triggered")).toHaveLength(0);
 
     fireEvent.change(input, { target: { value: "" } });
-    await wait(5_000);
+    await wait(DELAY);
     expect(events("idle_hint_triggered")).toHaveLength(1);
   });
 
@@ -282,7 +325,7 @@ describe("the idle hint", () => {
     const onSubmit = vi.fn().mockResolvedValue({ ok: true });
     const input = renderForm({ onSubmit });
 
-    await wait(5_000 + 1_500);
+    await wait(DELAY + 1_500);
     fireEvent.change(input, { target: { value: HINT.word } });
     await act(async () => {
       fireEvent.submit(input.form!);

@@ -293,7 +293,7 @@ function Report({
       <Section
         title="Idle hint test"
         benchmark={idleHintBenchmark(report.idleHint.all)}
-        note={`${span}. Players who sat idle ${IDLE_HINT_DELAY_MS.new / 1000}s, no hint vs hint, each player assigned 50/50${
+        note={`${span}. Players who sat idle (${IDLE_HINT_DELAY_MS.new / 1000}s new, ${IDLE_HINT_DELAY_MS.returning / 1000}s returning), no hint vs hint, each player assigned 50/50${
           report.idleHintSince ? `, since ${shortDate(report.idleHintSince)}` : ""
         }. New is a first-ever session, returning any later one.`}
       >
