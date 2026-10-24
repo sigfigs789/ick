@@ -60,7 +60,7 @@ const TABS: readonly Tab[] = [
   // The player's own numbers, beside the words they found. Only once there are
   // any (see `showStats`).
   { route: "stats", label: "Stats", short: "Stats" },
-  { route: "leaderboard", label: "Leaderboards", short: "Boards" },
+  { route: "leaderboard", label: "Leaderboards", short: "Ranks" },
 ];
 
 /**
@@ -335,7 +335,7 @@ export function AppHeader({
               aria-label={tab.label}
             >
               {/* Both are drawn and CSS picks one by width; the full label is
-                  the tab's name either way, and each short one is part of it. */}
+                  the tab's name either way. */}
               <span
                 className={`app__nav-label${
                   tab.short !== tab.label ? " app__nav-label--full" : ""

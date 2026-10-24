@@ -55,12 +55,12 @@ describe("the header", () => {
     expect(labels).toEqual(["Play", "Words found", "Leaderboards"]);
   });
 
-  it("keeps a phone's shorter labels inside each tab's full name", () => {
+  it("gives a phone shorter labels, still named in full", () => {
     render(<Harness />);
 
     // CSS shows these below 480px; the tab is still announced by its full name.
     expect(within(screen.getByRole("button", { name: "Words found" })).getByText("Words")).toBeInTheDocument();
-    expect(within(screen.getByRole("button", { name: "Leaderboards" })).getByText("Boards")).toBeInTheDocument();
+    expect(within(screen.getByRole("button", { name: "Leaderboards" })).getByText("Ranks")).toBeInTheDocument();
   });
 
   it("goes to each page, and moves the current marker with it", async () => {
