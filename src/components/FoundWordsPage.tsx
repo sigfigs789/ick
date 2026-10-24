@@ -362,8 +362,7 @@ export function FoundWordsPage() {
             </span>
           </h1>
           <p className="page-head__note">
-            Every word anybody turned up for this drop that the mode you’re in
-            allows, scored by that mode.
+            Every word anybody turned up for this drop
           </p>
         </div>
         {/* A refresh belongs on the two pages whose content is other people's,
