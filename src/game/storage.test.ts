@@ -5,6 +5,7 @@ import {
   loadProgress,
   loadStreak,
   newProgress,
+  playedBothModesLately,
   playedOnItsDay,
   recordAcceptedWord,
   recordRejectedAttempt,
@@ -1057,5 +1058,39 @@ describe("two modes, two games", () => {
 
     const played = playedOnItsDay().filter((day) => day.date === DAY);
     expect(played.map((day) => day.mode)).toEqual(["freeform", "standard"]);
+  });
+});
+
+describe("playedBothModesLately", () => {
+  function played(date: string, mode: "standard" | "freeform", words = 1) {
+    const key = `ick:progress:${date}${mode === "freeform" ? ":freeform" : ""}`;
+    const acceptedWords = Array.from({ length: words }, () => ({ word: "seed" }));
+    localStorage.setItem(key, JSON.stringify({ date, acceptedWords }));
+  }
+
+  it("is false for a player who has only played one mode", () => {
+    for (const date of ["2026-10-01", "2026-10-02", "2026-10-03"]) played(date, "standard");
+    expect(playedBothModesLately()).toBe(false);
+  });
+
+  it("is true when both modes fall in the last five play days", () => {
+    played("2026-10-01", "freeform");
+    for (const date of ["2026-10-02", "2026-10-03", "2026-10-05", "2026-10-09"]) played(date, "standard");
+    expect(playedBothModesLately()).toBe(true);
+  });
+
+  it("is false when the other mode was last played more than five play days ago", () => {
+    played("2026-10-01", "freeform");
+    for (const date of ["2026-10-02", "2026-10-03", "2026-10-04", "2026-10-05", "2026-10-06"]) {
+      played(date, "standard");
+    }
+    expect(playedBothModesLately()).toBe(false);
+  });
+
+  it("ignores a game with no words and the calendar-picked trial week", () => {
+    played("2026-10-01", "standard");
+    played("2026-10-02", "freeform", 0);
+    played("2026-09-24", "freeform");
+    expect(playedBothModesLately()).toBe(false);
   });
 });

@@ -13,6 +13,7 @@ import {
   retryWord,
   forfeitRetry,
   playedOnItsDay,
+  playedBothModesLately,
   rescoreAcceptedWords,
 } from "../game/storage";
 import {
@@ -702,7 +703,9 @@ export function useDailyPuzzle() {
   // one it prices off an estimate or a reviewed fold shows the wrong score.
   const metadataLoaded = useWordDataLoaded(viewedDate);
   const crossMode = useMemo<Record<string, CrossModePreview>>(() => {
-    if (!crossModeAvailable(viewedDate)) return {};
+    // Only for a player who has played both modes lately; to anyone else the
+    // other mode is a game they never chose or have left, and the offer is noise.
+    if (!crossModeAvailable(viewedDate) || !playedBothModesLately()) return {};
     const previews: Record<string, CrossModePreview> = {};
     for (const word of progress.acceptedWords) {
       previews[word.word] = previewInMode(word, target, viewedDate, drop, otherProgress);

@@ -249,6 +249,38 @@ export function playedBefore(date: string): boolean {
   });
 }
 
+/** How many of the player's most recent play days `playedBothModesLately` looks at. */
+export const RECENT_PLAY_DAYS = 5;
+
+/**
+ * Whether the player has banked a word in both Standard and Freeform across
+ * their last `RECENT_PLAY_DAYS` play days (puzzles from MODE_CHOICE_START on
+ * with a word in either mode, not calendar days). The guess log offers to copy words across only to such a
+ * player: to anyone else the other mode is a game they never chose, or one they
+ * have stopped playing. Raw JSON like `playedPuzzleCount`, for the same reason.
+ */
+export function playedBothModesLately(): boolean {
+  let keys: string[];
+  try {
+    keys = Object.keys(localStorage).filter((key) => key.startsWith(PROGRESS_PREFIX));
+  } catch {
+    return false;
+  }
+  const modesByDate = new Map<string, Set<GameMode>>();
+  for (const key of keys) {
+    if (!safeParse<DailyProgress>(localStorage.getItem(key))?.acceptedWords?.length) continue;
+    const { date, mode } = readProgressKey(key);
+    // Before the choice date the calendar picked the mode, not the player.
+    if (!modeIsChosen(date)) continue;
+    const modes = modesByDate.get(date) ?? new Set<GameMode>();
+    modes.add(mode);
+    modesByDate.set(date, modes);
+  }
+  const recent = [...modesByDate.keys()].sort().reverse().slice(0, RECENT_PLAY_DAYS);
+  const seen = new Set(recent.flatMap((date) => [...modesByDate.get(date)!]));
+  return seen.size === 2;
+}
+
 export function playedOnItsDay(): DailyProgress[] {
   return playedHistory().filter((progress) => {
     const playedAt = progress.firstWordAt ?? progress.completedAt;
