@@ -37,10 +37,10 @@ describe("StreakDisplay", () => {
     );
     expect(screen.getByRole("button", { name: /Streak freezes/ }).textContent).toBe("🧊0/2");
 
-    // A streak that has ended keeps the cap its longest streak set: 0 of 3.
+    // A streak that has ended keeps the cap its longest streak set: 0 of 2.
     rerender(<StreakDisplay streak={{ ...streak, longestStreak: 28 }} hideEmpty hasWords={false} />);
     expect(screen.getByText("day streak")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Streak freezes/ }).textContent).toBe("🧊0/3");
+    expect(screen.getByRole("button", { name: /Streak freezes/ }).textContent).toBe("🧊0/2");
 
     // A freeze held and a word banked: both come back.
     rerender(
@@ -178,12 +178,12 @@ describe("StreakDisplay", () => {
   it("shows saved freezes out of the most the streak can hold, with the rules in a popup", () => {
     render(<StreakDisplay streak={{ ...streak, currentStreak: 31, bankedFreezes: 1 }} />);
     const badge = screen.getByRole("button", { name: /streak freezes/i });
-    expect(badge.textContent).toBe("🧊1/3");
+    expect(badge.textContent).toBe("🧊1/2");
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     fireEvent.click(badge);
     const popup = screen.getByRole("dialog", { name: "Streak freezes" });
-    expect(popup.querySelector("strong")?.textContent).toBe("1 of 3 🧊 acquired");
+    expect(popup.querySelector("strong")?.textContent).toBe("1 of 2 🧊 acquired");
     expect(popup.textContent).toContain("Earn your first 🧊 on day 3, then one every 7 days played.");
 
     fireEvent.keyDown(document, { key: "Escape" });
@@ -217,7 +217,17 @@ describe("StreakDisplay", () => {
 
   it("shows the cap the longest streak earned, even on a short current one", () => {
     render(<StreakDisplay streak={{ ...streak, currentStreak: 3, longestStreak: 45 }} />);
-    expect(screen.getByRole("button", { name: /streak freezes/i }).textContent).toBe("🧊0/3");
+    expect(screen.getByRole("button", { name: /streak freezes/i }).textContent).toBe("🧊0/2");
+  });
+
+  it("shows three held from the old cap of three as over the cap of two", () => {
+    render(<StreakDisplay streak={{ ...streak, currentStreak: 31, longestStreak: 40, bankedFreezes: 3 }} />);
+    const badge = screen.getByRole("button", { name: /streak freezes/i });
+    expect(badge.textContent).toBe("🧊3/2");
+    fireEvent.click(badge);
+    expect(screen.getByRole("dialog", { name: "Streak freezes" }).querySelector("strong")?.textContent).toBe(
+      "3 🧊 acquired, over the limit of 2"
+    );
   });
 
   it("shows the current puzzle's total only", () => {
