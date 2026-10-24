@@ -58,7 +58,8 @@ export function SubmitForm({
   submitLabel = "Submit",
 }: Props) {
   const [value, setValue] = useState("");
-  const idleHint = useIdleHint({ drop, date, acceptedWords, value, disabled });
+  const [focused, setFocused] = useState(false);
+  const idleHint = useIdleHint({ drop, date, acceptedWords, value, disabled, focused });
   const rowRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fieldRef = useRef<HTMLSpanElement>(null);
@@ -178,6 +179,8 @@ export function SubmitForm({
             value={value}
             disabled={disabled}
             onChange={(e) => setValue(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
             placeholder={disabled ? "" : (idleHint.placeholder ?? "type a word…")}
             maxLength={30}
           />

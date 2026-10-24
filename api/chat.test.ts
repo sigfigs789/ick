@@ -217,6 +217,14 @@ describe("api/chat POST", () => {
     });
   });
 
+  it("refuses a banned player", async () => {
+    withEnv();
+    stubFetch([{ status: "banned", id: null, handle: null, body: null, created_at: null }]);
+    const response = await handler(post({ playerId: PLAYER, body: "hello", date: "2026-09-29" }));
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ ok: false, reason: "banned" });
+  });
+
   it("refuses profanity before touching the database", async () => {
     withEnv();
     const fetchMock = stubFetch();
@@ -449,6 +457,50 @@ describe("api/chat POST react", () => {
     expect((await handler(react({ on: "yes" }))).status).toBe(400);
     expect((await handler(react({}, "2026-06-30"))).status).toBe(400);
     expect((await handler(post({ playerId: PLAYER, react: "🔥" }))).status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("api/chat POST report", () => {
+  const report = (overrides: Record<string, unknown> = {}, date: unknown = "2026-09-29") =>
+    post({ playerId: PLAYER, date, report: { id: 7, ...overrides } });
+
+  it("flags the line for the reporter in that room", async () => {
+    withEnv();
+    const fetchMock = stubFetch([{ status: "ok" }]);
+    const response = await handler(report());
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true });
+    const call = rpcCall(fetchMock);
+    expect(call.url).toContain("/rpc/chat_flag");
+    expect(call.args).toEqual({ p_player: PLAYER, p_date: "2026-09-29", p_message: 7 });
+  });
+
+  it("passes the database's refusals through", async () => {
+    withEnv();
+    stubFetch([{ status: "missing" }]);
+    expect((await handler(report())).status).toBe(404);
+    stubFetch([{ status: "rate-limited" }]);
+    expect((await handler(report())).status).toBe(429);
+  });
+
+  it("names an unapplied migration rather than a passing outage", async () => {
+    withEnv();
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    stubFetch(undefined, 404);
+    const response = await handler(report());
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ ok: false, reason: "not-migrated" });
+    expect(String(logged.mock.calls[0]?.[0])).toContain("20261105000000_chat_flags.sql");
+  });
+
+  it("refuses a bad line and a bad room before touching the database", async () => {
+    withEnv();
+    const fetchMock = stubFetch();
+    expect((await handler(report({ id: "7" }))).status).toBe(400);
+    expect((await handler(report({ id: 0 }))).status).toBe(400);
+    expect((await handler(report({}, "2026-06-30"))).status).toBe(400);
+    expect((await handler(post({ playerId: PLAYER, report: 7 }))).status).toBe(400);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

@@ -794,7 +794,7 @@ export function trackChatMessageSent(viewId: string, length: number) {
 /** A send the room refused, and why -- the bubble's own check or the server's. */
 export function trackChatMessageBlocked(
   viewId: string,
-  reason: "too-long" | "profane" | "rate-limited" | "unavailable",
+  reason: "too-long" | "profane" | "rate-limited" | "banned" | "unavailable",
 ) {
   send("chat_message_blocked", { view_id: viewId, reason, puzzle_date: todayDateString() });
 }

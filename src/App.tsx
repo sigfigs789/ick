@@ -81,7 +81,7 @@ function ArchiveNote({
   if (owed.includes(date)) {
     return (
       <p className="archive-note archive-note--catch-up">
-        ⚠️ Bank a word on this puzzle to make up the day you missed and save your streak.
+        ⚠️ Make a guess on this puzzle to make up the day you missed and save your streak.
       </p>
     );
   }

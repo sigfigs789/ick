@@ -89,7 +89,15 @@ export function SubmitForm({
   const theme = useTheme();
   const [value, setValue] = useState('');
   const [focused, setFocused] = useState(false);
-  const idlePlaceholder = useIdleHint({ drop, date, acceptedWords, value, disabled, covered });
+  const idlePlaceholder = useIdleHint({
+    drop,
+    date,
+    acceptedWords,
+    value,
+    disabled,
+    covered,
+    focused,
+  });
   const inputRef = useRef<TextInput>(null);
   // Play was pressed before the word data arrived: the button spins until it
   // does, then sends whatever is in the box.

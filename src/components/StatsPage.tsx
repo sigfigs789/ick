@@ -3,7 +3,7 @@ import { ACHIEVEMENT_GROUPS, syncAchievements, type AchievementStatus } from "..
 import { formatDateLabel } from "../game/date";
 import { formatTotal } from "../game/dictionary";
 import { MODE_LABELS } from "../game/mode";
-import { CURRENT_TIERS, loadStats, type PlayerStats } from "../game/stats";
+import { CURRENT_TIERS, loadStats, TOP_WORDS, type PlayerStats } from "../game/stats";
 import { loadStreak } from "../game/storage";
 import type { Rarity } from "../game/types";
 import { navigate } from "../routes";
@@ -118,15 +118,17 @@ function RarityBars({ byRarity }: { byRarity: PlayerStats["byRarity"] }) {
 }
 
 function BestWords({ stats }: { stats: PlayerStats }) {
+  const [shown, setShown] = useState(stats.bestWordsShown);
   // Empty when every word found was on a legacy-scored puzzle (see game/stats.ts).
   if (stats.topWords.length === 0) return null;
+  const total = stats.topWords.length;
   return (
     <section className="stats__section" aria-labelledby="stats-best">
       <h2 className="stats__heading" id="stats-best">
         Best words
       </h2>
       <ol className="stats__words">
-        {stats.topWords.map((word) => (
+        {stats.topWords.slice(0, shown).map((word) => (
           <li className="stats__word" key={`${word.word}-${word.date}`}>
             <span className="stats__word-text">{word.word}</span>
             <span className="stats__word-date">
@@ -137,6 +139,27 @@ function BestWords({ stats }: { stats: PlayerStats }) {
           </li>
         ))}
       </ol>
+      {(shown < total || shown > stats.bestWordsShown) && (
+        <div className="stats__more">
+          {shown < total && (
+            <button
+              type="button"
+              className="stats__link"
+              onClick={() => setShown((n) => Math.min(total, n + TOP_WORDS))}
+            >
+              Show more
+            </button>
+          )}
+          {shown > stats.bestWordsShown && (
+            <button type="button" className="stats__link" onClick={() => setShown(stats.bestWordsShown)}>
+              Show fewer
+            </button>
+          )}
+          <span className="stats__more-count">
+            {shown} of {total}
+          </span>
+        </div>
+      )}
     </section>
   );
 }

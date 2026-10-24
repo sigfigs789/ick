@@ -30,8 +30,15 @@ export const CURRENT_TIERS: readonly Rarity[] = [
   "Common",
 ];
 
-/** How many of the best words the page lists. */
-export const TOP_WORDS = 5;
+/**
+ * How many of the best words the page lists at first, and how many more each
+ * "Show more" adds. Every Mythic-or-better word shows at first, though, even
+ * past this many (see `bestWordsShown`).
+ */
+export const TOP_WORDS = 15;
+
+/** The displayed score a word needs to always show: Mythic and above. */
+const ALWAYS_SHOWN_SCORE = 9.5;
 
 export interface StatWord {
   word: string;
@@ -63,8 +70,13 @@ export interface PlayerStats {
   longestStreak: number;
   /** Words found per tier. Quotidian only appears when an old puzzle has one. */
   byRarity: Partial<Record<Rarity, number>>;
-  /** The best words, highest score first, each word once. */
+  /** Every scored word, highest score first and newest first on a tie, each word once. */
   topWords: StatWord[];
+  /**
+   * How many of `topWords` to show before the player asks for more:
+   * TOP_WORDS, or every word scoring 9.5 or more where that is longer.
+   */
+  bestWordsShown: number;
   /** The longest word banked, earliest first on a tie. */
   longestWord: StatWord | null;
   /** One row per mode played, Standard first. */
@@ -123,9 +135,15 @@ export function computeStats(
     }
   }
 
-  const topWords = [...best.values()]
-    .sort((a, b) => b.score - a.score || a.zipf - b.zipf || a.date.localeCompare(b.date))
-    .slice(0, TOP_WORDS);
+  const topWords = [...best.values()].sort(
+    (a, b) => b.score - a.score || b.date.localeCompare(a.date) || a.zipf - b.zipf
+  );
+  // Off the score as the badge shows it: Mythic starts at a one-decimal 9.5
+  // (see dictionary.ts), so a raw 9.46 counts.
+  const mythicOrBetter = topWords.filter(
+    (w) => Math.round(w.score * 10 + 1e-6) / 10 >= ALWAYS_SHOWN_SCORE
+  ).length;
+  const bestWordsShown = Math.min(topWords.length, Math.max(TOP_WORDS, mythicOrBetter));
 
   const modes: ModeStats[] = (["standard", "freeform"] as const)
     .filter((mode) => modeTotals.has(mode))
@@ -147,6 +165,7 @@ export function computeStats(
     longestStreak: streak.longestStreak,
     byRarity,
     topWords,
+    bestWordsShown,
     longestWord,
     modes,
   };

@@ -427,9 +427,17 @@ export function useDailyPuzzle() {
   /** Record and report a rejection, and show its message. */
   const rejectWord = useCallback(
     (raw: string, reason: RejectionReason) => {
+      const caughtUpBefore = wasCaughtUp(loadStreak(), viewedDate);
       const updated = recordRejectedAttempt(progressRef.current, raw.trim());
       progressRef.current = updated;
       setProgress(updated);
+      // A rejection can be the day's first submission, which banks the streak,
+      // or make up a day the streak owed.
+      const updatedStreak = loadStreak();
+      setStreak(updatedStreak);
+      if (!caughtUpBefore && wasCaughtUp(updatedStreak, viewedDate)) {
+        trackStreakCaughtUp(viewedDate, updatedStreak);
+      }
       trackRejectedAnswer(viewedDate, drop, raw);
       trackRejectionMessage(viewedDate, reason);
       showFeedback("rejected", REJECTION_MESSAGES[reason], undefined, reason);

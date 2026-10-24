@@ -393,6 +393,29 @@ describe("recordRejectedAttempt", () => {
     expect(p2.rejectedAttempts).toEqual(["xyz"]);
     expect(p2.acceptedWords).toEqual([]);
   });
+
+  it("advances today's streak even though the word was not accepted", () => {
+    recordRejectedAttempt(newProgress("2024-01-01", "str"), "xyz");
+    expect(loadStreak().currentStreak).toBe(1);
+    expect(loadStreak().lastCompletedDate).toBe("2024-01-01");
+
+    setToday("2024-01-02");
+    recordRejectedAttempt(newProgress("2024-01-02", "str"), "qqq");
+    expect(loadStreak().currentStreak).toBe(2);
+    expect(loadStreak().totalCompleted).toBe(0);
+  });
+
+  it("counts the day once, whether the rest of the day's guesses land or miss", () => {
+    let p = recordRejectedAttempt(newProgress("2024-01-01", "str"), "xyz");
+    p = recordRejectedAttempt(p, "qqq");
+    recordAcceptedWord(p, word("strong"));
+    expect(loadStreak().currentStreak).toBe(1);
+  });
+
+  it("does not advance the streak from an archive puzzle", () => {
+    recordRejectedAttempt(newProgress("2023-12-15", "str"), "xyz");
+    expect(loadStreak().currentStreak).toBe(0);
+  });
 });
 
 /**
