@@ -16,7 +16,6 @@
 
 import { rarityScore, totalRarityScore, usesLegacyRarity } from "./dictionary";
 import { type GameMode } from "./mode";
-import { isWinningRarity } from "./rank";
 import { playedHistory } from "./storage";
 import type { DailyProgress, Rarity, StreakState } from "./types";
 
@@ -60,10 +59,6 @@ export interface PlayerStats {
   wordsFound: number;
   /** Finished puzzles (every guess spent, or locked in). */
   finished: number;
-  /** Finished puzzles with a Rare-or-better word. */
-  won: number;
-  /** `won / finished`, or null before anything is finished. */
-  winRate: number | null;
   currentStreak: number;
   longestStreak: number;
   /** Words found per tier. Quotidian only appears when an old puzzle has one. */
@@ -102,7 +97,6 @@ export function computeStats(
   let longestWord: StatWord | null = null;
   let wordsFound = 0;
   let finished = 0;
-  let won = 0;
   const modeTotals = new Map<GameMode, { puzzles: number; totals: number[] }>();
 
   for (const progress of history) {
@@ -114,7 +108,6 @@ export function computeStats(
     forMode.puzzles++;
     if (progress.completed) {
       finished++;
-      if (progress.acceptedWords.some((word) => isWinningRarity(word.rarity))) won++;
       if (scored) forMode.totals.push(totalRarityScore(progress.acceptedWords, progress.date));
     }
     modeTotals.set(mode, forMode);
@@ -150,8 +143,6 @@ export function computeStats(
     daysPlayed: days.size,
     wordsFound,
     finished,
-    won,
-    winRate: finished ? won / finished : null,
     currentStreak: streak.currentStreak,
     longestStreak: streak.longestStreak,
     byRarity,

@@ -362,7 +362,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     group: "Style",
     icon: "⏱️",
     title: "Down to the wire",
-    description: "Win with your last guess, after every other missed.",
+    description: "Find a Rare or better word with your last guess, after every other fell short.",
     check: firstPuzzle(downToTheWire),
   },
   {
@@ -370,7 +370,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     group: "Style",
     icon: "🔀",
     title: "Both ways",
-    description: "Win the same puzzle in Standard and Freeform.",
+    description: "Find a Rare or better word in the same puzzle in Standard and Freeform.",
     check: bothWays,
   },
 ];
