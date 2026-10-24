@@ -199,6 +199,40 @@ function expand(source: string): { words: string; offsets: Int32Array } {
   return { words: out.join("\n"), offsets };
 }
 
+/**
+ * The sources whose presence means a corpus measured the word's frequency --
+ * the four the build's frequency waterfall reads (FREQUENCY_SOURCES in
+ * build-word-corpus.py).
+ */
+const FREQUENCY_SOURCE_MASK =
+  sourceBit("wordfreq") | sourceBit("norvig") | sourceBit("google_books") | sourceBit("datamuse");
+
+/**
+ * Spread zipf-attested.bin back out to one byte per word.
+ *
+ * The file holds a byte only for the words some corpus measured, in list order,
+ * and leaves out the 0 every other word would carry -- about 700k of 1.2M, and
+ * a third of what the full column cost to download. A word's byte is the next
+ * one along whenever sources.bin says it was measured, which the build checks
+ * for every word. Undefined when the counts disagree, so the caller refuses the
+ * corpus rather than read every byte after the first gap for the wrong word.
+ */
+function expandZipf(
+  attested: Uint8Array,
+  sources: Uint8Array,
+  count: number
+): Uint8Array | undefined {
+  if (sources.length !== count) return undefined;
+  const zipf = new Uint8Array(count);
+  let next = 0;
+  for (let i = 0; i < count; i++) {
+    if (!(sources[i] & FREQUENCY_SOURCE_MASK)) continue;
+    if (next >= attested.length) return undefined;
+    zipf[i] = attested[next++];
+  }
+  return next === attested.length ? zipf : undefined;
+}
+
 /** The word at `index`, sliced out of the flat string. */
 function wordAt(data: Loaded, index: number): string {
   const start = data.offsets[index];
@@ -268,7 +302,7 @@ export function loadCorpus(): Promise<boolean> {
         fetch(`${CORPUS_BASE}/words.txt${v}`),
         fetch(`${CORPUS_BASE}/tags.bin${v}`),
         fetch(`${CORPUS_BASE}/sources.bin${v}`),
-        fetch(`${CORPUS_BASE}/zipf.bin${v}`),
+        fetch(`${CORPUS_BASE}/zipf-attested.bin${v}`),
       ]);
       if (![metaRes, wordsRes, tagsRes, sourcesRes, zipfRes].every((r) => r.ok)) return false;
 
@@ -277,11 +311,13 @@ export function loadCorpus(): Promise<boolean> {
         tagOrder: string[];
         sourceOrder: string[];
         zipfScale: number;
+        attested: number;
       };
       const { words, offsets } = expand(await wordsRes.text());
       const tags = new Uint8Array(await tagsRes.arrayBuffer());
       const sources = new Uint8Array(await sourcesRes.arrayBuffer());
-      const zipf = new Uint8Array(await zipfRes.arrayBuffer());
+      const zipf = expandZipf(new Uint8Array(await zipfRes.arrayBuffer()), sources, meta.count);
+      if (zipf === undefined || zipf.length === 0 || meta.attested === undefined) return false;
 
       // Refuse a corpus whose pieces disagree. Every one of these would
       // otherwise fail silently and hand out wrong tags rather than no tags,

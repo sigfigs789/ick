@@ -70,7 +70,7 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
   all of these and refuses only misspellings and non-words. Hand-reviewed
   verdicts live in `src/data/word-rejections.json`.
 - **Rarity** (`src/game/dictionary.ts`, `src/data/rarity.json`, the corpus's
-  `zipf.bin`): a waterfall Zipf frequency, precomputed offline. It uses
+  `zipf-attested.bin`): a waterfall Zipf frequency, precomputed offline. It uses
   [wordfreq](https://github.com/rspeer/wordfreq) first, then Norvig's web
   counts, then Google Books, then Datamuse (`scripts/frequency.py`). A
   wordfreq `0.0` is not a measurement and falls through to the next source. A

@@ -36,11 +36,11 @@ const TAGS: Record<string, number> = {
 };
 const SOURCES: Record<string, number> = {
   prosery: sourceBit("wiktionary"),
-  sermonicky: sourceBit("wiktionary"),
+  sermonicky: sourceBit("wiktionary") | sourceBit("wordfreq"),
   sermonics: sourceBit("wiktionary") | sourceBit("norvig"),
   serpentivorous: sourceBit("wiktionary") | sourceBit("macos_dict"),
   sersed: sourceBit("wiktionary"),
-  sersion: sourceBit("wiktionary"),
+  sersion: sourceBit("wiktionary") | sourceBit("wordfreq"),
   serxyz: sourceBit("norvig"), // counted by a frequency corpus, described by nobody
 };
 const ZIPF: Record<string, number> = {
@@ -52,6 +52,14 @@ const ZIPF: Record<string, number> = {
   sersion: 64,
   serxyz: 40,
 };
+
+// The words zipf-attested.bin holds a byte for: those a frequency source
+// measured, which the build requires to be exactly those with a Zipf.
+const ATTESTED = WORDS.filter(
+  (w) =>
+    SOURCES[w] &
+    (sourceBit("wordfreq") | sourceBit("norvig") | sourceBit("google_books") | sourceBit("datamuse"))
+);
 
 function frontCode(words: string[]): string {
   let previous = "";
@@ -80,13 +88,17 @@ beforeEach(async () => {
                 tagOrder: [...CORPUS_TAGS],
                 sourceOrder: [...CORPUS_SOURCES],
                 zipfScale: 32,
+                attested: ATTESTED.length,
               }),
           }
         : url.includes("words.txt")
           ? { text: () => Promise.resolve(frontCode(WORDS)) }
           : {
               arrayBuffer: () => {
-                const map = url.includes("tags.bin") ? TAGS : url.includes("sources.bin") ? SOURCES : ZIPF;
+                if (url.includes("zipf-attested.bin")) {
+                  return Promise.resolve(new Uint8Array(ATTESTED.map((w) => ZIPF[w])).buffer);
+                }
+                const map = url.includes("tags.bin") ? TAGS : SOURCES;
                 return Promise.resolve(new Uint8Array(WORDS.map((w) => map[w])).buffer);
               },
             };

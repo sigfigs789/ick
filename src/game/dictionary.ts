@@ -5,16 +5,7 @@ import {
   freeformForDate,
   type GameMode,
 } from "./mode";
-import dictionaryWords from "../data/dictionary.json";
-import rarityData from "../data/rarity.json";
-import scoreOverrideData from "../data/score-overrides.json";
-import boundResidueData from "../data/bound-residues.json";
-import measurementUnitData from "../data/measurement-units.json";
-import wordRejectionData from "../data/word-rejections.json";
-import sameRootPinData from "../data/same-root-pins.json";
-import derivedRejectionData from "../data/derived-rejections.json";
-import revealWordData from "../data/reveal-words.json";
-import revealDefinitionData from "../data/reveal-definitions.json";
+import rarityScale from "../data/rarity-scale.json";
 import {
   baseForm,
   boundBaseCandidates,
@@ -43,8 +34,11 @@ import type { AcceptedWord, Rarity, RarityInfo, RejectionReason } from "./types"
  * Kept as its own dataset (see scripts/generate-data.py) so it can be
  * hand-edited independently of frequency data.
  */
-const WORDS: readonly string[] = dictionaryWords as string[];
-const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, i]));
+//
+// Fetched after the app starts, with the rest of the deferred scoring data
+// (see `scoringReady`), so both are empty until then.
+let WORDS: readonly string[] = [];
+let WORD_INDEX: ReadonlyMap<string, number> = new Map();
 
 /**
  * Rarity scoring has evolved across two cutovers, each date-gated so past
@@ -708,16 +702,14 @@ export function topRankForScore(score: number): Extract<Rarity, "Legend" | "Myth
 // -- Current frequency data (see scripts/generate-data.py) ------------------
 // Stored as hundredths of a Zipf value (integers) so the compressed deep-tail
 // band still has the resolution for two-decimal scores. Values can be negative
-// for the rarest words. Index-aligned with dictionary.json.
-const zipfHundredths: number[] = rarityData.zipfHundredths;
-// Plain loop rather than Math.min/max(...) -- spreading ~200k elements as call
-// arguments risks blowing the stack on some engines (e.g. Safari).
-let maxZipfHundredths = -Infinity;
-let minZipfHundredths = Infinity;
-for (const z of zipfHundredths) {
-  if (z > maxZipfHundredths) maxZipfHundredths = z;
-  if (z < minZipfHundredths) minZipfHundredths = z;
-}
+// for the rarest words. Index-aligned with dictionary.json, and deferred with it
+// (see `scoringReady`).
+let zipfHundredths: readonly number[] = [];
+// The scale's two ends are read off rarity-scale.json instead, which
+// generate-data.py writes beside rarity.json: a saved score has to show before
+// the deferred data is in, and the scale is all showing one takes. A test
+// (rarity-scale.test.ts) keeps the two files in step.
+const { maxZipfHundredths, minZipfHundredths } = rarityScale;
 const MAX_ZIPF = maxZipfHundredths / 100;
 // The rarest Zipf in the data (the sentinel assigned to words no corpus
 // attests). The 2026-08-15 system anchored the top of its deep-tail band here;
@@ -813,9 +805,7 @@ interface ScoreOverride {
  * scoring a word as its base is not a claim that a player may only have one of
  * them.
  */
-const SCORE_OVERRIDES: ReadonlyMap<string, ScoreOverride> = new Map(
-  Object.entries(scoreOverrideData as Record<string, ScoreOverride>)
-);
+let SCORE_OVERRIDES: ReadonlyMap<string, ScoreOverride> = new Map();
 
 /**
  * The curated base for `word` under `date`'s system, or undefined when no
@@ -1070,12 +1060,14 @@ let FOLD_REVIEW_VERDICTS: ReadonlyMap<string, FoldReviewVerdict> = new Map();
 
 // -- Scoring data fetched after the app starts ------------------------------
 /*
- * Four of the word-data files are fetched after the app starts rather than
- * with it: Claude's estimated Zipf (src/data/estimated-zipf/, about 1.9 MB
- * gzipped -- on its own, half of what the first load used to be), the fold
- * exemptions, the reviewed fold verdicts, and the pre-NEW_SCORING_START legacy
- * rarity. None is needed to draw a puzzle, so a new player sees the board
- * while they arrive.
+ * Every word-data file but the drops and the score scale is fetched after the
+ * app starts rather than with it: the curated dictionary and its frequencies,
+ * Claude's estimated Zipf (src/data/estimated-zipf/), the curated overrides,
+ * pins and rejections, the fold exemptions and reviewed verdicts, the reveal
+ * words and definitions, and the pre-NEW_SCORING_START legacy rarity. Together
+ * they were about 3.5 MB gzipped, nearly all of the first load. None is
+ * needed to draw a puzzle or show a saved score, so a new player sees the
+ * board while they arrive, and the Play button waits for them.
  *
  * But every one of them changes what a word scores, so -- like the rejection
  * metadata in submit.ts -- nothing may score a word before they are in. A
@@ -1085,8 +1077,8 @@ let FOLD_REVIEW_VERDICTS: ReadonlyMap<string, FoldReviewVerdict> = new Map();
  * on `useWordDataLoaded` (hooks/). Scripts and the API wait on
  * `scoringReady()` before they score anything.
  *
- * The first three go out as soon as this module runs, by which point the
- * critical chunks are in. The legacy rarity only prices an archived puzzle from
+ * All but the legacy rarity go out as soon as this module runs, by which point
+ * the critical chunks are in. The legacy rarity only prices an archived puzzle from
  * before NEW_SCORING_START, so it is asked for only when one is.
  */
 
@@ -1123,8 +1115,55 @@ function loadRecentScoringData(): Promise<void> {
     importData(() => import("../data/estimated-zipf")),
     importData(() => import("../data/fold-exemptions.json")),
     importData(() => import("../data/fold-review-verdicts.json")),
+    importData(() => import("../data/dictionary.json")),
+    importData(() => import("../data/rarity.json")),
+    importData(() => import("../data/score-overrides.json")),
+    importData(() => import("../data/bound-residues.json")),
+    importData(() => import("../data/measurement-units.json")),
+    importData(() => import("../data/word-rejections.json")),
+    importData(() => import("../data/same-root-pins.json")),
+    importData(() => import("../data/derived-rejections.json")),
+    importData(() => import("../data/reveal-words.json")),
+    importData(() => import("../data/reveal-definitions.json")),
   ]).then(
-    ([estimates, exemptions, verdicts]) => {
+    ([
+      estimates,
+      exemptions,
+      verdicts,
+      dictionary,
+      rarity,
+      overrides,
+      boundResidues,
+      measurementUnits,
+      wordRejections,
+      sameRootPins,
+      derivedRejections,
+      revealWords,
+      revealDefinitions,
+    ]) => {
+      WORDS = dictionary.default as string[];
+      WORD_INDEX = new Map(WORDS.map((w, i) => [w, i]));
+      zipfHundredths = rarity.default.zipfHundredths;
+      SCORE_OVERRIDES = new Map(
+        Object.entries(overrides.default as Record<string, ScoreOverride>)
+      );
+      BOUND_RESIDUES = new Map(
+        Object.entries(boundResidues.default as Record<string, BoundResidue>)
+      );
+      MEASUREMENT_UNITS = new Map(
+        Object.entries(measurementUnits.default as Record<string, MeasurementUnit>)
+      );
+      WORD_REJECTIONS = new Map(
+        Object.entries(wordRejections.default as Record<string, WordRejection>)
+      );
+      SAME_ROOT_PINS = new Map(
+        Object.entries(sameRootPins.default as Record<string, SameRootPin>)
+      );
+      DERIVED_REJECTIONS = indexDerivedRejections(
+        derivedRejections.default as Record<string, Record<string, readonly string[]>>
+      );
+      REVEAL_WORDS = revealWords.default.words;
+      REVEAL_DEFINITIONS = revealDefinitions.default as Record<string, string>;
       // Through `unknown`: once two batches estimate different words, the
       // JSON's inferred type gives each batch the other's words as
       // `?: undefined`, and a direct cast to Record<string, number> no longer
@@ -1250,9 +1289,7 @@ interface BoundResidue {
  * the scores of the words that folded through it, so an archived puzzle must not
  * see a residue reviewed after it was played.
  */
-const BOUND_RESIDUES: ReadonlyMap<string, BoundResidue> = new Map(
-  Object.entries(boundResidueData as Record<string, BoundResidue>)
-);
+let BOUND_RESIDUES: ReadonlyMap<string, BoundResidue> = new Map();
 
 /** Whether `residue` is a bound form rather than a word, under `date`'s puzzle. */
 function boundPrefixResidue(residue: string, date?: string): boolean {
@@ -1319,9 +1356,7 @@ interface MeasurementUnit {
  * everything folding through it, so an archived puzzle must not see a unit
  * reviewed after it was played.
  */
-const MEASUREMENT_UNITS: ReadonlyMap<string, MeasurementUnit> = new Map(
-  Object.entries(measurementUnitData as Record<string, MeasurementUnit>)
-);
+let MEASUREMENT_UNITS: ReadonlyMap<string, MeasurementUnit> = new Map();
 
 /** Whether `residue` is a reviewed unit of measure, under `date`'s puzzle. */
 function measurementUnit(residue: string, date?: string): boolean {
@@ -2490,9 +2525,7 @@ function waivedRejectionsFor(date?: string): ReadonlySet<RejectionReason> {
  * reviewed for onward, so an archived puzzle still validates the words it
  * validated on the day it was played.
  */
-const WORD_REJECTIONS: ReadonlyMap<string, WordRejection> = new Map(
-  Object.entries(wordRejectionData as Record<string, WordRejection>)
-);
+let WORD_REJECTIONS: ReadonlyMap<string, WordRejection> = new Map();
 
 /**
  * Every curated word that carries a rejection reason, grouped by the date its
@@ -2524,20 +2557,25 @@ const WORD_REJECTIONS: ReadonlyMap<string, WordRejection> = new Map(
  * playable despite its label goes in scripts/playable-exemptions.txt, which keeps
  * it out of this file for good.
  */
-const DERIVED_REJECTIONS: ReadonlyMap<string, { reason: RejectionReason; since: string }> =
-  new Map(
-    Object.entries(derivedRejectionData as Record<string, Record<string, readonly string[]>>)
-      .flatMap(([since, byReason]) =>
-        Object.entries(byReason).flatMap(([reason, words]) =>
-          words.map(
-            (word): [string, { reason: RejectionReason; since: string }] => [
-              word,
-              { reason: reason as RejectionReason, since },
-            ]
-          )
+let DERIVED_REJECTIONS: ReadonlyMap<string, { reason: RejectionReason; since: string }> =
+  new Map();
+
+function indexDerivedRejections(
+  derivedRejectionData: Record<string, Record<string, readonly string[]>>
+): ReadonlyMap<string, { reason: RejectionReason; since: string }> {
+  return new Map(
+    Object.entries(derivedRejectionData).flatMap(([since, byReason]) =>
+      Object.entries(byReason).flatMap(([reason, words]) =>
+        words.map(
+          (word): [string, { reason: RejectionReason; since: string }] => [
+            word,
+            { reason: reason as RejectionReason, since },
+          ]
         )
       )
+    )
   );
+}
 
 /**
  * The reason `word` is unplayable under `date`'s puzzle, or undefined when no
@@ -2827,9 +2865,7 @@ interface SameRootPin {
  * a player who found one may still play the other. Reading the overrides as
  * identities would turn every reviewed demotion into a refusal.
  */
-const SAME_ROOT_PINS: ReadonlyMap<string, SameRootPin> = new Map(
-  Object.entries(sameRootPinData as Record<string, SameRootPin>)
-);
+let SAME_ROOT_PINS: ReadonlyMap<string, SameRootPin> = new Map();
 
 /** The reviewed root for `word` under `date`'s puzzle, if one is pinned. */
 export function pinnedSameRoot(word: string, date?: string): string | undefined {
@@ -3142,7 +3178,7 @@ const LEARNABLE_MAX_SCORE = 9.9;
  * score, so growing this list may change what an archived puzzle reveals, and
  * that costs the player nothing.
  */
-const REVEAL_WORDS: readonly string[] = revealWordData.words;
+let REVEAL_WORDS: readonly string[] = [];
 
 /**
  * Glosses for the reviewed words, written for the reveal rather than lifted
@@ -3159,7 +3195,7 @@ const REVEAL_WORDS: readonly string[] = revealWordData.words;
  *
  * Every reviewed word has one, and a test holds the two files to that.
  */
-const REVEAL_DEFINITIONS: Readonly<Record<string, string>> = revealDefinitionData;
+let REVEAL_DEFINITIONS: Readonly<Record<string, string>> = {};
 
 /** The one-line gloss for a reviewed word, or undefined for anything else. */
 export function definitionFor(word: string): string | undefined {

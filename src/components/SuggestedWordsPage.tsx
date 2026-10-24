@@ -3,6 +3,7 @@ import { MarkBox, MarkToggle, ReviewPage } from "./ReviewPage";
 import { formatWhen, useMarks, useReviewList } from "./reviewList";
 import { fetchSuggestedWords, hasReviewKey } from "../game/review";
 import { curatedRejection, formatRarityScore } from "../game/dictionary";
+import { useWordDataLoaded } from "../hooks/useWordDataLoaded";
 
 /**
  * The review queue, as a page at /suggested-words.
@@ -36,6 +37,9 @@ export function SuggestedWordsPage() {
   const { rows, state, refreshing, refresh, retry } = useReviewList(load);
   const { markFor, cycle, failed } = useMarks("suggested-words", rows);
   const curating = hasReviewKey();
+  // Read only to draw the rows again once the curated rejections are in (see
+  // `rejectionReason`), which arrive after the page does.
+  useWordDataLoaded();
 
   return (
     <ReviewPage

@@ -19,7 +19,16 @@ Outputs (public/corpus/, served as static assets and fetched at runtime):
               single char (chr(48+n)) followed by the remaining suffix
   tags.bin    one byte per word, bit flags indexed by TAG_ORDER
   sources.bin one byte per word, bit flags indexed by SOURCE_ORDER
-  zipf.bin    one byte per word: round(zipf * 32), 0 meaning no corpus attests it
+  zipf-attested.bin
+              one byte per *attested* word, in list order: round(zipf * 32). A
+              word is attested exactly when sources.bin carries a frequency
+              source for it (FREQUENCY_SOURCES), so the 700k zeros the full
+              column spent on the rest are left out; the game expands it.
+  zipf.bin    the same column with one byte per word, 0 meaning no corpus
+              attests it. Kept for the store builds already installed, which
+              fetch it from the website and cannot read the new file; the
+              website reads zipf-attested.bin. Drop it once every store build
+              in use reads the new one.
   meta.json   counts, tag and source order, and the zipf scale, so the client
               decodes without hardcoding anything
 
@@ -81,6 +90,11 @@ SOURCE_ORDER = [
     "curated",
 ]
 ZIPF_SCALE = 32  # zipf.bin stores round(zipf * 32); 0 means unattested
+
+# The sources whose presence means the frequency waterfall has a number for the
+# word -- the four corpora FrequencyWaterfall reads. zipf-attested.bin relies on
+# it to know which words it holds a byte for, and the build checks it.
+FREQUENCY_SOURCES = ("wordfreq", "norvig", "google_books", "datamuse")
 
 NAME_POS = {"name"}
 ABBR_POS = {"abbrev"}
@@ -302,11 +316,31 @@ def main() -> None:
         "[\n" + ",\n".join(json.dumps(word) for word in blocklist) + "\n]\n"
     )
 
+    # zipf-attested.bin has no index of its own: the game finds a word's byte
+    # by counting the words before it that carry a frequency source. So the two
+    # must agree exactly, or every byte after the first disagreement is read
+    # for the wrong word.
+    frequency_mask = 0
+    for name in FREQUENCY_SOURCES:
+        frequency_mask |= 1 << SOURCE_ORDER.index(name)
+    disagree = [
+        word
+        for word in words
+        if bool(source_bits[index[word]] & frequency_mask) != (zipf_bytes[index[word]] != 0)
+    ]
+    if disagree:
+        raise SystemExit(
+            f"{len(disagree)} words disagree between their frequency sources and their Zipf "
+            f"(first: {disagree[:5]}); zipf-attested.bin cannot be written"
+        )
+    attested_zipf = bytes(b for b in zipf_bytes if b != 0)
+
     args.out_dir.mkdir(parents=True, exist_ok=True)
     (args.out_dir / "words.txt").write_text(front_code(words) + "\n")
     (args.out_dir / "tags.bin").write_bytes(bytes(tag_bits))
     (args.out_dir / "sources.bin").write_bytes(bytes(source_bits))
     (args.out_dir / "zipf.bin").write_bytes(bytes(zipf_bytes))
+    (args.out_dir / "zipf-attested.bin").write_bytes(attested_zipf)
     (args.out_dir / "meta.json").write_text(
         json.dumps(
             {

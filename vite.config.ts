@@ -46,11 +46,11 @@ if (process.env.VERCEL_ENV === 'preview') process.env.VITE_DEV_TOOLS = '1'
  * its file names. Keyed by APP_VERSION instead, it was downloaded afresh on
  * every release -- near daily -- though it changes a few times a year. Keyed by
  * its own contents, a returning player keeps it until it actually changes, and
- * the five files still move together: a rebuilt corpus changes the key on all
+ * the files the client fetches still move together: a rebuilt corpus changes the key on all
  * of them at once. Computed here, from the files being deployed, so it cannot
  * drift from them the way a committed hash could.
  */
-const CORPUS_FILES = ['meta.json', 'words.txt', 'tags.bin', 'sources.bin', 'zipf.bin']
+const CORPUS_FILES = ['meta.json', 'words.txt', 'tags.bin', 'sources.bin', 'zipf-attested.bin']
 const corpusHash = createHash('sha256')
 for (const name of CORPUS_FILES) corpusHash.update(readFileSync(`public/corpus/${name}`))
 process.env.VITE_CORPUS_VERSION = corpusHash.digest('hex').slice(0, 16)

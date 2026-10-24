@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import {
   FOLD_BATCH_SIZE,
   foldBatch,
@@ -51,8 +51,13 @@ describe("foldCandidates", () => {
   // curated list and this test needs no 3.6MB download to say anything. What it
   // checks is the shape of a row, not which words are in it: the fold itself is
   // pinned by inflection-scoring.test.ts, at length.
+  // Worked out once the setup has the deferred scoring data in, not while the
+  // file is collected.
   const date = "2026-09-01";
-  const found = foldCandidates([date]);
+  let found: ReturnType<typeof foldCandidates> = [];
+  beforeAll(() => {
+    found = foldCandidates([date]);
+  });
 
   it("reports each fold as the pair of words and the pair of scores", () => {
     expect(found.length).toBeGreaterThan(0);
