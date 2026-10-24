@@ -129,9 +129,9 @@ feedback box inside the app is the route that exists.
 
 ## Age rating
 
-Expect it to rise from **4+** with the first build that has the chat. Until then it was 4+,
-because the only thing one player could put on another's screen was a word
-from the curated dictionary. The chat changes that: players type free text that
+Before 1.57 the only thing one player could put on another's screen was a
+word from the curated dictionary, so the answers about user content were all
+"No". The chat changes that: players type free text that
 other players read.
 
 In App Store Connect → App Information → Age Rating, change only these answers:
@@ -143,8 +143,9 @@ In App Store Connect → App Information → Age Rating, change only these answe
 | Parental Controls, Age Assurance | **No** |
 | Everything else | unchanged ("None" / "No") |
 
-Apple's calculator sets the rating from those answers. Take whatever it gives
-rather than overriding it, and update this line with the result.
+Apple's calculator sets the rating from those answers; take whatever it gives
+rather than overriding it. Set on 1.57 through the API on 2026-10-24, and it
+still calculated **4+**.
 
 What guideline 1.2 asks of an app with user-generated content, and where each
 lives:
