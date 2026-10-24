@@ -1,7 +1,7 @@
 import type { Day, Rate, Report, Week } from "./report";
 
 /**
- * The scorecard: six categories, each with the three bands a small daily
+ * The scorecard: seven categories, each with the three bands a small daily
  * browser word game is held to, and where WordInk stands.
  *
  * The bands are as given, and leave gaps: D1 of 20% is past going nowhere
@@ -11,7 +11,8 @@ import type { Day, Rate, Report, Week } from "./report";
  * sharing, and "flat" growth -- the numbers are this page's, and the row says
  * what they are.
  *
- * Every row is over players, the visitors who banked a word.
+ * Every row but activation is over players, the visitors who banked a word.
+ * Activation is the step before: of first-time visitors, how many became one.
  */
 
 export type Standing = "nowhere" | "between" | "promising" | "great";
@@ -46,6 +47,8 @@ export interface Marks {
 
 export const D1_MARKS: Marks = { nowhere: 0.15, promising: 0.25, great: 0.4 };
 export const D7_MARKS: Marks = { nowhere: 0.05, promising: 0.1, great: 0.2 };
+/** Activation is not in the table, so these marks are the page's. */
+export const ACTIVATION_MARKS: Marks = { nowhere: 0.3, promising: 0.4, great: 0.6 };
 /** Sharing has no great mark of its own: great is consistent sharing that also brings players. */
 export const SHARE_MARKS: Marks = { nowhere: 0.05, promising: 0.1, great: Infinity };
 
@@ -145,6 +148,20 @@ export function scorecard(report: Report): Row[] {
   const reg = lastWeek ? regulars(lastWeek) : null;
 
   return [
+    {
+      metric: "Activation",
+      bands: { nowhere: "Under 30%", promising: "40–59%", great: "60%+" },
+      value: w.firstVisits >= LEAST ? percent(w.firstVisitPlayed / w.firstVisits) : null,
+      points: w.firstVisits >= LEAST ? whole(w.firstVisitPlayed / w.firstVisits) : null,
+      standing: w.firstVisits >= LEAST ? stand(w.firstVisitPlayed / w.firstVisits, ACTIVATION_MARKS) : null,
+      detail:
+        w.firstVisits >= LEAST
+          ? `${count(w.firstVisitPlayed)} of ${count(w.firstVisits)} first-time visitors banked a word`
+          : `needs ${LEAST} first-time visitors`,
+      how:
+        "Of first-time visitors in the last 28 days, the share who banked a word. The table has no activation row, so " +
+        "these marks are the page's: under 30% is going nowhere, 40% promising, 60% great.",
+    },
     retentionRow("D1 retention", 1, r.d1.players, { nowhere: "Under 15%", promising: "25–35%", great: "40%+" }, D1_MARKS),
     retentionRow("D7 retention", 7, r.d7.players, { nowhere: "Under 5%", promising: "10–15%", great: "20%+" }, D7_MARKS),
     retentionRow("D30 retention", 30, r.d30.players, { nowhere: "Under 2%", promising: "5–8%", great: "10%+" }, {

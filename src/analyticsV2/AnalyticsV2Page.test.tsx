@@ -51,8 +51,10 @@ describe("AnalyticsV2Page", () => {
     const d7 = screen.getByRole("rowheader", { name: "D7 retention" }).closest("tr")!;
     expect(d7.textContent).toContain("8%");
     expect(d7.textContent).toContain("In between");
-    // Activation: 253 of 978 first-time visitors banked a word.
-    expect(screen.getByText("26%")).toBeTruthy();
+    // Activation: 253 of 978 first-time visitors banked a word, 26%, short of in between (30%).
+    const activation = screen.getByRole("rowheader", { name: "Activation" }).closest("tr")!;
+    expect(activation.textContent).toContain("26%");
+    expect(activation.textContent).toContain("Going nowhere");
   });
 
   it("leaves a visitor rate blank when its window starts before visits were tracked", async () => {

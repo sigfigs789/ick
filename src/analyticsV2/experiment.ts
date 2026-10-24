@@ -7,8 +7,8 @@ import { count, D1_MARKS, D7_MARKS, LEAST, percent, SHARE_MARKS, stand, type Mar
  * every number is defined), and the call it points to: keep the thing tested,
  * or take it out.
  *
- * The call rests on D1, the scorecard's first row and the one a single puzzle's
- * screen can most plausibly move, over everyone drawn. 7-day return breaks a
+ * The call rests on D1, the scorecard's first retention row and the one a
+ * single puzzle's screen can most plausibly move, over everyone drawn. 7-day return breaks a
  * tie; sharing and finishing later puzzles are shown as guardrails, not judged,
  * since a player's days are not independent of each other.
  */
