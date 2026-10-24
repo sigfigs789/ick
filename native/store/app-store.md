@@ -166,6 +166,16 @@ lives:
 The short version: **data is collected and linked to a random identifier this
 install invented for itself; none of it is used for tracking.**
 
+**What App Store Connect actually shows (checked 2026-10-24)** differs from the
+table below, which is the original plan:
+
+| Data type | Linked to you? | Purpose | Tracking |
+| --- | --- | --- | --- |
+| User Content → Gameplay Content | No | Analytics | No |
+| User Content → Other User Content (chat, added 2026-10-24 for 1.57) | Yes | App Functionality | No |
+
+The original plan:
+
 | Question | Answer |
 | --- | --- |
 | Does the app collect data? | Yes |
