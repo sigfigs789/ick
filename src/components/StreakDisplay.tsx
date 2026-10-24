@@ -5,11 +5,10 @@ import { RestDayBadge } from "./RestDayBadge";
 
 /** How saved freezes work, for the freeze badge's popup. */
 const FREEZE_RULES =
-  "🧊 keeps your streak alive for one more day. Earn your first 🧊 on day 3, then one every 7 days played. " +
-  "You can hold 1 🧊 after a 3 day streak and 2 🧊 after 14 days. " +
-  "Lose a streak after reaching 3 days and your next one starts with a 🧊 (once every 30 days). " +
-  "Play 3 days Sunday to Friday to unlock a lazy Saturday: skip it and your streak is safe, no 🧊 spent. " +
-  "It's for that Saturday only.";
+  "🧊 saves your streak on a missed day. Earn one on day 3, then every 7 days. " +
+  "Hold 1, or 2 after a 14 day streak. " +
+  "Lose a 3+ day streak and the next starts with a 🧊 (once a month). " +
+  "Play 3 days by Friday for a lazy Saturday 😴.";
 
 function freezeSummary(banked: number, cap: number): string {
   if (banked === 0) return "No 🧊 acquired";

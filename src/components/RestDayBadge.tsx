@@ -2,8 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 
 /** What the 😴 means, for its hover text and popup. */
 const REST_DAY_RULE =
-  "3 days played this week unlocked a lazy Saturday: skipping it can't break the streak. " +
-  "Today only, so kick back or play and get ahead.";
+  "3 days played this week, so skipping today can't break the streak.";
 
 /**
  * The 😴 shown on a streak taking the Saturday off its week's play earned

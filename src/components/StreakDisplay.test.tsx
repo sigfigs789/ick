@@ -240,7 +240,7 @@ describe("StreakDisplay", () => {
     fireEvent.click(badge);
     const popup = screen.getByRole("dialog", { name: "Streak freezes" });
     expect(popup.querySelector("strong")?.textContent).toBe("1 of 2 🧊 acquired");
-    expect(popup.textContent).toContain("Earn your first 🧊 on day 3, then one every 7 days played.");
+    expect(popup.textContent).toContain("Earn one on day 3, then every 7 days.");
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
