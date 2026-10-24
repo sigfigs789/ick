@@ -453,7 +453,7 @@ interface StreakRow {
    */
   lost?: boolean | null;
   /**
-   * Today is a Saturday rest day and the run has not played it; absent before
+   * Today is a weekend rest day and the run has not played it; absent before
    * 20261103000000.
    */
   resting?: boolean | null;
@@ -474,7 +474,7 @@ interface StreakEntry {
   atRisk?: true;
   /** Sent only when true: the run has ended, and is listed for two days. */
   lost?: true;
-  /** Sent only when true: today is a Saturday the run is skipping, which cannot end it. */
+  /** Sent only when true: today is a weekend day the run is skipping, which cannot end it. */
   resting?: true;
 }
 
@@ -733,7 +733,10 @@ interface StreakReport {
   best: number;
   saved: number;
   lastPlayed: string;
-  /** The Saturday after `lastPlayed`, when that week's play earned it off. */
+  /**
+   * The Saturday ending `lastPlayed`'s week, when that week's play earned its
+   * weekend off: that Saturday and the Sunday after rest.
+   */
   restDay: string | null;
 }
 
@@ -773,16 +776,17 @@ function readStreakReport(raw: unknown): StreakReport | null {
 }
 
 /**
- * The earned Saturday off, or null. It can only be the Saturday that ends
- * `lastPlayed`'s week (see `streakReport` in src/game/streakFreeze.ts);
- * anything else is dropped, and the run is judged as if none was earned.
+ * The Saturday opening the earned weekend off, or null. It can only be the
+ * Saturday that ends `lastPlayed`'s week, which is `lastPlayed` itself when
+ * that is a Saturday, its Sunday still to rest (see `streakReport` in
+ * src/game/streakFreeze.ts); anything else is dropped, and the run is judged
+ * as if none was earned.
  */
 function readRestDay(raw: unknown, lastPlayed: string): string | null {
   // Not `validPuzzleDate`: the Saturday is usually still ahead. Pinning it to
   // the already-checked `lastPlayed` bounds it instead.
   if (typeof raw !== "string" || !DATE_RE.test(raw)) return null;
   const lastPlayedDay = new Date(`${lastPlayed}T00:00:00Z`).getUTCDay();
-  if (lastPlayedDay === 6) return null;
   const saturday = new Date(Date.parse(`${lastPlayed}T00:00:00Z`) + (6 - lastPlayedDay) * 86_400_000)
     .toISOString()
     .slice(0, 10);

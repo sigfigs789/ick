@@ -1,14 +1,14 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { REST_DAY_PLAYS } from "../game/streakFreeze";
 
-/** What the 😴 means on the Saturday itself, for its hover text and popup. */
-const REST_DAY_RULE = "3 days played this week, so skipping today can't break the streak.";
+/** What the 😴 means on a day of the weekend itself, for its hover text and popup. */
+const REST_DAY_RULE = "3 days played, so the weekend's all yours: skipping today can't break the streak.";
 
 /** What the badge means on a weekday, with `played` of the week's days played. */
 function weekdayRule(played: number, reachable: boolean): string {
-  if (played >= REST_DAY_PLAYS) return "Unlocked: skipping Saturday can't break your streak.";
-  if (!reachable) return "Play 3 days Sunday to Friday and unlock a lazy Saturday 😴 that protects your streak on Saturdays";
-  return `Play 3 days by Friday and skipping Saturday can't break your streak. ${played} of 3 so far.`;
+  if (played >= REST_DAY_PLAYS) return "Unlocked: kick back all weekend, skipping Saturday and Sunday can't break your streak.";
+  if (!reachable) return "Play 3 days Sunday to Friday and unlock a lazy weekend 😴 that protects your streak all Saturday and Sunday";
+  return `Play 3 days by Friday and snooze through the weekend: skipping it can't break your streak. ${played} of 3 so far.`;
 }
 
 /** A pie a third full for each day played, drawn in the text colour. */
@@ -31,8 +31,8 @@ function WeekPie({ played }: { played: number }) {
 }
 
 /**
- * The lazy Saturday badge. On the Saturday itself (no `played`), the 😴 shown
- * on a streak taking the Saturday off its week's play earned (see `resting`
+ * The lazy weekend badge. On the weekend itself (no `played`), the 😴 shown
+ * on a streak taking a day of the weekend off its week's play earned (see `resting`
  * in game/streakFreeze.ts). On a weekday, given the week's days `played`, a
  * pie filling a third a day that turns 😴 on the third (see `isRestDay`).
  * Hovering it with a mouse opens a popup with the rule while the pointer stays
@@ -85,14 +85,14 @@ export function RestDayBadge({
         className="rest-day__button"
         aria-expanded={open || hovered}
         aria-controls={popupId}
-        aria-label={`Lazy Saturday: ${rule}`}
+        aria-label={`Lazy weekend: ${rule}`}
         onClick={() => setOpen((was) => !was)}
       >
         {unlocked ? "😴" : <WeekPie played={played} />}
       </button>
       {(open || hovered) && (
-        <span className="rest-day__popup" id={popupId} role="dialog" aria-label="Lazy Saturday">
-          <strong>Lazy Saturday</strong>
+        <span className="rest-day__popup" id={popupId} role="dialog" aria-label="Lazy weekend">
+          <strong>Lazy weekend</strong>
           <span>{rule}</span>
         </span>
       )}

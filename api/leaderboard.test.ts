@@ -158,6 +158,19 @@ describe("api/leaderboard submissions", () => {
     }
   });
 
+  it("records a Saturday played as its own weekend off, its Sunday still to rest", async () => {
+    withEnv();
+    for (const [restDay, expected] of [
+      ["2026-08-29", "2026-08-29"],
+      ["2026-09-05", null],
+    ]) {
+      const fetchMock = stubFetch([[], []]);
+      const streak = { current: 40, best: 52, saved: 2, lastPlayed: "2026-08-29", restDay };
+      await handler(post({ ...score(), streak }));
+      expect(rpcCall(fetchMock, 1)?.args).toMatchObject({ p_rest_day: expected });
+    }
+  });
+
   it("drops a streak that does not add up and keeps the scores", async () => {
     withEnv();
     for (const streak of [

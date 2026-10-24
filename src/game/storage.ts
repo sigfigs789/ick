@@ -395,7 +395,7 @@ export function loadStreak(): StreakState {
 /**
  * The streak with its played days filled in from the stored puzzles, once,
  * for a save from before they were kept: the days already played this week
- * count towards Saturday off (see `isRestDay` in game/streakFreeze.ts).
+ * count towards a weekend off (see `isRestDay` in game/streakFreeze.ts).
  */
 function withPlayedDates(streak: StreakState): StreakState {
   if (streak.playedDates) return streak;

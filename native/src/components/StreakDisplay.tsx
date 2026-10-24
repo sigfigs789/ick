@@ -88,7 +88,7 @@ export function StreakDisplay({
 }: Props) {
   const theme = useTheme();
   // One icon for how the streak stands, as the streak board marks it: 😴 on
-  // an earned Saturday not played yet, which cannot end the streak; ⏳ when
+  // an earned weekend day not played yet, which cannot end the streak; ⏳ when
   // missing today ends the streak, every saved freeze spent; 🧊 while a saved
   // freeze is covering a missed day with one left for today, until today is
   // played; 🔥 otherwise. A past puzzle whose day a freeze covered shows 🧊
@@ -98,9 +98,9 @@ export function StreakDisplay({
   const risky = !restDay && isToday && date !== undefined && atRisk(streak, date);
   const coveredDay = !isToday && date !== undefined && wasFrozen(streak, date);
   const icon = risky ? '⏳' : frozen || coveredDay ? '🧊' : streak.currentStreak >= 2 ? '🔥' : null;
-  // Sunday to Friday, the week's progress towards a lazy Saturday (a pie, or
+  // Sunday to Friday, the week's progress towards a lazy weekend (a pie, or
   // 😴 once unlocked), beside the freezes. Only for a live streak, which is
-  // what a lazy Saturday keeps.
+  // what a lazy weekend keeps.
   const week =
     isToday && date !== undefined && streak.currentStreak > 0
       ? weekdayRestProgress(streak, date)
@@ -117,7 +117,7 @@ export function StreakDisplay({
 
   const summary =
     `Current streak: ${streak.currentStreak} days. ` +
-    (restDay ? "Lazy Saturday: skipping today can't break your streak. " : '') +
+    (restDay ? "Lazy weekend: skipping today can't break your streak. " : '') +
     (coveredDay ? 'A freeze kept your streak alive on this day. ' : '') +
     (frozen ? 'A saved freeze is covering your streak. ' : '') +
     (risky ? 'Play today to keep your streak. ' : '') +

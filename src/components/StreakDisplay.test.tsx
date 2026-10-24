@@ -67,7 +67,7 @@ describe("StreakDisplay", () => {
     expect(screen.getByText("Total")).toBeInTheDocument();
   });
 
-  it("shows 😴 on an earned Saturday not played yet, and says it can't break the streak", () => {
+  it("shows 😴 on an earned weekend day not played yet, and says it can't break the streak", () => {
     // 2026-10-31 is the first Saturday that can be earned; three days that week were played.
     const friday: StreakState = {
       ...streak,
@@ -76,19 +76,19 @@ describe("StreakDisplay", () => {
       playedDates: ["2026-10-28", "2026-10-29", "2026-10-30"],
     };
     const { rerender } = render(<StreakDisplay streak={friday} date="2026-10-31" isToday />);
-    const dancer = screen.getByRole("button", { name: /Lazy Saturday/ });
+    const dancer = screen.getByRole("button", { name: /Lazy weekend/ });
     expect(dancer.textContent).toBe("😴");
     // Hovering with a mouse opens the popup, and leaving closes it.
     const badge = dancer.parentElement as HTMLElement;
     fireEvent.pointerEnter(badge, { pointerType: "mouse" });
-    expect(screen.getByRole("dialog", { name: "Lazy Saturday" })).toHaveTextContent(
+    expect(screen.getByRole("dialog", { name: "Lazy weekend" })).toHaveTextContent(
       "can't break the streak"
     );
     fireEvent.pointerLeave(badge, { pointerType: "mouse" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     // Tapping opens it too.
     fireEvent.click(dancer);
-    expect(screen.getByRole("dialog", { name: "Lazy Saturday" })).toHaveTextContent(
+    expect(screen.getByRole("dialog", { name: "Lazy weekend" })).toHaveTextContent(
       "can't break the streak"
     );
 
@@ -96,22 +96,27 @@ describe("StreakDisplay", () => {
     rerender(
       <StreakDisplay streak={{ ...friday, lastCompletedDate: "2026-10-31" }} date="2026-10-31" isToday />
     );
-    expect(screen.queryByRole("button", { name: /Lazy Saturday/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Lazy weekend/ })).not.toBeInTheDocument();
     expect(flame()).toBe("🔥");
 
-    // Sunday after a skipped Saturday: fire, no freeze covering anything.
+    // Sunday after a skipped Saturday: still 😴, no freeze covering anything.
     rerender(<StreakDisplay streak={friday} date="2026-11-01" isToday />);
+    expect(flame()).toBe("😴");
+    expect(screen.queryByLabelText(/A saved freeze is covering/)).not.toBeInTheDocument();
+
+    // Monday after the whole weekend skipped: fire.
+    rerender(<StreakDisplay streak={friday} date="2026-11-02" isToday />);
     expect(flame()).toBe("🔥");
 
     // Not earned: an ordinary day, where the streak has missed nothing yet.
     rerender(
       <StreakDisplay streak={{ ...friday, playedDates: ["2026-10-30"] }} date="2026-10-31" isToday />
     );
-    expect(screen.queryByRole("button", { name: /Lazy Saturday/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Lazy weekend/ })).not.toBeInTheDocument();
     expect(flame()).toBe("🔥");
   });
 
-  it("shows the week's progress to a lazy Saturday on a weekday, then 😴", () => {
+  it("shows the week's progress to a lazy weekend on a weekday, then 😴", () => {
     const wednesday: StreakState = {
       ...streak,
       currentStreak: 5,
@@ -119,10 +124,10 @@ describe("StreakDisplay", () => {
       playedDates: ["2026-10-26", "2026-10-27"],
     };
     const { rerender } = render(<StreakDisplay streak={wednesday} date="2026-10-28" isToday />);
-    const pie = screen.getByRole("button", { name: /Lazy Saturday/ });
+    const pie = screen.getByRole("button", { name: /Lazy weekend/ });
     expect(pie.querySelector("svg")).not.toBeNull();
     fireEvent.click(pie);
-    expect(screen.getByRole("dialog", { name: "Lazy Saturday" })).toHaveTextContent("2 of 3 so far");
+    expect(screen.getByRole("dialog", { name: "Lazy weekend" })).toHaveTextContent("2 of 3 so far");
     // The streak icon is untouched on a weekday.
     expect(flame()).toBe("🔥");
 
@@ -133,7 +138,7 @@ describe("StreakDisplay", () => {
         isToday
       />
     );
-    expect(screen.getByRole("button", { name: /Lazy Saturday: Unlocked/ }).textContent).toBe("😴");
+    expect(screen.getByRole("button", { name: /Lazy weekend: Unlocked/ }).textContent).toBe("😴");
     // Out of reach this week: still shown, speaking of the rule for next week.
     rerender(
       <StreakDisplay
@@ -142,7 +147,7 @@ describe("StreakDisplay", () => {
         isToday
       />
     );
-    expect(screen.getByRole("button", { name: /Lazy Saturday: Play 3 days Sunday to Friday and unlock a lazy Saturday 😴/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Lazy weekend: Play 3 days Sunday to Friday and unlock a lazy weekend 😴/ })).toBeInTheDocument();
   });
 
   it("hides the flame until a streak reaches two days", () => {
