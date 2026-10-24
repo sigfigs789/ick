@@ -589,6 +589,7 @@ describe("reading the boards", () => {
         covered: true,
         atRisk: true,
         lost: false,
+        resting: false,
       },
       {
         rank: null,
@@ -600,6 +601,7 @@ describe("reading the boards", () => {
         covered: false,
         atRisk: false,
         lost: true,
+        resting: false,
       },
     ]);
     expect(boards.streakSelf).toBeNull();

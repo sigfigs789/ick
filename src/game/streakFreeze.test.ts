@@ -8,7 +8,10 @@ import {
   earnFreeze,
   freezeCap,
   freezesOn,
+  isRestDay,
+  missedDays,
   recordFreezes,
+  resting,
   savedFreezeCovering,
   startStreak,
   streakReport,
@@ -93,6 +96,50 @@ describe("applyFreezes", () => {
   it("forgets covered days after two months", () => {
     const after = applyFreezes(streakOf({ frozenDates: ["2026-07-01"], bankedFreezes: 1 }), "2026-10-03");
     expect(after.frozenDates).toEqual(["2026-10-02"]);
+  });
+});
+
+// 2026-10-31 is the first rest day, a Saturday.
+describe("Saturday rest days", () => {
+  it("are the Saturdays from 2026-10-31 on", () => {
+    expect(isRestDay("2026-10-31")).toBe(true);
+    expect(isRestDay("2026-11-07")).toBe(true);
+    // An earlier Saturday was an ordinary day.
+    expect(isRestDay("2026-10-24")).toBe(false);
+    expect(isRestDay("2026-10-30")).toBe(false);
+    expect(isRestDay("2026-11-01")).toBe(false);
+  });
+
+  it("are not missed days", () => {
+    expect(missedDays("2026-10-30", "2026-11-01")).toEqual([]);
+    expect(missedDays("2026-10-29", "2026-11-02")).toEqual(["2026-10-30", "2026-11-01"]);
+  });
+
+  it("keep a streak with no saved freeze, spending none and adding nothing", () => {
+    const friday = streakOf({ lastCompletedDate: "2026-10-30" });
+    expect(applyFreezes(friday, "2026-11-01")).toBe(friday);
+    expect(savedFreezeCovering(friday, "2026-11-01")).toBe(false);
+    // Sunday missed too: that one is a missed day like any other.
+    expect(applyFreezes(friday, "2026-11-02").currentStreak).toBe(0);
+  });
+
+  it("are skipped over when a freeze covers the day before", () => {
+    const thursday = streakOf({ lastCompletedDate: "2026-10-29", bankedFreezes: 1 });
+    const sunday = applyFreezes(thursday, "2026-11-01");
+    expect(sunday).toMatchObject({ currentStreak: 10, bankedFreezes: 0, frozenDates: ["2026-10-30"] });
+    // Friday's freeze was the last, so Sunday is the day the streak is at risk.
+    expect(atRisk(sunday, "2026-11-01")).toBe(true);
+  });
+
+  it("are never at risk, and rest the streak until played", () => {
+    const thursday = streakOf({ lastCompletedDate: "2026-10-29", bankedFreezes: 1 });
+    const saturday = applyFreezes(thursday, "2026-10-31");
+    expect(missedYesterday(saturday, "2026-10-31")).toBe(true);
+    expect(atRisk(saturday, "2026-10-31")).toBe(false);
+    expect(resting(saturday, "2026-10-31")).toBe(true);
+    expect(resting({ ...saturday, lastCompletedDate: "2026-10-31" }, "2026-10-31")).toBe(false);
+    expect(resting(streakOf({ currentStreak: 0 }), "2026-10-31")).toBe(false);
+    expect(resting(streakOf({ lastCompletedDate: "2026-10-31" }), "2026-11-01")).toBe(false);
   });
 });
 

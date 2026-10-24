@@ -1,12 +1,15 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { atRisk, freezesOn, savedFreezeCovering, wasFrozen } from "../game/streakFreeze";
+import { loadPlayerId } from "../game/player";
+import { atRisk, freezesOn, resting, savedFreezeCovering, wasFrozen } from "../game/streakFreeze";
 import type { StreakState } from "../game/types";
+import { RestDayBadge } from "./RestDayBadge";
 
 /** How saved freezes work, for the freeze badge's popup. */
 const FREEZE_RULES =
   "🧊 keeps your streak alive for one more day. Earn your first 🧊 on day 3, then one every 7 days played. " +
   "You can hold 1 🧊 after a 3 day streak and 2 🧊 after 14 days. " +
-  "Lose a streak after reaching 3 days and your next one starts with a 🧊 (once every 30 days).";
+  "Lose a streak after reaching 3 days and your next one starts with a 🧊 (once every 30 days). " +
+  "Saturdays are rest days: skip one and your streak is safe, no 🧊 spent.";
 
 function freezeSummary(banked: number, cap: number): string {
   if (banked === 0) return "No 🧊 acquired";
@@ -92,13 +95,15 @@ export function StreakDisplay({
   hasWords = true,
 }: Props) {
   // One icon for how the streak stands, as the streak board marks it (see
-  // components/LeaderboardPage.tsx): ⏳ when missing today ends the streak,
+  // components/LeaderboardPage.tsx): 🕺, 💃 or 😴 on a Saturday not played yet,
+  // which cannot end the streak; ⏳ when missing today ends the streak,
   // every saved freeze spent; 🧊 while a saved freeze is covering a missed day
   // with one left for today, until today is played; 🔥 otherwise. A past
   // puzzle whose day a freeze covered shows 🧊 too: that day the streak was
   // kept by a freeze, not by play.
-  const frozen = isToday && date !== undefined && savedFreezeCovering(streak, date);
-  const risky = isToday && date !== undefined && atRisk(streak, date);
+  const restDay = isToday && date !== undefined && resting(streak, date);
+  const frozen = !restDay && isToday && date !== undefined && savedFreezeCovering(streak, date);
+  const risky = !restDay && isToday && date !== undefined && atRisk(streak, date);
   const coveredDay = !isToday && date !== undefined && wasFrozen(streak, date);
   const icon = risky ? "⏳" : frozen || coveredDay ? "🧊" : streak.currentStreak >= 2 ? "🔥" : null;
   const iconTitle = coveredDay
@@ -124,6 +129,7 @@ export function StreakDisplay({
       className="streak-display"
       aria-label={
         `Current streak: ${streak.currentStreak} days. ` +
+        (restDay ? "Saturdays don't break streaks. " : "") +
         (coveredDay ? "A freeze kept your streak alive on this day. " : "") +
         (frozen ? "A saved freeze is covering your streak. " : "") +
         (risky ? "Play today to keep your streak. " : "") +
@@ -133,7 +139,9 @@ export function StreakDisplay({
     >
       {showStreak && (
         <div className="streak-display__row">
-          {icon && (
+          {restDay ? (
+            <RestDayBadge playerId={loadPlayerId() ?? ""} className="streak-display__flame" />
+          ) : icon && (
             <span className="streak-display__flame" aria-hidden="true" title={iconTitle}>
               {icon}
             </span>

@@ -7,6 +7,7 @@ import type { AcceptedWord, DailyProgress, StreakState } from "./types";
 import {
   applyFreezes,
   backdateFreezes,
+  continuesInto,
   coveredThrough,
   earnFreeze,
   recordFreezes,
@@ -448,9 +449,9 @@ function updateStreakOnValidAnswer(date: string): void {
 
   if (streak.lastCompletedDate === date) return; // already counted
 
-  const yesterday = addDays(date, -1);
-  // Yesterday may have been covered by a freeze rather than played.
-  const continuesStreak = coveredThrough(streak) === yesterday;
+  // Yesterday may have been covered by a freeze rather than played, or been a
+  // rest day skipped.
+  const continuesStreak = continuesInto(coveredThrough(streak), date);
   const currentStreak = continuesStreak ? streak.currentStreak + 1 : 1;
 
   const updated: StreakState = {

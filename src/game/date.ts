@@ -51,6 +51,12 @@ export function addDays(dateStr: string, delta: number): string {
   ).padStart(2, "0")}`;
 }
 
+/** The day of the week of a date string, 0 for Sunday through 6 for Saturday. */
+export function dayOfWeek(dateStr: string): number {
+  const { y, m, d } = parseDateString(dateStr);
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+}
+
 /** Short display label for a date string, e.g. "Aug 9". */
 export function formatDateLabel(dateStr: string): string {
   return new Date(`${dateStr}T00:00:00`).toLocaleDateString(undefined, {

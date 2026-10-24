@@ -25,9 +25,15 @@
  * still days actually played. And it is remembered (`frozenDates`), because a
  * perfect month means every day played, and a covered day was not
  * (see game/perfectMonth.ts).
+ *
+ * Saturdays are rest days (from REST_DAY_START): a Saturday left unplayed
+ * spends no freeze and ends no streak, and a Saturday played counts like any
+ * other day. While Saturday is unplayed the streak shows 🕺, 💃 or 😴 (see
+ * `resting` and components/RestDayBadge.tsx). Every rule below that counts
+ * missed days skips rest days (`missedDays`).
  */
 
-import { addDays, daysSinceEpoch } from "./date";
+import { addDays, dayOfWeek, daysSinceEpoch } from "./date";
 import type { FreezeCount, StreakState } from "./types";
 
 /**
@@ -36,6 +42,25 @@ import type { FreezeCount, StreakState } from "./types";
  * growing for ever.
  */
 const FROZEN_DATES_KEPT_DAYS = 62;
+
+/** The first Saturday that is a rest day. Earlier Saturdays were missed like any day. */
+export const REST_DAY_START = "2026-10-31";
+
+const SATURDAY = 6;
+
+/** Whether `date` is a rest day: a Saturday a streak can skip for free. */
+export function isRestDay(date: string): boolean {
+  return date >= REST_DAY_START && dayOfWeek(date) === SATURDAY;
+}
+
+/**
+ * The days strictly between `after` and `before` that a streak needed played:
+ * every day in the gap but the rest days.
+ */
+export function missedDays(after: string, before: string): string[] {
+  const gap = Math.max(0, daysSinceEpoch(before, after) - 1);
+  return Array.from({ length: gap }, (_, i) => addDays(after, i + 1)).filter((d) => !isRestDay(d));
+}
 
 /** The first saved freeze is earned on a streak's third day played. */
 const FIRST_FREEZE_DAY = 3;
@@ -160,23 +185,29 @@ export function coveredThrough(streak: StreakState): string | undefined {
 }
 
 /**
+ * Whether a streak covered through `covered` carries on into `date`: nothing
+ * but rest days lies between them.
+ */
+export function continuesInto(covered: string | undefined, date: string): boolean {
+  return covered !== undefined && covered < date && missedDays(covered, date).length === 0;
+}
+
+/**
  * The streak as it stands on `today`: the missed days since the streak was
  * last covered are covered by saved freezes, one each, or the streak resets.
- * Unchanged when nothing was missed.
+ * Rest days are not missed days. Unchanged when nothing was missed.
  */
 export function applyFreezes(streak: StreakState, today: string): StreakState {
-  const yesterday = addDays(today, -1);
   const covered = coveredThrough(streak);
-  if (streak.currentStreak === 0 || !covered || covered >= yesterday) return streak;
+  if (streak.currentStreak === 0 || !covered || covered >= today) return streak;
 
-  const missed = daysSinceEpoch(yesterday, covered);
+  const missed = missedDays(covered, today);
+  if (missed.length === 0) return streak;
   const banked = streak.bankedFreezes ?? 0;
   const keepFrom = addDays(today, -FROZEN_DATES_KEPT_DAYS);
   const cap = streakFreezeCap(streak);
-  const missedDates = Array.from({ length: missed }, (_, i) => addDays(covered, i + 1)).filter(
-    (d) => d >= keepFrom
-  );
-  if (missed > banked) {
+  const missedDates = missed.filter((d) => d >= keepFrom);
+  if (missed.length > banked) {
     // The freezes went with the streak, from the first missed day.
     const lost = missedDates.map((d): [string, FreezeCount] => [d, { banked: 0, cap }]);
     return {
@@ -188,13 +219,12 @@ export function applyFreezes(streak: StreakState, today: string): StreakState {
   }
 
   // Each covered day spent one, so it ends the day with one fewer than the last.
-  const spent = missedDates.map((d): [string, FreezeCount] => [
-    d,
-    { banked: banked - daysSinceEpoch(d, covered), cap },
-  ]);
+  const spent = missed
+    .map((d, i): [string, FreezeCount] => [d, { banked: banked - i - 1, cap }])
+    .filter(([d]) => d >= keepFrom);
   return {
     ...streak,
-    bankedFreezes: banked - missed,
+    bankedFreezes: banked - missed.length,
     frozenDates: [...(streak.frozenDates ?? []), ...missedDates].filter((d) => d >= keepFrom),
     freezeHistory: keptHistory({ ...streak.freezeHistory, ...Object.fromEntries(spent) }, keepFrom),
   };
@@ -228,33 +258,45 @@ export function freezesOn(streak: StreakState, date: string | undefined): Freeze
 }
 
 /**
- * Whether a saved freeze is what is keeping the streak alive today: a day has
- * gone unplayed since the last played day, and today has not been played yet.
+ * Whether a saved freeze is what is keeping the streak alive today: a day
+ * other than a rest day has gone unplayed since the last played day, and
+ * today has not been played yet.
  */
 export function savedFreezeCovering(streak: StreakState, today: string): boolean {
   if (streak.currentStreak === 0 || !streak.lastCompletedDate) return false;
-  return daysSinceEpoch(today, streak.lastCompletedDate) > 1;
+  if (streak.lastCompletedDate >= today) return false;
+  return missedDays(streak.lastCompletedDate, today).length > 0;
 }
 
 /**
- * Whether yesterday went unplayed and was covered, and today is not played
- * yet: only a saved freeze stands between the streak and missing today. The
- * streak board's `covered`.
+ * Whether the last day before today that needed playing -- yesterday, or
+ * Friday when yesterday was a rest day -- went unplayed and was covered, and
+ * today is not played yet: only a saved freeze stands between the streak and
+ * missing today. The streak board's `covered`.
  */
 export function missedYesterday(streak: StreakState, today: string): boolean {
+  let day = addDays(today, -1);
+  while (isRestDay(day)) day = addDays(day, -1);
+  return streak.currentStreak > 0 && streak.lastCompletedDate !== today && wasFrozen(streak, day);
+}
+
+/**
+ * Whether the streak is lost if `today` goes unplayed: the last day that
+ * needed playing was covered and no saved freeze is left. Never on a rest
+ * day, which cannot end a streak. The streak board's `atRisk`.
+ */
+export function atRisk(streak: StreakState, today: string): boolean {
   return (
-    streak.currentStreak > 0 &&
-    streak.lastCompletedDate !== today &&
-    wasFrozen(streak, addDays(today, -1))
+    !isRestDay(today) && missedYesterday(streak, today) && (streak.bankedFreezes ?? 0) === 0
   );
 }
 
 /**
- * Whether the streak is lost if `today` goes unplayed: yesterday was covered
- * and no saved freeze is left. The streak board's `atRisk`.
+ * Whether today is a rest day the streak is taking: a live streak on a
+ * Saturday not played yet. The game and the streak board show 🕺, 💃 or 😴 for it.
  */
-export function atRisk(streak: StreakState, today: string): boolean {
-  return missedYesterday(streak, today) && (streak.bankedFreezes ?? 0) === 0;
+export function resting(streak: StreakState, today: string): boolean {
+  return isRestDay(today) && streak.currentStreak > 0 && streak.lastCompletedDate !== today;
 }
 
 /**

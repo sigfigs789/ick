@@ -318,6 +318,34 @@ describe("the leaderboard page", () => {
     expect(within(streaks).queryByRole("button", { name: /previous/i })).toBeNull();
   });
 
+  it("shows a dancer on a Saturday run not played yet, which says Saturdays don't break streaks", async () => {
+    stubFetch({
+      ...OPEN,
+      streak: [
+        { rank: 1, playerId: ALICE, current: 21, best: 21 },
+        { rank: 2, playerId: BOB, current: 3, best: 40, frozen: true, covered: true, resting: true },
+        { rank: 3, playerId: CAROL, current: 1, best: 6, resting: true },
+      ],
+      streakSelf: null,
+    });
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("Streaks")).toHaveLength(3));
+    // Played today: fire, as on any day.
+    expect(boardRows("Streaks")[0]).toHaveTextContent("🔥");
+    expect(boardRows("Streaks")[0]).not.toHaveTextContent(/🕺|💃|😴/u);
+    // Resting, even under a freeze and even on a one-day run: the dancer alone.
+    for (const row of boardRows("Streaks").slice(1)) {
+      expect(row).toHaveTextContent(/🕺|💃|😴/u);
+      expect(row).not.toHaveTextContent(/🔥|🧊|⏳/u);
+    }
+    const dancer = within(boardRows("Streaks")[1]).getByRole("button", { name: /Saturday rest day/ });
+    fireEvent.click(dancer);
+    expect(within(boardRows("Streaks")[1]).getByRole("dialog")).toHaveTextContent(
+      "Saturdays don't break streaks"
+    );
+  });
+
   it("leaves the streak board out when the server has none", async () => {
     stubFetch();
     render(<LeaderboardPage />);

@@ -96,6 +96,12 @@ export interface StreakEntry {
    * first two days over and marks it 💀. Playing again replaces it.
    */
   lost: boolean;
+  /**
+   * Today is a Saturday rest day the run has not played yet: missing it cannot
+   * end the run, and the board shows 🕺, 💃 or 😴 (see `resting` in
+   * game/streakFreeze.ts). Playing turns it back to 🔥.
+   */
+  resting: boolean;
 }
 
 /**
@@ -340,7 +346,7 @@ function parseStreak(
   fallbackRank?: number
 ): StreakEntry | null {
   if (!item || typeof item !== "object") return null;
-  const { rank, playerId, current, best, frozen, covered, atRisk, lost } = item;
+  const { rank, playerId, current, best, frozen, covered, atRisk, lost, resting } = item;
   if (typeof playerId !== "string") return null;
   if (typeof current !== "number" || !Number.isFinite(current) || current < 1) return null;
   const ranked = typeof rank === "number" && Number.isFinite(rank) ? rank : fallbackRank;
@@ -355,6 +361,7 @@ function parseStreak(
     covered: covered === true,
     atRisk: atRisk === true,
     lost: lost === true,
+    resting: resting === true,
   };
 }
 

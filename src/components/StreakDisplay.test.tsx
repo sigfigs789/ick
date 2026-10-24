@@ -12,6 +12,18 @@ const streak: StreakState = {
   highScore: 0,
 };
 
+// jsdom has no PointerEvent, so a pointer event's `pointerType` would be lost.
+if (typeof window.PointerEvent === "undefined") {
+  class TestPointerEvent extends MouseEvent {
+    pointerType: string;
+    constructor(type: string, init: PointerEventInit = {}) {
+      super(type, init);
+      this.pointerType = init.pointerType ?? "";
+    }
+  }
+  window.PointerEvent = TestPointerEvent as unknown as typeof PointerEvent;
+}
+
 /** The icon beside the count -- the badge carries its own 🧊, so not by text. */
 function flame(): string | undefined {
   return document.querySelector(".streak-display__flame")?.textContent ?? undefined;
@@ -53,6 +65,38 @@ describe("StreakDisplay", () => {
     );
     expect(screen.getByRole("button", { name: /Streak freezes/ })).toBeInTheDocument();
     expect(screen.getByText("Total")).toBeInTheDocument();
+  });
+
+  it("dances on a Saturday not played yet, and says Saturdays don't break streaks", () => {
+    // 2026-10-31 is the first Saturday rest day; Friday was played.
+    const friday: StreakState = { ...streak, currentStreak: 5, lastCompletedDate: "2026-10-30" };
+    const { rerender } = render(<StreakDisplay streak={friday} date="2026-10-31" isToday />);
+    const dancer = screen.getByRole("button", { name: /Saturday rest day/ });
+    expect(dancer.textContent).toMatch(/🕺|💃|😴/u);
+    // Hovering with a mouse opens the popup, and leaving closes it.
+    const badge = dancer.parentElement as HTMLElement;
+    fireEvent.pointerEnter(badge, { pointerType: "mouse" });
+    expect(screen.getByRole("dialog", { name: "Saturday rest day" })).toHaveTextContent(
+      "Saturdays don't break streaks"
+    );
+    fireEvent.pointerLeave(badge, { pointerType: "mouse" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    // Tapping opens it too.
+    fireEvent.click(dancer);
+    expect(screen.getByRole("dialog", { name: "Saturday rest day" })).toHaveTextContent(
+      "Saturdays don't break streaks"
+    );
+
+    // Played: fire again.
+    rerender(
+      <StreakDisplay streak={{ ...friday, lastCompletedDate: "2026-10-31" }} date="2026-10-31" isToday />
+    );
+    expect(screen.queryByRole("button", { name: /Saturday rest day/ })).not.toBeInTheDocument();
+    expect(flame()).toBe("🔥");
+
+    // Sunday after a skipped Saturday: fire, no freeze covering anything.
+    rerender(<StreakDisplay streak={friday} date="2026-11-01" isToday />);
+    expect(flame()).toBe("🔥");
   });
 
   it("hides the flame until a streak reaches two days", () => {
