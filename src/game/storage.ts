@@ -305,11 +305,19 @@ function playedOnDate(timestamp: string, date: string): boolean {
   );
 }
 
+/**
+ * Sent on `window` after a puzzle's record is saved, so what depends on whether
+ * anything has been played -- the header's Stats tab -- can notice the first
+ * word without waiting for a navigation.
+ */
+export const PROGRESS_SAVED_EVENT = "ick:progress-saved";
+
 function saveProgress(progress: DailyProgress): void {
   // Keyed by the record's own mode rather than by the switch's current position:
   // a live lookup can settle after the player has flipped it, and a word banked
   // then belongs to the puzzle it was submitted to.
   localStorage.setItem(progressKey(progress.date, progress.mode), JSON.stringify(progress));
+  window.dispatchEvent(new Event(PROGRESS_SAVED_EVENT));
 }
 
 export function newProgress(date: string, drop: string): DailyProgress {

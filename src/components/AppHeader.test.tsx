@@ -2,12 +2,13 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppHeader } from "./AppHeader";
-import { trackFoundWordsOpened, trackLeaderboardOpened } from "../analytics";
+import { trackFoundWordsOpened, trackLeaderboardOpened, trackStatsOpened } from "../analytics";
 import { useRoute } from "../routes";
 
 vi.mock("../analytics", () => ({
   trackLeaderboardOpened: vi.fn(),
   trackFoundWordsOpened: vi.fn(),
+  trackStatsOpened: vi.fn(),
   trackModeChanged: vi.fn(),
 }));
 
@@ -70,6 +71,26 @@ describe("the header", () => {
     expect(window.location.pathname).toBe("/found-words");
     expect(trackLeaderboardOpened).toHaveBeenCalledWith("header");
     expect(trackFoundWordsOpened).toHaveBeenCalledWith("header");
+  });
+
+  it("offers Stats only once there is a record, right after the finds", async () => {
+    const { rerender } = render(<AppHeader route="game" onHowToPlay={howToPlay} />);
+    expect(screen.queryByRole("button", { name: "Stats" })).not.toBeInTheDocument();
+
+    rerender(<AppHeader route="game" onHowToPlay={howToPlay} showStats />);
+    const labels = screen
+      .getAllByRole("button", { name: /^(Play|Words found|Stats|Leaderboards)$/ })
+      .map((tab) => tab.textContent);
+    expect(labels).toEqual(["Play", "Words found", "Stats", "Leaderboards"]);
+
+    await userEvent.click(screen.getByRole("button", { name: "Stats" }));
+    expect(window.location.pathname).toBe("/stats");
+    expect(trackStatsOpened).toHaveBeenCalledWith("header");
+  });
+
+  it("keeps the Stats tab on the Stats page itself", () => {
+    render(<AppHeader route="stats" onHowToPlay={howToPlay} />);
+    expect(screen.getByRole("button", { name: "Stats" })).toHaveAttribute("aria-current", "page");
   });
 
   it("keeps the wordmark as the page's h1 only on the puzzle", () => {
