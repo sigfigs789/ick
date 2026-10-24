@@ -27,8 +27,7 @@ import dictionaryWords from "./data/dictionary.json";
 import type { AcceptedWord, DailyProgress } from "./game/types";
 
 const track = vi.hoisted(() => vi.fn());
-vi.mock("@vercel/analytics", () => ({ track }));
-vi.mock("@vercel/analytics/react", () => ({ Analytics: () => null }));
+vi.mock("./eventLog", () => ({ logEvent: track }));
 
 const TODAY = todayDateString();
 const YESTERDAY = addDays(TODAY, -1);

@@ -10,7 +10,7 @@
  * Kept in local storage once seen, because the tag is only on the first URL:
  * moving to another page drops the query, and a return visit to the bare
  * address is still the same visitor. Rides on every event the game
- * mirrors to its own table (see `mirror` in analytics.ts), never on Vercel's.
+ * logs to its own table (see eventLog.ts).
  */
 
 const VISITOR_KEY = "ick:visitor";

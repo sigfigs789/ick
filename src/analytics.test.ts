@@ -4,7 +4,6 @@ import {
   trackShareArrival,
   trackTwitterArrival,
   trackModeAssigned,
-  trackWordSuggestion,
   trackRedditArrival,
   trackResultCopied,
   trackMerriamWebsterApproved,
@@ -16,7 +15,6 @@ import {
   trackFeedbackSubmitted,
   trackFreeformVote,
   trackFreeformFeedback,
-  trackModeChanged,
   trackSessionTime,
   trackLeaderboardOpened,
   trackFoundWordsOpened,
@@ -31,10 +29,9 @@ import type { LiveCheck } from "./game/liveValidate";
 import type { RarityInfo } from "./game/types";
 import { recordVisit, type VisitOutcome } from "./game/visits";
 import { APP_VERSION } from "./version";
-import { resetVisitorTagForTest, visitorTag } from "./game/visitor";
 
 const track = vi.hoisted(() => vi.fn());
-vi.mock("@vercel/analytics", () => ({ track }));
+vi.mock("./eventLog", () => ({ logEvent: track }));
 
 afterEach(() => {
   track.mockClear();
@@ -76,9 +73,9 @@ describe("visit events", () => {
       new_day: true,
       puzzle_date: LIVE_DATE,
     };
-    expect(track).toHaveBeenNthCalledWith(1, "site_visit", expected);
+    expect(track).toHaveBeenNthCalledWith(1, "site_visit", expect.objectContaining(expected));
     // Plus what engaged it, which a guess is unless the caller says otherwise.
-    expect(track).toHaveBeenNthCalledWith(2, "visit_engaged", { ...expected, via: "guess" });
+    expect(track).toHaveBeenNthCalledWith(2, "visit_engaged", expect.objectContaining({ ...expected, via: "guess" }));
   });
 
   it("stamps the running build on both visit events", () => {
@@ -164,7 +161,7 @@ describe("share attribution", () => {
 
     trackResultCopied("standard");
 
-    expect(track).toHaveBeenCalledWith("result_copied", {
+    expect(track).toHaveBeenCalledWith("result_copied", expect.objectContaining({
       method: "copy",
       mode: "standard",
       source: "reddit", // first-touch is sticky
@@ -173,7 +170,7 @@ describe("share attribution", () => {
       times_returned: 1,
       days_returned: 0,
       puzzle_date: LIVE_DATE,
-    });
+    }));
   });
 
   it("labels share-link origins the same way visit events do", () => {
@@ -193,7 +190,7 @@ describe("share attribution", () => {
     localStorage.clear();
     trackResultCopied("freeform");
 
-    expect(track).toHaveBeenCalledWith("result_copied", {
+    expect(track).toHaveBeenCalledWith("result_copied", expect.objectContaining({
       method: "copy",
       mode: "freeform",
       source: "direct",
@@ -202,7 +199,7 @@ describe("share attribution", () => {
       times_returned: 0,
       days_returned: 0,
       puzzle_date: LIVE_DATE,
-    });
+    }));
   });
 });
 
@@ -228,7 +225,7 @@ describe("session_time", () => {
       reportNumber: 2,
     });
 
-    expect(track).toHaveBeenCalledWith("session_time", {
+    expect(track).toHaveBeenCalledWith("session_time", expect.objectContaining({
       session_id: "abc",
       visible_ms: 90_000,
       total_ms: 300_000,
@@ -248,7 +245,7 @@ describe("session_time", () => {
       times_returned: 0,
       days_returned: 0,
       puzzle_date: LIVE_DATE,
-    });
+    }));
   });
 
   it("sends nulls, not zeros, for a session with no guess", () => {
@@ -376,14 +373,14 @@ describe("pressing anything", () => {
 });
 
 describe("visit id", () => {
-  it("is shared by a visit's events and kept out of Vercel", async () => {
+  it("is shared by a visit's events", () => {
     localStorage.clear();
     sessionStorage.clear();
     const visit = recordVisit("")!;
     expect(visit.visitId).toMatch(/^[0-9a-f-]{36}$/);
     trackVisit(visit);
     trackVisitEngaged(visit);
-    for (const [, props] of track.mock.calls) expect(props).not.toHaveProperty("visit_id");
+    for (const [, props] of track.mock.calls) expect(props).toHaveProperty("visit_id", visit.visitId);
   });
 });
 
@@ -399,7 +396,7 @@ describe("campaign arrivals", () => {
 
   it("records a Reddit arrival", () => {
     trackRedditArrival();
-    expect(track).toHaveBeenCalledWith("arrived_from_reddit");
+    expect(track).toHaveBeenCalledWith("arrived_from_reddit", undefined);
   });
 });
 
@@ -586,83 +583,14 @@ describe("unattested-score event", () => {
 });
 
 describe("trackFeedbackSubmitted", () => {
-  it("trims the note and caps Vercel's copy at the 255 characters it accepts", () => {
+  it("trims the note and sends all of it", () => {
     trackFeedbackSubmitted(`  ${"a".repeat(400)}  `);
-    expect(track).toHaveBeenCalledWith("feedback_submitted", { feedback: "a".repeat(255) });
+    expect(track).toHaveBeenCalledWith("feedback_submitted", { feedback: "a".repeat(400) });
   });
 });
 
-describe("supabase mirror", () => {
-  /** Install a sendBeacon jsdom doesn't have, and hand back its calls. */
-  function stubBeacon(result = true) {
-    const beacon = vi.fn(() => result);
-    Object.defineProperty(navigator, "sendBeacon", { value: beacon, configurable: true });
-    return beacon;
-  }
-
-  /**
-   * The event body a beacon or fetch call carried. jsdom's Blob has no `text()`,
-   * so a Blob is read the long way round.
-   */
-  async function payload(body: unknown): Promise<Record<string, unknown>> {
-    const text =
-      body instanceof Blob
-        ? await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(String(reader.result));
-            reader.onerror = () => reject(reader.error);
-            reader.readAsText(body);
-          })
-        : String(body);
-    return JSON.parse(text) as Record<string, unknown>;
-  }
-
-  afterEach(() => {
-    vi.unstubAllEnvs();
-    Reflect.deleteProperty(navigator, "sendBeacon");
-  });
-
-  it("stays quiet under test, where there is no endpoint to post to", () => {
-    const beacon = stubBeacon();
-    trackWordSuggestion("Quixotic");
-    // Vercel still gets it; only the mirror is skipped.
-    expect(track).toHaveBeenCalledTimes(1);
-    expect(beacon).not.toHaveBeenCalled();
-  });
-
-  it("beacons the same event it sends to Vercel", async () => {
-    vi.stubEnv("MODE", "production");
-    const beacon = stubBeacon();
-
-    trackWordSuggestion("  Quixotic  ");
-
-    expect(track).toHaveBeenCalledWith("word_suggested", { word: "quixotic" });
-    const [url, body] = beacon.mock.calls[0] as unknown as [string, Blob];
-    expect(url).toBe("/api/events");
-    expect(body.type).toBe("application/json");
-    expect(await payload(body)).toEqual({
-      name: "word_suggested",
-      props: { word: "quixotic", player_id: null },
-    });
-  });
-
-  it("mirrors a visit's id to Supabase only", async () => {
-    vi.stubEnv("MODE", "production");
-    const beacon = stubBeacon();
-    localStorage.clear();
-    sessionStorage.clear();
-    const visit = recordVisit("")!;
-
-    trackVisitEngaged(visit);
-
-    expect(track.mock.calls[0][1]).not.toHaveProperty("visit_id");
-    const [, body] = beacon.mock.calls[0] as unknown as [string, Blob];
-    expect(await payload(body)).toMatchObject({ name: "visit_engaged", props: { visit_id: visit.visitId } });
-  });
-
-  it("mirrors a visit's bot signals to Supabase only, on site_visit alone", async () => {
-    vi.stubEnv("MODE", "production");
-    const beacon = stubBeacon();
+describe("event extras", () => {
+  it("merges a visit's id and bot signals into site_visit alone", () => {
     localStorage.clear();
     sessionStorage.clear();
     const visit = recordVisit("")!;
@@ -670,135 +598,33 @@ describe("supabase mirror", () => {
     trackVisit(visit);
     trackVisitEngaged(visit);
 
-    for (const [, props] of track.mock.calls) {
-      expect(props).not.toHaveProperty("webdriver");
-      expect(props).not.toHaveProperty("bot_ua");
-    }
-    const [, siteVisit] = beacon.mock.calls[0] as unknown as [string, Blob];
-    expect(await payload(siteVisit)).toMatchObject({
-      name: "site_visit",
-      props: { webdriver: false, bot_ua: false, visibility: "visible" },
-    });
-    const [, engaged] = beacon.mock.calls[1] as unknown as [string, Blob];
-    expect((await payload(engaged)).props).not.toHaveProperty("webdriver");
+    expect(track.mock.calls[0][1]).toMatchObject({ visit_id: visit.visitId, webdriver: false, bot_ua: false });
+    expect(track.mock.calls[1][1]).toHaveProperty("visit_id", visit.visitId);
+    expect(track.mock.calls[1][1]).not.toHaveProperty("webdriver");
   });
 
-  it("stamps every mirrored event with the player it came from", async () => {
-    vi.stubEnv("MODE", "production");
+  it("sends the Freeform verdict with its voter", () => {
     localStorage.setItem("ick:player", JSON.stringify({ id: "player-1" }));
-    const beacon = stubBeacon();
-
-    trackModeChanged("standard", "freeform");
-
-    // The per-player read is the point, so the id rides on the mirror...
-    const [, body] = beacon.mock.calls[0] as unknown as [string, Blob];
-    expect(await payload(body)).toEqual({
-      name: "mode_changed",
-      props: { from: "standard", to: "freeform", via: "header", puzzle_date: LIVE_DATE, player_id: "player-1" },
-    });
-    // ...and not on Vercel, which cannot group by it.
-    expect(track).toHaveBeenCalledWith("mode_changed", {
-      from: "standard",
-      to: "freeform",
-      via: "header",
-      puzzle_date: LIVE_DATE,
-    });
+    trackFreeformVote("boo", "2026-09-15");
+    expect(track).toHaveBeenCalledWith("freeform_vote", { vote: "boo", date: "2026-09-15", voter: "player-1" });
     localStorage.clear();
   });
 
-  it("tags every mirrored event from a known visitor, and only the mirror", async () => {
-    vi.stubEnv("MODE", "production");
-    const beacon = stubBeacon();
-    visitorTag("?visitor=mos-muse");
-
-    trackWordSuggestion("quixotic");
-
-    expect(track).toHaveBeenCalledWith("word_suggested", { word: "quixotic" });
-    const [, body] = beacon.mock.calls[0] as unknown as [string, Blob];
-    expect(await payload(body)).toMatchObject({ props: { visitor: "mos-muse" } });
+  it("still records a verdict from a browser with no id to give", () => {
     localStorage.clear();
-    resetVisitorTagForTest();
+    trackFreeformVote("love", "2026-09-15");
+    expect(track).toHaveBeenCalledWith("freeform_vote", { vote: "love", date: "2026-09-15", voter: null });
   });
 
-  it("mirrors nothing from a host with reporting off, even an event sent to it directly", () => {
-    vi.stubEnv("MODE", "production");
-    const beacon = stubBeacon();
+  it("logs nothing from a host with reporting off, feedback included", () => {
     setReporting(false);
     try {
+      trackFeedbackSubmitted("a note");
       trackFreeformFeedback("a note", "2026-09-15", null);
     } finally {
       setReporting(true);
     }
-    expect(beacon).not.toHaveBeenCalled();
-  });
-
-  it("falls back to a keepalive fetch where sendBeacon is missing", async () => {
-    vi.stubEnv("MODE", "production");
-    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }));
-    vi.stubGlobal("fetch", fetchMock);
-
-    trackRedditArrival();
-
-    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
-    expect(url).toBe("/api/events");
-    expect(init.keepalive).toBe(true);
-    // An event with no properties of its own still says whose it was.
-    expect(await payload(init.body)).toEqual({
-      name: "arrived_from_reddit",
-      props: { player_id: null },
-    });
-    vi.unstubAllGlobals();
-  });
-
-  it("sends the Freeform verdict with its voter to both sinks", async () => {
-    vi.stubEnv("MODE", "production");
-    localStorage.setItem("ick:player", JSON.stringify({ id: "player-1" }));
-    const beacon = stubBeacon();
-
-    trackFreeformVote("boo", "2026-09-15");
-
-    // The same tally wherever it is read: the board identity is a UUID this
-    // browser invented, so there is no reason to keep it from one of the two.
-    expect(track).toHaveBeenCalledWith("freeform_vote", {
-      vote: "boo",
-      date: "2026-09-15",
-      voter: "player-1",
-    });
-    const [, body] = beacon.mock.calls[0] as unknown as [string, Blob];
-    expect(await payload(body)).toEqual({
-      name: "freeform_vote",
-      props: { vote: "boo", date: "2026-09-15", voter: "player-1", player_id: "player-1" },
-    });
-    localStorage.clear();
-  });
-
-  it("still records a verdict from a browser with no id to give", async () => {
-    vi.stubEnv("MODE", "production");
-    localStorage.clear();
-    const beacon = stubBeacon();
-
-    trackFreeformVote("love", "2026-09-15");
-
-    // Uncollapsible, not uncounted: a player who cannot be identified still has
-    // a verdict, and dropping it would quietly exclude private browsing.
-    const [, body] = beacon.mock.calls[0] as unknown as [string, Blob];
-    expect(await payload(body)).toEqual({
-      name: "freeform_vote",
-      props: { vote: "love", date: "2026-09-15", voter: null, player_id: null },
-    });
-  });
-
-  it("keeps the event flowing to Vercel when the mirror throws", () => {
-    vi.stubEnv("MODE", "production");
-    Object.defineProperty(navigator, "sendBeacon", {
-      value: () => {
-        throw new Error("blocked by the browser");
-      },
-      configurable: true,
-    });
-
-    expect(() => trackRedditArrival()).not.toThrow();
-    expect(track).toHaveBeenCalledWith("arrived_from_reddit");
+    expect(track).not.toHaveBeenCalled();
   });
 });
 
@@ -840,13 +666,13 @@ describe("a host that reports nothing", () => {
     expect(isReporting()).toBe(true);
   });
 
-  it("sends nothing to Vercel once turned off", () => {
+  it("sends nothing once turned off", () => {
     setReporting(false);
     trackResultCopied("standard");
     expect(track).not.toHaveBeenCalled();
   });
 
-  it("says so, so the SDK components are never mounted", () => {
+  it("says so", () => {
     setReporting(false);
     expect(isReporting()).toBe(false);
   });
