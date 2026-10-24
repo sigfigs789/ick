@@ -43,7 +43,7 @@ const { evaluateSubmission } = await import("../src/game/submit.ts");
 const { asMode } = await import("../src/game/mode.ts");
 const { dropForDate } = await import("../src/game/drop.ts");
 const { addDays } = await import("../src/game/date.ts");
-const { unattestedZipf, estimatedZipfEntry } = await import("../src/game/dictionary.ts");
+const { unattestedZipf, estimatedZipfEntry, scoringReady } = await import("../src/game/dictionary.ts");
 const dictionary = (await import("../src/data/dictionary.json")).default as string[];
 
 function arg(name: string): string | undefined {
@@ -73,6 +73,7 @@ const played = wordsFile
       .filter((word) => /^[a-z]+$/.test(word))
   : [];
 
+await scoringReady();
 if (!(await loadCorpus())) {
   console.error("could not load public/corpus");
   process.exit(1);

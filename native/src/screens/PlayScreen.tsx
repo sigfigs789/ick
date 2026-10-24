@@ -54,6 +54,7 @@ export function PlayScreen({ onLeaderboard }: Props) {
     feedback,
     liveNote,
     checking,
+    wordDataLoading,
     submitWord,
     canRetry,
     retryOffered,
@@ -166,6 +167,7 @@ export function PlayScreen({ onLeaderboard }: Props) {
             disabled={progress.completed}
             feedback={feedback}
             checking={checking}
+            loading={wordDataLoading}
             onSubmit={(word) => void submitWord(word)}
           />
         )}

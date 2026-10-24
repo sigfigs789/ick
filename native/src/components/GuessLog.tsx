@@ -14,6 +14,7 @@ import { signalTap } from '../host/feedback';
 import { copyText } from '../host/share';
 import { radius, space } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
+import { useWordDataLoaded } from '../../../src/hooks/useWordDataLoaded';
 import { CommonFormSheet } from './CommonFormSheet';
 import { RarityBadge } from './RarityBadge';
 import { StreakDisplay } from './StreakDisplay';
@@ -57,6 +58,9 @@ export function GuessLog({
   const theme = useTheme();
   const best = bestWord(acceptedWords);
   const maxGuesses = maxGuessesFor(date);
+  // The common-form notes below are worked out from the deferred scoring data,
+  // so they wait for it rather than name a base the reviewed folds overrule.
+  const wordDataLoaded = useWordDataLoaded(date);
 
   const [copiedWord, setCopiedWord] = useState<string | null>(null);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -131,7 +135,7 @@ export function GuessLog({
              * than a base -- calling a plural the base word of its own singular
              * reads as the very bug this is meant to explain.
              */
-            const baseNote = baseFormSubstitution(word.word, date);
+            const baseNote = wordDataLoaded ? baseFormSubstitution(word.word, date) : undefined;
 
             return (
               <Pressable

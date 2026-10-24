@@ -11,6 +11,7 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { loadCorpus } from "../../src/game/corpus";
+import { scoringReady } from "../../src/game/dictionary";
 import { setMode } from "../../src/game/mode";
 import { sameRootKey } from "../../src/game/submit";
 
@@ -40,6 +41,7 @@ async function main(): Promise<void> {
   setMode("standard");
   serve();
   await loadCorpus();
+  await scoringReady();
 
   const lines = readFileSync("scripts/fold-audit/out/folds.tsv", "utf8").split("\n");
   const header = lines[0].split("\t");

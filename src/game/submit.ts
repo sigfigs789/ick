@@ -57,9 +57,9 @@ type MetadataByReason = Record<MetadataReason, readonly string[]>;
  * The reason is not cosmetic, though: a named register is final, where a bare
  * "not-a-word" sends the word to the live Merriam-Webster lookup (see
  * `rejectionReasonFor`). So nothing may act on a "not-a-word" before the file
- * is here. The puzzle's submit and copy paths wait on
- * `rejectionMetadataReady`, and the views that judge words on render
- * re-run on `useRejectionMetadataLoaded` (see hooks/).
+ * is here. The puzzle's submit and copy paths wait on it through
+ * `wordDataReady` (game/wordData.ts), and the views that judge words on render
+ * re-run on `useWordDataLoaded` (see hooks/).
  */
 let metadataByReason: MetadataByReason | undefined;
 

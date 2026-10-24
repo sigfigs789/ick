@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { loadCorpus } from "../../src/game/corpus";
-import { baseFormSubstitution, rarityFor } from "../../src/game/dictionary";
+import { baseFormSubstitution, rarityFor, scoringReady } from "../../src/game/dictionary";
 import { setMode } from "../../src/game/mode";
 import curated from "../../src/data/dictionary.json";
 function serve(): void {
@@ -25,7 +25,7 @@ function serve(): void {
   }) as typeof fetch;
 }
 async function main(): Promise<void> {
-  setMode("standard"); serve(); await loadCorpus();
+  setMode("standard"); serve(); await loadCorpus(); await scoringReady();
   const BEFORE = "2026-09-30";
   const AFTER = "2026-10-01";
   const ups: { word: string; b: number; a: number; base?: string }[] = [];

@@ -1,4 +1,4 @@
-import { wordsForDropInTiers } from "./dictionary";
+import { scoringLoaded, wordsForDropInTiers } from "./dictionary";
 import { evaluateSubmission } from "./submit";
 import { chatProblem } from "./chat";
 import { isReturningSession } from "./visits";
@@ -174,7 +174,9 @@ export function idleHintPool(drop: string, date: string): readonly AcceptedWord[
       .map((w) => ({ w, key: hash(`${key}:${w.word}`) }))
       .sort((a, b) => a.key - b.key)
       .map(({ w }) => w);
-    pools.set(key, pool);
+    // Kept only once the deferred scoring data is in: a pool built before it
+    // can hold a word that folds, and would be stuck with it for the puzzle.
+    if (scoringLoaded(date)) pools.set(key, pool);
   }
   return pool;
 }

@@ -1946,6 +1946,28 @@ h2 {
   opacity: 0.4;
   cursor: not-allowed;
 }
+/* While the word data downloads: the button keeps its label and gains a small
+   spinner beside it, so a player who has typed a word sees why Play is not
+   taking it yet. Spun from the button's own text colour, so it follows the
+   disabled outline style below without a colour of its own. */
+.submit-form__button--loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+}
+.submit-form__spinner {
+  width: 0.85em;
+  height: 0.85em;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: submit-form-spin 0.8s linear infinite;
+}
+@keyframes submit-form-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 .submit-form button:not(:disabled):hover,
 .share-button:not(:disabled):hover {
   background: var(--accent-hover);

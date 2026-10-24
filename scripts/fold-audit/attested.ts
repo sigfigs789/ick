@@ -1,6 +1,7 @@
 /** The confirmed words that either lexicon actually holds; the pin requires it. */
 import { readFileSync, writeFileSync } from "node:fs";
 import { corpusAttests, loadCorpus } from "../../src/game/corpus";
+import { scoringReady } from "../../src/game/dictionary";
 import { setMode } from "../../src/game/mode";
 import curated from "../../src/data/dictionary.json";
 function serve(): void {
@@ -25,7 +26,7 @@ function serve(): void {
   }) as typeof fetch;
 }
 async function main(): Promise<void> {
-  setMode("standard"); serve(); await loadCorpus();
+  setMode("standard"); serve(); await loadCorpus(); await scoringReady();
   const CUR = new Set(curated as string[]);
   const rows = JSON.parse(readFileSync("scripts/fold-audit/out/confirmed.json", "utf8"));
   const ok = rows.map((r: { word: string }) => r.word).filter((w: string) => CUR.has(w) || corpusAttests(w));

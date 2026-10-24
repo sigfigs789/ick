@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { syncHistory } from '../../src/game/leaderboard';
+import { syncHistoryWhenReady } from '../../src/game/leaderboard';
 import { hasJoined, joinBoard } from '../../src/game/player';
 import { hasSeen, markSeen } from '../../src/game/whatsNew';
 import { InstructionsSheet } from './components/InstructionsSheet';
@@ -99,7 +99,7 @@ export function App() {
    * no-op, and only the gaps land.
    */
   useEffect(() => {
-    syncHistory();
+    syncHistoryWhenReady();
     syncedAt.current = Date.now();
   }, []);
 
@@ -111,7 +111,7 @@ export function App() {
       // Re-read rather than trusted from mount: a device that could not store
       // an id is not a player, and never becomes one by being reopened.
       if (!hasJoined()) return;
-      syncHistory();
+      syncHistoryWhenReady();
       syncedAt.current = Date.now();
     },
   });

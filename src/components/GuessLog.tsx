@@ -4,6 +4,7 @@ import { bestWord } from "../game/rank";
 import { baseFormSubstitution, totalRarityScore } from "../game/dictionary";
 import { raritySymbol } from "../game/share";
 import { isNewBest } from "../game/celebration";
+import { useWordDataLoaded } from "../hooks/useWordDataLoaded";
 import { CommonFormModal } from "./CommonFormModal";
 import { RarityBadge } from "./RarityBadge";
 import { StreakDisplay } from "./StreakDisplay";
@@ -69,6 +70,9 @@ export function GuessLog({
 }: Props) {
   const best = bestWord(acceptedWords);
   const maxGuesses = maxGuessesFor(date);
+  // The common-form notes below are worked out from the deferred scoring data,
+  // so they wait for it rather than name a base the reviewed folds overrule.
+  const wordDataLoaded = useWordDataLoaded(date);
   const guessesLeft = maxGuesses - acceptedWords.length;
 
   // Armed by the retry button, and spent by tapping a word.
@@ -181,7 +185,7 @@ export function GuessLog({
             // as "caution"), or a longer form ("abaci" as "abacus"), and calling
             // a plural the base word of its own singular reads as the bug it is
             // meant to explain away.
-            const baseNote = baseFormSubstitution(w.word, date);
+            const baseNote = wordDataLoaded ? baseFormSubstitution(w.word, date) : undefined;
             const elsewhere = otherMode ? crossMode?.[w.word] : undefined;
             const isFresh = fresh?.word === w.word;
             return (

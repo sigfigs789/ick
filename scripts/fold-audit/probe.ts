@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { corpusAttests, loadCorpus } from "../../src/game/corpus";
-import { foldTrace } from "../../src/game/dictionary";
+import { foldTrace, scoringReady } from "../../src/game/dictionary";
 import { setMode } from "../../src/game/mode";
 function serve(): void {
   const base = "public/corpus";
@@ -24,7 +24,7 @@ function serve(): void {
   }) as typeof fetch;
 }
 async function main(): Promise<void> {
-  setMode("standard"); serve(); await loadCorpus();
+  setMode("standard"); serve(); await loadCorpus(); await scoringReady();
   const D = "2026-09-29";
   const probes = process.argv.slice(2).filter((a) => /^[a-z]+$/.test(a));
   for (const w of probes) {

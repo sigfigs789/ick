@@ -6,7 +6,7 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { loadCorpus } from "../../src/game/corpus";
-import { foldTrace, rarityScore } from "../../src/game/dictionary";
+import { foldTrace, rarityScore, scoringReady } from "../../src/game/dictionary";
 import { setMode } from "../../src/game/mode";
 function serve(): void {
   const base = "public/corpus";
@@ -33,7 +33,7 @@ const BEFORE = "2026-09-30";
 const AFTER = "2026-10-01";
 
 async function main(): Promise<void> {
-  setMode("standard"); serve(); await loadCorpus();
+  setMode("standard"); serve(); await loadCorpus(); await scoringReady();
   const flagged: { word: string; base: string; why: string }[] = [];
   for (const line of readFileSync("scripts/fold-audit/out/fold-review.md", "utf8").split("\n")) {
     if (!line.startsWith("| `")) continue;

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatDateLabel } from "../game/date";
 import { definitionFor, formatRarityScore, learnableWordForDrop } from "../game/dictionary";
+import { useWordDataLoaded } from "../hooks/useWordDataLoaded";
 import { rarityClassName } from "./rarityStyles";
 import { revealGatedFor } from "../game/constants";
 import { RevealWordModal } from "./RevealWordModal";
@@ -38,8 +39,13 @@ export function DropDisplay({
   wordOfDay = true,
 }: Props) {
   // Recomputed only when the drop itself changes -- a full dictionary scan,
-  // so it's not something we want re-running on unrelated re-renders.
-  const reveal = useMemo(() => learnableWordForDrop(drop, date), [drop, date]);
+  // so it's not something we want re-running on unrelated re-renders. Not
+  // before the deferred scoring data is in, which can change the pick.
+  const wordDataLoaded = useWordDataLoaded(date);
+  const reveal = useMemo(
+    () => (wordDataLoaded ? learnableWordForDrop(drop, date) : undefined),
+    [drop, date, wordDataLoaded]
+  );
   const definition = reveal ? definitionFor(reveal.word) : undefined;
   // Open by default: the definition is the point of the reveal, so it should be
   // there to read without asking. The toggle stays for anyone who wants it gone.

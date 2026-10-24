@@ -13,7 +13,7 @@ import { usesFreeformRules } from "./game/dictionary";
 import { modeIsChosen } from "./game/mode";
 import { useGameMode } from "./hooks/useGameMode";
 import { takeFreshAssignment } from "./game/onboarding";
-import { syncHistory } from "./game/leaderboard";
+import { syncHistoryWhenReady } from "./game/leaderboard";
 import { hasJoined, joinBoard } from "./game/player";
 import { playedPuzzleCount } from "./game/storage";
 import { hasSeen, headerBadgeFor, markSeen } from "./game/whatsNew";
@@ -305,7 +305,7 @@ export function Root() {
     // after it: the first one is the interesting moment, and firing on every
     // load would turn the event into a visit count that already exists.
     if (!joinedBefore.current && playerId.current) trackLeaderboardJoined(false);
-    syncHistory();
+    syncHistoryWhenReady();
     syncedAt.current = Date.now();
   }, []);
 
@@ -330,7 +330,7 @@ export function Root() {
       // an id (private mode, storage off) is not a player, and never becomes
       // one by coming back to the tab.
       if (!hasJoined()) return;
-      syncHistory();
+      syncHistoryWhenReady();
       syncedAt.current = Date.now();
     };
     const onVisible = () => {

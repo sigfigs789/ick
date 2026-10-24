@@ -7,6 +7,7 @@ import {
   formatRarityScore,
   learnableWordForDrop,
 } from '../../../src/game/dictionary';
+import { useWordDataLoaded } from '../../../src/hooks/useWordDataLoaded';
 import { signalTap } from '../host/feedback';
 import { radius, space } from '../theme/tokens';
 import { rarityPalette, useTheme } from '../theme/useTheme';
@@ -40,8 +41,13 @@ export function DropDisplay({
   const theme = useTheme();
 
   // A full dictionary scan, so it is memoised against the drop rather than
-  // re-run whenever an unrelated piece of the screen changes.
-  const reveal = useMemo(() => learnableWordForDrop(drop, date), [drop, date]);
+  // re-run whenever an unrelated piece of the screen changes. Not before the
+  // deferred scoring data is in, which can change the pick.
+  const wordDataLoaded = useWordDataLoaded(date);
+  const reveal = useMemo(
+    () => (wordDataLoaded ? learnableWordForDrop(drop, date) : undefined),
+    [drop, date, wordDataLoaded],
+  );
   const definition = reveal ? definitionFor(reveal.word) : undefined;
 
   // Open by default: the definition is the point of the reveal, so it is there

@@ -38,7 +38,7 @@ vi.mock("./components/SuggestedWordsPage", () => ({
 vi.mock("./components/FeedbackPage", () => ({
   FeedbackPage: () => <div>feedback</div>,
 }));
-vi.mock("./game/leaderboard", () => ({ syncHistory: vi.fn() }));
+vi.mock("./game/leaderboard", () => ({ syncHistoryWhenReady: vi.fn() }));
 vi.mock("./analytics", () => ({
   trackLeaderboardJoined: vi.fn(),
   trackLeaderboardOpened: vi.fn(),

@@ -7,11 +7,7 @@ import {
 } from "./mode";
 import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
-import legacyRarityData from "../data/rarity-legacy.json";
 import scoreOverrideData from "../data/score-overrides.json";
-import estimatedZipfData from "../data/estimated-zipf";
-import foldExemptionData from "../data/fold-exemptions.json";
-import foldReviewVerdictData from "../data/fold-review-verdicts.json";
 import boundResidueData from "../data/bound-residues.json";
 import measurementUnitData from "../data/measurement-units.json";
 import wordRejectionData from "../data/word-rejections.json";
@@ -737,12 +733,20 @@ const MEASURED_FLOOR = 1;
 // One-decimal Zipf values with unknown-frequency words floored flat to 1.4,
 // scored against a single 1.0..MAX range. Also index-aligned with
 // dictionary.json (the word list has not changed).
-const legacyZipfTenths: number[] = legacyRarityData.zipfTenths;
-let maxLegacyTenths = -Infinity;
-for (const z of legacyZipfTenths) {
-  if (z > maxLegacyTenths) maxLegacyTenths = z;
+//
+// Fetched only when a puzzle that old is opened (see `scoringReady`), so both
+// are empty until then.
+let legacyZipfTenths: readonly number[] = [];
+let LEGACY_MAX_ZIPF = 0;
+
+function setLegacyRarity(zipfTenths: readonly number[]): void {
+  let maxLegacyTenths = -Infinity;
+  for (const z of zipfTenths) {
+    if (z > maxLegacyTenths) maxLegacyTenths = z;
+  }
+  legacyZipfTenths = zipfTenths;
+  LEGACY_MAX_ZIPF = maxLegacyTenths / 10;
 }
-const LEGACY_MAX_ZIPF = maxLegacyTenths / 10;
 const LEGACY_MIN_ZIPF = 1; // wordfreq's measured lower bound
 const LEGACY_UNKNOWN_ZIPF = 1.4;
 
@@ -883,12 +887,8 @@ export function indexEstimatedZipf(
   return index;
 }
 
-// Through `unknown`: once two batches estimate different words, the JSON's
-// inferred type gives each batch the other's words as `?: undefined`, and a
-// direct cast to Record<string, number> no longer type-checks.
-let ESTIMATED_ZIPF = indexEstimatedZipf(
-  (estimatedZipfData as unknown as { batches: EstimatedZipfBatch[] }).batches
-);
+// Empty until the deferred scoring data is in (see `scoringReady`).
+let ESTIMATED_ZIPF: ReadonlyMap<string, EstimatedZipf> = new Map();
 
 /** Swap the estimates for a test's own. Tests only. */
 export function setEstimatedZipfForTests(batches: readonly EstimatedZipfBatch[]): void {
@@ -975,9 +975,7 @@ interface FoldExemption {
  * needs a tighter guard instead. A word must not appear in both files -- the
  * exemption would win, silently -- and a test pins that.
  */
-const FOLD_EXEMPTIONS: ReadonlyMap<string, FoldExemption> = new Map(
-  Object.entries(foldExemptionData as Record<string, FoldExemption>)
-);
+let FOLD_EXEMPTIONS: ReadonlyMap<string, FoldExemption> = new Map();
 
 /**
  * Whether `word` may be read as a Latin plural at all.
@@ -1068,9 +1066,127 @@ interface FoldReviewVerdict {
  * Dated per entry like both of them, so a verdict applies from the puzzle it was
  * exported for onward and every archived puzzle keeps the score it showed.
  */
-const FOLD_REVIEW_VERDICTS: ReadonlyMap<string, FoldReviewVerdict> = new Map(
-  Object.entries(foldReviewVerdictData as Record<string, FoldReviewVerdict>)
-);
+let FOLD_REVIEW_VERDICTS: ReadonlyMap<string, FoldReviewVerdict> = new Map();
+
+// -- Scoring data fetched after the app starts ------------------------------
+/*
+ * Four of the word-data files are fetched after the app starts rather than
+ * with it: Claude's estimated Zipf (src/data/estimated-zipf/, about 1.9 MB
+ * gzipped -- on its own, half of what the first load used to be), the fold
+ * exemptions, the reviewed fold verdicts, and the pre-NEW_SCORING_START legacy
+ * rarity. None is needed to draw a puzzle, so a new player sees the board
+ * while they arrive.
+ *
+ * But every one of them changes what a word scores, so -- like the rejection
+ * metadata in submit.ts -- nothing may score a word before they are in. A
+ * score is saved with the word and sent to the board, so one priced early is
+ * wrong for good. The puzzle's submit and copy paths wait on `wordDataReady`
+ * (game/wordData.ts), and the views that score words while they render re-run
+ * on `useWordDataLoaded` (hooks/). Scripts and the API wait on
+ * `scoringReady()` before they score anything.
+ *
+ * The first three go out as soon as this module runs, by which point the
+ * critical chunks are in. The legacy rarity only prices an archived puzzle from
+ * before NEW_SCORING_START, so it is asked for only when one is.
+ */
+
+/** Undefined until the first three files are in. */
+let recentScoringData: Promise<void> | undefined;
+let recentScoringLoaded = false;
+let legacyScoringData: Promise<void> | undefined;
+let legacyScoringLoaded = false;
+
+/**
+ * One dynamic import, tried twice. Undefined comes back only while
+ * chunkRecovery reloads the tab, and waiting on the reload is better than a
+ * moment of scoring words without the file. A second failure rejects, and the
+ * caller's memo is cleared so the next wait tries again: a word is never
+ * scored on missing data, and a player who taps submit again on a better
+ * connection is not stuck.
+ */
+async function importData<T>(load: () => Promise<T | undefined>): Promise<T> {
+  let failure: unknown;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const module = await load();
+      if (module === undefined) return new Promise<never>(() => {});
+      return module;
+    } catch (error) {
+      failure = error;
+    }
+  }
+  throw failure;
+}
+
+function loadRecentScoringData(): Promise<void> {
+  recentScoringData ??= Promise.all([
+    importData(() => import("../data/estimated-zipf")),
+    importData(() => import("../data/fold-exemptions.json")),
+    importData(() => import("../data/fold-review-verdicts.json")),
+  ]).then(
+    ([estimates, exemptions, verdicts]) => {
+      // Through `unknown`: once two batches estimate different words, the
+      // JSON's inferred type gives each batch the other's words as
+      // `?: undefined`, and a direct cast to Record<string, number> no longer
+      // type-checks.
+      ESTIMATED_ZIPF = indexEstimatedZipf(
+        (estimates.default as unknown as { batches: EstimatedZipfBatch[] }).batches
+      );
+      FOLD_EXEMPTIONS = new Map(
+        Object.entries(exemptions.default as Record<string, FoldExemption>)
+      );
+      FOLD_REVIEW_VERDICTS = new Map(
+        Object.entries(verdicts.default as Record<string, FoldReviewVerdict>)
+      );
+      recentScoringLoaded = true;
+    },
+    (error: unknown) => {
+      recentScoringData = undefined;
+      throw error;
+    }
+  );
+  return recentScoringData;
+}
+
+function loadLegacyScoringData(): Promise<void> {
+  legacyScoringData ??= importData(() => import("../data/rarity-legacy.json")).then(
+    (legacy) => {
+      setLegacyRarity(legacy.default.zipfTenths);
+      legacyScoringLoaded = true;
+    },
+    (error: unknown) => {
+      legacyScoringData = undefined;
+      throw error;
+    }
+  );
+  return legacyScoringData;
+}
+
+/** Whether `date`'s puzzle is priced off the legacy rarity. */
+function usesLegacyRarity(date?: string): boolean {
+  return date !== undefined && date < NEW_SCORING_START;
+}
+
+/**
+ * Resolves once everything needed to score a word on `date`'s puzzle is in.
+ * An omitted date means the newest system, which never needs the legacy
+ * rarity. Rejects only if a file failed to arrive twice; waiting again retries.
+ */
+export function scoringReady(date?: string): Promise<void> {
+  const recent = loadRecentScoringData();
+  return usesLegacyRarity(date)
+    ? Promise.all([recent, loadLegacyScoringData()]).then(() => undefined)
+    : recent;
+}
+
+/** Whether `scoringReady(date)` has resolved. */
+export function scoringLoaded(date?: string): boolean {
+  return recentScoringLoaded && (!usesLegacyRarity(date) || legacyScoringLoaded);
+}
+
+// The request goes out with the module; a failure here is retried by the
+// first wait that needs the data, so it is not reported twice.
+loadRecentScoringData().catch(() => {});
 
 /** The reviewed verdict in force for `word` under `date`, if any. */
 function reviewVerdictFor(word: string, date?: string): FoldReviewVerdict | undefined {

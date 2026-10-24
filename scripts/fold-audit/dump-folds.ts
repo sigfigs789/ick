@@ -18,7 +18,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { argv, stderr } from "node:process";
 
 import { loadCorpus } from "../../src/game/corpus";
-import { foldTrace, rarityScore, rarityForZipf } from "../../src/game/dictionary";
+import { foldTrace, rarityScore, rarityForZipf, scoringReady } from "../../src/game/dictionary";
 import { dropForDate } from "../../src/game/drop";
 import { setMode } from "../../src/game/mode";
 import { evaluateSubmission } from "../../src/game/submit";
@@ -98,6 +98,7 @@ async function main(): Promise<void> {
 
   serveShippedCorpus();
   const ok = await loadCorpus();
+  await scoringReady();
   if (!ok) throw new Error("corpus failed to load");
 
   const words = corpusWords();
