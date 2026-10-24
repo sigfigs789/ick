@@ -6793,6 +6793,9 @@ button.app__menu-item + button.app__menu-item {
   margin-top: 0.75rem;
   font-size: 0.85rem;
 }
+.stats__sentinel {
+  height: 1px;
+}
 .stats__more-count {
   margin-left: auto;
   color: var(--fg-faint);

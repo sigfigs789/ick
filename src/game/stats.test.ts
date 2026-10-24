@@ -44,7 +44,6 @@ describe("computeStats", () => {
     const stats = computeStats(history, streak);
     expect(stats.topWords.map((w) => w.word)).toEqual(["inkhorn", "inkling", "ink", "pink", "think"]);
     expect(stats.topWords[0].mode).toBe("freeform");
-    expect(stats.bestWordsShown).toBe(5);
     expect(stats.longestWord?.word).toBe("inkling");
   });
 
@@ -54,19 +53,6 @@ describe("computeStats", () => {
       streak
     );
     expect(stats.topWords.map((w) => w.word)).toEqual(["kink", "pink"]);
-  });
-
-  it("shows fifteen words at first, or every 9.5+ word where there are more", () => {
-    const common = Array.from({ length: 20 }, (_, i) => word(`common${i}`, "Common", 4.5));
-    const few = computeStats([day("2026-10-20", common)], streak);
-    expect(few.topWords).toHaveLength(20);
-    expect(few.bestWordsShown).toBe(15);
-
-    const mythic = Array.from({ length: 18 }, (_, i) => word(`mythic${i}`, "Mythic", 0.5));
-    const many = computeStats([day("2026-10-20", [...common, ...mythic])], streak);
-    expect(many.topWords).toHaveLength(38);
-    expect(many.topWords.slice(0, 18).every((w) => w.score >= 9.5)).toBe(true);
-    expect(many.bestWordsShown).toBe(18);
   });
 
   it("splits by mode, averaging finished puzzles only", () => {
