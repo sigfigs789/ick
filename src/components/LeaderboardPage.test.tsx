@@ -579,6 +579,18 @@ describe("the leaderboard page", () => {
     expect(region).not.toHaveTextContent(/Aug \d+ – \d+/);
   });
 
+  it("says the weekly board resets on Mondays once weeks start on Monday", async () => {
+    // A Friday in the first Monday week, which opened on Sunday 2026-10-25.
+    onDay("2026-10-30");
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    const region = board("This week");
+    expect(region).toHaveTextContent("Resets on Mondays");
+    expect(region).not.toHaveTextContent("Sundays");
+  });
+
   it("drops the subtitle over the two boards", async () => {
     stubFetch();
     render(<LeaderboardPage />);
