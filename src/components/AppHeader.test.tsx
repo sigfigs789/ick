@@ -23,6 +23,11 @@ function Harness() {
   return <AppHeader route={route} onHowToPlay={howToPlay} />;
 }
 
+/** Open the "?" menu, where the rules and the mode switch live. */
+async function openMenu() {
+  await userEvent.click(screen.getByRole("button", { name: "Help and settings" }));
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
@@ -30,37 +35,28 @@ beforeEach(() => {
 });
 
 describe("the header", () => {
-  it("names all three pages, and says which one you are on", () => {
+  it("names each page by its icon, and the wordmark goes home", async () => {
+    window.history.pushState(null, "", "/leaderboard");
     render(<Harness />);
 
-    expect(screen.getByText("Play")).toBeInTheDocument();
-    expect(screen.getByText("Leaderboards")).toBeInTheDocument();
-    // Named for what the page opens on, which is what brings anybody back to
-    // it through the day.
-    expect(screen.getByText("Words found")).toBeInTheDocument();
-    // Labels, not a row of glyphs: a trophy and a scroll cannot say which of
-    // the two lists of words is which.
-    expect(screen.getByRole("button", { name: /^Play$/ })).toHaveAttribute(
+    // Icons on the bar, each named and titled with its page.
+    expect(screen.getByRole("button", { name: "Words found" })).toHaveAttribute("title", "Words found");
+    expect(screen.getByRole("button", { name: "Leaderboards" })).toHaveAttribute(
       "aria-current",
       "page",
     );
+    // The puzzle has no icon: the wordmark is the way back to it.
+    await userEvent.click(screen.getByRole("link", { name: /^Word ?Ink$/ }));
+    expect(window.location.pathname).toBe("/");
   });
 
   it("puts the finds before the boards", () => {
     render(<Harness />);
 
-    const labels = screen
-      .getAllByRole("button", { name: /^(Play|Words found|Leaderboards)$/ })
+    const labels = within(screen.getByRole("navigation", { name: "Pages" }))
+      .getAllByRole("button")
       .map((tab) => tab.getAttribute("aria-label"));
-    expect(labels).toEqual(["Play", "Words found", "Leaderboards"]);
-  });
-
-  it("gives a phone shorter labels, still named in full", () => {
-    render(<Harness />);
-
-    // CSS shows these below 480px; the tab is still announced by its full name.
-    expect(within(screen.getByRole("button", { name: "Words found" })).getByText("Words")).toBeInTheDocument();
-    expect(within(screen.getByRole("button", { name: "Leaderboards" })).getByText("Ranks")).toBeInTheDocument();
+    expect(labels).toEqual(["Words found", "Leaderboards"]);
   });
 
   it("goes to each page, and moves the current marker with it", async () => {
@@ -86,10 +82,10 @@ describe("the header", () => {
     expect(screen.queryByRole("button", { name: "Stats" })).not.toBeInTheDocument();
 
     rerender(<AppHeader route="game" onHowToPlay={howToPlay} showStats />);
-    const labels = screen
-      .getAllByRole("button", { name: /^(Play|Words found|Stats|Leaderboards)$/ })
+    const labels = within(screen.getByRole("navigation", { name: "Pages" }))
+      .getAllByRole("button")
       .map((tab) => tab.getAttribute("aria-label"));
-    expect(labels).toEqual(["Play", "Words found", "Stats", "Leaderboards"]);
+    expect(labels).toEqual(["Words found", "Stats", "Leaderboards"]);
 
     await userEvent.click(screen.getByRole("button", { name: "Stats" }));
     expect(window.location.pathname).toBe("/stats");
@@ -129,8 +125,34 @@ describe("the header", () => {
 
     // It used to live on the game alone, so a reader of the boards had to go
     // back to the puzzle to check what a rank was made of.
+    await openMenu();
     await userEvent.click(screen.getByRole("button", { name: /how to play/i }));
     expect(howToPlay).toHaveBeenCalled();
+    // A choice closes the menu behind it.
+    expect(screen.queryByRole("button", { name: /how to play/i })).not.toBeInTheDocument();
+  });
+
+  it("offers feedback and word suggestions in the menu only when wired", async () => {
+    const onOpenSheet = vi.fn();
+    const { rerender } = render(<AppHeader route="game" onHowToPlay={howToPlay} />);
+    await openMenu();
+    expect(screen.queryByRole("button", { name: "Feedback" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Suggest a word" })).not.toBeInTheDocument();
+
+    rerender(<AppHeader route="game" onHowToPlay={howToPlay} onOpenSheet={onOpenSheet} />);
+    await userEvent.click(screen.getByRole("button", { name: "Feedback" }));
+    expect(onOpenSheet).toHaveBeenLastCalledWith("feedback");
+    await openMenu();
+    await userEvent.click(screen.getByRole("button", { name: "Suggest a word" }));
+    expect(onOpenSheet).toHaveBeenLastCalledWith("suggest-word");
+  });
+
+  it("closes the menu on Escape, handing focus back to the \"?\"", async () => {
+    render(<Harness />);
+    await openMenu();
+    await userEvent.keyboard("{Escape}");
+    expect(screen.queryByRole("button", { name: /how to play/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Help and settings" })).toHaveFocus();
   });
 });
 
@@ -277,6 +299,9 @@ describe("the mode switch", () => {
         onModeChange={onModeChange}
       />,
     );
+    // Tucked in the "?" menu, out of the puzzle's way.
+    expect(screen.queryByRole("button", { name: /switch to/i })).not.toBeInTheDocument();
+    await openMenu();
     // The label is where you are; the accessible name carries the destination,
     // which is the half a screen reader needs and the glyph cannot give.
     const button = screen.getByRole("button", {
@@ -297,13 +322,14 @@ describe("the mode switch", () => {
         onModeChange={onModeChange}
       />,
     );
+    await openMenu();
     await userEvent.click(
       screen.getByRole("button", { name: /switch to standard/i }),
     );
     expect(onModeChange).toHaveBeenCalledWith("standard");
   });
 
-  it("wears no badge, even when handed a label", () => {
+  it("wears no badge, even when handed a label", async () => {
     render(
       <AppHeader
         route="game"
@@ -313,6 +339,7 @@ describe("the mode switch", () => {
         badgeLabel="Two ways to play"
       />,
     );
+    await openMenu();
     expect(
       screen.getByRole("button", { name: /switch to freeform/i }),
     ).toBeInTheDocument();
@@ -342,7 +369,7 @@ describe("the docked mode switch", () => {
   const switches = () =>
     screen.queryAllByRole("button", { name: /switch to/i });
 
-  it("follows the reader down the finds once the header's has scrolled away", async () => {
+  it("follows the reader down the finds once the header has scrolled away", async () => {
     const onModeChange = vi.fn();
     render(
       <AppHeader
@@ -352,17 +379,18 @@ describe("the docked mode switch", () => {
         onModeChange={onModeChange}
       />,
     );
-    // One switch while the header's is on screen -- never two at once.
-    expect(switches()).toHaveLength(1);
+    // In the menu while the header is on screen, and out on the page once it
+    // has scrolled away.
+    expect(switches()).toHaveLength(0);
     act(() => report(false));
-    expect(switches()).toHaveLength(2);
-    await userEvent.click(switches()[1]);
+    expect(switches()).toHaveLength(1);
+    await userEvent.click(switches()[0]);
     expect(onModeChange).toHaveBeenCalledWith("freeform");
     act(() => report(true));
-    expect(switches()).toHaveLength(1);
+    expect(switches()).toHaveLength(0);
   });
 
-  it("stays in the header on the puzzle, whose input sits under it", () => {
+  it("stays in the menu on the puzzle, whose input sits under the header", () => {
     render(
       <AppHeader
         route="game"
@@ -371,8 +399,8 @@ describe("the docked mode switch", () => {
         onModeChange={vi.fn()}
       />,
     );
-    expect(switches()).toHaveLength(1);
+    expect(switches()).toHaveLength(0);
     act(() => report(false));
-    expect(switches()).toHaveLength(1);
+    expect(switches()).toHaveLength(0);
   });
 });

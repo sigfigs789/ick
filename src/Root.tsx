@@ -6,6 +6,7 @@ import { ChatBubble } from "./components/ChatBubble";
 import { FreeformModal } from "./components/FreeformModal";
 import { PageErrorBoundary } from "./components/PageErrorBoundary";
 import { InstructionsModal } from "./components/InstructionsModal";
+import { MenuSheetModal, type MenuSheet } from "./components/MenuSheetModal";
 import { DevDateBar } from "./dev/DevDateBar";
 import { DEV_TOOLS } from "./dev/devTools";
 import { todayDateString } from "./game/date";
@@ -139,6 +140,8 @@ export function Root() {
   const [showInstructions, setShowInstructions] = useState(
     () => route !== "transfer" && !hasSeen("instructions"),
   );
+  /** Feedback or Suggest a word, opened from the header's "?" menu. */
+  const [menuSheet, setMenuSheet] = useState<MenuSheet | null>(null);
 
   /**
    * Today's date, read once per mount.
@@ -399,6 +402,7 @@ export function Root() {
       <AppHeader
         route={route}
         onHowToPlay={() => setShowInstructions(true)}
+        onOpenSheet={takesPlayerMessages() ? setMenuSheet : undefined}
         // One slot, two eras, never both at once. Until MODE_CHOICE_START the
         // header is the trial's and nothing here changes -- the button opens the
         // week's notice, exactly as it does today. From that date the trial is
@@ -469,6 +473,7 @@ export function Root() {
       {DEV_TOOLS && <DevDateBar />}
       {/* The chat room's corner button, on every page that has a chat room. */}
       {takesPlayerMessages() && <ChatBubble lifted={DEV_TOOLS} />}
+      <MenuSheetModal sheet={menuSheet} onClose={() => setMenuSheet(null)} />
       <InstructionsModal
         open={showInstructions}
         onClose={() => {

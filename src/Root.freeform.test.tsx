@@ -157,28 +157,34 @@ describe("the mode switch, from the choice date on", () => {
     localStorage.setItem("ick:seen:instructions", "1");
   });
 
-  const modeButton = () => screen.getByRole("button", { name: /switch to/i });
+  /** The switch, in the "?" menu: opened first if it is not already. */
+  const modeButton = async () => {
+    if (!screen.queryByRole("button", { name: /switch to/i })) {
+      await userEvent.click(screen.getByRole("button", { name: "Help and settings" }));
+    }
+    return screen.getByRole("button", { name: /switch to/i });
+  };
 
-  it("opens on Standard for a player who has never chosen", () => {
+  it("opens on Standard for a player who has never chosen", async () => {
     render(<Root />);
-    expect(modeButton()).toHaveTextContent("Standard");
+    expect(await modeButton()).toHaveTextContent("Standard");
   });
 
   it("remembers the choice, in this session and the next", async () => {
     const first = render(<Root />);
-    await userEvent.click(modeButton());
-    expect(modeButton()).toHaveTextContent("Freeform");
+    await userEvent.click(await modeButton());
+    expect(await modeButton()).toHaveTextContent("Freeform");
     first.unmount();
 
     // A mode is a setting, not a session: a player who switched on Monday is
     // still in Freeform on Tuesday without being asked again.
     render(<Root />);
-    expect(modeButton()).toHaveTextContent("Freeform");
+    expect(await modeButton()).toHaveTextContent("Freeform");
   });
 
-  it("puts no badge under the switch", () => {
+  it("puts no badge under the switch", async () => {
     render(<Root />);
-    expect(modeButton()).toBeInTheDocument();
+    expect(await modeButton()).toBeInTheDocument();
     expect(screen.queryByText(/change mode/i)).toBeNull();
   });
 

@@ -266,12 +266,10 @@ h2 {
 }
 
 /* Header */
-/* Two rows: the wordmark and the rules on top, the three pages under them. A
-   row of its own for the tabs because three labelled destinations do not fit a
-   phone's width beside a wordmark -- and because a tab strip that runs the width
-   of the page is the shape people already read as "these are the pages". */
+/* One row: the wordmark, which is the way home, then an icon per page and the
+   "?" menu -- the bar every daily word game has settled on. */
 .app__header {
-  padding: 1.25rem 0 0;
+  padding: 1rem 0 0.85rem;
   border-bottom: 1px solid var(--border);
   margin-bottom: 1.25rem;
 }
@@ -279,8 +277,8 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  /* Tight enough that the wordmark, the update pill and the "?" hold one line
-     on a 375px phone. */
+  /* Tight enough that the wordmark, the page icons and the "?" hold one line
+     on a 320px phone. */
   gap: 0.5rem;
 }
 /* The wordmark, which is an h1 on the puzzle and a plain line elsewhere (see
@@ -301,81 +299,100 @@ h2 {
 .app__wordmark-ink {
   color: var(--rarity-mythic-dot);
 }
-/* On a phone the wordmark, the mode pill and the "?" have to share one line,
-   and a wordmark that wraps drops the beta chip under it. So the type follows
-   the screen's width, from 1.9rem on anything 490px or wider down to 1.2rem on
-   the narrowest phone, and never wraps: the row is the app's identity and it
-   should read as one line everywhere. */
+/* On a phone the wordmark shares its line with the page icons and the "?", so
+   the type follows the screen's width, from 1.9rem on anything 435px or wider
+   down to 1.4rem on the narrowest phone, and never wraps. */
 .app__wordmark {
-  font-size: clamp(1.2rem, 6.2vw, 1.9rem);
+  font-size: clamp(1.4rem, 7vw, 1.9rem);
   white-space: nowrap;
 }
-/* The tabs. Evenly divided rather than packed to one side: they are the whole
-   width of the app's navigation, and wide targets are easier to hit without
-   looking. One column per tab, three or four (Stats joins once the player has
-   a record), all the same width so the row reads as even steps. Four equal
-   quarters of a phone are narrower than "Words found" and "Leaderboards", so
-   below 480px each tab shows its short label instead (see AppHeader). */
+/* The pages, as icons beside the "?" (see AppHeader). The current one is
+   filled in, so the bar still says where you are without a row of tabs. */
 .app__nav {
-  display: grid;
-  grid-auto-columns: 1fr;
-  grid-auto-flow: column;
-  gap: 0.25rem;
-  margin-top: 0.85rem;
-}
-.app__nav-item {
-  position: relative;
-  /* Grid items default to their content's width as a minimum, which would let
-     one long label widen its column and undo the even steps. */
-  min-width: 0;
-  /* Not clipped: the badge and its callout deliberately hang outside. */
-  overflow: visible;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 0.55rem 0.2rem 0.6rem;
-  border: 0;
-  /* The underline that marks the current tab, drawn transparent on the others
-     so nothing moves when it appears. It sits on the header's own bottom rule,
-     which is what makes a tab look attached to the page under it. */
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
+  gap: inherit;
+}
+/* Bare icons, so four of them read as one quiet row rather than four
+   competing circles; the "?" matches them. */
+.app__icon-button.app__nav-item,
+.app__menu > .app__icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-color: transparent;
   background: transparent;
   color: var(--fg-muted);
-  font-family: var(--font-display);
-  /* Bigger than it was under the glyphs: the label is the whole tab now, and
-     the row has the height the icon used to take. */
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+}
+.app__icon-button.app__nav-item:hover,
+.app__menu > .app__icon-button:hover,
+.app__menu > .app__icon-button[aria-expanded="true"] {
+  color: var(--fg);
+  background: var(--bg-inset);
+}
+.app__icon-button.app__nav-item--current {
+  color: var(--bg);
+  background: var(--fg);
+  border-color: var(--fg);
+}
+.app__icon-button.app__nav-item--current:hover {
+  color: var(--bg);
+  background: var(--fg);
+}
+/* The wordmark is a link home, dressed as the wordmark. */
+.app__wordmark-link {
+  color: inherit;
+  text-decoration: none;
+}
+/* The "?" menu, hanging from the "?" at the bar's right edge. */
+.app__menu {
+  position: relative;
+  flex: none;
+}
+.app__menu-panel {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 20;
+  min-width: 13rem;
+  display: flex;
+  flex-direction: column;
+  padding: 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--card-bg);
+  box-shadow: var(--dock-shadow);
+}
+.app__menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
   cursor: pointer;
-  transition: color 0.15s var(--ease-standard);
 }
-.app__nav-item:hover {
-  color: var(--fg);
+button.app__menu-item:hover {
+  background: var(--bg-inset);
 }
-.app__nav-item--current {
-  color: var(--fg);
-  border-bottom-color: var(--fg);
+.app__menu-mode {
+  cursor: default;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  padding-top: 0.3rem;
+  margin-top: 0.3rem;
 }
-.app__nav-label {
-  white-space: nowrap;
-}
-.app__nav-label--short {
-  display: none;
-  white-space: nowrap;
-}
-@media (max-width: 479px) {
-  .app__nav-label--full {
-    display: none;
-  }
-  .app__nav-label--short {
-    display: inline;
-  }
-}
+/* The beta tag, on the title of How to play (see InstructionsModal). */
 .app__beta {
   display: inline-block;
-  margin-left: 0.4rem;
+  margin-left: 0.5rem;
   padding: 0.1rem 0.35rem;
   border: 1px solid var(--border-strong);
   border-radius: 0.35rem;
@@ -386,10 +403,10 @@ h2 {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   vertical-align: middle;
-  /* Lifted off the baseline so it reads as a tag on the wordmark rather than a
+  /* Lifted off the baseline so it reads as a tag on the title rather than a
      shrunken second word sitting in the same line of type. */
   position: relative;
-  top: -0.45em;
+  top: -0.2em;
 }
 .app__puzzle-number {
   margin: 0;
@@ -427,7 +444,16 @@ h2 {
   display: flex;
   align-items: center;
   flex: none;
-  gap: 0.5rem;
+  gap: 0.4rem;
+}
+@media (max-width: 379px) {
+  .app__header-actions {
+    gap: 0.15rem;
+  }
+  .app__header-actions .app__icon-button {
+    width: 2rem;
+    height: 2rem;
+  }
 }
 /* The announcement button and the badge floating under it. The wrapper is what
    the badge is positioned against, and it takes no space of its own. */

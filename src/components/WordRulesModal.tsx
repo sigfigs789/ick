@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, type Ref, useEffect, useRef, useState } from "react";
 import { trackWordSuggestion } from "../analytics";
 import { usesFreeformRules } from "../game/dictionary";
 import { modeIsChosen } from "../game/mode";
@@ -15,8 +15,6 @@ interface Props {
 
 export function WordRulesModal({ open, date, onClose }: Props) {
   const closeRef = useRef<HTMLButtonElement>(null);
-  const [suggestion, setSuggestion] = useState("");
-  const [sent, setSent] = useState(false);
   const [mode] = useGameMode();
 
   useEffect(() => {
@@ -33,15 +31,6 @@ export function WordRulesModal({ open, date, onClose }: Props) {
   }, [open, onClose]);
 
   if (!open) return null;
-
-  function submitSuggestion(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const word = suggestion.trim().toLowerCase();
-    if (!word) return;
-    trackWordSuggestion(word);
-    setSuggestion("");
-    setSent(true);
-  }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -88,44 +77,79 @@ export function WordRulesModal({ open, date, onClose }: Props) {
           {takesPlayerMessages() &&
             "Know a good word that's missing? Suggest it and everybody gets to play it."}
         </p>
-        {takesPlayerMessages() && (
-          <form className="word-suggestion" onSubmit={submitSuggestion}>
-            <label htmlFor="word-suggestion">Suggest a word</label>
-            <div className="word-suggestion__row">
-              <input
-                id="word-suggestion"
-                value={suggestion}
-                onChange={(event) => {
-                  setSuggestion(event.target.value);
-                  setSent(false);
-                }}
-                placeholder="Enter a word"
-                autoComplete="off"
-                maxLength={80}
-              />
-              <button type="submit" disabled={!suggestion.trim()}>
-                Suggest word
-              </button>
-            </div>
-            {/* role="status" so the confirmation is announced and not only seen. */}
-            {sent && (
-              <p className="word-suggestion__thanks" role="status">
-                Thanks for the suggestion!{" "}
-                <button
-                  type="button"
-                  className="word-suggestion__link"
-                  onClick={() => {
-                    onClose();
-                    navigate("suggested-words");
-                  }}
-                >
-                  See suggestions
-                </button>
-              </p>
-            )}
-          </form>
-        )}
+        {takesPlayerMessages() && <WordSuggestionForm onLeave={onClose} />}
       </div>
     </div>
+  );
+}
+
+/**
+ * The box for suggesting a word, shared by Word rules (where a turned-away word
+ * sends a player) and the "?" menu's Suggest a word.
+ *
+ * `onLeave` closes whatever sheet holds the form before "See suggestions"
+ * takes the player to the queue.
+ */
+export function WordSuggestionForm({
+  onLeave,
+  inputRef,
+  labelHidden = false,
+}: {
+  onLeave: () => void;
+  inputRef?: Ref<HTMLInputElement>;
+  /** For a sheet whose title already says "Suggest a word". */
+  labelHidden?: boolean;
+}) {
+  const [suggestion, setSuggestion] = useState("");
+  const [sent, setSent] = useState(false);
+
+  function submitSuggestion(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const word = suggestion.trim().toLowerCase();
+    if (!word) return;
+    trackWordSuggestion(word);
+    setSuggestion("");
+    setSent(true);
+  }
+
+  return (
+    <form className="word-suggestion" onSubmit={submitSuggestion}>
+      <label htmlFor="word-suggestion" className={labelHidden ? "sr-only" : undefined}>
+        Suggest a word
+      </label>
+      <div className="word-suggestion__row">
+        <input
+          ref={inputRef}
+          id="word-suggestion"
+          value={suggestion}
+          onChange={(event) => {
+            setSuggestion(event.target.value);
+            setSent(false);
+          }}
+          placeholder="Enter a word"
+          autoComplete="off"
+          maxLength={80}
+        />
+        <button type="submit" disabled={!suggestion.trim()}>
+          Suggest word
+        </button>
+      </div>
+      {/* role="status" so the confirmation is announced and not only seen. */}
+      {sent && (
+        <p className="word-suggestion__thanks" role="status">
+          Thanks for the suggestion!{" "}
+          <button
+            type="button"
+            className="word-suggestion__link"
+            onClick={() => {
+              onLeave();
+              navigate("suggested-words");
+            }}
+          >
+            See suggestions
+          </button>
+        </p>
+      )}
+    </form>
   );
 }
