@@ -301,40 +301,33 @@ h2 {
 .app__wordmark-ink {
   color: var(--rarity-mythic-dot);
 }
-/* On a phone the wordmark, the Freeform pill and the "?" stop fitting on one
-   line, and a wrapped wordmark drops the beta chip under it. Stepping the type
-   down is cheaper than any of the alternatives -- the row is the app's identity
-   and it should read as one line on every phone. Two steps, because the width
-   range is wide: a 430px phone has room the 320px one has not.
-
-   Applies whether or not the pill is there. The row was already tight at these
-   widths without it, and a wordmark that changes size when a button comes and
-   goes would be the more obvious fault. */
-@media (max-width: 429px) {
-  .app__wordmark {
-    font-size: 1.6rem;
-  }
-}
-@media (max-width: 359px) {
-  .app__wordmark {
-    font-size: 1.2rem;
-  }
+/* On a phone the wordmark, the mode pill and the "?" have to share one line,
+   and a wordmark that wraps drops the beta chip under it. So the type follows
+   the screen's width, from 1.9rem on anything 490px or wider down to 1.2rem on
+   the narrowest phone, and never wraps: the row is the app's identity and it
+   should read as one line everywhere. */
+.app__wordmark {
+  font-size: clamp(1.2rem, 6.2vw, 1.9rem);
+  white-space: nowrap;
 }
 /* The tabs. Evenly divided rather than packed to one side: they are the whole
    width of the app's navigation, and wide targets are easier to hit without
    looking. One column per tab, three or four (Stats joins once the player has
-   a record): each as wide as its label, then the spare width shared out
-   equally, because four equal quarters of a phone are narrower than
-   "Leaderboards". */
+   a record), all the same width so the row reads as even steps. Four equal
+   quarters of a phone are narrower than "Words found" and "Leaderboards", so
+   below 480px each tab shows its short label instead (see AppHeader). */
 .app__nav {
   display: grid;
-  grid-auto-columns: auto;
+  grid-auto-columns: 1fr;
   grid-auto-flow: column;
   gap: 0.25rem;
   margin-top: 0.85rem;
 }
 .app__nav-item {
   position: relative;
+  /* Grid items default to their content's width as a minimum, which would let
+     one long label widen its column and undo the even steps. */
+  min-width: 0;
   /* Not clipped: the badge and its callout deliberately hang outside. */
   overflow: visible;
   display: flex;
@@ -367,6 +360,18 @@ h2 {
 }
 .app__nav-label {
   white-space: nowrap;
+}
+.app__nav-label--short {
+  display: none;
+  white-space: nowrap;
+}
+@media (max-width: 479px) {
+  .app__nav-label--full {
+    display: none;
+  }
+  .app__nav-label--short {
+    display: inline;
+  }
 }
 .app__beta {
   display: inline-block;

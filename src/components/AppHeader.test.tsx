@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppHeader } from "./AppHeader";
@@ -51,8 +51,16 @@ describe("the header", () => {
 
     const labels = screen
       .getAllByRole("button", { name: /^(Play|Words found|Leaderboards)$/ })
-      .map((tab) => tab.textContent);
+      .map((tab) => tab.getAttribute("aria-label"));
     expect(labels).toEqual(["Play", "Words found", "Leaderboards"]);
+  });
+
+  it("keeps a phone's shorter labels inside each tab's full name", () => {
+    render(<Harness />);
+
+    // CSS shows these below 480px; the tab is still announced by its full name.
+    expect(within(screen.getByRole("button", { name: "Words found" })).getByText("Words")).toBeInTheDocument();
+    expect(within(screen.getByRole("button", { name: "Leaderboards" })).getByText("Boards")).toBeInTheDocument();
   });
 
   it("goes to each page, and moves the current marker with it", async () => {
@@ -80,7 +88,7 @@ describe("the header", () => {
     rerender(<AppHeader route="game" onHowToPlay={howToPlay} showStats />);
     const labels = screen
       .getAllByRole("button", { name: /^(Play|Words found|Stats|Leaderboards)$/ })
-      .map((tab) => tab.textContent);
+      .map((tab) => tab.getAttribute("aria-label"));
     expect(labels).toEqual(["Play", "Words found", "Stats", "Leaderboards"]);
 
     await userEvent.click(screen.getByRole("button", { name: "Stats" }));

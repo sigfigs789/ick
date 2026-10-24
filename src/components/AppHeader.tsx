@@ -36,6 +36,8 @@ const DOCKED_SWITCH_ROUTES: readonly Route[] = ["leaderboard", "found-words"];
 interface Tab {
   route: Route;
   label: string;
+  /** What a phone shows instead, where four full labels do not fit one row. */
+  short: string;
 }
 
 /**
@@ -49,16 +51,16 @@ interface Tab {
  * glyph above it was decoration with a claim on the header's height.
  */
 const TABS: readonly Tab[] = [
-  { route: "game", label: "Play" },
+  { route: "game", label: "Play", short: "Play" },
   // "Words found" rather than "Today's finds": the page does not only hold
   // today's -- it opens there, but stepping back a day is a thing it offers,
   // and a tab that promises today then shows Tuesday has misnamed itself. The
   // heading on the page is the one that says which day you are looking at.
-  { route: "found-words", label: "Words found" },
+  { route: "found-words", label: "Words found", short: "Words" },
   // The player's own numbers, beside the words they found. Only once there are
   // any (see `showStats`).
-  { route: "stats", label: "Stats" },
-  { route: "leaderboard", label: "Leaderboards" },
+  { route: "stats", label: "Stats", short: "Stats" },
+  { route: "leaderboard", label: "Leaderboards", short: "Boards" },
 ];
 
 /**
@@ -330,8 +332,22 @@ export function AppHeader({
               className={`app__nav-item${current ? " app__nav-item--current" : ""}`}
               onClick={() => go(tab)}
               aria-current={current ? "page" : undefined}
+              aria-label={tab.label}
             >
-              <span className="app__nav-label">{tab.label}</span>
+              {/* Both are drawn and CSS picks one by width; the full label is
+                  the tab's name either way, and each short one is part of it. */}
+              <span
+                className={`app__nav-label${
+                  tab.short !== tab.label ? " app__nav-label--full" : ""
+                }`}
+              >
+                {tab.label}
+              </span>
+              {tab.short !== tab.label && (
+                <span className="app__nav-label--short" aria-hidden="true">
+                  {tab.short}
+                </span>
+              )}
             </button>
           );
         })}
