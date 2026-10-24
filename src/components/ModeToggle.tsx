@@ -52,3 +52,42 @@ export function ModeToggle({
     </button>
   );
 }
+
+/**
+ * Both modes side by side, the current one filled: the switch as it sits in
+ * the header's "?" menu, where there is room for the pair the bar never had.
+ * A radio group, because it is one choice of two, and picking the mode you
+ * are already in does nothing.
+ */
+export function ModeSegments({
+  mode,
+  onChange,
+}: {
+  mode: GameMode;
+  onChange: (mode: GameMode) => void;
+}) {
+  const modes: GameMode[] = ["standard", "freeform"];
+  return (
+    <div className="mode-segments" role="radiogroup" aria-label="Mode">
+      {modes.map((option) => {
+        const current = option === mode;
+        return (
+          <button
+            key={option}
+            type="button"
+            role="radio"
+            aria-checked={current}
+            className={`mode-segments__option${current ? " mode-segments__option--current" : ""}`}
+            onClick={() => {
+              if (current) return;
+              trackModeChanged(mode, option);
+              onChange(option);
+            }}
+          >
+            {MODE_LABELS[option]}
+          </button>
+        );
+      })}
+    </div>
+  );
+}

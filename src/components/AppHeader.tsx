@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { trackFoundWordsOpened, trackLeaderboardOpened, trackStatsOpened } from "../analytics";
-import { navigate, type Route } from "../routes";
-import { ModeToggle } from "./ModeToggle";
+import { navigate, pathFor, type Route } from "../routes";
+import { ModeSegments, ModeToggle } from "./ModeToggle";
 import type { GameMode } from "../game/mode";
+import type { MenuSheet } from "./MenuSheetModal";
 
 /**
  * How long the header badge stays before it is retired.
@@ -32,38 +33,98 @@ const BADGE_VISIBLE_MS = 10_000;
  */
 const DOCKED_SWITCH_ROUTES: readonly Route[] = ["leaderboard", "found-words"];
 
-/** One tab: where it goes and what it is called. */
+/** One page in the bar: where it goes, what it is called, and its icon. */
 interface Tab {
   route: Route;
   label: string;
+  icon: ReactNode;
+}
+
+/** Shared by every icon in the bar: a 24-unit line drawing in the text colour. */
+function Icon({ children }: { children: ReactNode }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="22"
+      height="22"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  );
+}
+
+/** The "›" at the end of a menu row, which says the row opens something. */
+function MenuChevron() {
+  return (
+    <span className="app__menu-chevron" aria-hidden="true">
+      ›
+    </span>
+  );
 }
 
 /**
- * The three pages, in the order a player meets them: the puzzle, then the two
- * things you go and look at once you have played it.
+ * The pages beside the puzzle, as icons on the one bar -- the shape every daily
+ * word game's header has settled on, and the only one that holds a wordmark and
+ * four destinations on a 320px phone. The puzzle itself is the wordmark.
  *
- * Labels alone, no glyphs. A trophy is guessable and a scroll is not, and
- * neither of them says which of the two lists of words you are about to get --
- * the boards rank players and the feed collects words, which is exactly the
- * distinction an icon cannot draw. Once the word is doing all the work, the
- * glyph above it was decoration with a claim on the header's height.
+ * Each icon keeps its page's name as its accessible name and its tooltip, so a
+ * screen reader and a mouse both get the word the glyph stands for.
  */
 const TABS: readonly Tab[] = [
-  { route: "game", label: "Play" },
+  // A book: the record of the words players found.
   // "Words found" rather than "Today's finds": the page does not only hold
   // today's -- it opens there, but stepping back a day is a thing it offers,
   // and a tab that promises today then shows Tuesday has misnamed itself. The
   // heading on the page is the one that says which day you are looking at.
-  { route: "found-words", label: "Words found" },
-  // The player's own numbers, beside the words they found. Only once there are
-  // any (see `showStats`).
-  { route: "stats", label: "Stats" },
-  { route: "leaderboard", label: "Leaderboards" },
+  {
+    route: "found-words",
+    label: "Words found",
+    icon: (
+      <Icon>
+        <path d="M2 4h6a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H2z" />
+        <path d="M22 4h-6a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h7z" />
+      </Icon>
+    ),
+  },
+  // The player's own numbers, beside the words they found. Offered from the
+  // first visit: before a word is banked the page says so and points at the
+  // puzzle (see StatsPage).
+  {
+    route: "stats",
+    label: "Stats",
+    icon: (
+      <Icon>
+        <path d="M4 20V10" />
+        <path d="M10 20V4" />
+        <path d="M16 20v-7" />
+        <path d="M2 20h20" />
+      </Icon>
+    ),
+  },
+  {
+    route: "leaderboard",
+    label: "Leaderboards",
+    icon: (
+      <Icon>
+        <path d="M7 4h10v5a5 5 0 0 1-10 0z" />
+        <path d="M7 6H4a3 3 0 0 0 3 4" />
+        <path d="M17 6h3a3 3 0 0 1-3 4" />
+        <path d="M12 14v4" />
+        <path d="M8 21h8l-1-3H9z" />
+      </Icon>
+    ),
+  },
 ];
 
 /**
- * The header every page wears: the wordmark, the way to the rules, and the tabs
- * between the three pages.
+ * The header every page wears: one bar with the wordmark, which is the way back
+ * to the puzzle, an icon for each page beside it, and the "?" menu.
  *
  * Rendered once above the router (see src/Root.tsx) rather than by each page, so
  * it is literally the same element across a navigation -- nothing to keep in
@@ -75,16 +136,19 @@ const TABS: readonly Tab[] = [
 export function AppHeader({
   route,
   onHowToPlay,
+  onOpenSheet,
   onFreeform,
   mode,
   onModeChange,
   badge = true,
   badgeLabel,
   onBadgeDone,
-  showStats = false,
 }: {
   route: Route;
   onHowToPlay: () => void;
+  /** Open Feedback or Suggest a word. Absent where the build takes no
+   * messages, which is what keeps both off the menu. */
+  onOpenSheet?: (sheet: MenuSheet) => void;
   /**
    * Open the trial week's notice. Passed only while the trial is running, which
    * is what takes the button off the header once it is over.
@@ -133,12 +197,6 @@ export function AppHeader({
    * announcement's state.
    */
   onBadgeDone?: () => void;
-  /**
-   * Whether the Stats tab is offered: once this browser has banked a word. A
-   * player with no record has no stats, and a tab that opens on zeros is one
-   * more thing on a first visit's header to read past.
-   */
-  showStats?: boolean;
 }) {
   // Whether this header has the trial's button, the only thing a badge sits
   // under. The mode switch that replaced it wears none.
@@ -158,22 +216,20 @@ export function AppHeader({
   const badgeDone = useRef(onBadgeDone);
 
   /**
-   * Whether the header's switch has scrolled out of view, which is when its
-   * docked copy appears at the top of the column.
+   * Whether the header has scrolled out of view, which is when the switch
+   * docks at the top of the column on the boards and the finds.
    *
-   * A copy that exists only while the original is off screen, rather than
-   * sticking the header itself: the header is two rows and the wordmark, a
-   * fifth of a phone's height, to keep one pill in reach. And never both at
-   * once, so there is only ever one "Mode" button to find, by eye or by screen
-   * reader.
+   * The switch itself lives in the "?" menu, out of the way of the puzzle; on
+   * those two pages a long list is read against the mode, so once the header
+   * has gone the pill follows the reader down.
    */
-  const modeNav = useRef<HTMLDivElement>(null);
+  const headerBar = useRef<HTMLDivElement>(null);
   const [docked, setDocked] = useState(false);
   const dockable = Boolean(mode && onModeChange) && DOCKED_SWITCH_ROUTES.includes(route);
   useEffect(() => {
-    const target = modeNav.current;
-    // No observer (jsdom, very old browsers) is no dock: the header's switch
-    // is still there, a scroll away.
+    const target = headerBar.current;
+    // No observer (jsdom, very old browsers) is no dock: the menu's switch is
+    // still there, a scroll away.
     if (!dockable || !target || typeof IntersectionObserver !== "function") {
       setDocked(false);
       return;
@@ -188,6 +244,38 @@ export function AppHeader({
     badgeDone.current = onBadgeDone;
   });
 
+  /**
+   * The "?" menu: the rules, feedback, word suggestions, the mode switch, and room for whatever the game
+   * grows next (an account, say) without the bar growing with it.
+   *
+   * A disclosure rather than an ARIA menu: a button that shows a short list of
+   * ordinary buttons, which every input already knows how to use. It closes on
+   * a press outside it, on Escape (handing focus back to the "?"), and after
+   * any choice in it.
+   */
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRoot = useRef<HTMLDivElement>(null);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onPointerDown(event: PointerEvent) {
+      if (!menuRoot.current?.contains(event.target as Node)) setMenuOpen(false);
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setMenuOpen(false);
+      menuButton.current?.focus();
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [menuOpen]);
+  // A new page is a choice made elsewhere; the menu does not follow it there.
+  useEffect(() => setMenuOpen(false), [route]);
+
   useEffect(() => {
     // No label is no badge on screen (see `badgeLabel`), and a badge nobody can
     // see has nothing to finish -- timing one out would retire an announcement
@@ -198,7 +286,18 @@ export function AppHeader({
   }, [switchable, badge, badgeLabel]);
 
   function changeMode(next: GameMode) {
+    setMenuOpen(false);
     onModeChange?.(next);
+  }
+
+  function openRules() {
+    setMenuOpen(false);
+    onHowToPlay();
+  }
+
+  function openSheet(sheet: MenuSheet) {
+    setMenuOpen(false);
+    onOpenSheet?.(sheet);
   }
 
   /**
@@ -211,6 +310,14 @@ export function AppHeader({
     onFreeform?.();
   }
 
+  /** The wordmark is the way back to the puzzle, as a link so it opens in a
+   * new tab like any other. */
+  function goHome(event: MouseEvent<HTMLAnchorElement>) {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+    event.preventDefault();
+    if (route !== "game") navigate("game");
+  }
+
   function go(tab: Tab) {
     if (tab.route === route) return;
     if (tab.route === "leaderboard") trackLeaderboardOpened("header");
@@ -219,17 +326,17 @@ export function AppHeader({
     navigate(tab.route);
   }
 
+  const wordmark = (
+    <a className="app__wordmark-link" href={pathFor("game")} onClick={goHome}>
+      Word<span className="app__wordmark-ink">Ink</span>
+    </a>
+  );
+
   return (
     <>
     <header className="app__header">
-      <div className="app__header-bar">
-        {/* The wordmark carries the beta chip rather than a banner: the game
-            really is changing under players week to week, and a permanent
-            label sets that expectation once, in the one place every screen
-            shows, without spending a row of the puzzle to say it. Title on
-            the chip so the curious get the reason.
-
-            An h1 on the puzzle and a plain word elsewhere. The other two pages
+      <div className="app__header-bar" ref={headerBar}>
+        {/* An h1 on the puzzle and a plain word elsewhere. The other pages
             have a heading of their own that says what they are, and two h1s on
             one page is a worse answer to "what is this" than either alone.
 
@@ -237,43 +344,12 @@ export function AppHeader({
             the name that makes it this game. No space between the spans, so it
             still reads -- and is announced -- as the one word. */}
         {route === "game" ? (
-          <h1 className="app__wordmark">
-            Word<span className="app__wordmark-ink">Ink</span>
-            <span
-              className="app__beta"
-              title="Still being built — rules and scoring may change."
-            >
-              beta
-            </span>
-          </h1>
+          <h1 className="app__wordmark">{wordmark}</h1>
         ) : (
-          <p className="app__wordmark">
-            Word<span className="app__wordmark-ink">Ink</span>
-            <span
-              className="app__beta"
-              title="Still being built — rules and scoring may change."
-            >
-              beta
-            </span>
-          </p>
+          <p className="app__wordmark">{wordmark}</p>
         )}
-        {/* The two controls travel as a pair, in their own box. The bar is
-            space-between, which spreads its children across the full width --
-            with the wordmark, this and the "?" as three siblings that parked
-            "Freeform" in the middle of the header on any screen wide enough to
-            have a middle. Grouped, the bar has two children again and the pair
-            stays at the right edge where the "?" has always been. */}
         <div className="app__header-actions">
-        {/* Sits before the "?" so the two read left to right as
-            state-then-reference, and so the badge under it is not hard against
-            the edge of a phone.
-
-            A word rather than a glyph, for the same reason it was a word when
-            it announced the week: an icon here would be a second circle beside
-            the "?" saying even less. The label names the mode you are in. */}
-        {/* The trial's button, while the trial is running. Unchanged from the
-            week it was built for: a word rather than a glyph, because an "i" in
-            a circle is the same shape as the "?" beside it and says less. */}
+        {/* The trial's button, on old puzzles from before the mode switch. */}
         {onFreeform && (
           <div className="app__freeform-nav">
             <button
@@ -302,40 +378,73 @@ export function AppHeader({
             )}
           </div>
         )}
-        {mode && onModeChange && (
-          <div className="app__mode-nav" ref={modeNav}>
-            <ModeToggle mode={mode} onChange={changeMode} />
-          </div>
-        )}
-        <button
-          type="button"
-          className="app__icon-button"
-          onClick={onHowToPlay}
-          aria-label="How to play"
-        >
-          ?
-        </button>
+        <nav className="app__nav" aria-label="Pages">
+          {TABS.map((tab) => {
+            const current = tab.route === route;
+            return (
+              <button
+                key={tab.route}
+                type="button"
+                className={`app__icon-button app__nav-item${current ? " app__nav-item--current" : ""}`}
+                onClick={() => go(tab)}
+                aria-current={current ? "page" : undefined}
+                aria-label={tab.label}
+                title={tab.label}
+              >
+                {tab.icon}
+              </button>
+            );
+          })}
+        </nav>
+        <div className="app__menu" ref={menuRoot}>
+          <button
+            ref={menuButton}
+            type="button"
+            className="app__icon-button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label="Help and settings"
+            aria-expanded={menuOpen}
+            aria-controls="app-menu"
+            title="Help and settings"
+          >
+            ?
+          </button>
+          {menuOpen && (
+            <div className="app__menu-panel" id="app-menu">
+              <button type="button" className="app__menu-item" onClick={openRules}>
+                How to play
+                <MenuChevron />
+              </button>
+              {onOpenSheet && (
+                <>
+                  <button
+                    type="button"
+                    className="app__menu-item"
+                    onClick={() => openSheet("suggest-word")}
+                  >
+                    Suggest a word
+                    <MenuChevron />
+                  </button>
+                  <button
+                    type="button"
+                    className="app__menu-item"
+                    onClick={() => openSheet("feedback")}
+                  >
+                    Feedback
+                    <MenuChevron />
+                  </button>
+                </>
+              )}
+              {mode && onModeChange && (
+                <div className="app__menu-mode">
+                  <ModeSegments mode={mode} onChange={onModeChange} />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
         </div>
       </div>
-      {/* Under the wordmark rather than beside it: three labelled destinations
-          do not fit a phone's width next to a wordmark, and a row of its own
-          lets each tab be a real target with its name under it. */}
-      <nav className="app__nav" aria-label="Pages">
-        {TABS.filter((tab) => tab.route !== "stats" || showStats || route === "stats").map((tab) => {
-          const current = tab.route === route;
-          return (
-            <button
-              key={tab.route}
-              type="button"
-              className={`app__nav-item${current ? " app__nav-item--current" : ""}`}
-              onClick={() => go(tab)}
-              aria-current={current ? "page" : undefined}
-            >
-              <span className="app__nav-label">{tab.label}</span>
-            </button>
-          );
-        })}
-      </nav>
     </header>
     {/* Zero-height and sticky, as a direct child of the page column, so the
         pill rides at the column's own right edge at every width without this

@@ -340,8 +340,8 @@ function playedOnDate(timestamp: string, date: string): boolean {
 
 /**
  * Sent on `window` after a puzzle's record is saved, so what depends on whether
- * anything has been played -- the header's Stats tab -- can notice the first
- * word without waiting for a navigation.
+ * anything has been played -- the native app's Stats tab -- can notice the
+ * first word without waiting for a navigation.
  */
 export const PROGRESS_SAVED_EVENT = "ick:progress-saved";
 

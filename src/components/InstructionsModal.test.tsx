@@ -4,8 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { MODE_CHOICE_START, resetModeCache, setMode } from "../game/mode";
 import { InstructionsModal } from "./InstructionsModal";
 
-const trackFeedbackSubmitted = vi.hoisted(() => vi.fn());
-vi.mock("../analytics", () => ({ trackFeedbackSubmitted }));
+vi.mock("../analytics", () => ({}));
 
 // The real clock by default, so the single-mode cases keep describing the sheet
 // players see today; the mode cases move it to MODE_CHOICE_START.
@@ -69,63 +68,9 @@ describe("InstructionsModal", () => {
     expect(onClose).toHaveBeenCalledTimes(3);
   });
 
-  it("sends trimmed feedback to analytics, then clears the box and thanks the player", async () => {
-    trackFeedbackSubmitted.mockClear();
-    render(
-      <InstructionsModal
-        open
-        onClose={vi.fn()}
-      />,
-    );
-    const box = screen.getByLabelText(/share feedback or leave a suggestion/i);
-    const send = screen.getByRole("button", { name: /^send$/i });
-    expect(send).toBeDisabled();
-
-    await userEvent.type(box, "  more vowel drops please  ");
-    await userEvent.click(send);
-
-    expect(trackFeedbackSubmitted).toHaveBeenCalledWith(
-      "more vowel drops please",
-    );
-    expect(box).toHaveValue("");
-    expect(screen.getByText(/thanks for the feedback/i)).toBeInTheDocument();
-  });
-
-  it("thanks the player without pointing them at everybody else's notes", async () => {
-    window.history.pushState(null, "", "/");
+  it("no longer carries the feedback box, which has its own sheet", () => {
     render(<InstructionsModal open onClose={vi.fn()} />);
-
-    await userEvent.type(
-      screen.getByLabelText(/share feedback or leave a suggestion/i),
-      "more vowel drops please",
-    );
-    await userEvent.click(screen.getByRole("button", { name: /^send$/i }));
-
-    // A note is written to us, not to the other players: the confirmation says
-    // it landed and offers nothing to open.
-    expect(screen.getByRole("status")).toHaveTextContent(/thanks for the feedback/i);
-    expect(screen.queryByRole("button", { name: /see what everyone/i })).not.toBeInTheDocument();
-    expect(window.location.pathname).toBe("/");
-  });
-
-  it("ignores a whitespace-only note rather than sending an empty event", async () => {
-    trackFeedbackSubmitted.mockClear();
-    render(
-      <InstructionsModal
-        open
-        onClose={vi.fn()}
-      />,
-    );
-    const box = screen.getByLabelText(/share feedback or leave a suggestion/i);
-
-    await userEvent.type(box, "   ");
-    expect(screen.getByRole("button", { name: /^send$/i })).toBeDisabled();
-    fireEvent.submit(box.closest("form")!);
-
-    expect(trackFeedbackSubmitted).not.toHaveBeenCalled();
-    expect(
-      screen.queryByText(/thanks for the feedback/i),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/share feedback/i)).not.toBeInTheDocument();
   });
 
   it("keeps Standard to a line, with More info opening the fold explainer and closing back to the sheet", async () => {
