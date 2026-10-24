@@ -464,6 +464,8 @@ describe("api/review", () => {
     const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
     expect(String(calls[0][0]).split("/").pop()).toBe("analytics_v2");
     expect(JSON.parse(String(calls[0][1].body))).toEqual({ p_today: "2026-10-22" });
+    // Shared by the CDN, so a reload or retry on a weak connection skips the database.
+    expect(response.headers.get("cache-control")).toContain("s-maxage=300");
     expect((await handler(get("?list=analytics-v2"))).status).toBe(400);
     expect((await handler(get("?list=analytics-v2&today=2026-13-40"))).status).toBe(400);
   });

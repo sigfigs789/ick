@@ -84,6 +84,17 @@ export const config = { runtime: "edge" };
 const DEFAULT_LIMIT = 200;
 const MAX_LIMIT = 500;
 
+/** How long the analytics reports may wait on the database; the game's own reads get 2 seconds. */
+const ANALYTICS_TIMEOUT_MS = 8000;
+/**
+ * The v2 report shared by the CDN for five minutes, then served stale for up
+ * to an hour while a fresh one is fetched behind it. Its windows end at closed
+ * days, so a few minutes' lag changes nothing, and a reload or "Try again" on
+ * a weak connection then waits on a 2 KB answer instead of the database.
+ * `max-age=0` keeps the browser asking, so the CDN decides.
+ */
+const ANALYTICS_V2_CACHE = "public, max-age=0, s-maxage=300, stale-while-revalidate=3600";
+
 /** One row as `list_suggested_words` returns it. */
 interface SuggestedRow {
   word: string;
@@ -156,11 +167,11 @@ const WORD_RE = /^[a-z]{2,30}$/;
 // A mark is three fields; nothing here needs a large body.
 const MAX_BODY_BYTES = 2 * 1024;
 
-function reply(status: number, body?: unknown): Response {
+function reply(status: number, body?: unknown, cache = "no-store"): Response {
   return new Response(body === undefined ? null : JSON.stringify(body), {
     status,
     headers: {
-      "cache-control": "no-store",
+      "cache-control": cache,
       ...(body === undefined ? {} : { "content-type": "application/json" }),
     },
   });
@@ -362,16 +373,26 @@ async function handleGet(request: Request): Promise<Response> {
       if (today === null || !isCalendarDate(today)) return reply(400, { ok: false, reason: "bad-date" });
       // The experiments ride along only when asked for: the page's second
       // fetch, yesterday's report for the scorecard's change, has no use for them.
+      // Given longer than the game's 2 seconds: these are whole-history reads,
+      // and a dashboard that waits a few seconds beats one that fails.
       const experiment = (event: string) =>
         params.get("experiments") === "1"
-          ? rpc<Record<string, unknown> | null>("analytics_v2_experiment", { p_today: today, p_event: event })
+          ? rpc<Record<string, unknown> | null>(
+              "analytics_v2_experiment",
+              { p_today: today, p_event: event },
+              ANALYTICS_TIMEOUT_MS,
+            )
           : null;
       const [report, wordOfDay, comeBack] = await Promise.all([
-        rpc<Record<string, unknown> | null>("analytics_v2", { p_today: today }),
+        rpc<Record<string, unknown> | null>("analytics_v2", { p_today: today }, ANALYTICS_TIMEOUT_MS),
         experiment("word_of_day_assigned"),
         experiment("come_back_assigned"),
       ]);
-      return reply(200, wordOfDay === null ? { report: report ?? {} } : { report: report ?? {}, wordOfDay, comeBack });
+      return reply(
+        200,
+        wordOfDay === null ? { report: report ?? {} } : { report: report ?? {}, wordOfDay, comeBack },
+        ANALYTICS_V2_CACHE,
+      );
     }
     if (list === "analytics") {
       // The window's ends and the viewer's own puzzle, sent as-is rather than

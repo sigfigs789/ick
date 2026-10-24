@@ -1,4 +1,4 @@
-import { useCallback, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { ReviewPage } from "../components/ReviewPage";
 import { useReviewList } from "../components/reviewList";
 import { todayDateString } from "../game/date";
@@ -37,15 +37,25 @@ import {
  */
 export function AnalyticsV2Page() {
   const today = todayDateString();
-  // Yesterday's report is only for the scorecard's day-on-day change, so a
-  // failure there leaves the changes blank rather than the page.
-  const load = useCallback(async () => {
-    const [report, before] = await Promise.all([fetchReport(today, true), fetchReport(addDays(today, -1)).catch(() => null)]);
-    return [{ report, before }];
-  }, [today]);
+  const load = useCallback(async () => [await fetchReport(today, true)], [today]);
   const { rows, state, refreshing, refresh, retry } = useReviewList(load);
-  const report = rows[0]?.report;
-  const before = rows[0]?.before ?? null;
+  const report = rows[0];
+  // Yesterday's report is only for the scorecard's day-on-day change, so it is
+  // asked for once today's has drawn -- on a weak connection the two would
+  // otherwise share the bandwidth the page needs -- and a failure there leaves
+  // the changes blank rather than the page.
+  const [before, setBefore] = useState<Report | null>(null);
+  const drawn = report !== undefined;
+  useEffect(() => {
+    if (!drawn) return;
+    let live = true;
+    fetchReport(addDays(today, -1))
+      .then((r) => live && setBefore(r))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [drawn, today]);
   return (
     <ReviewPage
       title="Analytics v2"

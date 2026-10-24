@@ -204,14 +204,32 @@ export function parseReport(raw: unknown): Report {
   };
 }
 
+/** How long one try may take, the download included: a weak connection is slow, not broken. */
+const TRY_MS = 30_000;
+
+/**
+ * One read of the report, tried twice before it counts as failed.
+ *
+ * The second try is the one a reader on a weak connection was pressing "Try
+ * again" for, and it is usually quick: the first warmed the CDN's copy (see
+ * ANALYTICS_V2_CACHE in api/review.ts). No `cache: "no-store"`, which would
+ * skip that copy; the response's `max-age=0` already keeps the browser asking.
+ */
+async function readReport(url: string): Promise<Json> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const response = await fetch(url, { signal: AbortSignal.timeout(TRY_MS) });
+      if (!response.ok) throw new Error(`analytics-v2 ${response.status}`);
+      return (await response.json()) as Json;
+    } catch (error) {
+      if (attempt >= 2) throw error;
+    }
+  }
+}
+
 /** The report for the puzzle the reader is on, with the experiments when `experiments` asks for them. */
 export async function fetchReport(today: string, experiments = false): Promise<Report> {
-  const response = await fetch(`/api/review?list=analytics-v2&today=${today}${experiments ? "&experiments=1" : ""}`, {
-    signal: AbortSignal.timeout(15_000),
-    cache: "no-store",
-  });
-  if (!response.ok) throw new Error(`analytics-v2 ${response.status}`);
-  const body = (await response.json()) as Json;
+  const body = await readReport(`/api/review?list=analytics-v2&today=${today}${experiments ? "&experiments=1" : ""}`);
   if (!experiments) return parseReport(body.report);
   return { ...parseReport(body.report), wordOfDay: parseExperiment(body.wordOfDay), comeBack: parseExperiment(body.comeBack) };
 }
