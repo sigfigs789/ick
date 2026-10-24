@@ -1072,7 +1072,7 @@ function streakIconTitle(entry: StreakEntry): string | undefined {
 /** What a screen reader hears after a streak row's count. */
 function streakStatus(entry: StreakEntry): string {
   if (entry.lost) return ", lost";
-  if (entry.resting) return ", resting: an earned Saturday off can't break the streak";
+  if (entry.resting) return ", lazy Saturday: skipping it can't break the streak";
   if (entry.current <= 1 && !entry.frozen) return "";
   const held = entry.frozen
     ? ", covered by a saved freeze"

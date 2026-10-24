@@ -104,15 +104,15 @@ describe("streakGoal", () => {
       streak({ currentStreak: 8, longestStreak: 20, bankedFreezes: 2, playedDates });
 
     it("counts down the days still needed while the week has room", () => {
-      expect(streakGoal(run(["2026-10-25"]), "2026-10-25")).toBe("2 more days by Friday earns Saturday off.");
+      expect(streakGoal(run(["2026-10-25"]), "2026-10-25")).toBe("2 more days by Friday unlocks a lazy Saturday 😴");
       expect(streakGoal(run(["2026-10-27", "2026-10-28"]), "2026-10-28")).toBe(
-        "Tomorrow earns Saturday off: skip it and your streak is safe."
+        "Play tomorrow for a lazy Saturday 😴"
       );
     });
 
     it("says on Friday that it is earned", () => {
       expect(streakGoal(run(["2026-10-26", "2026-10-28", "2026-10-30"]), "2026-10-30")).toBe(
-        "You've earned Saturday off: skip tomorrow and your streak is safe."
+        "Lazy Saturday unlocked: skip tomorrow and your streak is safe."
       );
     });
 

@@ -60,10 +60,10 @@ export function streakGoal(streak: StreakState, today: string): string {
   // Only for a streak worth resting: a lost one has nothing for Saturday to keep.
   const rest = days > 0 ? restDayProgress(streak, today) : null;
   if (rest?.needed === 0 && rest.saturday === addDays(today, 1)) {
-    return "You've earned Saturday off: skip tomorrow and your streak is safe.";
+    return "Lazy Saturday unlocked: skip tomorrow and your streak is safe.";
   }
-  if (rest?.needed === 1) return "Tomorrow earns Saturday off: skip it and your streak is safe.";
-  if (rest && rest.needed > 1) return `${rest.needed} more days by Friday earns Saturday off.`;
+  if (rest?.needed === 1) return "Play tomorrow for a lazy Saturday 😴";
+  if (rest && rest.needed > 1) return `${rest.needed} more days by Friday unlocks a lazy Saturday 😴`;
 
   // A full cap only rises at 14 days, and a kept freeze is never more than
   // four weeks out.

@@ -76,19 +76,19 @@ describe("StreakDisplay", () => {
       playedDates: ["2026-10-28", "2026-10-29", "2026-10-30"],
     };
     const { rerender } = render(<StreakDisplay streak={friday} date="2026-10-31" isToday />);
-    const dancer = screen.getByRole("button", { name: /Saturday rest day/ });
+    const dancer = screen.getByRole("button", { name: /Lazy Saturday/ });
     expect(dancer.textContent).toMatch(/🕺|💃|😴/u);
     // Hovering with a mouse opens the popup, and leaving closes it.
     const badge = dancer.parentElement as HTMLElement;
     fireEvent.pointerEnter(badge, { pointerType: "mouse" });
-    expect(screen.getByRole("dialog", { name: "Saturday rest day" })).toHaveTextContent(
+    expect(screen.getByRole("dialog", { name: "Lazy Saturday" })).toHaveTextContent(
       "can't break the streak"
     );
     fireEvent.pointerLeave(badge, { pointerType: "mouse" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     // Tapping opens it too.
     fireEvent.click(dancer);
-    expect(screen.getByRole("dialog", { name: "Saturday rest day" })).toHaveTextContent(
+    expect(screen.getByRole("dialog", { name: "Lazy Saturday" })).toHaveTextContent(
       "can't break the streak"
     );
 
@@ -96,7 +96,7 @@ describe("StreakDisplay", () => {
     rerender(
       <StreakDisplay streak={{ ...friday, lastCompletedDate: "2026-10-31" }} date="2026-10-31" isToday />
     );
-    expect(screen.queryByRole("button", { name: /Saturday rest day/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Lazy Saturday/ })).not.toBeInTheDocument();
     expect(flame()).toBe("🔥");
 
     // Sunday after a skipped Saturday: fire, no freeze covering anything.
@@ -107,7 +107,7 @@ describe("StreakDisplay", () => {
     rerender(
       <StreakDisplay streak={{ ...friday, playedDates: ["2026-10-30"] }} date="2026-10-31" isToday />
     );
-    expect(screen.queryByRole("button", { name: /Saturday rest day/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Lazy Saturday/ })).not.toBeInTheDocument();
     expect(flame()).toBe("🔥");
   });
 

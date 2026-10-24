@@ -9,8 +9,8 @@ const FREEZE_RULES =
   "🧊 keeps your streak alive for one more day. Earn your first 🧊 on day 3, then one every 7 days played. " +
   "You can hold 1 🧊 after a 3 day streak and 2 🧊 after 14 days. " +
   "Lose a streak after reaching 3 days and your next one starts with a 🧊 (once every 30 days). " +
-  "Play 3 days Sunday to Friday and you earn that Saturday off: skip it and your streak is safe, no 🧊 spent. " +
-  "It can't be saved for later.";
+  "Play 3 days Sunday to Friday to unlock a lazy Saturday: skip it and your streak is safe, no 🧊 spent. " +
+  "It's for that Saturday only.";
 
 function freezeSummary(banked: number, cap: number): string {
   if (banked === 0) return "No 🧊 acquired";
@@ -130,7 +130,7 @@ export function StreakDisplay({
       className="streak-display"
       aria-label={
         `Current streak: ${streak.currentStreak} days. ` +
-        (restDay ? "You earned today off: it can't break your streak. " : "") +
+        (restDay ? "Lazy Saturday: skipping today can't break your streak. " : "") +
         (coveredDay ? "A freeze kept your streak alive on this day. " : "") +
         (frozen ? "A saved freeze is covering your streak. " : "") +
         (risky ? "Play today to keep your streak. " : "") +

@@ -339,7 +339,7 @@ describe("the leaderboard page", () => {
       expect(row).toHaveTextContent(/🕺|💃|😴/u);
       expect(row).not.toHaveTextContent(/🔥|🧊|⏳/u);
     }
-    const dancer = within(boardRows("Streaks")[1]).getByRole("button", { name: /Saturday rest day/ });
+    const dancer = within(boardRows("Streaks")[1]).getByRole("button", { name: /Lazy Saturday/ });
     fireEvent.click(dancer);
     expect(within(boardRows("Streaks")[1]).getByRole("dialog")).toHaveTextContent(
       "can't break the streak"

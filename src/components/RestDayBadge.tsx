@@ -2,8 +2,8 @@ import { useEffect, useId, useRef, useState } from "react";
 
 /** What the dancer means, for its hover text and popup. */
 const REST_DAY_RULE =
-  "3 days played this week earned this Saturday off: skipping it can't break the streak. " +
-  "It's good for today only, so kick back or play and get ahead.";
+  "3 days played this week unlocked a lazy Saturday: skipping it can't break the streak. " +
+  "Today only, so kick back or play and get ahead.";
 
 /** The Saturday faces, one per player. */
 const REST_DAY_ICONS = ["🕺", "💃", "😴"] as const;
@@ -59,14 +59,14 @@ export function RestDayBadge({ playerId, className }: { playerId: string; classN
         className="rest-day__button"
         aria-expanded={open || hovered}
         aria-controls={popupId}
-        aria-label={`Saturday rest day: ${REST_DAY_RULE}`}
+        aria-label={`Lazy Saturday: ${REST_DAY_RULE}`}
         onClick={() => setOpen((was) => !was)}
       >
         {restDayDancer(playerId)}
       </button>
       {(open || hovered) && (
-        <span className="rest-day__popup" id={popupId} role="dialog" aria-label="Saturday rest day">
-          <strong>Saturday rest day</strong>
+        <span className="rest-day__popup" id={popupId} role="dialog" aria-label="Lazy Saturday">
+          <strong>Lazy Saturday</strong>
           <span>{REST_DAY_RULE}</span>
         </span>
       )}
