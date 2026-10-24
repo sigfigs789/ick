@@ -12,6 +12,8 @@ interface Props {
   children: ReactNode;
   /** A confirmation rather than a reading sheet: no scroll, actions supplied by the caller. */
   compact?: boolean;
+  /** Called as the reader scrolls near the bottom, for a sheet that loads more as it goes. */
+  onNearEnd?: () => void;
 }
 
 /**
@@ -26,7 +28,7 @@ interface Props {
  * do reach for that, and `onRequestClose` wires up Android's back gesture,
  * which is the one a dialog on that platform must answer.
  */
-export function Sheet({ open, title, onClose, children, compact = false }: Props) {
+export function Sheet({ open, title, onClose, children, compact = false, onNearEnd }: Props) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -78,6 +80,13 @@ export function Sheet({ open, title, onClose, children, compact = false }: Props
               style={styles.scroll}
               contentContainerStyle={styles.body}
               showsVerticalScrollIndicator={false}
+              scrollEventThrottle={100}
+              onScroll={
+                onNearEnd &&
+                (({ nativeEvent: { layoutMeasurement, contentOffset, contentSize } }) => {
+                  if (layoutMeasurement.height + contentOffset.y >= contentSize.height - 400) onNearEnd();
+                })
+              }
             >
               {children}
             </ScrollView>

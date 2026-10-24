@@ -8,11 +8,12 @@ import {
 import { formatDateLabel } from '../../../src/game/date';
 import { formatTotal } from '../../../src/game/dictionary';
 import { MODE_LABELS } from '../../../src/game/mode';
-import { CURRENT_TIERS, loadStats, TOP_WORDS, type PlayerStats } from '../../../src/game/stats';
+import { CURRENT_TIERS, loadStats, TOP_WORDS, type PlayerStats, type StatWord } from '../../../src/game/stats';
 import { loadStreak } from '../../../src/game/storage';
 import type { Rarity } from '../../../src/game/types';
 import { PAGE_GUTTER, PageHead, PageNote } from '../components/PageChrome';
 import { RarityBadge } from '../components/RarityBadge';
+import { Sheet } from '../components/Sheet';
 import { signalTap } from '../host/feedback';
 import { radius, space } from '../theme/tokens';
 import { rarityPalette, useTheme } from '../theme/useTheme';
@@ -164,48 +165,67 @@ function RarityBars({ byRarity }: { byRarity: PlayerStats['byRarity'] }) {
 /** The rarest finds, newest first on a tie, with the day they were found. */
 function BestWords({ stats }: { stats: PlayerStats }) {
   const theme = useTheme();
-  const [shown, setShown] = useState(stats.bestWordsShown);
+  const [open, setOpen] = useState(false);
+  const [shown, setShown] = useState(SHEET_BATCH);
   // Empty when every word found was on a legacy-scored puzzle (see game/stats.ts).
   if (stats.topWords.length === 0) return null;
   const total = stats.topWords.length;
-  const moreLink = (label: string, onPress: () => void) => (
-    <Text
-      onPress={() => {
-        signalTap();
-        onPress();
-      }}
-      accessibilityRole="button"
-      style={[styles.link, styles.moreLink, { color: theme.fg }]}
-    >
-      {label}
-    </Text>
-  );
   return (
     <View style={styles.section}>
       <Heading>Best words</Heading>
-      <View>
-        {stats.topWords.slice(0, shown).map((word) => (
-          <View key={`${word.word}-${word.date}`} style={[styles.word, { borderBottomColor: theme.border }]}>
-            <View style={styles.wordText}>
-              <Text style={[styles.wordName, { color: theme.fg }]}>{word.word}</Text>
-              <Text style={[styles.wordDate, { color: theme.fgFaint }]}>
-                {formatDateLabel(word.date)}
-                {word.mode === 'freeform' ? ` · ${MODE_LABELS.freeform}` : ''}
-              </Text>
-            </View>
-            <RarityBadge rarity={word.rarity} zipf={word.zipf} date={word.date} />
-          </View>
-        ))}
-      </View>
-      {(shown < total || shown > stats.bestWordsShown) && (
+      <BestWordList words={stats.topWords.slice(0, TOP_WORDS)} />
+      {total > TOP_WORDS && (
         <View style={styles.more}>
-          {shown < total && moreLink('Show more', () => setShown((n) => Math.min(total, n + TOP_WORDS)))}
-          {shown > stats.bestWordsShown && moreLink('Show fewer', () => setShown(stats.bestWordsShown))}
+          <Text
+            onPress={() => {
+              signalTap();
+              setShown(SHEET_BATCH);
+              setOpen(true);
+            }}
+            accessibilityRole="button"
+            style={[styles.link, styles.moreLink, { color: theme.fg }]}
+          >
+            Show more
+          </Text>
           <Text style={[styles.moreCount, { color: theme.fgFaint }]}>
-            {shown} of {total}
+            {TOP_WORDS} of {total}
           </Text>
         </View>
       )}
+      {/* Every best word, a batch at a time: a long record runs to thousands
+          of rows, each with a badge, so the sheet adds the next batch as the
+          reader nears the bottom. */}
+      <Sheet
+        open={open}
+        title="Best words"
+        onClose={() => setOpen(false)}
+        onNearEnd={() => setShown((n) => Math.min(total, n + SHEET_BATCH))}
+      >
+        <BestWordList words={stats.topWords.slice(0, shown)} />
+      </Sheet>
+    </View>
+  );
+}
+
+/** How many more rows the Show more sheet renders each time the reader nears the bottom. */
+const SHEET_BATCH = 30;
+
+function BestWordList({ words }: { words: StatWord[] }) {
+  const theme = useTheme();
+  return (
+    <View>
+      {words.map((word) => (
+        <View key={`${word.word}-${word.date}`} style={[styles.word, { borderBottomColor: theme.border }]}>
+          <View style={styles.wordText}>
+            <Text style={[styles.wordName, { color: theme.fg }]}>{word.word}</Text>
+            <Text style={[styles.wordDate, { color: theme.fgFaint }]}>
+              {formatDateLabel(word.date)}
+              {word.mode === 'freeform' ? ` · ${MODE_LABELS.freeform}` : ''}
+            </Text>
+          </View>
+          <RarityBadge rarity={word.rarity} zipf={word.zipf} date={word.date} />
+        </View>
+      ))}
     </View>
   );
 }
