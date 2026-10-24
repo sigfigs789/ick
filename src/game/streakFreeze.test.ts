@@ -103,7 +103,7 @@ describe("applyFreezes", () => {
   });
 });
 
-// 2026-10-31 is the first Saturday that can be a rest day; its week is 10-25 to 10-30.
+// 2026-10-31 is the first Saturday that can be a rest day; its days played are 10-24 to 10-30.
 const WEEK_PLAYED = ["2026-10-26", "2026-10-28", "2026-10-29"];
 
 describe("Weekend rest days", () => {
@@ -131,9 +131,20 @@ describe("Weekend rest days", () => {
     expect(isRestDay(earned, "2026-11-02")).toBe(false);
     expect(isRestDay(earned, "2026-11-07")).toBe(false);
     expect(isRestDay(earned, "2026-11-08")).toBe(false);
-    // Saturday itself played does not count towards the next week.
-    const withSaturday = streakOf({ playedDates: [...WEEK_PLAYED, "2026-10-31", "2026-11-01"] });
-    expect(weekPlays(withSaturday, "2026-11-07")).toBe(1);
+    // A played weekend counts towards the next one, not its own.
+    const withWeekend = streakOf({ playedDates: [...WEEK_PLAYED, "2026-10-31", "2026-11-01"] });
+    expect(weekPlays(withWeekend, "2026-10-31")).toBe(3);
+    expect(weekPlays(withWeekend, "2026-11-07")).toBe(2);
+  });
+
+  it("count a Saturday played towards the next weekend", () => {
+    // Saturday, Sunday and Monday earn the weekend after.
+    const earned = streakOf({ playedDates: ["2026-10-24", "2026-10-25", "2026-10-26"] });
+    expect(weekPlays(earned, "2026-10-31")).toBe(3);
+    expect(isRestDay(earned, "2026-10-31")).toBe(true);
+    expect(isRestDay(earned, "2026-11-01")).toBe(true);
+    // The Saturday before does not count twice.
+    expect(weekPlays(streakOf({ playedDates: ["2026-10-24"] }), "2026-11-07")).toBe(0);
   });
 
   it("are not missed days, but an unearned weekend is", () => {
@@ -222,8 +233,20 @@ describe("weekdayRestProgress", () => {
     });
     // Thursday, one played and today not yet: today and Friday make three.
     expect(weekdayRestProgress(streakOf({ playedDates: ["2026-10-26"] }), "2026-10-29")?.reachable).toBe(true);
-    // Saturday shows 😴 itself, and weeks before rest days began show nothing.
+    // An earned Saturday shows 😴 itself, and weeks before rest days began show nothing.
     expect(weekdayRestProgress(streakOf({ playedDates: WEEK_PLAYED }), "2026-10-31")).toBeNull();
+    // Once played, it counts towards the next weekend, with the week ahead to reach it.
+    expect(
+      weekdayRestProgress(
+        streakOf({ lastCompletedDate: "2026-10-31", playedDates: [...WEEK_PLAYED, "2026-10-31"] }),
+        "2026-10-31"
+      )
+    ).toEqual({ played: 1, reachable: true });
+    // An unearned Saturday not played yet shows the count towards the next weekend.
+    expect(weekdayRestProgress(streakOf({ playedDates: ["2026-10-30"] }), "2026-10-31")).toEqual({
+      played: 0,
+      reachable: true,
+    });
     // So does an earned Sunday until it is played, when the new week's count shows.
     const sunday = streakOf({ lastCompletedDate: "2026-10-30", playedDates: WEEK_PLAYED });
     expect(weekdayRestProgress(sunday, "2026-11-01")).toBeNull();
@@ -231,6 +254,8 @@ describe("weekdayRestProgress", () => {
       weekdayRestProgress({ ...sunday, lastCompletedDate: "2026-11-01", playedDates: [...WEEK_PLAYED, "2026-11-01"] }, "2026-11-01")
     ).toEqual({ played: 1, reachable: true });
     expect(weekdayRestProgress(streakOf({ playedDates: [] }), "2026-10-20")).toBeNull();
+    // 2026-10-24 counts towards the first weekend that can be earned.
+    expect(weekdayRestProgress(streakOf({ playedDates: [] }), "2026-10-24")).toEqual({ played: 0, reachable: true });
   });
 });
 
@@ -248,8 +273,11 @@ describe("restDayProgress", () => {
       saturday: "2026-10-31",
       needed: 0,
     });
-    // On Saturday the week is over.
-    expect(restDayProgress(streakOf({ playedDates: WEEK_PLAYED }), "2026-10-31")).toBeNull();
+    // A Saturday played counts towards the next weekend.
+    expect(restDayProgress(streakOf({ playedDates: [...WEEK_PLAYED, "2026-10-31"] }), "2026-10-31")).toEqual({
+      saturday: "2026-11-07",
+      needed: 2,
+    });
     // Before rest days began.
     expect(restDayProgress(streakOf({ playedDates: ["2026-10-19"] }), "2026-10-19")).toBeNull();
   });

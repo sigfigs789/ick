@@ -119,7 +119,7 @@ export function StreakDisplay({
       : frozen
         ? "A saved freeze is covering your streak"
         : undefined;
-  // Sunday to Friday, the week's progress towards a lazy weekend (a pie, or
+  // The days played towards the next lazy weekend (a pie, or
   // 😴 once unlocked), beside the freezes. Only for a live streak, which is
   // what a lazy weekend keeps.
   const week =

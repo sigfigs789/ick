@@ -1,5 +1,6 @@
--- An earned rest day is now the whole weekend: three days played Sunday to
--- Friday, each on its own day, rest that Saturday and the Sunday after it
+-- An earned rest day is now the whole weekend: three days played from the
+-- Saturday before to the Friday, each on its own day, rest the Saturday after
+-- that Friday and the Sunday after it
 -- (see `isRestDay` in src/game/streakFreeze.ts).
 --
 -- The game still sends one date, the Saturday (`restDay` in `streakReport`),

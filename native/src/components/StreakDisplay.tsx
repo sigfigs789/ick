@@ -98,7 +98,7 @@ export function StreakDisplay({
   const risky = !restDay && isToday && date !== undefined && atRisk(streak, date);
   const coveredDay = !isToday && date !== undefined && wasFrozen(streak, date);
   const icon = risky ? '⏳' : frozen || coveredDay ? '🧊' : streak.currentStreak >= 2 ? '🔥' : null;
-  // Sunday to Friday, the week's progress towards a lazy weekend (a pie, or
+  // The days played towards the next lazy weekend (a pie, or
   // 😴 once unlocked), beside the freezes. Only for a live streak, which is
   // what a lazy weekend keeps.
   const week =

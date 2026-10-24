@@ -21,7 +21,7 @@ function weekdayRule(played: number, reachable: boolean): string {
     return "Unlocked: kick back all weekend, skipping Saturday and Sunday can't break your streak.";
   }
   if (!reachable) {
-    return 'Play 3 days Sunday to Friday and unlock a lazy weekend 😴 that protects your streak all Saturday and Sunday';
+    return 'Play any 3 days by Friday and unlock a lazy weekend 😴 that protects your streak all Saturday and Sunday';
   }
   return `Play 3 days by Friday and snooze through the weekend: skipping it can't break your streak. ${played} of 3 so far.`;
 }
