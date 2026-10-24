@@ -423,6 +423,8 @@ export function useDailyPuzzle() {
       const updated = recordRejectedAttempt(progressRef.current, raw.trim());
       progressRef.current = updated;
       setProgress(updated);
+      // A rejection can be the day's first submission, which banks the streak.
+      setStreak(loadStreak());
       trackRejectedAnswer(viewedDate, drop, raw);
       trackRejectionMessage(viewedDate, reason);
       showFeedback("rejected", REJECTION_MESSAGES[reason], undefined, reason);

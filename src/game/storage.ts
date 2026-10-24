@@ -433,8 +433,9 @@ export function dismissWelcomeBack(date: string): void {
 }
 
 /**
- * The first valid word immediately advances today's streak. The player can
- * still keep guessing up to the day's guess limit, or lock in early, without counting
+ * The first valid word immediately advances today's streak, if a rejected
+ * guess has not already (see recordRejectedAttempt). The player can still keep
+ * guessing up to the day's guess limit, or lock in early, without counting
  * that streak win a second time.
  */
 export function recordAcceptedWord(progress: DailyProgress, word: AcceptedWord): DailyProgress {
@@ -473,7 +474,7 @@ export function recordAcceptedWord(progress: DailyProgress, word: AcceptedWord):
   });
 
   if (progress.acceptedWords.length === 0) {
-    updateStreakOnValidAnswer(progress.date);
+    updateStreakOnSubmission(progress.date);
   }
   if (justCompleted && won) {
     incrementCompletionTotal();
@@ -482,19 +483,26 @@ export function recordAcceptedWord(progress: DailyProgress, word: AcceptedWord):
   return updated;
 }
 
+/**
+ * A rejected guess still counts as showing up: it advances today's streak just
+ * as an accepted word does, so a player whose only try of the day missed does
+ * not lose the streak for it. Nothing else moves -- no score, no completion.
+ */
 export function recordRejectedAttempt(progress: DailyProgress, rawWord: string): DailyProgress {
   const updated: DailyProgress = {
     ...progress,
     rejectedAttempts: [...progress.rejectedAttempts, rawWord],
   };
   saveProgress(updated);
+  updateStreakOnSubmission(progress.date);
   return updated;
 }
 
 /**
- * Advance the streak as soon as today's first valid word is accepted.
+ * Advance the streak on today's first submission, accepted or not. Counts a
+ * day once, however many guesses follow.
  */
-function updateStreakOnValidAnswer(date: string): void {
+function updateStreakOnSubmission(date: string): void {
   const streak = loadStreak();
 
   if (date !== todayDateString()) return;
