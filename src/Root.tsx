@@ -19,6 +19,7 @@ import { hasJoined, joinBoard } from "./game/player";
 import { playedPuzzleCount } from "./game/storage";
 import { hasSeen, headerBadgeFor, markSeen } from "./game/whatsNew";
 import { takesPlayerMessages } from "./game/playerMessages";
+import { isVercelHost } from "./game/vercelHost";
 import { lazyPage } from "./lazyPage";
 import { useRoute } from "./routes";
 
@@ -387,7 +388,15 @@ export function Root() {
       <AppHeader
         route={route}
         onHowToPlay={() => setShowInstructions(true)}
-        onOpenSheet={takesPlayerMessages() ? setMenuSheet : undefined}
+        // Shown on previews too, so the sheets can be seen and tried there;
+        // reporting is off on those hosts, so what is sent goes nowhere (see
+        // src/main.tsx). Only a Reddit post, which has no way to send them at
+        // all, leaves them off.
+        onOpenSheet={
+          takesPlayerMessages() || isVercelHost(window.location.hostname)
+            ? setMenuSheet
+            : undefined
+        }
         // One slot, two eras, never both at once. Until MODE_CHOICE_START the
         // header is the trial's and nothing here changes -- the button opens the
         // week's notice, exactly as it does today. From that date the trial is
