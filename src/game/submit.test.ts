@@ -102,7 +102,7 @@ describe("evaluateSubmission", () => {
   });
 
   it("explains rejected proper names and abbreviations from ESDB metadata", () => {
-    expect(evaluateSubmission("Paris", "ari", [])).toEqual({
+    expect(evaluateSubmission("Aarhus", "arh", [])).toEqual({
       ok: false,
       reason: "name-or-abbreviation",
     });
@@ -232,9 +232,9 @@ describe("rejection metadata coverage", () => {
     archaic: 10309,
     dated: 2108,
     misspelling: 7,
-    "name-or-abbreviation": 11588,
+    "name-or-abbreviation": 11586,
     obsolete: 63353,
-    "proper-noun": 18241,
+    "proper-noun": 18234,
   };
   const metadata = rejectionMetadata as Record<string, readonly string[]>;
 
@@ -247,7 +247,7 @@ describe("rejection metadata coverage", () => {
 
   it("pins the total number of words with a rejection reason", () => {
     const total = Object.values(metadata).reduce((sum, words) => sum + words.length, 0);
-    expect(total).toBe(107_427);
+    expect(total).toBe(107_418);
   });
 
   // These six carried no frequency from any corpus, so they scored the
