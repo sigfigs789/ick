@@ -1,15 +1,17 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { markSeen } from "./game/whatsNew";
 import { addDays } from "./game/date";
+import { checkStreakClimb } from "./game/streakClimb";
 
 vi.mock("./hooks/useDailyPuzzle", () => ({ useDailyPuzzle: vi.fn() }));
 vi.mock("./hooks/useSound", () => ({ useSound: vi.fn() }));
 vi.mock("@vercel/analytics/react", () => ({ Analytics: () => null }));
+vi.mock("./game/streakClimb", () => ({ checkStreakClimb: vi.fn(async () => null) }));
 
 const submitWord = vi.fn();
 const retryAnswer = vi.fn();
@@ -67,6 +69,7 @@ describe("App", () => {
     // rules, so start them as a returning player who has already read them.
     markSeen("instructions");
     window.history.pushState(null, "", "/");
+    vi.mocked(checkStreakClimb).mockResolvedValue(null);
     vi.mocked(useSound).mockReturnValue({
       accept: vi.fn(),
       reject: vi.fn(),
@@ -186,6 +189,49 @@ describe("App", () => {
       vi.mocked(useDailyPuzzle).mockReturnValue(day(true));
       render(<App />);
       expect(screen.queryByText("You're on the rise!")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("a climb up the streak board", () => {
+    const today = "2026-08-13";
+
+    function day(completed: boolean) {
+      return puzzle({
+        progress: {
+          date: today,
+          drop: "str",
+          acceptedWords: [{ word: "strange", rarity: "Common", zipf: 4.6 }],
+          rejectedAttempts: [],
+          completed,
+        },
+      }) as ReturnType<typeof useDailyPuzzle>;
+    }
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("is celebrated a moment after today's puzzle is finished", async () => {
+      vi.useFakeTimers();
+      vi.mocked(checkStreakClimb).mockResolvedValue({ from: 12, to: 9 });
+      vi.mocked(useDailyPuzzle).mockReturnValue(day(false));
+      const { rerender } = render(<App />);
+
+      vi.mocked(useDailyPuzzle).mockReturnValue(day(true));
+      rerender(<App />);
+      expect(checkStreakClimb).not.toHaveBeenCalled();
+      await act(() => vi.advanceTimersByTimeAsync(1500));
+      expect(checkStreakClimb).toHaveBeenCalledWith(today);
+      expect(screen.getByText("Up the streak board!")).toBeInTheDocument();
+      expect(vi.mocked(useSound).mock.results[0].value.rising).toHaveBeenCalledTimes(1);
+    });
+
+    it("is not looked for on a puzzle that mounts already finished", async () => {
+      vi.useFakeTimers();
+      vi.mocked(useDailyPuzzle).mockReturnValue(day(true));
+      render(<App />);
+      await act(() => vi.advanceTimersByTimeAsync(1500));
+      expect(checkStreakClimb).not.toHaveBeenCalled();
     });
   });
 });

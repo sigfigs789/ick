@@ -13,6 +13,7 @@ import { ConfettiBurst } from "./components/ConfettiBurst";
 import { JackpotStamp } from "./components/JackpotStamp";
 import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
 import { ImprovementCelebration } from "./components/ImprovementCelebration";
+import { StreakClimbCelebration } from "./components/StreakClimbCelebration";
 import { QuickShareButton } from "./components/QuickShareButton";
 import { YesterdaysBest } from "./components/YesterdaysBest";
 import { ComeBackCard } from "./components/ComeBackCard";
@@ -33,6 +34,7 @@ import {
   markImprovementCelebrated,
   type Improvement,
 } from "./game/improvement";
+import { checkStreakClimb, type StreakClimb } from "./game/streakClimb";
 import { totalRarityScore } from "./game/dictionary";
 import { Analytics } from "@vercel/analytics/react";
 import {
@@ -52,6 +54,12 @@ import {
   endSessionSegment,
   resumeSession,
 } from "./game/sessionTime";
+
+/**
+ * How long after a finish the streak board is read: long enough for the
+ * finishing word's write to land (see game/leaderboard.ts, submitScore).
+ */
+const STREAK_CHECK_DELAY_MS = 1500;
 
 export default function App() {
   useForceUpdate();
@@ -100,6 +108,8 @@ export default function App() {
   const endPerfectMonth = useCallback(() => setShowPerfectMonth(false), []);
   const [improvement, setImprovement] = useState<Improvement | null>(null);
   const endImprovement = useCallback(() => setImprovement(null), []);
+  const [climb, setClimb] = useState<StreakClimb | null>(null);
+  const endClimb = useCallback(() => setClimb(null), []);
   const sound = useSound();
   // Half of players never see the word of the day; the draw is the first
   // finished puzzle, where it would first appear (see game/wordOfDay.ts).
@@ -239,14 +249,33 @@ export default function App() {
     const before = wasFinished.current;
     wasFinished.current = { date, finished: finishedToday };
     if (!finishedToday || before.date !== date || before.finished) return;
-    if (!improvementCelebrationDue(date)) return;
-    const rise = averageImprovement(date, progress.mode);
-    if (!rise) return;
-    markImprovementCelebrated(date);
-    sound.rising();
-    setImprovement(rise);
+    const rise = improvementCelebrationDue(date) && averageImprovement(date, progress.mode);
+    if (rise) {
+      markImprovementCelebrated(date);
+      sound.rising();
+      setImprovement(rise);
+    }
+    // And a climb up the streak board (see game/streakClimb.ts), read from the
+    // server after a moment so the finishing word's write has landed. It waits
+    // its turn behind the cards above, as they wait behind each other.
+    let cancelled = false;
+    const check = window.setTimeout(() => {
+      void checkStreakClimb(date).then((found) => {
+        if (found && !cancelled) setClimb(found);
+      });
+    }, STREAK_CHECK_DELAY_MS);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(check);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finishedToday, date]);
+  // Its chime when the card actually shows, which is after any card ahead of it.
+  const climbShown = !showPerfectMonth && !improvement && climb !== null;
+  useEffect(() => {
+    if (climbShown) sound.rising();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [climbShown]);
 
   const guessEntry = (
     <>
@@ -286,6 +315,8 @@ export default function App() {
       ) : improvement ? (
         // After the perfect month's card, if both land on one finish.
         <ImprovementCelebration improvement={improvement} onDone={endImprovement} />
+      ) : climb ? (
+        <StreakClimbCelebration climb={climb} onDone={endClimb} />
       ) : (
         burst && (
           <Fragment key={burst.key}>
