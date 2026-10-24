@@ -14,6 +14,8 @@
  * result is read on /analyticsV2.
  */
 
+import { isTester } from "./testers";
+
 export type WordOfDayVariant = "shown" | "hidden";
 
 const ASSIGNMENT_KEY = "ick:word-of-day";
@@ -57,9 +59,11 @@ export function assignWordOfDayVariant(
 
 /**
  * An arm forced with `?word-of-day=hidden` (or `=shown`), for trying either
- * out without waiting on a coin flip. Never stored or reported.
+ * out without waiting on a coin flip; a hand-picked tester (see testers.ts) is
+ * forced to shown. Never stored or reported.
  */
 export function forcedWordOfDayVariant(search: string = window.location.search): WordOfDayVariant | null {
   const value = new URLSearchParams(search).get("word-of-day");
-  return isVariant(value) ? value : null;
+  if (isVariant(value)) return value;
+  return isTester() ? "shown" : null;
 }
