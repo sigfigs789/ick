@@ -1,22 +1,76 @@
+import { formatRarityScore } from "./dictionary";
 import type { FoundWord } from "./leaderboard";
 
+/** The score a find shows, which is what two words have to share to tie. */
+function shownScore(found: FoundWord): string {
+  return formatRarityScore(found.zipf, found.foundOn || undefined);
+}
+
 /**
- * The best word anybody found in a day's feed: the rarest, which is the lowest
- * Zipf.
+ * The words in the running for a day's best: every word showing the top score.
  *
- * A tie goes to the word fewer players found -- the same rarity turned up by one
- * person is the better find -- and then to the alphabet, so two readers of the
- * same feed always see the same word. Undefined for a day nobody found anything.
+ * The rarest word (the lowest Zipf) sets the score, and anything else that
+ * prints the same number ties with it -- two words a reader sees as 9.87 are a
+ * tie whatever their Zipf says past the second decimal. Empty for a day nobody
+ * found anything.
  */
-export function bestFind(words: readonly FoundWord[]): FoundWord | undefined {
-  let best: FoundWord | undefined;
+export function bestCandidates(words: readonly FoundWord[]): FoundWord[] {
+  let rarest: FoundWord | undefined;
   for (const found of words) {
+    if (!rarest || found.zipf < rarest.zipf) rarest = found;
+  }
+  if (!rarest) return [];
+  const top = shownScore(rarest);
+  return words.filter((found) => shownScore(found) === top);
+}
+
+/**
+ * A stand-in for a coin toss that every reader tosses the same way: FNV-1a over
+ * the day and the word. Random enough to favour nobody, and stable, so the line
+ * does not change word between renders or between two players' screens.
+ */
+function toss(date: string, word: string): number {
+  let hash = 0x811c9dc5;
+  for (const char of `${date}:${word}`) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash;
+}
+
+/**
+ * The day's best word out of its tied candidates (see `bestCandidates`).
+ *
+ * 1. The word whose player has had the best word least often -- so a tie
+ *    hands the line to somebody it has not named much. A word's player is its
+ *    first finder (`holders`); `wins` counts their best words before this day.
+ *    Skipped when any candidate's player is unknown, since a word whose finder
+ *    could not be read cannot be weighed against one whose could.
+ * 2. Then -- which is also where two words of the same player land -- the
+ *    longer word.
+ * 3. Then a coin toss, the same one for every reader (see `toss`).
+ */
+export function pickBest(
+  candidates: readonly FoundWord[],
+  date: string,
+  holders: ReadonlyMap<string, string> = new Map(),
+  wins: Readonly<Record<string, number>> = {},
+): FoundWord | undefined {
+  const byPlayer = candidates.every((found) => holders.has(found.word));
+  const winsOf = (found: FoundWord) =>
+    byPlayer ? (wins[holders.get(found.word) as string] ?? 0) : 0;
+  let best: FoundWord | undefined;
+  for (const found of candidates) {
+    if (!best) {
+      best = found;
+      continue;
+    }
+    const byWins = winsOf(found) - winsOf(best);
+    const byLength = best.word.length - found.word.length;
     if (
-      !best ||
-      found.zipf < best.zipf ||
-      (found.zipf === best.zipf &&
-        (found.finders < best.finders ||
-          (found.finders === best.finders && found.word < best.word)))
+      byWins < 0 ||
+      (byWins === 0 &&
+        (byLength < 0 || (byLength === 0 && toss(date, found.word) < toss(date, best.word))))
     ) {
       best = found;
     }

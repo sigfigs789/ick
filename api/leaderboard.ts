@@ -925,6 +925,40 @@ async function handleFindersGet(params: URLSearchParams): Promise<Response> {
   }
 }
 
+/**
+ * How many days each player has had the best word, before one puzzle.
+ *
+ * Read only when the "yesterday's best" line has a tie to settle: the word of
+ * the player it has named least often wins (see pickBest in
+ * src/game/yesterdaysBest.ts). Carries no player, so like the feed one URL per
+ * day is shared by every reader through the CDN.
+ */
+async function handleBestWinsGet(params: URLSearchParams): Promise<Response> {
+  const day = wordsDay(params.get("today"));
+  if (day === null) return reply(200, { wins: {} }, WORDS_CACHE_SECONDS);
+
+  if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
+
+  try {
+    const rows = await rpc<{ player_id: string; wins: number | string }[]>(
+      "leaderboard_best_word_wins",
+      { p_before: day }
+    );
+    const wins: Record<string, number> = {};
+    for (const row of Array.isArray(rows) ? rows : []) {
+      const count = Number(row.wins);
+      if (Number.isFinite(count) && count > 0) wins[String(row.player_id).toLowerCase()] = count;
+    }
+    return reply(200, { wins }, WORDS_CACHE_SECONDS);
+  } catch (error) {
+    console.error(
+      "[leaderboard] best wins read failed:",
+      error instanceof Error ? error.message : error
+    );
+    return reply(502, { ok: false, reason: "unavailable" });
+  }
+}
+
 /** One row of the puzzles-played board, as `leaderboard_total_played` returns it. */
 interface TotalRow {
   rank: number;
@@ -1041,6 +1075,8 @@ async function handleGet(request: Request): Promise<Response> {
   if (params.get("words") === "1") return handleWordsGet(params);
   // One word's finders, shared by every reader in the same way.
   if (params.has("finders")) return handleFindersGet(params);
+  // Who has had the best word how often, for settling a tie for it.
+  if (params.get("bestWins") === "1") return handleBestWinsGet(params);
   // The puzzles-played board, on its own: it has no window to validate.
   if (params.get("total") === "1") return handleTotalGet(params);
   // The dead-streaks board, on its own for the same reason.

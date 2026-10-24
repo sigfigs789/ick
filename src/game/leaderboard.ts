@@ -829,6 +829,28 @@ export async function fetchWordFinders(word: string, date: string): Promise<stri
     : [];
 }
 
+/**
+ * How many days each player has had the best word, on the puzzles before
+ * `date`: player id to count, for the players who have had it at all. Shared
+ * by every reader like the feed. Read only to settle a tie for the best word
+ * (see `pickBest` in game/yesterdaysBest.ts).
+ */
+export async function fetchBestWordWins(date: string): Promise<Record<string, number>> {
+  const response = await fetch(`/api/leaderboard?bestWins=1&today=${encodeURIComponent(date)}`, {
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error(`leaderboard best wins ${response.status}`);
+  const body = (await response.json()) as Record<string, unknown>;
+  const wins: Record<string, number> = {};
+  if (body.wins && typeof body.wins === "object") {
+    for (const [id, count] of Object.entries(body.wins as Record<string, unknown>)) {
+      if (typeof count === "number" && Number.isFinite(count)) wins[id.toLowerCase()] = count;
+    }
+  }
+  return wins;
+}
+
 /** Turn one response body -- real or sample -- into the boards the page renders. */
 function readBoards(
   body: Record<string, unknown>,
