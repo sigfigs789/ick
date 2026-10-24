@@ -7,8 +7,8 @@
  * (`bankedFreezes`) early: the first on its third day played, then one on
  * every seventh day played -- the streak count, which frozen days do not add
  * to -- held up to a cap set by the longest streak the player has ever had
- * (see `streakFreezeCap`). The cap is permanent: a player who once reached 28
- * days can hold three on every streak after.
+ * (see `streakFreezeCap`). The cap is permanent: a player who once reached 14
+ * days can hold two on every streak after.
  *
  * There is no free missed day: every missed day spends a saved freeze or ends
  * the streak. Saved freezes are spent one per missed day, and only when there
@@ -70,11 +70,14 @@ const DAYS_PER_EARNED_FREEZE = 7;
 
 /**
  * The most saved freezes a player whose longest streak is `days` can hold:
- * none in the first two days, one from 3 days, two from 14, three from 28. A
- * freeze earned past the cap is not kept.
+ * none in the first two days, one from 3 days, two from 14. A freeze earned
+ * past the cap is not kept.
+ *
+ * It was three from 28 days until 2026-10-24. A player already holding three
+ * keeps them -- nothing here takes a saved freeze away, and earning only ever
+ * adds up to the cap -- so they show as 3/2 until they spend one.
  */
 export function freezeCap(days: number): number {
-  if (days >= 28) return 3;
   if (days >= 14) return 2;
   if (days >= FIRST_FREEZE_DAY) return 1;
   return 0;

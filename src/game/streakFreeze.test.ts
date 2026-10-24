@@ -81,15 +81,16 @@ describe("applyFreezes", () => {
 
   it("records the freezes each covered day ended with", () => {
     const after = applyFreezes(streakOf({ longestStreak: 30, bankedFreezes: 3 }), "2026-10-04");
-    expect(freezesOn(after, "2026-10-02")).toEqual({ banked: 2, cap: 3 });
-    expect(freezesOn(after, "2026-10-03")).toEqual({ banked: 1, cap: 3 });
+    // Three held from the old cap of three, over today's cap of two.
+    expect(freezesOn(after, "2026-10-02")).toEqual({ banked: 2, cap: 2 });
+    expect(freezesOn(after, "2026-10-03")).toEqual({ banked: 1, cap: 2 });
     // Today, not covered yet, is what is held now.
-    expect(freezesOn(after, "2026-10-04")).toEqual({ banked: 1, cap: 3 });
+    expect(freezesOn(after, "2026-10-04")).toEqual({ banked: 1, cap: 2 });
   });
 
   it("records none held on the days of a gap that ended the streak", () => {
     const after = applyFreezes(streakOf({ longestStreak: 30, bankedFreezes: 1 }), "2026-10-04");
-    expect(freezesOn(after, "2026-10-02")).toEqual({ banked: 0, cap: 3 });
+    expect(freezesOn(after, "2026-10-02")).toEqual({ banked: 0, cap: 2 });
   });
 
   it("forgets covered days after two months", () => {
@@ -143,8 +144,8 @@ describe("Saturday rest days", () => {
 });
 
 describe("saved freezes", () => {
-  it("caps at none in the first two days, one from 3 days, two from 14, three from 28", () => {
-    expect([1, 2, 3, 13, 14, 27, 28, 365].map(freezeCap)).toEqual([0, 0, 1, 1, 2, 2, 3, 3]);
+  it("caps at none in the first two days, one from 3 days, two from 14", () => {
+    expect([1, 2, 3, 13, 14, 27, 28, 365].map(freezeCap)).toEqual([0, 0, 1, 1, 2, 2, 2, 2]);
   });
 
   it("earns the first on the third day, then one on every seventh day, up to the cap", () => {
@@ -159,7 +160,8 @@ describe("saved freezes", () => {
     expect(earnFreeze(streakOf({ ...fresh, currentStreak: 7 })).bankedFreezes).toBe(1);
     expect(earnFreeze(streakOf({ ...fresh, currentStreak: 14, bankedFreezes: 1 })).bankedFreezes).toBe(2);
     expect(earnFreeze(streakOf({ ...fresh, currentStreak: 21, bankedFreezes: 2 })).bankedFreezes).toBe(2);
-    expect(earnFreeze(streakOf({ ...fresh, currentStreak: 28, bankedFreezes: 2 })).bankedFreezes).toBe(3);
+    expect(earnFreeze(streakOf({ ...fresh, currentStreak: 28, bankedFreezes: 2 })).bankedFreezes).toBe(2);
+    // Three held from the old cap are kept, though no more are earned.
     expect(earnFreeze(streakOf({ ...fresh, currentStreak: 42, bankedFreezes: 3 })).bankedFreezes).toBe(3);
     expect(earnFreeze(streakOf({ ...fresh, currentStreak: 36, bankedFreezes: 0 })).bankedFreezes).toBe(0);
   });
@@ -168,7 +170,7 @@ describe("saved freezes", () => {
     const returning = { longestStreak: 40, bankedFreezes: 0 };
     expect(earnFreeze(streakOf({ ...returning, currentStreak: 3 })).bankedFreezes).toBe(1);
     expect(earnFreeze(streakOf({ ...returning, currentStreak: 7 })).bankedFreezes).toBe(1);
-    expect(earnFreeze(streakOf({ ...returning, currentStreak: 14, bankedFreezes: 2 })).bankedFreezes).toBe(3);
+    expect(earnFreeze(streakOf({ ...returning, currentStreak: 14, bankedFreezes: 1 })).bankedFreezes).toBe(2);
     // A past 14-day streak caps at two.
     expect(earnFreeze(streakOf({ longestStreak: 20, currentStreak: 7, bankedFreezes: 1 })).bankedFreezes).toBe(2);
     expect(
@@ -266,7 +268,7 @@ describe("streakReport", () => {
 describe("backdateFreezes", () => {
   it("fills the streak to the cap its longest run set", () => {
     expect(backdateFreezes(streakOf({ currentStreak: 40, longestStreak: 40 }))).toMatchObject({
-      bankedFreezes: 3,
+      bankedFreezes: 2,
       freezesBackdated: true,
     });
     expect(backdateFreezes(streakOf({ currentStreak: 20, longestStreak: 20 })).bankedFreezes).toBe(2);
@@ -277,7 +279,7 @@ describe("backdateFreezes", () => {
 
   it("does not depend on the length of the current run", () => {
     // A 48-day run before freezes existed, then a new run four days in.
-    expect(backdateFreezes(streakOf({ currentStreak: 4, longestStreak: 48 })).bankedFreezes).toBe(3);
+    expect(backdateFreezes(streakOf({ currentStreak: 4, longestStreak: 48 })).bankedFreezes).toBe(2);
     expect(backdateFreezes(streakOf({ currentStreak: 1, longestStreak: 20 })).bankedFreezes).toBe(2);
   });
 

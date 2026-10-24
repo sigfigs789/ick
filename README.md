@@ -936,8 +936,9 @@ anything that matters.
   streak — only a valid answer submitted on its own real calendar date
   counts. Saved freezes cover missed days, one each: a streak earns its
   first on day 3 and then one every 7 days played, and holds up to 1 once
-  it has ever reached 3 days, 2 once it has ever reached 14 and 3 once it
-  has ever reached 28 (the cap never goes back down), and the 🔥 turns to
+  it has ever reached 3 days and 2 once it has ever reached 14 (the cap
+  never goes back down; players holding 3 from the old cap of 3 keep them
+  until spent, shown as 3/2), and the 🔥 turns to
   🧊 while one is covering. There is no free missed day: every missed day
   spends a freeze or ends the streak, and a gap they cannot cover resets
   the streak to zero. A player who once reached 3 days and comes back after

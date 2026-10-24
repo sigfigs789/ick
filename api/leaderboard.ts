@@ -735,7 +735,10 @@ interface StreakReport {
   lastPlayed: string;
 }
 
-/** The most saved freezes the game lets a streak hold (see freezeCap). */
+/**
+ * The most saved freezes a streak can report. The game's cap is two (see
+ * freezeCap), but players who reached three under the old cap keep them.
+ */
 const MAX_SAVED_FREEZES = 3;
 
 /**
