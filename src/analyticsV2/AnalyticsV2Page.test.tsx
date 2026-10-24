@@ -144,6 +144,9 @@ describe("AnalyticsV2Page", () => {
     const d1 = screen.getAllByRole("rowheader", { name: "D1 retention" })[1].closest("tr")!;
     expect(d1.textContent).toContain("30%");
     expect(d1.textContent).toContain("+10 pts *");
+    // Drawn only after a first word, so the arms cannot differ on activation; the row says so rather than show 100%.
+    const activation = screen.getAllByRole("rowheader", { name: "Activation" })[1].closest("tr")!;
+    expect(activation.textContent).toBe("Activationn/an/a–");
   });
 
   it("draws the come-back tip experiment beside the word of the day", async () => {
