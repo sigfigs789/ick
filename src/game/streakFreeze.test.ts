@@ -57,15 +57,15 @@ describe("applyFreezes", () => {
     const streak = streakOf({});
     expect(applyFreezes(streak, "2026-10-03")).toBe(streak);
     expect(catchUpDays(streak, "2026-10-03")).toEqual(["2026-10-02"]);
-    expect(applyFreezes(streak, "2026-10-05")).toMatchObject({ currentStreak: 0, longestStreak: 10 });
+    expect(applyFreezes(streak, "2026-10-04")).toMatchObject({ currentStreak: 0, longestStreak: 10 });
     // Not even a run too short to hold a freeze yet.
     const short = streakOf({ currentStreak: 2, longestStreak: 2 });
     expect(endangered(short, "2026-10-03")).toBe(true);
-    expect(applyFreezes(short, "2026-10-05").currentStreak).toBe(0);
+    expect(applyFreezes(short, "2026-10-04").currentStreak).toBe(0);
     // Nor a returning player whose new run has not earned one.
     const returning = streakOf({ currentStreak: 2, longestStreak: 30, bankedFreezes: 0 });
     expect(endangered(returning, "2026-10-03")).toBe(true);
-    expect(applyFreezes(returning, "2026-10-05").currentStreak).toBe(0);
+    expect(applyFreezes(returning, "2026-10-04").currentStreak).toBe(0);
   });
 
   it("is idempotent across reloads on the same day", () => {
@@ -81,8 +81,8 @@ describe("applyFreezes", () => {
     expect(applyFreezes(after, "2026-10-04")).toBe(after);
   });
 
-  it("resets a gap more than two days past the saved freezes", () => {
-    const after = applyFreezes(streakOf({ bankedFreezes: 1 }), "2026-10-06");
+  it("resets a gap more than one day past the saved freezes", () => {
+    const after = applyFreezes(streakOf({ bankedFreezes: 1 }), "2026-10-05");
     expect(after).toMatchObject({ currentStreak: 0, longestStreak: 10 });
   });
 
@@ -91,7 +91,7 @@ describe("applyFreezes", () => {
     const next = applyFreezes(frozen, "2026-10-04");
     expect(next.frozenDates).toEqual(["2026-10-02"]);
     expect(catchUpDays(next, "2026-10-04")).toEqual(["2026-10-03"]);
-    expect(applyFreezes(frozen, "2026-10-06").currentStreak).toBe(0);
+    expect(applyFreezes(frozen, "2026-10-05").currentStreak).toBe(0);
   });
 
   it("covers a later missed day again with another saved freeze", () => {
@@ -162,13 +162,13 @@ describe("Saturday rest days", () => {
     expect(savedFreezeCovering(friday, "2026-11-01")).toBe(false);
     // Sunday missed too: that one is a missed day like any other, owed.
     expect(catchUpDays(friday, "2026-11-02")).toEqual(["2026-11-01"]);
-    expect(applyFreezes(friday, "2026-11-04").currentStreak).toBe(0);
+    expect(applyFreezes(friday, "2026-11-03").currentStreak).toBe(0);
   });
 
   it("spend a freeze or end the streak when not earned", () => {
     const friday = streakOf({ lastCompletedDate: "2026-10-30", playedDates: ["2026-10-30"] });
     expect(catchUpDays(friday, "2026-11-01")).toEqual(["2026-10-31"]);
-    expect(applyFreezes(friday, "2026-11-03").currentStreak).toBe(0);
+    expect(applyFreezes(friday, "2026-11-02").currentStreak).toBe(0);
     const covered = applyFreezes({ ...friday, bankedFreezes: 1 }, "2026-11-01");
     expect(covered).toMatchObject({ currentStreak: 10, bankedFreezes: 0, frozenDates: ["2026-10-31"] });
   });
@@ -315,11 +315,11 @@ describe("saved freezes", () => {
     const frozen = streakOf({ lastCompletedDate: "2026-10-01", frozenDates: ["2026-10-02"], bankedFreezes: 1 });
     expect(applyFreezes(frozen, "2026-10-04")).toMatchObject({ currentStreak: 10, bankedFreezes: 0 });
     expect(endangered({ ...frozen, bankedFreezes: 0 }, "2026-10-04")).toBe(true);
-    expect(applyFreezes({ ...frozen, bankedFreezes: 0 }, "2026-10-06").currentStreak).toBe(0);
+    expect(applyFreezes({ ...frozen, bankedFreezes: 0 }, "2026-10-05").currentStreak).toBe(0);
   });
 
   it("resets, losing the saved freezes, when they cannot cover the whole gap", () => {
-    const after = applyFreezes(streakOf({ bankedFreezes: 2 }), "2026-10-07");
+    const after = applyFreezes(streakOf({ bankedFreezes: 2 }), "2026-10-06");
     expect(after).toMatchObject({ currentStreak: 0, bankedFreezes: 0 });
   });
 });
@@ -489,12 +489,11 @@ describe("catching up on missed days", () => {
   // Last played 10-01, no saved freeze: 10-02 missed.
   const lapsed = streakOf({});
 
-  it("owes yesterday, then the day before too, and is lost after that", () => {
+  it("owes yesterday for one day only, and is lost after that", () => {
     expect(catchUpDays(lapsed, "2026-10-03")).toEqual(["2026-10-02"]);
-    expect(catchUpDays(lapsed, "2026-10-04")).toEqual(["2026-10-02", "2026-10-03"]);
-    expect(catchUpDays(lapsed, "2026-10-05")).toEqual([]);
-    expect(endangered(lapsed, "2026-10-04")).toBe(true);
-    expect(endangered(lapsed, "2026-10-05")).toBe(false);
+    expect(catchUpDays(lapsed, "2026-10-04")).toEqual([]);
+    expect(endangered(lapsed, "2026-10-03")).toBe(true);
+    expect(endangered(lapsed, "2026-10-04")).toBe(false);
   });
 
   it("owes nothing to a streak played through yesterday, today, or already lost", () => {
@@ -513,21 +512,18 @@ describe("catching up on missed days", () => {
     expect(wasCaughtUp(madeUp, "2026-10-02")).toBe(true);
     // Not a day played, nor one past the window.
     expect(recordCatchUp(lapsed, "2026-10-01", "2026-10-03")).toBe(lapsed);
-    expect(recordCatchUp(lapsed, "2026-10-02", "2026-10-05")).toBe(lapsed);
+    expect(recordCatchUp(lapsed, "2026-10-02", "2026-10-04")).toBe(lapsed);
   });
 
-  it("keeps the streak alive, at the same count, once every owed day is made up", () => {
-    let streak = recordCatchUp(lapsed, "2026-10-03", "2026-10-04");
-    // The other owed day is still owed.
-    expect(catchUpDays(streak, "2026-10-04")).toEqual(["2026-10-02"]);
-    streak = recordCatchUp(streak, "2026-10-02", "2026-10-04");
-    expect(endangered(streak, "2026-10-04")).toBe(false);
-    expect(applyFreezes(streak, "2026-10-04")).toBe(streak);
-    expect(continuesInto(streak, "2026-10-04")).toBe(true);
+  it("keeps the streak alive, at the same count, once the owed day is made up", () => {
+    const streak = recordCatchUp(lapsed, "2026-10-02", "2026-10-03");
+    expect(endangered(streak, "2026-10-03")).toBe(false);
+    expect(applyFreezes(streak, "2026-10-03")).toBe(streak);
+    expect(continuesInto(streak, "2026-10-03")).toBe(true);
     expect(streak.currentStreak).toBe(10);
     // Made up, not covered by a freeze: 🔥, but ⏳ with no freeze left for today.
-    expect(savedFreezeCovering(streak, "2026-10-04")).toBe(false);
-    expect(atRisk(streak, "2026-10-04")).toBe(true);
+    expect(savedFreezeCovering(streak, "2026-10-03")).toBe(false);
+    expect(atRisk(streak, "2026-10-03")).toBe(true);
   });
 
   it("makes up the day the freezes could not reach after they cover the first", () => {

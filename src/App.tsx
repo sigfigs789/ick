@@ -82,24 +82,16 @@ function ArchiveNote({
     return (
       <p className="archive-note archive-note--catch-up">
         ⚠️ Bank a word on this puzzle to make up the day you missed and save your streak.
-        {owed.length > 1 && " Then play the other missed day too."}
       </p>
     );
   }
   if (wasCaughtUp(streak, date) && streak.lastCompletedDate !== today) {
     return (
       <p className="archive-note archive-note--catch-up">
-        {owed.length > 0
-          ? "Day made up. One more missed puzzle to go, then today's."
-          : "Streak saved! Now play today's puzzle to keep it going."}
-        {owed.length === 0 && (
-          <>
-            {" "}
-            <button type="button" className="archive-note__today" onClick={onPlayToday}>
-              Play today's
-            </button>
-          </>
-        )}
+        Streak saved! Now play today's puzzle to keep it going.{" "}
+        <button type="button" className="archive-note__today" onClick={onPlayToday}>
+          Play today's
+        </button>
       </p>
     );
   }

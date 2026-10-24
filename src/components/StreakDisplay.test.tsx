@@ -180,12 +180,12 @@ describe("StreakDisplay", () => {
   });
 
   it("warns, over the count, that missed puzzles can still save a streak out of freezes", () => {
-    // 10-02 and 10-03 missed with no freeze: both still owed on 10-04.
+    // 10-03 missed with no freeze: still owed on 10-04.
     const lapsed: StreakState = {
       ...streak,
       currentStreak: 12,
       longestStreak: 12,
-      lastCompletedDate: "2026-10-01",
+      lastCompletedDate: "2026-10-02",
     };
     const played: string[] = [];
     const { rerender } = render(
@@ -194,29 +194,18 @@ describe("StreakDisplay", () => {
     expect(flame()).toBe("⚠️");
     const popup = screen.getByRole("status");
     expect(popup).toHaveTextContent("Save your 12-day streak");
-    expect(popup).toHaveTextContent("Play Friday's and yesterday's puzzles before today's");
+    expect(popup).toHaveTextContent("Play yesterday's puzzle before today's");
     fireEvent.click(screen.getByRole("button", { name: "Play yesterday's" }));
-    fireEvent.click(screen.getByRole("button", { name: "Play Friday's" }));
-    expect(played).toEqual(["2026-10-03", "2026-10-02"]);
-
-    // One made up: only the other is asked for.
-    rerender(
-      <StreakDisplay streak={{ ...lapsed, caughtUpDates: ["2026-10-02"] }} date="2026-10-04" isToday />
-    );
-    expect(screen.getByRole("status")).toHaveTextContent("Play yesterday's puzzle before today's");
+    expect(played).toEqual(["2026-10-03"]);
 
     // Closed with ×, for this visit.
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(flame()).toBe("⚠️");
 
-    // Both made up: no warning, and ⏳ since no freeze is left for today.
+    // Made up: no warning, and ⏳ since no freeze is left for today.
     rerender(
-      <StreakDisplay
-        streak={{ ...lapsed, caughtUpDates: ["2026-10-02", "2026-10-03"] }}
-        date="2026-10-04"
-        isToday
-      />
+      <StreakDisplay streak={{ ...lapsed, caughtUpDates: ["2026-10-03"] }} date="2026-10-04" isToday />
     );
     expect(flame()).toBe("⏳");
     expect(screen.queryByRole("status")).not.toBeInTheDocument();

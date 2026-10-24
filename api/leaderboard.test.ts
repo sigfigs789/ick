@@ -162,7 +162,7 @@ describe("api/leaderboard submissions", () => {
     withEnv();
     for (const streak of [
       { current: 5, best: 4, saved: 0, lastPlayed: SUNDAY }, // best below current
-      { current: 5, best: 5, saved: 6, lastPlayed: SUNDAY }, // more saved than the cap and two made up
+      { current: 5, best: 5, saved: 5, lastPlayed: SUNDAY }, // more saved than the cap and one made up
       { current: 500, best: 500, saved: 0, lastPlayed: SUNDAY }, // longer than there have been puzzles
       { current: 5, best: 5, saved: 0, lastPlayed: "2026-13-01" },
     ]) {
@@ -485,7 +485,7 @@ describe("api/leaderboard reads", () => {
           best_streak: 4,
           covered: true,
         },
-        // Out of freezes with missed days to make up: still ranked.
+        // Out of freezes with a missed day to make up: still ranked.
         {
           rank: 4,
           place: 4,

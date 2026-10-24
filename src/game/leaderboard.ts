@@ -92,7 +92,7 @@ export interface StreakEntry {
    */
   atRisk: boolean;
   /**
-   * The run has ended, past the two days a missed day can be made up: the
+   * The run has ended, past the day a missed day can be made up: the
    * board keeps it, at the length it reached, for two days more and marks it
    * 💀. Playing again replaces it.
    */

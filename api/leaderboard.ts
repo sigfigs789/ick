@@ -748,10 +748,10 @@ interface StreakReport {
 /**
  * The most saved freezes a streak can report. The game's cap is two (see
  * freezeCap), but players who reached three under the old cap keep them, and
- * the two missed days that can be made up count as saved once they are (see
+ * the missed day that can be made up counts as saved once it is (see
  * `streakReport` in src/game/streakFreeze.ts).
  */
-const MAX_SAVED_FREEZES = 3 + 2;
+const MAX_SAVED_FREEZES = 3 + 1;
 
 /**
  * The reported streak, or null for one that is absent or does not add up. A

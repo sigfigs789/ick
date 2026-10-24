@@ -85,7 +85,7 @@ function dayLabel(date: string, today: string): string {
 /**
  * Over the streak count while it is ⚠️ (see `catchUpDays` in
  * game/streakFreeze.ts): the freezes are spent, and the streak lives only if
- * the missed puzzles are played before today's. Shown without being asked
+ * the missed puzzle is played before today's. Shown without being asked
  * for, because this is the one day the streak can be saved and nothing else
  * on the screen says how; closed with ×, for this visit.
  */
@@ -193,7 +193,7 @@ export function StreakDisplay({
           ? "🔥"
           : null;
   const iconTitle = danger
-    ? "Out of freezes: play the missed puzzles before today's to save your streak"
+    ? "Out of freezes: play the missed puzzle before today's to save your streak"
     : coveredDay
       ? "A freeze kept your streak alive on this day"
       : risky
@@ -227,7 +227,7 @@ export function StreakDisplay({
         (coveredDay ? "A freeze kept your streak alive on this day. " : "") +
         (frozen ? "A saved freeze is covering your streak. " : "") +
         (risky ? "Play today to keep your streak. " : "") +
-        (danger ? "Out of freezes: play the missed puzzles before today's to save your streak. " : "") +
+        (danger ? "Out of freezes: play the missed puzzle before today's to save your streak. " : "") +
         `Streak freezes: ${banked} of ${cap}. ` +
         `This puzzle's total score: ${totalRarity.toFixed(1)}.`
       }

@@ -697,7 +697,7 @@ function Row({ entry, isYou, last }: { entry: BoardEntry; isYou: boolean; last: 
 /** What a screen reader hears after a streak row's count. */
 function streakStatus(entry: StreakEntry): string {
   if (entry.lost) return ', lost';
-  if (entry.endangered) return ', in danger: out of freezes, missed days to make up';
+  if (entry.endangered) return ', in danger: out of freezes, a missed day to make up';
   if (entry.resting) return ", lazy Saturday: skipping it can't break the streak";
   if (entry.current <= 1 && !entry.frozen) return '';
   const held = entry.frozen
@@ -716,8 +716,8 @@ function streakStatus(entry: StreakEntry): string {
  * The same row as a scored board's, with the run where the total goes and the
  * longest run where the best find goes. One icon says how the run stands: 😴 on
  * an earned Saturday not played yet (pressed to say why, see RestDayBadge); ⏳ when missed days
- * have spent every saved freeze; ⚠️ for the two days after, while the missed
- * puzzles can still be made up; 🧊 while a freeze is covering it; 💀 for a run
+ * have spent every saved freeze; ⚠️ for the day after, while the missed
+ * puzzle can still be made up; 🧊 while a freeze is covering it; 💀 for a run
  * that has ended, kept for two days more, struck through and unranked;
  * 🔥 for a run played through yesterday. None on a live run of one day.
  */

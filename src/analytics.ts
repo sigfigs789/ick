@@ -972,7 +972,7 @@ export function trackComeBackAssigned(variant: ComeBackVariant, date: string) {
  * A missed day made up: the first word banked on an archive puzzle the streak
  * owed, once the saved freezes had run out (see `catchUpDays` in
  * game/streakFreeze.ts). A bare counter of how often it saves a streak;
- * `days_back` says whether it was yesterday's puzzle (1) or the one before.
+ * `days_back` is 1 for yesterday's puzzle, 2 for Friday's past a rest day.
  */
 export function trackStreakCaughtUp(date: string, streak: StreakState) {
   send("streak_caught_up", {

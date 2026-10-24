@@ -36,10 +36,10 @@
  * rule below that counts missed days skips rest days (`missedDays`).
  *
  * A gap the saved freezes cannot cover does not end the streak at once. The
- * last CATCH_UP_DAYS missed days past the freezes -- yesterday, and the day
- * before -- can still be made up by playing their puzzles out of the archive
- * (`catchUpDays`, `recordCatchUp`). While one is owed the streak shows ⚠️
- * (`endangered`), and it ends only when a missed day falls out of that window.
+ * last missed day past the freezes -- yesterday, or Friday past a rest day --
+ * can still be made up by playing its puzzle out of the archive (`catchUpDays`,
+ * `recordCatchUp`). While it is owed the streak shows ⚠️ (`endangered`), and
+ * it ends the day after, when the missed day falls out of that window.
  * A made-up day is like a frozen one: it keeps the streak alive but does not
  * add to it, since it was not played on its own day.
  */
@@ -109,9 +109,9 @@ export function missedDays(streak: StreakState, after: string, before: string): 
 
 /**
  * How many missed days past the saved freezes can still be made up: the last
- * two that needed playing -- yesterday and the day before, skipping a rest day.
+ * one that needed playing -- yesterday, skipping a rest day.
  */
-export const CATCH_UP_DAYS = 2;
+export const CATCH_UP_DAYS = 1;
 
 /** How long a made-up day is remembered: long enough to outlast any gap it bridged. */
 const CAUGHT_UP_DATES_KEPT_DAYS = 14;

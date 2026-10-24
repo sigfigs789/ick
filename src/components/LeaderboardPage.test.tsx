@@ -274,7 +274,7 @@ describe("the leaderboard page", () => {
         },
         // Below the lost run, and ranked as if it were not there.
         { rank: 6, playerId: "77777777-7777-4777-8777-777777777777", current: 8, best: 8 },
-        // Out of freezes with missed days to make up: in danger, still ranked.
+        // Out of freezes with a missed day to make up: in danger, still ranked.
         {
           rank: 7,
           playerId: "88888888-8888-4888-8888-888888888888",

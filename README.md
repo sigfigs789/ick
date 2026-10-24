@@ -941,13 +941,12 @@ anything that matters.
   until spent, shown as 3/2), and the 🔥 turns to
   🧊 while one is covering. There is no free missed day: every missed day
   spends a freeze or has to be made up. Once the freezes are spent, the
-  streak shows ⚠️ and the last two missed days (yesterday, and the day
-  before) can still be made up by playing their puzzles out of the archive
-  before today's — the one way an archive puzzle touches the streak. A
+  streak shows ⚠️ and the last missed day (yesterday) can still be made up
+  by playing its puzzle out of the archive before today's — the one way an archive puzzle touches the streak. A
   made-up day keeps the streak alive without adding to it, and each one is
   counted (`streak_caught_up`). A gap longer than that resets the streak to
-  zero, and the streak board shows the run ⚠️ (still ranked) for those two
-  days before it turns 💀. A player who once reached 3 days and comes back after
+  zero, and the streak board shows the run ⚠️ (still ranked) for that one
+  day before it turns 💀. A player who once reached 3 days and comes back after
   losing a streak sees a "Welcome back" card with their best streak, and the
   new streak starts with one saved freeze (at most once every 30 days; see
   `welcomeBack`). Those checks live in `storage.ts` and `streakFreeze.ts`,

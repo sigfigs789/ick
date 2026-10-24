@@ -135,7 +135,7 @@ export function StreakDisplay({
     (coveredDay ? 'A freeze kept your streak alive on this day. ' : '') +
     (frozen ? 'A saved freeze is covering your streak. ' : '') +
     (risky ? 'Play today to keep your streak. ' : '') +
-    (danger ? "Out of freezes: play the missed puzzles before today's to save your streak. " : '') +
+    (danger ? "Out of freezes: play the missed puzzle before today's to save your streak. " : '') +
     `Streak freezes: ${banked} of ${cap}. ` +
     `This puzzle's total score: ${totalRarity.toFixed(1)}.`;
 
