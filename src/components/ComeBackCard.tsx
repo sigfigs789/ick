@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { isReporting, trackComeBackAssigned } from "../analytics";
+import { syncAchievements } from "../game/achievements";
 import { streakGoal } from "../game/comeBack";
 import { assignComeBackArm, forcedComeBackVariant, type ComeBackVariant } from "../game/comeBackTest";
 import type { StreakState } from "../game/types";
@@ -38,10 +39,17 @@ export function ComeBackCard({ streak, date }: Props) {
     setVariant(drawn.variant);
   }, [date]);
 
-  if (variant !== "shown") return null;
+  // The achievements still locked, for when nothing nearer is ahead. Memoized:
+  // reading them walks the stored history.
+  const goal = useMemo(
+    () => streakGoal(streak, date, syncAchievements(streak).filter((status) => !status.earnedOn)),
+    [streak, date]
+  );
+
+  if (variant !== "shown" || goal === null) return null;
   return (
     <section className="come-back" aria-label="Tomorrow's drop">
-      <p className="come-back__goal">{streakGoal(streak, date)}</p>
+      <p className="come-back__goal">{goal}</p>
     </section>
   );
 }

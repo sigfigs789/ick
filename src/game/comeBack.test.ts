@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ACHIEVEMENTS } from "./achievements";
 import { streakGoal } from "./comeBack";
 import type { StreakState } from "./types";
 
@@ -50,7 +51,7 @@ describe("streakGoal", () => {
     // Two is the most the cap ever reaches, so a full one past 14 days never rises.
     expect(
       streakGoal(streak({ currentStreak: 20, longestStreak: 20, bankedFreezes: 2 }), SATURDAY)
-    ).toBe("This is your longest streak yet.");
+    ).toBeNull();
   });
 
   it("promises no freeze to a player still holding three from the old cap", () => {
@@ -69,13 +70,13 @@ describe("streakGoal", () => {
     ).toBe("Tomorrow earns a 2nd 🧊 streak freeze.");
   });
 
-  it("falls back to the best streak, then to a new record", () => {
+  it("falls back to the best streak, then to nothing", () => {
     expect(
       streakGoal(streak({ currentStreak: 30, longestStreak: 40, bankedFreezes: 3 }), SATURDAY)
     ).toBe("11 days to beat your best streak of 40.");
     expect(
       streakGoal(streak({ currentStreak: 30, longestStreak: 30, bankedFreezes: 3 }), SATURDAY)
-    ).toBe("This is your longest streak yet.");
+    ).toBeNull();
   });
 
   it("names whichever of the next freeze and the best streak is nearer", () => {
@@ -93,7 +94,7 @@ describe("streakGoal", () => {
     for (let days = 1; days <= 60; days++) {
       for (const banked of [0, 1, 2, 3]) {
         const goal = streakGoal(streak({ currentStreak: days, longestStreak: days, bankedFreezes: banked }), SATURDAY);
-        expect(goal).not.toMatch(/make it a/);
+        expect(goal ?? "").not.toMatch(/make it a/);
       }
     }
   });
@@ -110,19 +111,12 @@ describe("streakGoal", () => {
       );
     });
 
-    it("says it is unlocked every weekday left, from the day it unlocks", () => {
+    it("is not mentioned once unlocked", () => {
+      // Cap full and the best streak 12 days off: nothing nearer to say instead.
       expect(streakGoal(run(["2026-10-25", "2026-10-26", "2026-10-27"]), "2026-10-27")).toBe(
-        "Lazy Saturday unlocked 😴 Skip Saturday and your streak is safe."
+        "13 days to beat your best streak of 20."
       );
-      expect(streakGoal(run(["2026-10-25", "2026-10-26", "2026-10-27", "2026-10-28"]), "2026-10-28")).toBe(
-        "Lazy Saturday unlocked 😴 Skip Saturday and your streak is safe."
-      );
-    });
-
-    it("says on Friday that tomorrow is the one", () => {
-      expect(streakGoal(run(["2026-10-26", "2026-10-28", "2026-10-30"]), "2026-10-30")).toBe(
-        "Lazy Saturday unlocked: skip tomorrow and your streak is safe."
-      );
+      expect(streakGoal(run(["2026-10-26", "2026-10-28", "2026-10-30"]), "2026-10-30")).not.toMatch(/Saturday/);
     });
 
     it("does not promise one the week has no room left for", () => {
@@ -150,27 +144,47 @@ describe("streakGoal", () => {
       ).toBe("2 more days by Friday unlocks a lazy Saturday 😴");
     });
 
-    it("once unlocked, gives way only to a freeze tomorrow", () => {
-      const played = ["2026-10-25", "2026-10-26", "2026-10-27"];
-      // The cap rises at 14, three days away.
-      expect(
-        streakGoal(
-          streak({ currentStreak: 11, longestStreak: 11, bankedFreezes: 1, playedDates: played }),
-          "2026-10-27"
-        )
-      ).toBe("Lazy Saturday unlocked 😴 Skip Saturday and your streak is safe.");
-      expect(
-        streakGoal(
-          streak({ currentStreak: 13, longestStreak: 13, bankedFreezes: 1, playedDates: played }),
-          "2026-10-27"
-        )
-      ).toMatch(/^Tomorrow your 🧊 freeze limit goes up to 2/);
-    });
-
     it("comes after a freeze tomorrow earns", () => {
       expect(
         streakGoal(streak({ currentStreak: 2, longestStreak: 2, playedDates: ["2026-10-25"] }), "2026-10-25")
       ).toMatch(/^Tomorrow earns a 🧊 freeze/);
+    });
+  });
+
+  describe("with nothing else ahead", () => {
+    // Cap full, no lazy Saturday (a Saturday), and the best streak is this one.
+    const maxed = streak({ currentStreak: 30, longestStreak: 30, bankedFreezes: 2 });
+    const locked = ACHIEVEMENTS.slice(0, 3).map((achievement) => ({ achievement, earnedOn: null }));
+
+    it("names a locked achievement, the same all day", () => {
+      const line = streakGoal(maxed, SATURDAY, locked) ?? "";
+      expect(line).toMatch(/^Still to unlock: /);
+      expect(locked.some(({ achievement }) => line.includes(achievement.title))).toBe(true);
+      expect(streakGoal(maxed, SATURDAY, locked)).toBe(line);
+    });
+
+    it("says how far along a count is", () => {
+      const words = ACHIEVEMENTS.find((a) => a.id === "words-100")!;
+      expect(
+        streakGoal(maxed, SATURDAY, [{ achievement: words, earnedOn: null, progress: { current: 64, target: 100 } }])
+      ).toBe("Still to unlock: 📚 Hundred words (64/100). Bank 100 words.");
+    });
+
+    it("picks from them over the days", () => {
+      const lines = new Set(
+        ["2026-11-07", "2026-11-14", "2026-11-21", "2026-11-28", "2026-12-05", "2026-12-12"].map((date) =>
+          streakGoal(maxed, date, locked)
+        )
+      );
+      expect(lines.size).toBeGreaterThan(1);
+    });
+
+    it("is not used while anything else is ahead", () => {
+      expect(streakGoal(streak({}), SATURDAY, locked)).toBe("2 days to your next 🧊 streak freeze.");
+    });
+
+    it("says nothing with every achievement earned", () => {
+      expect(streakGoal(maxed, SATURDAY, [])).toBeNull();
     });
   });
 });

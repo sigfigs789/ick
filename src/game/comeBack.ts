@@ -9,7 +9,8 @@
  * earns, a Saturday off, or the best streak it is closing in on.
  */
 
-import { addDays } from "./date";
+import type { AchievementStatus } from "./achievements";
+import { daysSinceEpoch } from "./date";
 import { freezeCap, restDayProgress } from "./streakFreeze";
 import type { StreakState } from "./types";
 
@@ -24,15 +25,18 @@ function earnsFreezeOn(days: number): boolean {
  * playing tomorrow grows the streak is a given, and a second line under it
  * only buried the reward that was actually news.
  *
+ * Only something still to earn is named, never something already earned.
  * Soonest first: of the next freeze that would fit under the cap, a lazy
  * Saturday (see `restDayProgress` in game/streakFreeze.ts) and beating the
  * best streak, whichever lands in the fewest days played. A tie goes to the
  * freeze, the thing they keep, then to the lazy Saturday, which lapses with
- * its week. A lazy Saturday already unlocked is said every weekday left, so
- * the day it unlocks is never silent; it counts as a day away, so it gives
- * way only to a freeze tomorrow. Then a record run, and only with nothing
- * else to say, that a streak starts tomorrow. A lazy Saturday is only
- * promised while the week has days enough left to earn it.
+ * its week. A lazy Saturday is only promised while the week has days enough
+ * left to earn it, and once unlocked is not mentioned again.
+ *
+ * With none of those ahead -- the freeze cap full, no lazy Saturday left to
+ * earn, and the best streak the current one -- it names an achievement still
+ * locked (see game/achievements.ts), picked at random from `locked`. With
+ * nothing at all left to earn, it is null and nothing is said.
  *
  * A freeze past the cap is not kept, so it is not promised. A player already
  * holding one hears which it would be -- a 2nd, a 3rd -- since "your next
@@ -40,7 +44,11 @@ function earnsFreezeOn(days: number): boolean {
  * that the cap rises, since that is what the wait is for: the day it rises
  * also earns the freeze that fills it.
  */
-export function streakGoal(streak: StreakState, today: string): string {
+export function streakGoal(
+  streak: StreakState,
+  today: string,
+  locked: readonly AchievementStatus[] = []
+): string | null {
   const days = streak.currentStreak;
   const next = days + 1;
   const best = Math.max(streak.longestStreak, days);
@@ -76,16 +84,12 @@ export function streakGoal(streak: StreakState, today: string): string {
 
   // Only for a streak worth resting: a lost one has nothing for Saturday to keep.
   const rest = days > 0 ? restDayProgress(streak, today) : null;
-  if (rest) {
+  if (rest && rest.needed > 0) {
     const line =
-      rest.needed === 0
-        ? rest.saturday === addDays(today, 1)
-          ? "Lazy Saturday unlocked: skip tomorrow and your streak is safe."
-          : "Lazy Saturday unlocked 😴 Skip Saturday and your streak is safe."
-        : rest.needed === 1
-          ? "Play tomorrow for a lazy Saturday 😴"
-          : `${rest.needed} more days by Friday unlocks a lazy Saturday 😴`;
-    goals.push({ away: Math.max(rest.needed, 1), rank: 1, line });
+      rest.needed === 1
+        ? "Play tomorrow for a lazy Saturday 😴"
+        : `${rest.needed} more days by Friday unlocks a lazy Saturday 😴`;
+    goals.push({ away: rest.needed, rank: 1, line });
   }
 
   if (best > days) {
@@ -94,6 +98,21 @@ export function streakGoal(streak: StreakState, today: string): string {
 
   goals.sort((x, y) => x.away - y.away || x.rank - y.rank);
   if (goals.length > 0) return goals[0].line;
-  if (days >= 2) return "This is your longest streak yet.";
-  return "Play tomorrow to start a streak.";
+  if (locked.length > 0) return achievementGoal(locked[pickFor(today, locked.length)]);
+  return null;
+}
+
+/**
+ * A random index below `count`, the same all of `date`: the line stays put
+ * across reloads that day and moves on the next.
+ */
+function pickFor(date: string, count: number): number {
+  // Knuth's multiplicative hash, so neighbouring days land far apart.
+  return ((daysSinceEpoch(date, "2000-01-01") * 2654435761) >>> 0) % count;
+}
+
+/** The line for an achievement still locked, with how far along a count is. */
+function achievementGoal({ achievement, progress }: AchievementStatus): string {
+  const along = progress && progress.current > 0 ? ` (${progress.current}/${progress.target})` : "";
+  return `Still to unlock: ${achievement.icon} ${achievement.title}${along}. ${achievement.description}`;
 }
