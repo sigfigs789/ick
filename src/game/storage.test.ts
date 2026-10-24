@@ -172,13 +172,16 @@ describe("loadStreak", () => {
     expect(loadStreak()).toMatchObject({ crushedIt: 0, elite: 0, highScore: 0 });
   });
 
-  it("resets an expired streak to zero after two missed days", () => {
-    setToday("2024-01-04");
+  it("resets an expired streak to zero after three missed days", () => {
     localStorage.setItem(
       "ick:streak",
       JSON.stringify({ currentStreak: 2, longestStreak: 2, lastCompletedDate: "2024-01-01" })
     );
+    // Two missed days can still be made up.
+    setToday("2024-01-04");
+    expect(loadStreak()).toMatchObject({ currentStreak: 2 });
 
+    setToday("2024-01-05");
     expect(loadStreak()).toMatchObject({ currentStreak: 0, longestStreak: 2 });
   });
 
@@ -223,7 +226,7 @@ describe("Saturday rest days", () => {
       setToday(date);
       recordAcceptedWord(newProgress(date, "str"), word("strange"));
     }
-    setToday("2026-11-01");
+    setToday("2026-11-03");
     expect(loadStreak().currentStreak).toBe(0);
   });
 
@@ -538,8 +541,32 @@ describe("streak freezes", () => {
   it("gives no free missed day before the first freeze is earned", () => {
     play("2024-01-01");
     play("2024-01-02");
-    setToday("2024-01-04"); // skipped 01-03, with no freeze yet
-    expect(loadStreak()).toMatchObject({ currentStreak: 0, longestStreak: 2 });
+    play("2024-01-04"); // skipped 01-03, with no freeze yet, and not made up
+    expect(loadStreak()).toMatchObject({ currentStreak: 1, longestStreak: 2 });
+  });
+
+  it("saves a streak whose missed days are made up from the archive", () => {
+    play("2024-01-01");
+    play("2024-01-02");
+    // 01-03 and 01-04 missed; on 01-05 both are still owed.
+    setToday("2024-01-05");
+    expect(loadStreak()).toMatchObject({ currentStreak: 2 });
+    recordAcceptedWord(newProgress("2024-01-04", "str"), word("strange"));
+    expect(loadStreak().caughtUpDates).toEqual(["2024-01-04"]);
+    recordAcceptedWord(newProgress("2024-01-03", "str"), word("strong"));
+    // Made up, not played: the count holds until today is played.
+    expect(loadStreak()).toMatchObject({ currentStreak: 2, caughtUpDates: ["2024-01-03", "2024-01-04"] });
+    play("2024-01-05");
+    expect(loadStreak()).toMatchObject({ currentStreak: 3, longestStreak: 3 });
+  });
+
+  it("does not let an archive puzzle outside the window make up a day", () => {
+    play("2024-01-01");
+    play("2024-01-02");
+    setToday("2024-01-06"); // 01-03 to 01-05 missed: too many
+    recordAcceptedWord(newProgress("2024-01-05", "str"), word("strange"));
+    expect(loadStreak()).toMatchObject({ currentStreak: 0 });
+    expect(loadStreak().caughtUpDates).toBeUndefined();
   });
 
   it("earns a saved freeze at 7 days that covers a missed day, with no free day after", () => {

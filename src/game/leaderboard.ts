@@ -87,13 +87,14 @@ export interface StreakEntry {
    */
   covered: boolean;
   /**
-   * Missing today ends the run: every saved freeze is spent.
+   * Missing today puts the run in danger: every saved freeze is spent.
    * The day the game shows ⏳ (`atRisk` in game/streakFreeze.ts). A run with a freeze left for today is not at risk.
    */
   atRisk: boolean;
   /**
-   * The run has ended: the board keeps it, at the length it reached, for its
-   * first two days over and marks it 💀. Playing again replaces it.
+   * The run has ended, past the two days a missed day can be made up: the
+   * board keeps it, at the length it reached, for two days more and marks it
+   * 💀. Playing again replaces it.
    */
   lost: boolean;
   /**
@@ -102,6 +103,12 @@ export interface StreakEntry {
    * game/streakFreeze.ts). Playing turns it back to 🔥.
    */
   resting: boolean;
+  /**
+   * The saved freezes are spent and missed days are owed: the run ends unless
+   * they are made up by playing their puzzles late, and the board shows ⚠️
+   * (see `endangered` in game/streakFreeze.ts). Still ranked.
+   */
+  endangered: boolean;
 }
 
 /**
@@ -346,7 +353,7 @@ function parseStreak(
   fallbackRank?: number
 ): StreakEntry | null {
   if (!item || typeof item !== "object") return null;
-  const { rank, playerId, current, best, frozen, covered, atRisk, lost, resting } = item;
+  const { rank, playerId, current, best, frozen, covered, atRisk, lost, resting, endangered } = item;
   if (typeof playerId !== "string") return null;
   if (typeof current !== "number" || !Number.isFinite(current) || current < 1) return null;
   const ranked = typeof rank === "number" && Number.isFinite(rank) ? rank : fallbackRank;
@@ -362,6 +369,7 @@ function parseStreak(
     atRisk: atRisk === true,
     lost: lost === true,
     resting: resting === true,
+    endangered: endangered === true,
   };
 }
 

@@ -19,7 +19,7 @@ import { loadPlayerId } from "./game/player";
 import { modeForDate, type GameMode } from "./game/mode";
 import { currentVisit, markSessionEngaged, markSessionInteracted, type VisitOutcome } from "./game/visits";
 import { markLook, markShare, type SessionTimeReport } from "./game/sessionTime";
-import { todayDateString } from "./game/date";
+import { daysSinceEpoch, todayDateString } from "./game/date";
 import { parseSourceCode, type ModeAssignment } from "./game/onboarding";
 import { IDLE_HINT_DELAY_MS, currentIdleHintArm, type IdleHintArm } from "./game/idleHint";
 import type { ComeBackVariant } from "./game/comeBackTest";
@@ -964,6 +964,22 @@ export function trackComeBackAssigned(variant: ComeBackVariant, date: string) {
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),
     live_date: todayDateString(),
+    mode: modeOf(date),
+  });
+}
+
+/**
+ * A missed day made up: the first word banked on an archive puzzle the streak
+ * owed, once the saved freezes had run out (see `catchUpDays` in
+ * game/streakFreeze.ts). A bare counter of how often it saves a streak;
+ * `days_back` says whether it was yesterday's puzzle (1) or the one before.
+ */
+export function trackStreakCaughtUp(date: string, streak: StreakState) {
+  send("streak_caught_up", {
+    puzzle_date: date,
+    live_date: todayDateString(),
+    days_back: daysSinceEpoch(todayDateString(), date),
+    current_streak: streak.currentStreak,
     mode: modeOf(date),
   });
 }

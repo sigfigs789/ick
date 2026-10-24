@@ -24,6 +24,7 @@ function row(playerId: string, rank: number | null, current = 5): StreakEntry {
     atRisk: false,
     lost: rank === null,
     resting: false,
+    endangered: false,
   };
 }
 

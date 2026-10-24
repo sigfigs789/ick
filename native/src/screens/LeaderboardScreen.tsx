@@ -697,6 +697,7 @@ function Row({ entry, isYou, last }: { entry: BoardEntry; isYou: boolean; last: 
 /** What a screen reader hears after a streak row's count. */
 function streakStatus(entry: StreakEntry): string {
   if (entry.lost) return ', lost';
+  if (entry.endangered) return ', in danger: out of freezes, missed days to make up';
   if (entry.resting) return ", lazy Saturday: skipping it can't break the streak";
   if (entry.current <= 1 && !entry.frozen) return '';
   const held = entry.frozen
@@ -715,8 +716,9 @@ function streakStatus(entry: StreakEntry): string {
  * The same row as a scored board's, with the run where the total goes and the
  * longest run where the best find goes. One icon says how the run stands: 😴 on
  * an earned Saturday not played yet (pressed to say why, see RestDayBadge); ⏳ when missed days
- * have spent every saved freeze; 🧊 while a freeze is covering it; 💀 for a run
- * that has ended, kept for its first two days over, struck through and unranked;
+ * have spent every saved freeze; ⚠️ for the two days after, while the missed
+ * puzzles can still be made up; 🧊 while a freeze is covering it; 💀 for a run
+ * that has ended, kept for two days more, struck through and unranked;
  * 🔥 for a run played through yesterday. None on a live run of one day.
  */
 function StreakRow({ entry, isYou, last }: { entry: StreakEntry; isYou: boolean; last: boolean }) {
@@ -724,12 +726,14 @@ function StreakRow({ entry, isYou, last }: { entry: StreakEntry; isYou: boolean;
   const isLeader = entry.rank === 1;
   const icon = entry.lost
     ? '\u{1F480}'
-    : entry.atRisk
-      ? '\u{23F3}'
-      : entry.frozen || entry.covered
-        ? '\u{1F9CA}'
-        : '\u{1F525}';
-  const resting = entry.resting && !entry.lost;
+    : entry.endangered
+      ? '\u{26A0}\u{FE0F}'
+      : entry.atRisk
+        ? '\u{23F3}'
+        : entry.frozen || entry.covered
+          ? '\u{1F9CA}'
+          : '\u{1F525}';
+  const resting = entry.resting && !entry.lost && !entry.endangered;
   // Gold when the longest run beats the current one: a strong player on a
   // recent lapse, not a weak one.
   const past = entry.best > entry.current;
@@ -760,7 +764,9 @@ function StreakRow({ entry, isYou, last }: { entry: StreakEntry; isYou: boolean;
           {resting ? (
             <RestDayBadge fontSize={16} style={styles.restBadge} />
           ) : (
-            (entry.current > 1 || entry.lost) && <Text style={styles.score}>{icon} </Text>
+            (entry.current > 1 || entry.lost || entry.endangered) && (
+              <Text style={styles.score}>{icon} </Text>
+            )
           )}
           <Text style={[styles.score, { color: theme.fg }]}>{entry.current}</Text>
         </View>

@@ -1060,6 +1060,7 @@ function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
 /** The hover text for a streak row's icon. */
 function streakIconTitle(entry: StreakEntry): string | undefined {
   if (entry.lost) return "Streak lost: it leaves the board after two days";
+  if (entry.endangered) return "Out of freezes: the missed days have to be made up, or the streak is lost";
   if (entry.frozen && entry.atRisk) {
     return "Missed days: a saved freeze is covering them, and none is left for today";
   }
@@ -1072,6 +1073,7 @@ function streakIconTitle(entry: StreakEntry): string | undefined {
 /** What a screen reader hears after a streak row's count. */
 function streakStatus(entry: StreakEntry): string {
   if (entry.lost) return ", lost";
+  if (entry.endangered) return ", in danger: out of freezes, missed days to make up";
   if (entry.resting) return ", lazy Saturday: skipping it can't break the streak";
   if (entry.current <= 1 && !entry.frozen) return "";
   const held = entry.frozen
@@ -1121,24 +1123,27 @@ function StreakRow({ entry, isYou }: { entry: StreakEntry; isYou: boolean }) {
         {/* One icon for how the run stands, as the game marks it (see
             components/StreakDisplay.tsx): 😴 on an earned Saturday not played
             yet, which cannot end the run, tapped to say so; ⏳ when missed days have spent
-            every saved freeze, so missing today ends it; 🧊 while a saved
-            freeze is covering it with one left for today; 💀 for a run that
-            has ended, listed for its first two days over; 🔥 for a run played
+            every saved freeze, so missing today puts it in danger; ⚠️ once it
+            is, for the two days its missed puzzles can still be made up; 🧊
+            while a saved freeze is covering it with one left for today; 💀 for
+            a run that has ended, listed for two days more; 🔥 for a run played
             through yesterday. None on a live run of one day, which is a start
-            rather than a streak. */}
-        {entry.resting && !entry.lost ? (
+            rather than a streak -- unless it is in danger. */}
+        {entry.resting && !entry.lost && !entry.endangered ? (
           <>
             <RestDayBadge />{" "}
           </>
-        ) : (entry.current > 1 || entry.lost) && (
+        ) : (entry.current > 1 || entry.lost || entry.endangered) && (
           <span aria-hidden="true" title={streakIconTitle(entry)}>
             {entry.lost
               ? "💀"
-              : entry.atRisk
-                ? "⏳"
-                : entry.frozen || entry.covered
-                  ? "🧊"
-                  : "🔥"}{" "}
+              : entry.endangered
+                ? "⚠️"
+                : entry.atRisk
+                  ? "⏳"
+                  : entry.frozen || entry.covered
+                    ? "🧊"
+                    : "🔥"}{" "}
           </span>
         )}
         {entry.current}

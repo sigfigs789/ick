@@ -30,6 +30,7 @@ function puzzle(overrides: Record<string, unknown> = {}) {
     goToPrevious: vi.fn(),
     goToNext: vi.fn(),
     goToToday: vi.fn(),
+    goToDate: vi.fn(),
     drop: "str",
     progress: {
       date: "2026-08-13",

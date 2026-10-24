@@ -864,6 +864,20 @@ h2 {
   color: var(--fg-muted);
   text-align: center;
 }
+/* A missed day the streak owes, or one just made up (App's ArchiveNote). */
+.archive-note--catch-up {
+  color: var(--fg);
+  font-weight: 600;
+}
+.archive-note__today {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
 
 /* One quiet footnote at the foot of the play screen: yesterday's rarest find.
    A hairline sets it apart from the player's own streak and total above. */
@@ -2148,6 +2162,75 @@ h2 {
 .streak-display__freeze-wrap {
   position: relative;
   display: inline-flex;
+}
+/* The ⚠️ catch-up popup (StreakDisplay's CatchUpPopup), pinned over the count. */
+.streak-display__count-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.streak-display__catch-up {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: grid;
+  gap: 0.35rem;
+  width: max-content;
+  max-width: min(17rem, calc(100vw - 2rem));
+  padding: 0.7rem 1.6rem 0.7rem 0.85rem;
+  border: 1px solid var(--danger-fg);
+  border-radius: 0.75rem;
+  background: var(--danger-bg);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.15);
+  color: var(--fg);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  text-align: left;
+}
+/* The tail, pointing down at the count. */
+.streak-display__catch-up::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 0.4rem solid transparent;
+  border-top-color: var(--danger-fg);
+}
+.streak-display__catch-up strong {
+  color: var(--danger-fg);
+}
+.streak-display__catch-up-close {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.45rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.streak-display__catch-up-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.streak-display__catch-up-play {
+  padding: 0.3rem 0.65rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.streak-display__catch-up-play:hover {
+  background: var(--accent-hover);
 }
 .streak-display__freeze-popup {
   position: absolute;

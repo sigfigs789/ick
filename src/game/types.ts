@@ -147,4 +147,9 @@ export interface StreakState {
    * `loadStreak` fills once from the stored puzzles.
    */
   playedDates?: string[];
+  /**
+   * Recent missed days whose puzzle was played late to save the streak, once
+   * the saved freezes had run out (see `catchUpDays` in game/streakFreeze.ts).
+   */
+  caughtUpDates?: string[];
 }

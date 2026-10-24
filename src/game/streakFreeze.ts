@@ -10,13 +10,13 @@
  * (see `streakFreezeCap`). The cap is permanent: a player who once reached 14
  * days can hold two on every streak after.
  *
- * There is no free missed day: every missed day spends a saved freeze or ends
- * the streak. Saved freezes are spent one per missed day, and only when there
- * are enough to cover the whole gap -- a gap they cannot cover resets the
- * streak and the freezes go with it, though the cap stays.
+ * There is no free missed day: every missed day spends a saved freeze, is made
+ * up (below), or ends the streak. Saved freezes are spent one per missed day,
+ * earliest first -- a gap they cannot cover and that is too long to make up
+ * resets the streak and the freezes go with it, though the cap stays.
  *
- * So the day after a covered day is a day a streak can be lost if no saved
- * freeze is left, and that is when `atRisk` is true and the streak shows ⏳.
+ * So the day after a covered day is a day a streak can be put in danger if no
+ * saved freeze is left, and that is when `atRisk` is true and the streak shows ⏳.
  * Otherwise it shows 🧊 while a saved freeze is covering (see
  * `savedFreezeCovering` and components/StreakDisplay.tsx). Playing turns it
  * back to fire.
@@ -34,6 +34,14 @@
  * counts like any other day. While an earned Saturday is unplayed the streak
  * shows 😴 (see `resting` and components/RestDayBadge.tsx). Every
  * rule below that counts missed days skips rest days (`missedDays`).
+ *
+ * A gap the saved freezes cannot cover does not end the streak at once. The
+ * last CATCH_UP_DAYS missed days past the freezes -- yesterday, and the day
+ * before -- can still be made up by playing their puzzles out of the archive
+ * (`catchUpDays`, `recordCatchUp`). While one is owed the streak shows ⚠️
+ * (`endangered`), and it ends only when a missed day falls out of that window.
+ * A made-up day is like a frozen one: it keeps the streak alive but does not
+ * add to it, since it was not played on its own day.
  */
 
 import { addDays, dayOfWeek, daysSinceEpoch } from "./date";
@@ -90,13 +98,60 @@ export function recordPlayed(streak: StreakState, date: string): StreakState {
 
 /**
  * The days strictly between `after` and `before` that a streak needed played:
- * every day in the gap but the rest days.
+ * every day in the gap but the rest days and the days made up since.
  */
 export function missedDays(streak: StreakState, after: string, before: string): string[] {
   const gap = Math.max(0, daysSinceEpoch(before, after) - 1);
   return Array.from({ length: gap }, (_, i) => addDays(after, i + 1)).filter(
-    (d) => !isRestDay(streak, d)
+    (d) => !isRestDay(streak, d) && !wasCaughtUp(streak, d)
   );
+}
+
+/**
+ * How many missed days past the saved freezes can still be made up: the last
+ * two that needed playing -- yesterday and the day before, skipping a rest day.
+ */
+export const CATCH_UP_DAYS = 2;
+
+/** How long a made-up day is remembered: long enough to outlast any gap it bridged. */
+const CAUGHT_UP_DATES_KEPT_DAYS = 14;
+
+/** Whether `date` was missed and then made up by playing its puzzle late. */
+export function wasCaughtUp(streak: StreakState, date: string): boolean {
+  return (streak.caughtUpDates ?? []).includes(date);
+}
+
+/**
+ * The missed days that playing their puzzle now would make up, earliest first:
+ * the ones a live streak's saved freezes cannot cover, while there are no more
+ * than CATCH_UP_DAYS of them. Empty when nothing is owed, or when too much is
+ * and the streak is lost.
+ */
+export function catchUpDays(streak: StreakState, today: string): string[] {
+  const covered = coveredThrough(streak);
+  if (streak.currentStreak === 0 || !covered || covered >= today) return [];
+  const owed = missedDays(streak, covered, today).slice(streak.bankedFreezes ?? 0);
+  return owed.length <= CATCH_UP_DAYS ? owed : [];
+}
+
+/**
+ * Whether the streak is lost unless missed days are made up: the saved
+ * freezes are spent and a day they could not cover is still owed. The game
+ * and the streak board show ⚠️ for it.
+ */
+export function endangered(streak: StreakState, today: string): boolean {
+  return catchUpDays(streak, today).length > 0;
+}
+
+/**
+ * The streak with `date` made up, when `date` is a day it owes (see
+ * `catchUpDays`); otherwise unchanged.
+ */
+export function recordCatchUp(streak: StreakState, date: string, today: string): StreakState {
+  if (!catchUpDays(streak, today).includes(date)) return streak;
+  const keepFrom = addDays(today, -CAUGHT_UP_DATES_KEPT_DAYS);
+  const kept = (streak.caughtUpDates ?? []).filter((d) => d >= keepFrom);
+  return { ...streak, caughtUpDates: [...kept, date].sort() };
 }
 
 /** The first saved freeze is earned on a streak's third day played. */
@@ -232,8 +287,10 @@ export function continuesInto(streak: StreakState, date: string): boolean {
 
 /**
  * The streak as it stands on `today`: the missed days since the streak was
- * last covered are covered by saved freezes, one each, or the streak resets.
- * Rest days are not missed days. Unchanged when nothing was missed.
+ * last covered are covered by saved freezes, one each, earliest first. Up to
+ * CATCH_UP_DAYS left over are owed, to be made up (see `catchUpDays`); any
+ * more and the streak resets. Rest days and made-up days are not missed days.
+ * Unchanged when nothing was missed.
  */
 export function applyFreezes(streak: StreakState, today: string): StreakState {
   const covered = coveredThrough(streak);
@@ -244,8 +301,8 @@ export function applyFreezes(streak: StreakState, today: string): StreakState {
   const banked = streak.bankedFreezes ?? 0;
   const keepFrom = addDays(today, -FROZEN_DATES_KEPT_DAYS);
   const cap = streakFreezeCap(streak);
-  const missedDates = missed.filter((d) => d >= keepFrom);
-  if (missed.length > banked) {
+  if (missed.length - banked > CATCH_UP_DAYS) {
+    const missedDates = missed.filter((d) => d >= keepFrom);
     // The freezes went with the streak, from the first missed day.
     const lost = missedDates.map((d): [string, FreezeCount] => [d, { banked: 0, cap }]);
     return {
@@ -256,14 +313,17 @@ export function applyFreezes(streak: StreakState, today: string): StreakState {
     };
   }
 
+  // The freezes cover the earliest missed days; any left over are owed.
+  const frozen = missed.slice(0, banked);
+  if (frozen.length === 0) return streak;
   // Each covered day spent one, so it ends the day with one fewer than the last.
-  const spent = missed
+  const spent = frozen
     .map((d, i): [string, FreezeCount] => [d, { banked: banked - i - 1, cap }])
     .filter(([d]) => d >= keepFrom);
   return {
     ...streak,
-    bankedFreezes: banked - missed.length,
-    frozenDates: [...(streak.frozenDates ?? []), ...missedDates].filter((d) => d >= keepFrom),
+    bankedFreezes: banked - frozen.length,
+    frozenDates: [...(streak.frozenDates ?? []), ...frozen].filter((d) => d >= keepFrom),
     freezeHistory: keptHistory({ ...streak.freezeHistory, ...Object.fromEntries(spent) }, keepFrom),
   };
 }
@@ -308,20 +368,25 @@ export function savedFreezeCovering(streak: StreakState, today: string): boolean
 
 /**
  * Whether the last day before today that needed playing -- yesterday, or
- * Friday when yesterday was a rest day -- went unplayed and was covered, and
- * today is not played yet: only a saved freeze stands between the streak and
- * missing today. The streak board's `covered`.
+ * Friday when yesterday was a rest day -- went unplayed and was covered by a
+ * freeze or made up, and today is not played yet: only a saved freeze stands
+ * between the streak and missing today. The streak board's `covered`.
  */
 export function missedYesterday(streak: StreakState, today: string): boolean {
   let day = addDays(today, -1);
   while (isRestDay(streak, day)) day = addDays(day, -1);
-  return streak.currentStreak > 0 && streak.lastCompletedDate !== today && wasFrozen(streak, day);
+  return (
+    streak.currentStreak > 0 &&
+    streak.lastCompletedDate !== today &&
+    (wasFrozen(streak, day) || wasCaughtUp(streak, day))
+  );
 }
 
 /**
- * Whether the streak is lost if `today` goes unplayed: the last day that
- * needed playing was covered and no saved freeze is left. Never on a rest
- * day, which cannot end a streak. The streak board's `atRisk`.
+ * Whether the streak is endangered if `today` goes unplayed: the last day that
+ * needed playing was covered and no saved freeze is left, so tomorrow it is
+ * ⚠️ and has to be made up. Never on a rest day, which cannot end a streak.
+ * The streak board's `atRisk`.
  */
 export function atRisk(streak: StreakState, today: string): boolean {
   return (
@@ -379,9 +444,9 @@ export function restDayProgress(
  * board is sent (see game/leaderboard.ts). The board works out the rest from
  * that day alone: the run is alive while the days missed since -- less the
  * earned Saturday, if one lies between -- are no more than the freezes saved
- * then. So the saved count is the one from before any
- * were spent on the gap -- every covered day since the last played day took
- * one.
+ * then, and ⚠️ for CATCH_UP_DAYS more. So the saved count is the one from
+ * before any were spent on the gap -- every covered day since the last played
+ * day took one -- plus the days made up since.
  */
 export function streakReport(streak: StreakState): {
   current: number;
@@ -393,7 +458,11 @@ export function streakReport(streak: StreakState): {
 } | null {
   const lastPlayed = streak.lastCompletedDate;
   if (streak.currentStreak === 0 || !lastPlayed) return null;
-  const coveredSince = (streak.frozenDates ?? []).filter((d) => d > lastPlayed).length;
+  // A day made up since counts as one more saved: the board sees only the days
+  // missed since the last played day, and a made-up day is one it need not end on.
+  const coveredSince = [...(streak.frozenDates ?? []), ...(streak.caughtUpDates ?? [])].filter(
+    (d) => d > lastPlayed
+  ).length;
   return {
     current: streak.currentStreak,
     best: Math.max(streak.longestStreak, streak.currentStreak),

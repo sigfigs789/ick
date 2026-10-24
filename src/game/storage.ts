@@ -9,6 +9,7 @@ import {
   backdateFreezes,
   continuesInto,
   earnFreeze,
+  recordCatchUp,
   recordFreezes,
   recordPlayed,
   startStreak,
@@ -492,12 +493,20 @@ export function recordRejectedAttempt(progress: DailyProgress, rawWord: string):
 }
 
 /**
- * Advance the streak as soon as today's first valid word is accepted.
+ * Advance the streak as soon as today's first valid word is accepted. An
+ * earlier puzzle never adds to it, but one the streak owes -- a missed day the
+ * saved freezes could not cover, still within reach -- makes that day up (see
+ * `catchUpDays` in game/streakFreeze.ts).
  */
 function updateStreakOnValidAnswer(date: string): void {
   const streak = loadStreak();
+  const today = todayDateString();
 
-  if (date !== todayDateString()) return;
+  if (date !== today) {
+    const caughtUp = recordCatchUp(streak, date, today);
+    if (caughtUp !== streak) saveStreak(caughtUp);
+    return;
+  }
 
   if (streak.lastCompletedDate === date) return; // already counted
 

@@ -162,7 +162,7 @@ describe("api/leaderboard submissions", () => {
     withEnv();
     for (const streak of [
       { current: 5, best: 4, saved: 0, lastPlayed: SUNDAY }, // best below current
-      { current: 5, best: 5, saved: 4, lastPlayed: SUNDAY }, // more saved than the cap
+      { current: 5, best: 5, saved: 6, lastPlayed: SUNDAY }, // more saved than the cap and two made up
       { current: 500, best: 500, saved: 0, lastPlayed: SUNDAY }, // longer than there have been puzzles
       { current: 5, best: 5, saved: 0, lastPlayed: "2026-13-01" },
     ]) {
@@ -485,10 +485,22 @@ describe("api/leaderboard reads", () => {
           best_streak: 4,
           covered: true,
         },
+        // Out of freezes with missed days to make up: still ranked.
+        {
+          rank: 4,
+          place: 4,
+          player_id: "eeeeeeee-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          current_streak: 3,
+          best_streak: 3,
+          frozen: false,
+          covered: false,
+          at_risk: false,
+          endangered: true,
+        },
         // A lost run: placed by its length, ranked nowhere.
         {
           rank: null,
-          place: 4,
+          place: 5,
           player_id: "dddddddd-bbbb-4ccc-8ddd-eeeeeeeeeeee",
           current_streak: 3,
           best_streak: 6,
@@ -523,6 +535,13 @@ describe("api/leaderboard reads", () => {
         best: 4,
         covered: true,
         atRisk: true,
+      },
+      {
+        rank: 4,
+        playerId: "eeeeeeee-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+        current: 3,
+        best: 3,
+        endangered: true,
       },
       { rank: null, playerId: "dddddddd-bbbb-4ccc-8ddd-eeeeeeeeeeee", current: 3, best: 6, lost: true },
     ]);

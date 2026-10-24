@@ -274,12 +274,20 @@ describe("the leaderboard page", () => {
         },
         // Below the lost run, and ranked as if it were not there.
         { rank: 6, playerId: "77777777-7777-4777-8777-777777777777", current: 8, best: 8 },
+        // Out of freezes with missed days to make up: in danger, still ranked.
+        {
+          rank: 7,
+          playerId: "88888888-8888-4888-8888-888888888888",
+          current: 1,
+          best: 4,
+          endangered: true,
+        },
       ],
       streakSelf: null,
     });
     render(<LeaderboardPage />);
 
-    await waitFor(() => expect(boardRows("Streaks")).toHaveLength(7));
+    await waitFor(() => expect(boardRows("Streaks")).toHaveLength(8));
     expect(boardRows("Streaks")[0]).toHaveTextContent(handleFor(ALICE));
     expect(boardRows("Streaks")[0]).toHaveTextContent("21");
     // Ranked by the run they are on, with their longest kept as the detail.
@@ -310,6 +318,11 @@ describe("the leaderboard page", () => {
     // Struck out and unnumbered; the next live run takes the rank it left.
     expect(boardRows("Streaks")[5]).toHaveClass("leaderboard__row--lost");
     expect(boardRows("Streaks")[5].querySelector(".leaderboard__rank")).toBeEmptyDOMElement();
+    // In danger shows ⚠️ even on a one-day run, and keeps its rank.
+    expect(boardRows("Streaks")[7]).toHaveTextContent("⚠️");
+    expect(boardRows("Streaks")[7]).not.toHaveTextContent(/🔥|🧊|⏳|💀/u);
+    expect(boardRows("Streaks")[7]).toHaveTextContent("in danger");
+    expect(boardRows("Streaks")[7].querySelector(".leaderboard__rank")).toHaveTextContent("7");
     expect(boardRows("Streaks")[6]).not.toHaveClass("leaderboard__row--lost");
     expect(boardRows("Streaks")[6].querySelector(".leaderboard__rank")).toHaveTextContent(/^6$/);
     expect(board("Streaks")).toHaveTextContent(/Streak\s*Longest streak/);

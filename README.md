@@ -932,7 +932,7 @@ anything that matters.
   to the puzzle number browse any past date back to the epoch (never into
   the future). Each date's progress persists independently, so revisiting
   one resumes where you left off. Completing an archived puzzle still
-  saves and locks it (so it's reviewable later) but never touches the
+  saves and locks it (so it's reviewable later) but never adds to the
   streak — only a valid answer submitted on its own real calendar date
   counts. Saved freezes cover missed days, one each: a streak earns its
   first on day 3 and then one every 7 days played, and holds up to 1 once
@@ -940,8 +940,14 @@ anything that matters.
   never goes back down; players holding 3 from the old cap of 3 keep them
   until spent, shown as 3/2), and the 🔥 turns to
   🧊 while one is covering. There is no free missed day: every missed day
-  spends a freeze or ends the streak, and a gap they cannot cover resets
-  the streak to zero. A player who once reached 3 days and comes back after
+  spends a freeze or has to be made up. Once the freezes are spent, the
+  streak shows ⚠️ and the last two missed days (yesterday, and the day
+  before) can still be made up by playing their puzzles out of the archive
+  before today's — the one way an archive puzzle touches the streak. A
+  made-up day keeps the streak alive without adding to it, and each one is
+  counted (`streak_caught_up`). A gap longer than that resets the streak to
+  zero, and the streak board shows the run ⚠️ (still ranked) for those two
+  days before it turns 💀. A player who once reached 3 days and comes back after
   losing a streak sees a "Welcome back" card with their best streak, and the
   new streak starts with one saved freeze (at most once every 30 days; see
   `welcomeBack`). Those checks live in `storage.ts` and `streakFreeze.ts`,

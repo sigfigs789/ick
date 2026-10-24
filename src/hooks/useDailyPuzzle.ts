@@ -63,12 +63,14 @@ import {
   trackPuzzleCompleted,
   trackRejectedAnswer,
   trackRejectionMessage,
+  trackStreakCaughtUp,
   trackUnattestedScore,
   trackEstimatedScore,
   scoreSource,
   trackVisitEngaged,
 } from "../analytics";
 import { backfillHistory, submitScore } from "../game/leaderboard";
+import { wasCaughtUp } from "../game/streakFreeze";
 import { fetchLiveFoldRejections } from "../game/liveFoldRejections";
 import {
   liveFoldRescore,
@@ -345,12 +347,17 @@ export function useDailyPuzzle() {
   const acceptWord = useCallback(
     (word: AcceptedWord, source: "curated" | "live", liveWaiver?: RejectionReason): boolean => {
       const before = progressRef.current;
+      const caughtUpBefore = wasCaughtUp(loadStreak(), viewedDate);
       const updated = recordAcceptedWord(before, word);
       if (updated === before) return false;
       progressRef.current = updated;
       setProgress(updated);
       const updatedStreak = loadStreak();
       setStreak(updatedStreak);
+      // An archive puzzle the streak owed, just made up (see recordCatchUp).
+      if (!caughtUpBefore && wasCaughtUp(updatedStreak, viewedDate)) {
+        trackStreakCaughtUp(viewedDate, updatedStreak);
+      }
       trackAcceptedAnswer(
         viewedDate,
         word,
@@ -873,6 +880,13 @@ export function useDailyPuzzle() {
 
   const goToToday = useCallback(() => setViewedDate(today), [today]);
 
+  /** Straight to `date`'s puzzle, kept between the first puzzle and today. */
+  const goToDate = useCallback(
+    (date: string) =>
+      setViewedDate(date < dropData.epoch ? dropData.epoch : date > today ? today : date),
+    [today]
+  );
+
   return {
     date: viewedDate,
     puzzleNumber: puzzleNumber(viewedDate),
@@ -886,6 +900,7 @@ export function useDailyPuzzle() {
     goToPrevious,
     goToNext,
     goToToday,
+    goToDate,
     drop,
     progress,
     streak,

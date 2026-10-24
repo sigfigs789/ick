@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { addDays } from "../game/date";
 import {
   atRisk,
+  catchUpDays,
   freezesOn,
   resting,
   savedFreezeCovering,
@@ -72,6 +74,71 @@ function FreezeBadge({ banked, cap }: { banked: number; cap: number }) {
   );
 }
 
+/** A missed day's puzzle as the catch-up popup names it: yesterday's, or by date. */
+function dayLabel(date: string, today: string): string {
+  if (date === addDays(today, -1)) return "yesterday's";
+  const [y, m, d] = date.split("-").map(Number);
+  const weekday = new Date(y, m - 1, d).toLocaleDateString("en-US", { weekday: "long" });
+  return `${weekday}'s`;
+}
+
+/**
+ * Over the streak count while it is ⚠️ (see `catchUpDays` in
+ * game/streakFreeze.ts): the freezes are spent, and the streak lives only if
+ * the missed puzzles are played before today's. Shown without being asked
+ * for, because this is the one day the streak can be saved and nothing else
+ * on the screen says how; closed with ×, for this visit.
+ */
+function CatchUpPopup({
+  streak,
+  owed,
+  today,
+  onPlayDate,
+}: {
+  streak: StreakState;
+  owed: string[];
+  today: string;
+  onPlayDate?: (date: string) => void;
+}) {
+  const [open, setOpen] = useState(true);
+  if (!open) return null;
+  const days = streak.currentStreak;
+  const puzzles = owed.map((date) => dayLabel(date, today));
+  const which = puzzles.length === 1 ? `${puzzles[0]} puzzle` : `${puzzles.join(" and ")} puzzles`;
+  return (
+    <span className="streak-display__catch-up" role="status">
+      <button
+        type="button"
+        className="streak-display__catch-up-close"
+        aria-label="Close"
+        onClick={() => setOpen(false)}
+      >
+        ×
+      </button>
+      <strong>
+        Save your {days}-day streak <span aria-hidden="true">⚠️</span>
+      </strong>
+      <span>
+        You're out of 🧊 freezes. Play {which} before today's and your streak lives on.
+      </span>
+      {onPlayDate && (
+        <span className="streak-display__catch-up-actions">
+          {owed.map((date) => (
+            <button
+              key={date}
+              type="button"
+              className="streak-display__catch-up-play"
+              onClick={() => onPlayDate(date)}
+            >
+              Play {dayLabel(date, today)}
+            </button>
+          ))}
+        </span>
+      )}
+    </span>
+  );
+}
+
 interface Props {
   streak: StreakState;
   totalRarity?: number;
@@ -88,6 +155,8 @@ interface Props {
   hideEmpty?: boolean;
   /** Whether this puzzle has a banked word, for `hideEmpty`. */
   hasWords?: boolean;
+  /** Open a missed day's puzzle, from the catch-up popup's buttons. */
+  onPlayDate?: (date: string) => void;
 }
 
 export function StreakDisplay({
@@ -97,28 +166,43 @@ export function StreakDisplay({
   isToday = false,
   hideEmpty = false,
   hasWords = true,
+  onPlayDate,
 }: Props) {
   // One icon for how the streak stands, as the streak board marks it (see
-  // components/LeaderboardPage.tsx): 😴 on an earned Saturday not
-  // played yet, which cannot end the streak; ⏳ when missing today ends the streak,
-  // every saved freeze spent; 🧊 while a saved freeze is covering a missed day
-  // with one left for today, until today is played; 🔥 otherwise. A past
-  // puzzle whose day a freeze covered shows 🧊 too: that day the streak was
-  // kept by a freeze, not by play.
-  const restDay = isToday && date !== undefined && resting(streak, date);
-  const frozen = !restDay && isToday && date !== undefined && savedFreezeCovering(streak, date);
-  const risky = !restDay && isToday && date !== undefined && atRisk(streak, date);
+  // components/LeaderboardPage.tsx): ⚠️ when missed days are owed, every
+  // saved freeze spent, and the streak lives only if they are made up; 😴 on
+  // an earned Saturday not played yet, which cannot end the streak; ⏳ when
+  // missing today puts the streak in danger, every saved freeze spent; 🧊
+  // while a saved freeze is covering a missed day with one left for today,
+  // until today is played; 🔥 otherwise. A past puzzle whose day a freeze
+  // covered shows 🧊 too: that day the streak was kept by a freeze, not by play.
+  const owed = isToday && date !== undefined ? catchUpDays(streak, date) : [];
+  const danger = owed.length > 0;
+  const restDay = !danger && isToday && date !== undefined && resting(streak, date);
+  const frozen =
+    !danger && !restDay && isToday && date !== undefined && savedFreezeCovering(streak, date);
+  const risky = !danger && !restDay && isToday && date !== undefined && atRisk(streak, date);
   const coveredDay = !isToday && date !== undefined && wasFrozen(streak, date);
-  const icon = risky ? "⏳" : frozen || coveredDay ? "🧊" : streak.currentStreak >= 2 ? "🔥" : null;
-  const iconTitle = coveredDay
-    ? "A freeze kept your streak alive on this day"
+  const icon = danger
+    ? "⚠️"
     : risky
-      ? frozen
-        ? "A saved freeze is covering your streak, and none is left: play today to keep it"
-        : "You missed yesterday: play today to keep your streak"
-      : frozen
-        ? "A saved freeze is covering your streak"
-        : undefined;
+      ? "⏳"
+      : frozen || coveredDay
+        ? "🧊"
+        : streak.currentStreak >= 2
+          ? "🔥"
+          : null;
+  const iconTitle = danger
+    ? "Out of freezes: play the missed puzzles before today's to save your streak"
+    : coveredDay
+      ? "A freeze kept your streak alive on this day"
+      : risky
+        ? frozen
+          ? "A saved freeze is covering your streak, and none is left: play today to keep it safe"
+          : "No freeze left: play today to keep your streak safe"
+        : frozen
+          ? "A saved freeze is covering your streak"
+          : undefined;
   // Sunday to Friday, the week's progress towards a lazy Saturday (a pie, or
   // 😴 once unlocked), beside the freezes. Only for a live streak, which is
   // what a lazy Saturday keeps.
@@ -131,7 +215,8 @@ export function StreakDisplay({
   // to show, and the row stays for it.
   const showFreezes = !hideEmpty || cap > 0;
   const showTotal = !hideEmpty || hasWords;
-  const showStreak = !hideEmpty || streak.currentStreak > 0 || frozen || risky || cap > 0;
+  const showStreak =
+    !hideEmpty || streak.currentStreak > 0 || frozen || risky || danger || cap > 0;
   if (!showStreak && !showTotal) return null;
   return (
     <div
@@ -142,6 +227,7 @@ export function StreakDisplay({
         (coveredDay ? "A freeze kept your streak alive on this day. " : "") +
         (frozen ? "A saved freeze is covering your streak. " : "") +
         (risky ? "Play today to keep your streak. " : "") +
+        (danger ? "Out of freezes: play the missed puzzles before today's to save your streak. " : "") +
         `Streak freezes: ${banked} of ${cap}. ` +
         `This puzzle's total score: ${totalRarity.toFixed(1)}.`
       }
@@ -155,7 +241,12 @@ export function StreakDisplay({
               {icon}
             </span>
           )}
-          <span className="streak-display__count">{streak.currentStreak}</span>
+          <span className="streak-display__count-wrap">
+            {danger && date !== undefined && (
+              <CatchUpPopup streak={streak} owed={owed} today={date} onPlayDate={onPlayDate} />
+            )}
+            <span className="streak-display__count">{streak.currentStreak}</span>
+          </span>
           <span className="streak-display__unit">day streak</span>
           {showFreezes && <FreezeBadge banked={banked} cap={cap} />}
           {week && (

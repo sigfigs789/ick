@@ -457,6 +457,11 @@ interface StreakRow {
    * 20261103000000.
    */
   resting?: boolean | null;
+  /**
+   * The saved freezes are spent and missed days are owed, which playing their
+   * puzzles late can still make up; absent before 20261105000000.
+   */
+  endangered?: boolean | null;
 }
 
 /** One streak row, as the client receives it. */
@@ -476,6 +481,8 @@ interface StreakEntry {
   lost?: true;
   /** Sent only when true: today is a Saturday the run is skipping, which cannot end it. */
   resting?: true;
+  /** Sent only when true: the run ends unless the missed days are made up. */
+  endangered?: true;
 }
 
 /** The streak board split at the cut, the same way `toBoard` splits the others. */
@@ -501,6 +508,7 @@ function toStreakBoard(
       ...((row.at_risk ?? row.covered) === true ? { atRisk: true as const } : {}),
       ...(lost ? { lost: true as const } : {}),
       ...(row.resting === true ? { resting: true as const } : {}),
+      ...(row.endangered === true ? { endangered: true as const } : {}),
     };
     if (place > limit) self = entry;
     else entries.push(entry);
@@ -739,9 +747,11 @@ interface StreakReport {
 
 /**
  * The most saved freezes a streak can report. The game's cap is two (see
- * freezeCap), but players who reached three under the old cap keep them.
+ * freezeCap), but players who reached three under the old cap keep them, and
+ * the two missed days that can be made up count as saved once they are (see
+ * `streakReport` in src/game/streakFreeze.ts).
  */
-const MAX_SAVED_FREEZES = 3;
+const MAX_SAVED_FREEZES = 3 + 2;
 
 /**
  * The reported streak, or null for one that is absent or does not add up. A

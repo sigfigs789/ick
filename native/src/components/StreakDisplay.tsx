@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import {
   atRisk,
+  endangered,
   freezesOn,
   resting,
   savedFreezeCovering,
@@ -93,11 +94,23 @@ export function StreakDisplay({
   // freeze is covering a missed day with one left for today, until today is
   // played; 🔥 otherwise. A past puzzle whose day a freeze covered shows 🧊
   // too: that day the streak was kept by a freeze, not by play.
-  const restDay = isToday && date !== undefined && resting(streak, date);
-  const frozen = !restDay && isToday && date !== undefined && savedFreezeCovering(streak, date);
-  const risky = !restDay && isToday && date !== undefined && atRisk(streak, date);
+  // ⚠️ before all of them: the freezes are spent and missed days are owed,
+  // which only playing their puzzles late can save (see `catchUpDays`).
+  const danger = isToday && date !== undefined && endangered(streak, date);
+  const restDay = !danger && isToday && date !== undefined && resting(streak, date);
+  const frozen =
+    !danger && !restDay && isToday && date !== undefined && savedFreezeCovering(streak, date);
+  const risky = !danger && !restDay && isToday && date !== undefined && atRisk(streak, date);
   const coveredDay = !isToday && date !== undefined && wasFrozen(streak, date);
-  const icon = risky ? '⏳' : frozen || coveredDay ? '🧊' : streak.currentStreak >= 2 ? '🔥' : null;
+  const icon = danger
+    ? '⚠️'
+    : risky
+      ? '⏳'
+      : frozen || coveredDay
+        ? '🧊'
+        : streak.currentStreak >= 2
+          ? '🔥'
+          : null;
   // Sunday to Friday, the week's progress towards a lazy Saturday (a pie, or
   // 😴 once unlocked), beside the freezes. Only for a live streak, which is
   // what a lazy Saturday keeps.
@@ -112,7 +125,8 @@ export function StreakDisplay({
   // to show, and the row stays for it.
   const showFreezes = !hideEmpty || cap > 0;
   const showTotal = !hideEmpty || hasWords;
-  const showStreak = !hideEmpty || streak.currentStreak > 0 || frozen || risky || cap > 0;
+  const showStreak =
+    !hideEmpty || streak.currentStreak > 0 || frozen || risky || danger || cap > 0;
   if (!showStreak && !showTotal) return null;
 
   const summary =
@@ -121,6 +135,7 @@ export function StreakDisplay({
     (coveredDay ? 'A freeze kept your streak alive on this day. ' : '') +
     (frozen ? 'A saved freeze is covering your streak. ' : '') +
     (risky ? 'Play today to keep your streak. ' : '') +
+    (danger ? "Out of freezes: play the missed puzzles before today's to save your streak. " : '') +
     `Streak freezes: ${banked} of ${cap}. ` +
     `This puzzle's total score: ${totalRarity.toFixed(1)}.`;
 

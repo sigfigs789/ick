@@ -24,9 +24,10 @@ import { useWordOfDay } from "./hooks/useWordOfDay";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { isWinningRarity } from "./game/rank";
 import { celebrationFor } from "./game/celebration";
-import type { Rarity } from "./game/types";
+import type { Rarity, StreakState } from "./game/types";
 import { completedWholeMonth } from "./game/perfectMonth";
-import { welcomeBack } from "./game/streakFreeze";
+import { catchUpDays, wasCaughtUp, welcomeBack } from "./game/streakFreeze";
+import { todayDateString } from "./game/date";
 import { dismissWelcomeBack, welcomeBackDismissedOn } from "./game/storage";
 import {
   averageImprovement,
@@ -61,6 +62,55 @@ import {
  */
 const STREAK_CHECK_DELAY_MS = 1500;
 
+/**
+ * Under an archive puzzle: that it is just for fun -- unless it is a missed
+ * day the streak owes (see `catchUpDays` in game/streakFreeze.ts), which a
+ * banked word makes up, or one already made up.
+ */
+function ArchiveNote({
+  date,
+  streak,
+  onPlayToday,
+}: {
+  date: string;
+  streak: StreakState;
+  onPlayToday: () => void;
+}) {
+  const today = todayDateString();
+  const owed = catchUpDays(streak, today);
+  if (owed.includes(date)) {
+    return (
+      <p className="archive-note archive-note--catch-up">
+        ⚠️ Bank a word on this puzzle to make up the day you missed and save your streak.
+        {owed.length > 1 && " Then play the other missed day too."}
+      </p>
+    );
+  }
+  if (wasCaughtUp(streak, date) && streak.lastCompletedDate !== today) {
+    return (
+      <p className="archive-note archive-note--catch-up">
+        {owed.length > 0
+          ? "Day made up. One more missed puzzle to go, then today's."
+          : "Streak saved! Now play today's puzzle to keep it going."}
+        {owed.length === 0 && (
+          <>
+            {" "}
+            <button type="button" className="archive-note__today" onClick={onPlayToday}>
+              Play today's
+            </button>
+          </>
+        )}
+      </p>
+    );
+  }
+  return (
+    <p className="archive-note">
+      You're playing an old puzzle — this is just for fun and won't affect
+      your streak.
+    </p>
+  );
+}
+
 export default function App() {
   useForceUpdate();
   const {
@@ -71,6 +121,8 @@ export default function App() {
     canGoToNext,
     goToPrevious,
     goToNext,
+    goToToday,
+    goToDate,
     drop,
     progress,
     streak,
@@ -402,10 +454,7 @@ export default function App() {
         />
 
         {!progress.completed && !isToday && (
-          <p className="archive-note">
-            You're playing an old puzzle — this is just for fun and won't affect
-            your streak.
-          </p>
+          <ArchiveNote date={date} streak={streak} onPlayToday={goToToday} />
         )}
 
         {!progress.completed && (
@@ -416,6 +465,7 @@ export default function App() {
             isToday={isToday}
             hideEmpty
             hasWords={progress.acceptedWords.length > 0}
+            onPlayDate={goToDate}
           />
         )}
 
