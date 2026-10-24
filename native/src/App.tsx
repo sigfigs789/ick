@@ -5,6 +5,7 @@ import { syncHistoryWhenReady } from '../../src/game/leaderboard';
 import { hasJoined, joinBoard } from '../../src/game/player';
 import { playedPuzzleCount, PROGRESS_SAVED_EVENT } from '../../src/game/storage';
 import { hasSeen, markSeen } from '../../src/game/whatsNew';
+import { ChatButton, ChatSheet, useChatUnread } from './components/ChatSheet';
 import { InstructionsSheet } from './components/InstructionsSheet';
 import { UpdateBanner } from './components/UpdateBanner';
 import { signalTap } from './host/feedback';
@@ -74,6 +75,10 @@ export function App() {
   // which is the whole game -- so the rules open themselves once, on a first
   // run, and never again.
   const [showInstructions, setShowInstructions] = useState(() => !hasSeen('instructions'));
+
+  // The chat, the same per-puzzle rooms the website's corner bubble opens.
+  const [showChat, setShowChat] = useState(false);
+  const chatUnread = useChatUnread(showChat);
 
   // Whether the Stats tab is up: from the first saved word, which the game
   // announces on `window` (see src/host/events.ts).
@@ -170,21 +175,30 @@ export function App() {
               <Text style={{ color: theme.rarity.Mythic.dot }}>Ink</Text>
             </Text>
 
-            <Pressable
-              onPress={() => {
-                signalTap();
-                setShowInstructions(true);
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="How to play"
-              hitSlop={space.md}
-              style={({ pressed }) => [
-                styles.help,
-                { backgroundColor: theme.bgInset, opacity: pressed ? 0.6 : 1 },
-              ]}
-            >
-              <Text style={[styles.helpGlyph, { color: theme.fg }]}>?</Text>
-            </Pressable>
+            <View style={styles.actions}>
+              <ChatButton
+                unread={chatUnread}
+                onPress={() => {
+                  signalTap();
+                  setShowChat(true);
+                }}
+              />
+              <Pressable
+                onPress={() => {
+                  signalTap();
+                  setShowInstructions(true);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="How to play"
+                hitSlop={space.md}
+                style={({ pressed }) => [
+                  styles.help,
+                  { backgroundColor: theme.bgInset, opacity: pressed ? 0.6 : 1 },
+                ]}
+              >
+                <Text style={[styles.helpGlyph, { color: theme.fg }]}>?</Text>
+              </Pressable>
+            </View>
           </View>
 
           <View style={styles.nav} accessibilityRole="tablist">
@@ -228,9 +242,11 @@ export function App() {
           ) : route === 'stats' ? (
             <StatsScreen onPlay={backToPlay} />
           ) : (
-            <PlayScreen covered={showInstructions} />
+            <PlayScreen covered={showInstructions || showChat} />
           )}
         </View>
+
+        <ChatSheet open={showChat} onClose={() => setShowChat(false)} />
 
         <InstructionsSheet
           open={showInstructions}
@@ -265,6 +281,11 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
     letterSpacing: -0.4,
+  },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
   },
   help: {
     width: 30,

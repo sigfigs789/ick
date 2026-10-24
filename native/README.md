@@ -38,6 +38,10 @@ lookupable by then.
 - **Sent only when you ask for it.** A word you type into "Suggest a word", or a
   note you type into the feedback box. These are the two things the app sends
   because you pressed a button that says it will. See `src/host/submissions.ts`.
+- **The chat.** A message you post goes to the room of the puzzle you are on,
+  under your handle, for every player to read; a message you report goes to the
+  server so it can be reviewed. Who you block stays on the device. See
+  `src/components/ChatSheet.tsx` and the repo's `src/game/chatModeration.ts`.
 - **No analytics.** The website reports gameplay events to Vercel Analytics and
   to its own database. This build calls `setReporting(false)` before the first
   render and sends none of it — see `src/host/install.ts`. The Reddit build makes
@@ -204,8 +208,9 @@ needs an account rather than a commit:
   answer is in "What it stores, and where" above; the short version is a random
   per-install identifier tied to game scores, no tracking, no third-party
   analytics, and no advertising identifier.
-- **Age rating.** No user-generated content is displayed except other players'
-  found words, which come from a curated dictionary.
+- **Age rating.** The chat is user-generated content, with filtering, report,
+  block and an agree-to-the-rules screen before the first open; see "Age
+  rating" in `store/app-store.md` for the answers and what backs each one.
 
 ### Version numbers
 
