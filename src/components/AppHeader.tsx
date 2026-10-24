@@ -37,7 +37,7 @@ interface Tab {
   route: Route;
   label: string;
   /**
-   * What it is called on a phone once Stats has joined the row. Four full
+   * What it is called on a phone. Four full
    * labels need more than a phone's width, and squeezed into it they ran
    * together with no gap between one tab and the next. The full label stays
    * the tab's accessible name either way.
@@ -62,8 +62,9 @@ const TABS: readonly Tab[] = [
   // and a tab that promises today then shows Tuesday has misnamed itself. The
   // heading on the page is the one that says which day you are looking at.
   { route: "found-words", label: "Words found", short: "Words" },
-  // The player's own numbers, beside the words they found. Only once there are
-  // any (see `showStats`).
+  // The player's own numbers, beside the words they found. Always offered: a
+  // player with no record yet gets the page's empty state, which points them
+  // back to the puzzle.
   { route: "stats", label: "Stats" },
   { route: "leaderboard", label: "Leaderboards", short: "Boards" },
 ];
@@ -88,7 +89,6 @@ export function AppHeader({
   badge = true,
   badgeLabel,
   onBadgeDone,
-  showStats = false,
 }: {
   route: Route;
   onHowToPlay: () => void;
@@ -140,12 +140,6 @@ export function AppHeader({
    * announcement's state.
    */
   onBadgeDone?: () => void;
-  /**
-   * Whether the Stats tab is offered: once this browser has banked a word. A
-   * player with no record has no stats, and a tab that opens on zeros is one
-   * more thing on a first visit's header to read past.
-   */
-  showStats?: boolean;
 }) {
   // Whether this header has the trial's button, the only thing a badge sits
   // under. The mode switch that replaced it wears none.
@@ -217,8 +211,6 @@ export function AppHeader({
     onBadgeDone?.();
     onFreeform?.();
   }
-
-  const tabs = TABS.filter((tab) => tab.route !== "stats" || showStats || route === "stats");
 
   function go(tab: Tab) {
     if (tab.route === route) return;
@@ -329,11 +321,8 @@ export function AppHeader({
       {/* Under the wordmark rather than beside it: three labelled destinations
           do not fit a phone's width next to a wordmark, and a row of its own
           lets each tab be a real target with its name under it. */}
-      <nav
-        className={`app__nav${tabs.length > 3 ? " app__nav--crowded" : ""}`}
-        aria-label="Pages"
-      >
-        {tabs.map((tab) => {
+      <nav className="app__nav" aria-label="Pages">
+        {TABS.map((tab) => {
           const current = tab.route === route;
           return (
             <button
