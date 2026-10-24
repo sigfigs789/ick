@@ -1202,7 +1202,7 @@ function loadLegacyScoringData(): Promise<void> {
 }
 
 /** Whether `date`'s puzzle is priced off the legacy rarity. */
-function usesLegacyRarity(date?: string): boolean {
+export function usesLegacyRarity(date?: string): boolean {
   return date !== undefined && date < NEW_SCORING_START;
 }
 

@@ -122,6 +122,8 @@ function RarityBars({ byRarity }: { byRarity: PlayerStats["byRarity"] }) {
 }
 
 function BestWords({ stats }: { stats: PlayerStats }) {
+  // Empty when every word found was on a legacy-scored puzzle (see game/stats.ts).
+  if (stats.topWords.length === 0) return null;
   return (
     <section className="stats__section" aria-labelledby="stats-best">
       <h2 className="stats__heading" id="stats-best">
