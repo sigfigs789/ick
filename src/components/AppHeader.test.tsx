@@ -56,7 +56,7 @@ describe("the header", () => {
     const labels = within(screen.getByRole("navigation", { name: "Pages" }))
       .getAllByRole("button")
       .map((tab) => tab.getAttribute("aria-label"));
-    expect(labels).toEqual(["Words found", "Leaderboards"]);
+    expect(labels).toEqual(["Words found", "Stats", "Leaderboards"]);
   });
 
   it("goes to each page, and moves the current marker with it", async () => {
@@ -77,11 +77,9 @@ describe("the header", () => {
     expect(trackFoundWordsOpened).toHaveBeenCalledWith("header");
   });
 
-  it("offers Stats only once there is a record, right after the finds", async () => {
-    const { rerender } = render(<AppHeader route="game" onHowToPlay={howToPlay} />);
-    expect(screen.queryByRole("button", { name: "Stats" })).not.toBeInTheDocument();
-
-    rerender(<AppHeader route="game" onHowToPlay={howToPlay} showStats />);
+  it("offers Stats from the first visit, right after the finds", async () => {
+    // No record needed: the page has an empty state of its own.
+    render(<AppHeader route="game" onHowToPlay={howToPlay} />);
     const labels = within(screen.getByRole("navigation", { name: "Pages" }))
       .getAllByRole("button")
       .map((tab) => tab.getAttribute("aria-label"));

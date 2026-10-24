@@ -83,8 +83,9 @@ const TABS: readonly Tab[] = [
       </Icon>
     ),
   },
-  // The player's own numbers, beside the words they found. Only once there are
-  // any (see `showStats`).
+  // The player's own numbers, beside the words they found. Offered from the
+  // first visit: before a word is banked the page says so and points at the
+  // puzzle (see StatsPage).
   {
     route: "stats",
     label: "Stats",
@@ -133,7 +134,6 @@ export function AppHeader({
   badge = true,
   badgeLabel,
   onBadgeDone,
-  showStats = false,
 }: {
   route: Route;
   onHowToPlay: () => void;
@@ -188,12 +188,6 @@ export function AppHeader({
    * announcement's state.
    */
   onBadgeDone?: () => void;
-  /**
-   * Whether the Stats tab is offered: once this browser has banked a word. A
-   * player with no record has no stats, and a tab that opens on zeros is one
-   * more thing on a first visit's header to read past.
-   */
-  showStats?: boolean;
 }) {
   // Whether this header has the trial's button, the only thing a badge sits
   // under. The mode switch that replaced it wears none.
@@ -376,7 +370,7 @@ export function AppHeader({
           </div>
         )}
         <nav className="app__nav" aria-label="Pages">
-          {TABS.filter((tab) => tab.route !== "stats" || showStats || route === "stats").map((tab) => {
+          {TABS.map((tab) => {
             const current = tab.route === route;
             return (
               <button
@@ -430,8 +424,7 @@ export function AppHeader({
                 </>
               )}
               {mode && onModeChange && (
-                <div className="app__menu-item app__menu-mode">
-                  <span>Mode</span>
+                <div className="app__menu-mode">
                   <ModeToggle mode={mode} onChange={changeMode} />
                 </div>
               )}
