@@ -598,7 +598,7 @@ history brought in by a backfill, or a score from a clock already on the first o
 next month, would count toward a month it is not in. On screen it says **Resets
 Tuesday, Sep 1** — the weekday leads because that is the half a player can act
 on; a bare date is one they still have to place in their own week. Unlike the
-week's "Resets on Sundays" the answer moves, so it is computed rather than a
+week's "Resets on Mondays" the answer moves, so it is computed rather than a
 constant on the page.
 
 **The find is held back for now.** Each row used to carry the player's rarest
