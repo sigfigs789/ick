@@ -1,0 +1,92 @@
+import { useCallback, type ReactNode } from "react";
+import { ReviewPage } from "../components/ReviewPage";
+import { useReviewList } from "../components/reviewList";
+import { todayDateString } from "../game/date";
+import { fetchExperiments, type Experiments } from "./report";
+import { ExperimentView } from "./ExperimentView";
+
+/**
+ * The experiments, at /experimentsV2: each 50/50 test's call, then its arms for
+ * everyone drawn, new players and returning players.
+ *
+ * Moved off /analyticsV2 onto their own read (`list=experiments-v2`), so this
+ * page does not wait on the dashboard's report and the dashboard does not wait
+ * on the experiments.
+ *
+ * Unlinked from the game and open without a key: every number is an aggregate.
+ */
+export function ExperimentsV2Page() {
+  const today = todayDateString();
+  const load = useCallback(async () => [await fetchExperiments(today)], [today]);
+  const { rows, state, refreshing, refresh, retry } = useReviewList(load);
+  const experiments = rows[0];
+  return (
+    <ReviewPage
+      title="Experiments v2"
+      note="Whether each thing under test moves the scorecard, for everyone, new players and returning players."
+      count={0}
+      state={state}
+      refreshing={refreshing}
+      onRefresh={refresh}
+      onRetry={retry}
+      empty="No experiment is running."
+      isEmpty={!experiments || (!experiments.wordOfDay && !experiments.comeBack)}
+    >
+      {experiments && <List experiments={experiments} />}
+    </ReviewPage>
+  );
+}
+
+function List({ experiments }: { experiments: Experiments }) {
+  return (
+    <div className="av2">
+      {experiments.wordOfDay && (
+        <Section
+          title="Word of the day"
+          note="Whether showing the word of the day under a finished puzzle moves the scorecard. Over players."
+        >
+          <ExperimentView
+            experiment={experiments.wordOfDay}
+            subject="the word of the day"
+            about={
+              <>
+                Half of players never see the word under a finished puzzle&rsquo;s drop. Each is drawn once, the first
+                time they finish a puzzle. Try either arm with <code>?word-of-day=hidden</code> or <code>=shown</code>;
+                a forced arm is not counted.
+              </>
+            }
+          />
+        </Section>
+      )}
+
+      {experiments.comeBack && (
+        <Section
+          title="Come-back tip"
+          note="Whether the line under the streak saying what tomorrow is worth moves the scorecard. Over players."
+        >
+          <ExperimentView
+            experiment={experiments.comeBack}
+            subject="the come-back tip"
+            about={
+              <>
+                Half of players never see the line under the streak that says what tomorrow is worth. Each is drawn
+                once, the first time it would appear: a word banked on today&rsquo;s puzzle. Try either arm with{" "}
+                <code>?come-back=hidden</code> or <code>=shown</code>; a forced arm, or a tester, is not counted.
+              </>
+            }
+          />
+        </Section>
+      )}
+    </div>
+  );
+}
+
+function Section({ title, note, children }: { title: string; note: string; children: ReactNode }) {
+  return (
+    <section className="av2__section">
+      <h2 className="av2__heading">{title}</h2>
+      <p className="review__meta av2__note">{note}</p>
+      {children}
+    </section>
+  );
+}

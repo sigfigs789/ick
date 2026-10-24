@@ -4,10 +4,10 @@ import type { Rate } from "./report";
 import { count, percent, STANDING_NAMES, type Standing } from "./scorecard";
 
 /**
- * An experiment on /analyticsV2: the call first, then the two arms side by side
- * on the scorecard's own measures, for everyone drawn and for new players
- * alone. `subject` names the thing tested ("the word of the day"); `about`
- * says who is drawn when, and how to force an arm.
+ * An experiment on /experimentsV2: the call first, then the two arms side by
+ * side on the scorecard's own measures, for everyone drawn, then new and
+ * returning players apart. `subject` names the thing tested ("the word of the
+ * day"); `about` says who is drawn when, and how to force an arm.
  */
 export function ExperimentView({
   experiment,
@@ -25,8 +25,9 @@ export function ExperimentView({
         <strong className="av2__verdict-headline">{call.headline}</strong>
         <p className="av2__verdict-reason">{call.reason}</p>
       </div>
-      <ArmTable experiment={experiment} segment="all" subject={subject} />
-      <ArmTable experiment={experiment} segment="new" subject={subject} />
+      {SEGMENTS.map((segment) => (
+        <ArmTable key={segment} experiment={experiment} segment={segment} subject={subject} />
+      ))}
       <p className="review__meta av2__note">
         {about}
         {experiment.since ? ` Drawn since ${experiment.since}; ` : " "}
@@ -39,9 +40,14 @@ export function ExperimentView({
   );
 }
 
+const SEGMENTS: Segment[] = ["all", "new", "returning"];
+
+const SEGMENT_NAMES: Record<Segment, string> = { all: "Everyone", new: "New", returning: "Returning" };
+
 const captions = (subject: string): Record<Segment, string> => ({
   all: `Everyone drawn: with ${subject} against without.`,
   new: "New players alone: drawn on the day of their first word, who never saw the game with it before.",
+  returning: "Returning players alone: drawn on a later day, who had played before.",
 });
 
 function ArmTable({ experiment, segment, subject }: { experiment: Experiment; segment: Segment; subject: string }) {
@@ -64,6 +70,8 @@ function ArmTable({ experiment, segment, subject }: { experiment: Experiment; se
     rateRow("Later puzzles finished", finishRate(shown), finishRate(hidden)),
   ];
   return (
+    <>
+    <h3 className="av2__subheading">{SEGMENT_NAMES[segment]}</h3>
     <div className="av2__table-wrap">
       <p className="review__meta av2__caption">{caption}</p>
       <table className="av2__table" aria-label={caption}>
@@ -87,6 +95,7 @@ function ArmTable({ experiment, segment, subject }: { experiment: Experiment; se
         </tbody>
       </table>
     </div>
+    </>
   );
 }
 

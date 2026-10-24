@@ -3,7 +3,6 @@ import { ReviewPage } from "../components/ReviewPage";
 import { useReviewList } from "../components/reviewList";
 import { todayDateString } from "../game/date";
 import { fetchReport, type Rate, type Report, type Source } from "./report";
-import { ExperimentView } from "./ExperimentView";
 import {
   addDays,
   average,
@@ -33,11 +32,13 @@ import {
  * 28 closed days unless a number says otherwise; today's puzzle is still
  * filling up and is left out.
  *
+ * The experiments have a page of their own, /experimentsV2.
+ *
  * Unlinked from the game and open without a key: every number is an aggregate.
  */
 export function AnalyticsV2Page() {
   const today = todayDateString();
-  const load = useCallback(async () => [await fetchReport(today, true)], [today]);
+  const load = useCallback(async () => [await fetchReport(today)], [today]);
   const { rows, state, refreshing, refresh, retry } = useReviewList(load);
   const report = rows[0];
   // Yesterday's report is only for the scorecard's day-on-day change, so it is
@@ -110,44 +111,6 @@ function Dashboard({ report, before }: { report: Report; before: Report | null }
       >
         <Scorecard rows={scorecard(report)} before={before ? scorecard(before) : []} />
       </Section>
-
-      {report.wordOfDay && (
-        <Section
-          title="Experiment: word of the day"
-          note="Whether showing the word of the day under a finished puzzle moves the scorecard. Over players."
-        >
-          <ExperimentView
-            experiment={report.wordOfDay}
-            subject="the word of the day"
-            about={
-              <>
-                Half of players never see the word under a finished puzzle&rsquo;s drop. Each is drawn once, the first
-                time they finish a puzzle. Try either arm with <code>?word-of-day=hidden</code> or <code>=shown</code>;
-                a forced arm is not counted.
-              </>
-            }
-          />
-        </Section>
-      )}
-
-      {report.comeBack && (
-        <Section
-          title="Experiment: come-back tip"
-          note="Whether the line under the streak saying what tomorrow is worth moves the scorecard. Over players."
-        >
-          <ExperimentView
-            experiment={report.comeBack}
-            subject="the come-back tip"
-            about={
-              <>
-                Half of players never see the line under the streak that says what tomorrow is worth. Each is drawn
-                once, the first time it would appear: a word banked on today&rsquo;s puzzle. Try either arm with{" "}
-                <code>?come-back=hidden</code> or <code>=shown</code>; a forced arm, or a tester, is not counted.
-              </>
-            }
-          />
-        </Section>
-      )}
 
       <Section title="Acquisition" note="Last 28 days.">
         <Tiles

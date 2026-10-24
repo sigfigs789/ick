@@ -44,6 +44,10 @@ const AnalyticsV2Page = lazyPage(
   () => import("./analyticsV2/AnalyticsV2Page"),
   (m) => m.AnalyticsV2Page,
 );
+const ExperimentsV2Page = lazyPage(
+  () => import("./analyticsV2/ExperimentsV2Page"),
+  (m) => m.ExperimentsV2Page,
+);
 const DeadStreaksPage = lazyPage(
   () => import("./components/DeadStreaksPage"),
   (m) => m.DeadStreaksPage,
@@ -438,6 +442,8 @@ export function Root() {
             <AnalyticsPage />
           ) : route === "analytics-v2" ? (
             <AnalyticsV2Page />
+          ) : route === "experiments-v2" ? (
+            <ExperimentsV2Page />
           ) : route === "transfer" ? (
             <TransferPage />
           ) : route === "leaderboard-total" ? (

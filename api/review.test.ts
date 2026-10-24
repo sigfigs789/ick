@@ -470,23 +470,23 @@ describe("api/review", () => {
     expect((await handler(get("?list=analytics-v2&today=2026-13-40"))).status).toBe(400);
   });
 
-  it("adds the word of the day experiment to the v2 report only when asked", async () => {
+  it("serves the experiments on their own, without the v2 report", async () => {
     withEnv(CONFIGURED);
     const body = { arms: [] };
     const fetchMock = stubFetch(body);
 
-    const response = await handler(get("?list=analytics-v2&today=2026-10-22&experiments=1"));
+    const response = await handler(get("?list=experiments-v2&today=2026-10-22"));
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ report: body, wordOfDay: body, comeBack: body });
+    expect(await response.json()).toEqual({ wordOfDay: body, comeBack: body });
     const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
-    expect(calls.map((c) => String(c[0]).split("/").pop()).sort()).toEqual([
-      "analytics_v2",
+    expect(calls.map((c) => String(c[0]).split("/").pop())).toEqual([
       "analytics_v2_experiment",
       "analytics_v2_experiment",
     ]);
-    expect(JSON.parse(String(calls[1][1].body))).toEqual({ p_today: "2026-10-22", p_event: "word_of_day_assigned" });
-    expect(JSON.parse(String(calls[2][1].body))).toEqual({ p_today: "2026-10-22", p_event: "come_back_assigned" });
+    expect(JSON.parse(String(calls[0][1].body))).toEqual({ p_today: "2026-10-22", p_event: "word_of_day_assigned" });
+    expect(JSON.parse(String(calls[1][1].body))).toEqual({ p_today: "2026-10-22", p_event: "come_back_assigned" });
+    expect((await handler(get("?list=experiments-v2"))).status).toBe(400);
   });
 
   it("no longer serves the idle hint report on its own", async () => {
