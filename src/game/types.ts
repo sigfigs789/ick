@@ -141,4 +141,10 @@ export interface StreakState {
    * streak (see `welcomeBack` in game/streakFreeze.ts), which spaces them out.
    */
   welcomeBackFreezeDate?: string;
+  /**
+   * Recent days played on their own day, which earn a Saturday off (see
+   * `isRestDay` in game/streakFreeze.ts). Absent on saves from before, which
+   * `loadStreak` fills once from the stored puzzles.
+   */
+  playedDates?: string[];
 }

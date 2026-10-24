@@ -11,10 +11,14 @@ import {
   isRestDay,
   missedDays,
   recordFreezes,
+  recordPlayed,
+  restDayProgress,
   resting,
   savedFreezeCovering,
   startStreak,
   streakReport,
+  weekdayRestProgress,
+  weekPlays,
   welcomeBack,
 } from "./streakFreeze";
 import type { StreakState } from "./types";
@@ -99,47 +103,132 @@ describe("applyFreezes", () => {
   });
 });
 
-// 2026-10-31 is the first rest day, a Saturday.
+// 2026-10-31 is the first Saturday that can be a rest day; its week is 10-25 to 10-30.
+const WEEK_PLAYED = ["2026-10-26", "2026-10-28", "2026-10-29"];
+
 describe("Saturday rest days", () => {
-  it("are the Saturdays from 2026-10-31 on", () => {
-    expect(isRestDay("2026-10-31")).toBe(true);
-    expect(isRestDay("2026-11-07")).toBe(true);
-    // An earlier Saturday was an ordinary day.
-    expect(isRestDay("2026-10-24")).toBe(false);
-    expect(isRestDay("2026-10-30")).toBe(false);
-    expect(isRestDay("2026-11-01")).toBe(false);
+  it("are the Saturdays from 2026-10-31 on that three days played that week earned", () => {
+    const earned = streakOf({ playedDates: WEEK_PLAYED });
+    expect(isRestDay(earned, "2026-10-31")).toBe(true);
+    expect(weekPlays(earned, "2026-10-31")).toBe(3);
+    // Not earned on two days played.
+    expect(isRestDay(streakOf({ playedDates: WEEK_PLAYED.slice(1) }), "2026-10-31")).toBe(false);
+    // An earlier Saturday was an ordinary day, earned or not.
+    expect(isRestDay(streakOf({ playedDates: ["2026-10-19", "2026-10-20", "2026-10-21"] }), "2026-10-24")).toBe(
+      false
+    );
+    expect(isRestDay(earned, "2026-10-30")).toBe(false);
   });
 
-  it("are not missed days", () => {
-    expect(missedDays("2026-10-30", "2026-11-01")).toEqual([]);
-    expect(missedDays("2026-10-29", "2026-11-02")).toEqual(["2026-10-30", "2026-11-01"]);
+  it("expire with their Saturday: a week's play earns that one and no other", () => {
+    const earned = streakOf({ playedDates: WEEK_PLAYED });
+    expect(isRestDay(earned, "2026-11-07")).toBe(false);
+    // Saturday itself played does not count towards the next week.
+    const withSaturday = streakOf({ playedDates: [...WEEK_PLAYED, "2026-10-31", "2026-11-01"] });
+    expect(weekPlays(withSaturday, "2026-11-07")).toBe(1);
+  });
+
+  it("are not missed days, but an unearned Saturday is", () => {
+    const earned = streakOf({ playedDates: WEEK_PLAYED });
+    expect(missedDays(earned, "2026-10-30", "2026-11-01")).toEqual([]);
+    expect(missedDays(earned, "2026-10-29", "2026-11-02")).toEqual(["2026-10-30", "2026-11-01"]);
+    expect(missedDays(streakOf({}), "2026-10-30", "2026-11-01")).toEqual(["2026-10-31"]);
   });
 
   it("keep a streak with no saved freeze, spending none and adding nothing", () => {
-    const friday = streakOf({ lastCompletedDate: "2026-10-30" });
+    const friday = streakOf({ lastCompletedDate: "2026-10-30", playedDates: WEEK_PLAYED });
     expect(applyFreezes(friday, "2026-11-01")).toBe(friday);
     expect(savedFreezeCovering(friday, "2026-11-01")).toBe(false);
     // Sunday missed too: that one is a missed day like any other.
     expect(applyFreezes(friday, "2026-11-02").currentStreak).toBe(0);
   });
 
+  it("spend a freeze or end the streak when not earned", () => {
+    const friday = streakOf({ lastCompletedDate: "2026-10-30", playedDates: ["2026-10-30"] });
+    expect(applyFreezes(friday, "2026-11-01").currentStreak).toBe(0);
+    const covered = applyFreezes({ ...friday, bankedFreezes: 1 }, "2026-11-01");
+    expect(covered).toMatchObject({ currentStreak: 10, bankedFreezes: 0, frozenDates: ["2026-10-31"] });
+  });
+
   it("are skipped over when a freeze covers the day before", () => {
-    const thursday = streakOf({ lastCompletedDate: "2026-10-29", bankedFreezes: 1 });
+    const thursday = streakOf({ lastCompletedDate: "2026-10-29", bankedFreezes: 1, playedDates: WEEK_PLAYED });
     const sunday = applyFreezes(thursday, "2026-11-01");
     expect(sunday).toMatchObject({ currentStreak: 10, bankedFreezes: 0, frozenDates: ["2026-10-30"] });
     // Friday's freeze was the last, so Sunday is the day the streak is at risk.
     expect(atRisk(sunday, "2026-11-01")).toBe(true);
   });
 
-  it("are never at risk, and rest the streak until played", () => {
-    const thursday = streakOf({ lastCompletedDate: "2026-10-29", bankedFreezes: 1 });
+  it("are never at risk when earned, and rest the streak until played", () => {
+    const thursday = streakOf({ lastCompletedDate: "2026-10-29", bankedFreezes: 1, playedDates: WEEK_PLAYED });
     const saturday = applyFreezes(thursday, "2026-10-31");
     expect(missedYesterday(saturday, "2026-10-31")).toBe(true);
     expect(atRisk(saturday, "2026-10-31")).toBe(false);
     expect(resting(saturday, "2026-10-31")).toBe(true);
     expect(resting({ ...saturday, lastCompletedDate: "2026-10-31" }, "2026-10-31")).toBe(false);
-    expect(resting(streakOf({ currentStreak: 0 }), "2026-10-31")).toBe(false);
-    expect(resting(streakOf({ lastCompletedDate: "2026-10-31" }), "2026-11-01")).toBe(false);
+    expect(resting(streakOf({ currentStreak: 0, playedDates: WEEK_PLAYED }), "2026-10-31")).toBe(false);
+    expect(resting(streakOf({ lastCompletedDate: "2026-10-31", playedDates: WEEK_PLAYED }), "2026-11-01")).toBe(
+      false
+    );
+  });
+
+  it("can be at risk when not earned", () => {
+    const thursday = streakOf({ lastCompletedDate: "2026-10-29", bankedFreezes: 1, playedDates: ["2026-10-29"] });
+    const saturday = applyFreezes(thursday, "2026-10-31");
+    expect(resting(saturday, "2026-10-31")).toBe(false);
+    expect(atRisk(saturday, "2026-10-31")).toBe(true);
+  });
+});
+
+describe("recordPlayed", () => {
+  it("remembers the last two weeks of days played", () => {
+    const played = recordPlayed(streakOf({ playedDates: ["2026-10-01", "2026-10-20"] }), "2026-10-26");
+    expect(played.playedDates).toEqual(["2026-10-20", "2026-10-26"]);
+    expect(recordPlayed(played, "2026-10-26").playedDates).toEqual(["2026-10-20", "2026-10-26"]);
+  });
+});
+
+describe("weekdayRestProgress", () => {
+  it("counts the week's days played, and whether three can still be reached", () => {
+    // Wednesday, two played, today not yet.
+    expect(weekdayRestProgress(streakOf({ playedDates: ["2026-10-26", "2026-10-27"] }), "2026-10-28")).toEqual({
+      played: 2,
+      reachable: true,
+    });
+    expect(weekdayRestProgress(streakOf({ playedDates: WEEK_PLAYED }), "2026-10-30")).toEqual({
+      played: 3,
+      reachable: true,
+    });
+    // Friday, one played and today not yet: still shown, out of reach.
+    expect(weekdayRestProgress(streakOf({ playedDates: ["2026-10-26"] }), "2026-10-30")).toEqual({
+      played: 1,
+      reachable: false,
+    });
+    // Thursday, one played and today not yet: today and Friday make three.
+    expect(weekdayRestProgress(streakOf({ playedDates: ["2026-10-26"] }), "2026-10-29")?.reachable).toBe(true);
+    // Saturday shows 😴 itself, and weeks before rest days began show nothing.
+    expect(weekdayRestProgress(streakOf({ playedDates: WEEK_PLAYED }), "2026-10-31")).toBeNull();
+    expect(weekdayRestProgress(streakOf({ playedDates: [] }), "2026-10-20")).toBeNull();
+  });
+});
+
+describe("restDayProgress", () => {
+  it("counts down the plays Saturday off still needs while the week has room", () => {
+    // Sunday played: two more of the five days left.
+    expect(restDayProgress(streakOf({ playedDates: ["2026-10-25"] }), "2026-10-25")).toEqual({
+      saturday: "2026-10-31",
+      needed: 2,
+    });
+    // Thursday with one played: two needed, one day left.
+    expect(restDayProgress(streakOf({ playedDates: ["2026-10-29"] }), "2026-10-29")).toBeNull();
+    // Earned.
+    expect(restDayProgress(streakOf({ playedDates: WEEK_PLAYED }), "2026-10-30")).toEqual({
+      saturday: "2026-10-31",
+      needed: 0,
+    });
+    // On Saturday the week is over.
+    expect(restDayProgress(streakOf({ playedDates: WEEK_PLAYED }), "2026-10-31")).toBeNull();
+    // Before rest days began.
+    expect(restDayProgress(streakOf({ playedDates: ["2026-10-19"] }), "2026-10-19")).toBeNull();
   });
 });
 
@@ -262,6 +351,14 @@ describe("streakReport", () => {
     // One saved freeze, then another, spent since: still reported as 2.
     expect(streakReport(applyFreezes(start, "2026-10-03"))).toEqual(expected);
     expect(streakReport(applyFreezes(start, "2026-10-04"))).toEqual(expected);
+  });
+
+  it("names the Saturday the last played day's week earned", () => {
+    const thursday = streakOf({ lastCompletedDate: "2026-10-29", playedDates: WEEK_PLAYED });
+    expect(streakReport(thursday)?.restDay).toBe("2026-10-31");
+    expect(streakReport({ ...thursday, playedDates: ["2026-10-29"] })?.restDay).toBeUndefined();
+    // A Saturday played: next week's Saturday is not earned yet.
+    expect(streakReport({ ...thursday, lastCompletedDate: "2026-10-31" })?.restDay).toBeUndefined();
   });
 });
 

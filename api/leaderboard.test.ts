@@ -131,8 +131,31 @@ describe("api/leaderboard submissions", () => {
     expect(response.status).toBe(202);
     expect(rpcCall(fetchMock, 1)).toEqual({
       url: "https://project.supabase.co/rest/v1/rpc/submit_leaderboard_streak",
-      args: { p_player_id: PLAYER, p_current: 40, p_best: 52, p_saved: 2, p_last_played: SUNDAY },
+      args: {
+        p_player_id: PLAYER,
+        p_current: 40,
+        p_best: 52,
+        p_saved: 2,
+        p_last_played: SUNDAY,
+        p_rest_day: null,
+      },
     });
+  });
+
+  it("records the Saturday off only when it ends the last played day's week", async () => {
+    withEnv();
+    // SUNDAY's week ends on 2026-08-29.
+    for (const [restDay, expected] of [
+      ["2026-08-29", "2026-08-29"],
+      ["2026-09-05", null], // a later Saturday, which no play has earned
+      ["2026-08-22", null], // before the last played day
+      ["soon", null],
+    ]) {
+      const fetchMock = stubFetch([[], []]);
+      const streak = { current: 40, best: 52, saved: 2, lastPlayed: SUNDAY, restDay };
+      await handler(post({ ...score(), streak }));
+      expect(rpcCall(fetchMock, 1)?.args).toMatchObject({ p_rest_day: expected });
+    }
   });
 
   it("drops a streak that does not add up and keeps the scores", async () => {

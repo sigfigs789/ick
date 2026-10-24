@@ -1072,7 +1072,7 @@ function streakIconTitle(entry: StreakEntry): string | undefined {
 /** What a screen reader hears after a streak row's count. */
 function streakStatus(entry: StreakEntry): string {
   if (entry.lost) return ", lost";
-  if (entry.resting) return ", resting: Saturdays don't break streaks";
+  if (entry.resting) return ", lazy Saturday: skipping it can't break the streak";
   if (entry.current <= 1 && !entry.frozen) return "";
   const held = entry.frozen
     ? ", covered by a saved freeze"
@@ -1119,7 +1119,7 @@ function StreakRow({ entry, isYou }: { entry: StreakEntry; isYou: boolean }) {
       </span>
       <span className="leaderboard__score">
         {/* One icon for how the run stands, as the game marks it (see
-            components/StreakDisplay.tsx): 🕺, 💃 or 😴 on a Saturday not played
+            components/StreakDisplay.tsx): 😴 on an earned Saturday not played
             yet, which cannot end the run, tapped to say so; ⏳ when missed days have spent
             every saved freeze, so missing today ends it; 🧊 while a saved
             freeze is covering it with one left for today; 💀 for a run that
@@ -1128,7 +1128,7 @@ function StreakRow({ entry, isYou }: { entry: StreakEntry; isYou: boolean }) {
             rather than a streak. */}
         {entry.resting && !entry.lost ? (
           <>
-            <RestDayBadge playerId={entry.playerId} />{" "}
+            <RestDayBadge />{" "}
           </>
         ) : (entry.current > 1 || entry.lost) && (
           <span aria-hidden="true" title={streakIconTitle(entry)}>

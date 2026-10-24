@@ -26,11 +26,14 @@
  * perfect month means every day played, and a covered day was not
  * (see game/perfectMonth.ts).
  *
- * Saturdays are rest days (from REST_DAY_START): a Saturday left unplayed
- * spends no freeze and ends no streak, and a Saturday played counts like any
- * other day. While Saturday is unplayed the streak shows 🕺, 💃 or 😴 (see
- * `resting` and components/RestDayBadge.tsx). Every rule below that counts
- * missed days skips rest days (`missedDays`).
+ * A Saturday can be earned as a rest day (from REST_DAY_START): play
+ * REST_DAY_PLAYS of the week's puzzles, Sunday to Friday, each on its own day,
+ * and that Saturday left unplayed spends no freeze and ends no streak. It is
+ * not saved like a freeze: it is that Saturday's or nothing, so it cannot be
+ * stockpiled. A Saturday not earned is an ordinary day, and a Saturday played
+ * counts like any other day. While an earned Saturday is unplayed the streak
+ * shows 😴 (see `resting` and components/RestDayBadge.tsx). Every
+ * rule below that counts missed days skips rest days (`missedDays`).
  */
 
 import { addDays, dayOfWeek, daysSinceEpoch } from "./date";
@@ -43,23 +46,57 @@ import type { FreezeCount, StreakState } from "./types";
  */
 const FROZEN_DATES_KEPT_DAYS = 62;
 
-/** The first Saturday that is a rest day. Earlier Saturdays were missed like any day. */
+/** The first Saturday that can be a rest day. Earlier Saturdays were missed like any day. */
 export const REST_DAY_START = "2026-10-31";
+
+/** Puzzles played on their own day, Sunday to Friday, that earn that Saturday off. */
+export const REST_DAY_PLAYS = 3;
 
 const SATURDAY = 6;
 
-/** Whether `date` is a rest day: a Saturday a streak can skip for free. */
-export function isRestDay(date: string): boolean {
-  return date >= REST_DAY_START && dayOfWeek(date) === SATURDAY;
+/**
+ * How long a played day is remembered: the current week and the last, which
+ * is all `isRestDay` ever asks about.
+ */
+const PLAYED_DATES_KEPT_DAYS = 14;
+
+/** The Saturday ending the week (Sunday to Saturday) that `date` falls in. */
+export function weekSaturday(date: string): string {
+  return addDays(date, SATURDAY - dayOfWeek(date));
+}
+
+/** The days of `saturday`'s week, Sunday to Friday, that were played on their own day. */
+export function weekPlays(streak: StreakState, saturday: string): number {
+  const sunday = addDays(saturday, -6);
+  return (streak.playedDates ?? []).filter((d) => d >= sunday && d < saturday).length;
+}
+
+/**
+ * Whether `date` is a rest day: a Saturday the week's play has earned, which
+ * a streak can skip for free.
+ */
+export function isRestDay(streak: StreakState, date: string): boolean {
+  return (
+    date >= REST_DAY_START && dayOfWeek(date) === SATURDAY && weekPlays(streak, date) >= REST_DAY_PLAYS
+  );
+}
+
+/** The streak with `date` remembered as played on its own day. */
+export function recordPlayed(streak: StreakState, date: string): StreakState {
+  const keepFrom = addDays(date, -PLAYED_DATES_KEPT_DAYS);
+  const kept = (streak.playedDates ?? []).filter((d) => d >= keepFrom && d !== date);
+  return { ...streak, playedDates: [...kept, date].sort() };
 }
 
 /**
  * The days strictly between `after` and `before` that a streak needed played:
  * every day in the gap but the rest days.
  */
-export function missedDays(after: string, before: string): string[] {
+export function missedDays(streak: StreakState, after: string, before: string): string[] {
   const gap = Math.max(0, daysSinceEpoch(before, after) - 1);
-  return Array.from({ length: gap }, (_, i) => addDays(after, i + 1)).filter((d) => !isRestDay(d));
+  return Array.from({ length: gap }, (_, i) => addDays(after, i + 1)).filter(
+    (d) => !isRestDay(streak, d)
+  );
 }
 
 /** The first saved freeze is earned on a streak's third day played. */
@@ -185,11 +222,12 @@ export function coveredThrough(streak: StreakState): string | undefined {
 }
 
 /**
- * Whether a streak covered through `covered` carries on into `date`: nothing
- * but rest days lies between them.
+ * Whether the streak carries on into `date`: nothing but rest days lies
+ * between it and the last day it was played or covered.
  */
-export function continuesInto(covered: string | undefined, date: string): boolean {
-  return covered !== undefined && covered < date && missedDays(covered, date).length === 0;
+export function continuesInto(streak: StreakState, date: string): boolean {
+  const covered = coveredThrough(streak);
+  return covered !== undefined && covered < date && missedDays(streak, covered, date).length === 0;
 }
 
 /**
@@ -201,7 +239,7 @@ export function applyFreezes(streak: StreakState, today: string): StreakState {
   const covered = coveredThrough(streak);
   if (streak.currentStreak === 0 || !covered || covered >= today) return streak;
 
-  const missed = missedDays(covered, today);
+  const missed = missedDays(streak, covered, today);
   if (missed.length === 0) return streak;
   const banked = streak.bankedFreezes ?? 0;
   const keepFrom = addDays(today, -FROZEN_DATES_KEPT_DAYS);
@@ -265,7 +303,7 @@ export function freezesOn(streak: StreakState, date: string | undefined): Freeze
 export function savedFreezeCovering(streak: StreakState, today: string): boolean {
   if (streak.currentStreak === 0 || !streak.lastCompletedDate) return false;
   if (streak.lastCompletedDate >= today) return false;
-  return missedDays(streak.lastCompletedDate, today).length > 0;
+  return missedDays(streak, streak.lastCompletedDate, today).length > 0;
 }
 
 /**
@@ -276,7 +314,7 @@ export function savedFreezeCovering(streak: StreakState, today: string): boolean
  */
 export function missedYesterday(streak: StreakState, today: string): boolean {
   let day = addDays(today, -1);
-  while (isRestDay(day)) day = addDays(day, -1);
+  while (isRestDay(streak, day)) day = addDays(day, -1);
   return streak.currentStreak > 0 && streak.lastCompletedDate !== today && wasFrozen(streak, day);
 }
 
@@ -287,29 +325,72 @@ export function missedYesterday(streak: StreakState, today: string): boolean {
  */
 export function atRisk(streak: StreakState, today: string): boolean {
   return (
-    !isRestDay(today) && missedYesterday(streak, today) && (streak.bankedFreezes ?? 0) === 0
+    !isRestDay(streak, today) && missedYesterday(streak, today) && (streak.bankedFreezes ?? 0) === 0
   );
 }
 
 /**
- * Whether today is a rest day the streak is taking: a live streak on a
- * Saturday not played yet. The game and the streak board show 🕺, 💃 or 😴 for it.
+ * Whether today is a rest day the streak is taking: a live streak on an
+ * earned Saturday not played yet. The game and the streak board show 😴 for it.
  */
 export function resting(streak: StreakState, today: string): boolean {
-  return isRestDay(today) && streak.currentStreak > 0 && streak.lastCompletedDate !== today;
+  return isRestDay(streak, today) && streak.currentStreak > 0 && streak.lastCompletedDate !== today;
+}
+
+/**
+ * The week's days played towards Saturday off, for the weekday badge (see
+ * components/RestDayBadge.tsx), and whether three can still be reached --
+ * counting today if it is not played yet. Shown even when they cannot, so a
+ * player learns of it for next week. Null on a Saturday, which shows 😴
+ * itself, and before rest days began.
+ */
+export function weekdayRestProgress(
+  streak: StreakState,
+  today: string
+): { played: number; reachable: boolean } | null {
+  const dow = dayOfWeek(today);
+  if (dow === SATURDAY || weekSaturday(today) < REST_DAY_START) return null;
+  const played = weekPlays(streak, weekSaturday(today));
+  const playedToday = (streak.playedDates ?? []).includes(today);
+  const daysLeft = SATURDAY - dow - (playedToday ? 1 : 0);
+  return { played, reachable: REST_DAY_PLAYS - played <= daysLeft };
+}
+
+/**
+ * The next Saturday after `date` and what earning it off still takes, for a
+ * player who has played `date`: the plays still needed by Friday (0 once it
+ * is earned). Null when it can no longer be earned -- too few days are left
+ * in the week -- or `date` is itself a Saturday, whose week is over.
+ */
+export function restDayProgress(
+  streak: StreakState,
+  date: string
+): { saturday: string; needed: number } | null {
+  if (dayOfWeek(date) === SATURDAY) return null;
+  const saturday = weekSaturday(date);
+  if (saturday < REST_DAY_START) return null;
+  const needed = Math.max(0, REST_DAY_PLAYS - weekPlays(streak, saturday));
+  const daysLeft = daysSinceEpoch(saturday, date) - 1;
+  return needed <= daysLeft ? { saturday, needed } : null;
 }
 
 /**
  * The streak as it stood on its last played day, which is what the streak
  * board is sent (see game/leaderboard.ts). The board works out the rest from
- * that day alone: the run is alive while the days missed since are no more
- * than the freezes saved then. So the saved count is the one from before any
+ * that day alone: the run is alive while the days missed since -- less the
+ * earned Saturday, if one lies between -- are no more than the freezes saved
+ * then. So the saved count is the one from before any
  * were spent on the gap -- every covered day since the last played day took
  * one.
  */
-export function streakReport(
-  streak: StreakState
-): { current: number; best: number; saved: number; lastPlayed: string } | null {
+export function streakReport(streak: StreakState): {
+  current: number;
+  best: number;
+  saved: number;
+  lastPlayed: string;
+  /** The Saturday after the last played day, when that week's play earned it off. */
+  restDay?: string;
+} | null {
   const lastPlayed = streak.lastCompletedDate;
   if (streak.currentStreak === 0 || !lastPlayed) return null;
   const coveredSince = (streak.frozenDates ?? []).filter((d) => d > lastPlayed).length;
@@ -318,6 +399,11 @@ export function streakReport(
     best: Math.max(streak.longestStreak, streak.currentStreak),
     saved: (streak.bankedFreezes ?? 0) + coveredSince,
     lastPlayed,
+    // Only the first Saturday after the last played day can be earned: no
+    // later week has been played.
+    ...(dayOfWeek(lastPlayed) !== SATURDAY && isRestDay(streak, weekSaturday(lastPlayed))
+      ? { restDay: weekSaturday(lastPlayed) }
+      : {}),
   };
 }
 

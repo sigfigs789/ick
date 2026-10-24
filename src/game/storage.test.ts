@@ -12,6 +12,7 @@ import {
   resetProgress,
   retryWord,
   forfeitRetry,
+  STREAK_KEY,
 } from "./storage";
 import { rarityScore } from "./dictionary";
 import { MODE_CHOICE_START, resetModeCache, setMode } from "./mode";
@@ -205,14 +206,42 @@ describe("loadStreak", () => {
 });
 
 describe("Saturday rest days", () => {
-  it("carry the streak from Friday to Sunday without counting Saturday", () => {
-    setToday("2026-10-30");
-    recordAcceptedWord(newProgress("2026-10-30", "str"), word("strange"));
+  it("carry the streak from Friday to Sunday without counting Saturday, once earned", () => {
+    for (const date of ["2026-10-28", "2026-10-29", "2026-10-30"]) {
+      setToday(date);
+      recordAcceptedWord(newProgress(date, "str"), word("strange"));
+    }
     setToday("2026-10-31");
-    expect(loadStreak().currentStreak).toBe(1);
+    expect(loadStreak().currentStreak).toBe(3);
     setToday("2026-11-01");
     recordAcceptedWord(newProgress("2026-11-01", "str"), word("strange"));
-    expect(loadStreak()).toMatchObject({ currentStreak: 2, lastCompletedDate: "2026-11-01" });
+    expect(loadStreak()).toMatchObject({ currentStreak: 4, lastCompletedDate: "2026-11-01" });
+  });
+
+  it("are missed days when the week did not earn them", () => {
+    for (const date of ["2026-10-29", "2026-10-30"]) {
+      setToday(date);
+      recordAcceptedWord(newProgress(date, "str"), word("strange"));
+    }
+    setToday("2026-11-01");
+    expect(loadStreak().currentStreak).toBe(0);
+  });
+
+  it("count the week's days played before they were remembered", () => {
+    // Played Wednesday and Thursday on their days, saved by a game from before
+    // the streak kept its played days.
+    for (const date of ["2026-10-28", "2026-10-29"]) {
+      setToday(date);
+      recordAcceptedWord(newProgress(date, "str"), word("strange"));
+    }
+    const stored = JSON.parse(localStorage.getItem(STREAK_KEY)!);
+    delete stored.playedDates;
+    localStorage.setItem(STREAK_KEY, JSON.stringify(stored));
+    setToday("2026-10-30");
+    recordAcceptedWord(newProgress("2026-10-30", "str"), word("strange"));
+    expect(loadStreak().playedDates).toEqual(["2026-10-28", "2026-10-29", "2026-10-30"]);
+    setToday("2026-11-01");
+    expect(loadStreak().currentStreak).toBe(3);
   });
 
   it("count when played", () => {

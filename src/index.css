@@ -2210,6 +2210,15 @@ h2 {
 .rest-day__popup strong {
   color: var(--fg);
 }
+.rest-day__button .rest-day__pie {
+  display: block;
+  color: var(--fg-muted);
+}
+.streak-display__week .rest-day__button {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.5rem;
+}
 /* On the board the dancer sits at the row's right edge: open leftwards. */
 .leaderboard__score .rest-day__popup {
   left: auto;

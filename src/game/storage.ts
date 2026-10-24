@@ -8,9 +8,9 @@ import {
   applyFreezes,
   backdateFreezes,
   continuesInto,
-  coveredThrough,
   earnFreeze,
   recordFreezes,
+  recordPlayed,
   startStreak,
 } from "./streakFreeze";
 
@@ -384,12 +384,24 @@ export function loadStreak(): StreakState {
   // Saved freezes the streak would have earned before they existed, granted
   // once and before the missed days are counted, so a player already in a gap
   // today is covered by them.
-  const streak = backdateFreezes(stored);
+  const streak = backdateFreezes(withPlayedDates(stored));
   // Missed days are covered by saved freezes, one each, if there are enough;
   // otherwise the streak resets (see game/streakFreeze.ts).
   const current = applyFreezes(streak, todayDateString());
   if (current !== stored) saveStreak(current);
   return current;
+}
+
+/**
+ * The streak with its played days filled in from the stored puzzles, once,
+ * for a save from before they were kept: the days already played this week
+ * count towards Saturday off (see `isRestDay` in game/streakFreeze.ts).
+ */
+function withPlayedDates(streak: StreakState): StreakState {
+  if (streak.playedDates) return streak;
+  const dates = playedOnItsDay().map((progress) => progress.date);
+  if (streak.lastCompletedDate) dates.push(streak.lastCompletedDate);
+  return dates.sort().reduce(recordPlayed, { ...streak, playedDates: [] });
 }
 
 function saveStreak(streak: StreakState): void {
@@ -491,7 +503,7 @@ function updateStreakOnValidAnswer(date: string): void {
 
   // Yesterday may have been covered by a freeze rather than played, or been a
   // rest day skipped.
-  const continuesStreak = continuesInto(coveredThrough(streak), date);
+  const continuesStreak = continuesInto(streak, date);
   const currentStreak = continuesStreak ? streak.currentStreak + 1 : 1;
 
   const updated: StreakState = {
@@ -506,7 +518,7 @@ function updateStreakOnValidAnswer(date: string): void {
     ...(continuesStreak ? { bankedFreezes: streak.bankedFreezes } : startStreak(streak, date)),
   };
   // Recorded after the day's freeze is earned, so the day shows what it ended with.
-  saveStreak(recordFreezes(earnFreeze(updated), date));
+  saveStreak(recordPlayed(recordFreezes(earnFreeze(updated), date), date));
 }
 
 function incrementCompletionTotal(): void {
