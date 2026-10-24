@@ -84,6 +84,6 @@ describe("word of the day experiment", () => {
 
   it("places each arm against the scorecard's bands", () => {
     const a = { ...emptyArm("shown", "all"), d1: { returned: 30, cohort: 100 }, d7: { returned: 1, cohort: 10 } };
-    expect(standings(a)).toEqual({ d1: "promising", d7: null, share: null });
+    expect(standings(a)).toEqual({ d1: "promising", d7: null, week: null, share: null });
   });
 });

@@ -1,5 +1,16 @@
 import type { Rate } from "./report";
-import { count, D1_MARKS, D7_MARKS, LEAST, percent, SHARE_MARKS, stand, type Marks, type Standing } from "./scorecard";
+import {
+  count,
+  D1_MARKS,
+  D7_MARKS,
+  LEAST,
+  percent,
+  SHARE_MARKS,
+  stand,
+  WEEK_MARKS,
+  type Marks,
+  type Standing,
+} from "./scorecard";
 
 /**
  * An experiment on /experimentsV2 -- the word of the day, the come-back line --
@@ -236,11 +247,12 @@ export function verdict(experiment: Experiment, subject = "the word of the day")
 }
 
 /** Where an arm's rates land against the scorecard's bands. */
-export function standings(a: Arm): Record<"d1" | "d7" | "share", Standing | null> {
+export function standings(a: Arm): Record<"d1" | "d7" | "week" | "share", Standing | null> {
   const judge = (part: number, whole: number, marks: Marks) => (whole >= LEAST ? stand(part / whole, marks) : null);
   return {
     d1: judge(a.d1.returned, a.d1.cohort, D1_MARKS),
     d7: judge(a.d7.returned, a.d7.cohort, D7_MARKS),
+    week: judge(a.week.returned, a.week.cohort, WEEK_MARKS),
     share: judge(a.sharedDays, a.playerDays, SHARE_MARKS),
   };
 }
