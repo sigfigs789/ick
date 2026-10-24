@@ -167,8 +167,7 @@ export function freezeCap(days: number): number {
  * and the limit rising to 2 until `cap` has.
  */
 export function freezeRules(currentStreak: number, cap: number): string {
-  const n = DAYS_PER_EARNED_FREEZE;
-  const everyN = `every ${n} days of your streak (day ${n}, ${n * 2}, ${n * 3}, and so on)`;
+  const everyN = `every ${DAYS_PER_EARNED_FREEZE} days of your streak`;
   const earn =
     currentStreak < FIRST_FREEZE_DAY
       ? `You get your first one on day ${FIRST_FREEZE_DAY} of your streak, then another ${everyN}.`
