@@ -63,4 +63,15 @@ describe("computeStats", () => {
     expect(stats.finished).toBe(0);
     expect(stats.modes[0].average).toBeNull();
   });
+
+  it("keeps legacy-scored puzzles out of the best words and totals", () => {
+    // Before 2026-08-15 the page has no legacy data, so "think" would show as 52.
+    const early = day("2026-08-01", [word("think", "Common", 5.2)], { mode: "standard" });
+    const stats = computeStats([early], streak);
+    expect(stats.topWords).toEqual([]);
+    expect(stats.modes[0]).toMatchObject({ mode: "standard", puzzles: 1, average: null, best: null });
+    expect(stats.daysPlayed).toBe(1);
+    expect(stats.wordsFound).toBe(1);
+    expect(stats.longestWord?.word).toBe("think");
+  });
 });
