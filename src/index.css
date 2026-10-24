@@ -6094,11 +6094,18 @@ h2 {
 
 /* Arrows on the drop row read as quiet links rather than buttons: on today's
    puzzle Previous is the only one live, and it leads into the archive, which
-   is not where most players are headed. */
+   is not where most players are headed. A touch larger than the shared arrow
+   buttons, so they're easier to spot and to tap. */
 .puzzle-nav--drop > .puzzle-nav__arrow {
+  min-height: 2.6rem;
+  padding: 0.35rem 0.75rem;
   border-color: transparent;
   background: transparent;
   color: var(--fg-muted);
+  font-size: 1rem;
+}
+.puzzle-nav--drop > .puzzle-nav__arrow > span[aria-hidden] {
+  font-size: 1.5em;
 }
 .puzzle-nav--drop > .puzzle-nav__arrow:not(:disabled):hover {
   background: var(--bg-inset);
