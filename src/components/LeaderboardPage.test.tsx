@@ -318,7 +318,7 @@ describe("the leaderboard page", () => {
     expect(within(streaks).queryByRole("button", { name: /previous/i })).toBeNull();
   });
 
-  it("shows a dancer on a Saturday run not played yet, which says Saturdays don't break streaks", async () => {
+  it("shows a dancer on a Saturday run not played yet, which says it can't break the streak", async () => {
     stubFetch({
       ...OPEN,
       streak: [
@@ -342,7 +342,7 @@ describe("the leaderboard page", () => {
     const dancer = within(boardRows("Streaks")[1]).getByRole("button", { name: /Saturday rest day/ });
     fireEvent.click(dancer);
     expect(within(boardRows("Streaks")[1]).getByRole("dialog")).toHaveTextContent(
-      "Saturdays don't break streaks"
+      "can't break the streak"
     );
   });
 

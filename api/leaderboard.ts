@@ -733,6 +733,8 @@ interface StreakReport {
   best: number;
   saved: number;
   lastPlayed: string;
+  /** The Saturday after `lastPlayed`, when that week's play earned it off. */
+  restDay: string | null;
 }
 
 /**
@@ -752,7 +754,7 @@ const MAX_SAVED_FREEZES = 3;
  */
 function readStreakReport(raw: unknown): StreakReport | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-  const { current, best, saved, lastPlayed } = raw as Record<string, unknown>;
+  const { current, best, saved, lastPlayed, restDay } = raw as Record<string, unknown>;
   if (typeof lastPlayed !== "string" || !validPuzzleDate(lastPlayed)) return null;
   const possible =
     Math.round((Date.parse(`${lastPlayed}T00:00:00Z`) - Date.parse(`${EPOCH}T00:00:00Z`)) / 86_400_000) + 1;
@@ -761,7 +763,30 @@ function readStreakReport(raw: unknown): StreakReport | null {
     return null;
   }
   if (!Number.isInteger(saved) || (saved as number) < 0 || (saved as number) > MAX_SAVED_FREEZES) return null;
-  return { current: current as number, best: best as number, saved: saved as number, lastPlayed };
+  return {
+    current: current as number,
+    best: best as number,
+    saved: saved as number,
+    lastPlayed,
+    restDay: readRestDay(restDay, lastPlayed),
+  };
+}
+
+/**
+ * The earned Saturday off, or null. It can only be the Saturday that ends
+ * `lastPlayed`'s week (see `streakReport` in src/game/streakFreeze.ts);
+ * anything else is dropped, and the run is judged as if none was earned.
+ */
+function readRestDay(raw: unknown, lastPlayed: string): string | null {
+  // Not `validPuzzleDate`: the Saturday is usually still ahead. Pinning it to
+  // the already-checked `lastPlayed` bounds it instead.
+  if (typeof raw !== "string" || !DATE_RE.test(raw)) return null;
+  const lastPlayedDay = new Date(`${lastPlayed}T00:00:00Z`).getUTCDay();
+  if (lastPlayedDay === 6) return null;
+  const saturday = new Date(Date.parse(`${lastPlayed}T00:00:00Z`) + (6 - lastPlayedDay) * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+  return raw === saturday ? raw : null;
 }
 
 function readSubmission(parsed: unknown):
@@ -1319,6 +1344,7 @@ async function handlePost(request: Request, context?: EdgeContext): Promise<Resp
         p_best: submission.streak.best,
         p_saved: submission.streak.saved,
         p_last_played: submission.streak.lastPlayed,
+        p_rest_day: submission.streak.restDay,
       },
       context
     );

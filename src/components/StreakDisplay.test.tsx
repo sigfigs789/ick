@@ -67,9 +67,14 @@ describe("StreakDisplay", () => {
     expect(screen.getByText("Total")).toBeInTheDocument();
   });
 
-  it("dances on a Saturday not played yet, and says Saturdays don't break streaks", () => {
-    // 2026-10-31 is the first Saturday rest day; Friday was played.
-    const friday: StreakState = { ...streak, currentStreak: 5, lastCompletedDate: "2026-10-30" };
+  it("dances on an earned Saturday not played yet, and says it can't break the streak", () => {
+    // 2026-10-31 is the first Saturday that can be earned; three days that week were played.
+    const friday: StreakState = {
+      ...streak,
+      currentStreak: 5,
+      lastCompletedDate: "2026-10-30",
+      playedDates: ["2026-10-28", "2026-10-29", "2026-10-30"],
+    };
     const { rerender } = render(<StreakDisplay streak={friday} date="2026-10-31" isToday />);
     const dancer = screen.getByRole("button", { name: /Saturday rest day/ });
     expect(dancer.textContent).toMatch(/🕺|💃|😴/u);
@@ -77,14 +82,14 @@ describe("StreakDisplay", () => {
     const badge = dancer.parentElement as HTMLElement;
     fireEvent.pointerEnter(badge, { pointerType: "mouse" });
     expect(screen.getByRole("dialog", { name: "Saturday rest day" })).toHaveTextContent(
-      "Saturdays don't break streaks"
+      "can't break the streak"
     );
     fireEvent.pointerLeave(badge, { pointerType: "mouse" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     // Tapping opens it too.
     fireEvent.click(dancer);
     expect(screen.getByRole("dialog", { name: "Saturday rest day" })).toHaveTextContent(
-      "Saturdays don't break streaks"
+      "can't break the streak"
     );
 
     // Played: fire again.
@@ -96,6 +101,13 @@ describe("StreakDisplay", () => {
 
     // Sunday after a skipped Saturday: fire, no freeze covering anything.
     rerender(<StreakDisplay streak={friday} date="2026-11-01" isToday />);
+    expect(flame()).toBe("🔥");
+
+    // Not earned: an ordinary day, where the streak has missed nothing yet.
+    rerender(
+      <StreakDisplay streak={{ ...friday, playedDates: ["2026-10-30"] }} date="2026-10-31" isToday />
+    );
+    expect(screen.queryByRole("button", { name: /Saturday rest day/ })).not.toBeInTheDocument();
     expect(flame()).toBe("🔥");
   });
 

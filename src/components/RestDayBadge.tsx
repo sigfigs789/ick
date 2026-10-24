@@ -1,7 +1,9 @@
 import { useEffect, useId, useRef, useState } from "react";
 
 /** What the dancer means, for its hover text and popup. */
-const REST_DAY_RULE = "Saturdays don't break streaks. Kick back and relax or play and get ahead.";
+const REST_DAY_RULE =
+  "3 days played this week earned this Saturday off: skipping it can't break the streak. " +
+  "It's good for today only, so kick back or play and get ahead.";
 
 /** The Saturday faces, one per player. */
 const REST_DAY_ICONS = ["🕺", "💃", "😴"] as const;
@@ -17,9 +19,9 @@ function restDayDancer(playerId: string): (typeof REST_DAY_ICONS)[number] {
 }
 
 /**
- * The dancer shown on a streak taking its Saturday off (see `resting` in
- * game/streakFreeze.ts). Hovering it with a mouse opens a popup with the rule
- * while the pointer stays on it; selecting it pins the popup open, and
+ * The dancer shown on a streak taking the Saturday off its week's play earned
+ * (see `resting` in game/streakFreeze.ts). Hovering it with a mouse opens a
+ * popup with the rule while the pointer stays on it; selecting it pins the popup open, and
  * selecting it again, anywhere outside it, or Escape closes it.
  */
 export function RestDayBadge({ playerId, className }: { playerId: string; className?: string }) {

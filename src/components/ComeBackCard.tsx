@@ -41,7 +41,7 @@ export function ComeBackCard({ streak, date }: Props) {
   if (variant !== "shown") return null;
   return (
     <section className="come-back" aria-label="Tomorrow's drop">
-      <p className="come-back__goal">{streakGoal(streak)}</p>
+      <p className="come-back__goal">{streakGoal(streak, date)}</p>
     </section>
   );
 }

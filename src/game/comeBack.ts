@@ -6,10 +6,11 @@
  * number and the freezes as a badge, so a player finished, shared or didn't,
  * and had no reason in front of them to return -- which is what D1 measures.
  * `streakGoal` names the one reward most worth returning for: a freeze it
- * earns, or the best streak it is closing in on.
+ * earns, a Saturday off, or the best streak it is closing in on.
  */
 
-import { freezeCap } from "./streakFreeze";
+import { addDays } from "./date";
+import { freezeCap, restDayProgress } from "./streakFreeze";
 import type { StreakState } from "./types";
 
 /** Whether a streak reaching `days` played days earns a saved freeze (see streakFreeze.earnFreeze). */
@@ -23,10 +24,14 @@ function earnsFreezeOn(days: number): boolean {
  * playing tomorrow grows the streak is a given, and a second line under it
  * only buried the reward that was actually news.
  *
- * Most motivating first: a freeze tomorrow itself, then whichever is nearer
- * of the next freeze that would fit under the cap and beating the best streak
- * (a tie goes to the freeze, the thing they keep), then a record run, and only
- * with nothing else to say, that a streak starts tomorrow.
+ * Most motivating first: a freeze tomorrow itself, then Saturday off (see
+ * `restDayProgress` in game/streakFreeze.ts) -- earned by tomorrow, already
+ * earned on a Friday, or a few days away -- since it lapses with its week
+ * while a freeze keeps; then whichever is nearer of the next freeze that would
+ * fit under the cap and beating the best streak (a tie goes to the freeze,
+ * the thing they keep), then a record run, and only with nothing else to say,
+ * that a streak starts tomorrow. Saturday off is only promised while the week
+ * has days enough left to earn it.
  *
  * A freeze past the cap is not kept, so it is not promised. A player already
  * holding one hears which it would be -- a 2nd, a 3rd -- since "your next
@@ -34,7 +39,7 @@ function earnsFreezeOn(days: number): boolean {
  * that the cap rises, since that is what the wait is for: the day it rises
  * also earns the freeze that fills it.
  */
-export function streakGoal(streak: StreakState): string {
+export function streakGoal(streak: StreakState, today: string): string {
   const days = streak.currentStreak;
   const next = days + 1;
   const best = Math.max(streak.longestStreak, days);
@@ -51,6 +56,14 @@ export function streakGoal(streak: StreakState): string {
     if (nth) return `Tomorrow earns a ${nth} 🧊 streak freeze.`;
     return "Tomorrow earns a 🧊 freeze, which saves your streak on a day you miss.";
   }
+
+  // Only for a streak worth resting: a lost one has nothing for Saturday to keep.
+  const rest = days > 0 ? restDayProgress(streak, today) : null;
+  if (rest?.needed === 0 && rest.saturday === addDays(today, 1)) {
+    return "You've earned Saturday off: skip tomorrow and your streak is safe.";
+  }
+  if (rest?.needed === 1) return "Tomorrow earns Saturday off: skip it and your streak is safe.";
+  if (rest && rest.needed > 1) return `${rest.needed} more days by Friday earns Saturday off.`;
 
   // A full cap only rises at 14 days, and a kept freeze is never more than
   // four weeks out.
