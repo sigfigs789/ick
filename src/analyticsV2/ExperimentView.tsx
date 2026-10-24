@@ -64,7 +64,7 @@ function ArmTable({ experiment, segment, subject }: { experiment: Experiment; se
     ["Activation", "n/a", "n/a", "–"],
     rateRow("D1 retention", shown.d1, hidden.d1, s.d1, h.d1),
     rateRow("D7 retention", shown.d7, hidden.d7, s.d7, h.d7),
-    rateRow("Back within a week", shown.week, hidden.week),
+    rateRow("Back within a week", shown.week, hidden.week, s.week, h.week),
     ["Days played in the week after", days(shown) ?? "–", days(hidden) ?? "–", daysGap(shown, hidden)],
     rateRow("Player-days shared", shareRate(shown), shareRate(hidden), s.share, h.share),
     rateRow("Later puzzles finished", finishRate(shown), finishRate(hidden)),

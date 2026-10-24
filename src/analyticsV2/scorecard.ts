@@ -47,6 +47,8 @@ export interface Marks {
 
 export const D1_MARKS: Marks = { nowhere: 0.15, promising: 0.25, great: 0.4 };
 export const D7_MARKS: Marks = { nowhere: 0.05, promising: 0.1, great: 0.2 };
+/** Coming back within a week is not in the table, so these marks are the page's. */
+export const WEEK_MARKS: Marks = { nowhere: 0.25, promising: 0.35, great: 0.5 };
 /** Activation is not in the table, so these marks are the page's. */
 export const ACTIVATION_MARKS: Marks = { nowhere: 0.3, promising: 0.4, great: 0.6 };
 /** Sharing has no great mark of its own: great is consistent sharing that also brings players. */
@@ -165,6 +167,12 @@ export function scorecard(report: Report): Row[] {
     },
     retentionRow("D1 retention", 1, r.d1.players, { nowhere: "Under 15%", promising: "25–35%", great: "40%+" }, D1_MARKS),
     retentionRow("D7 retention", 7, r.d7.players, { nowhere: "Under 5%", promising: "10–15%", great: "20%+" }, D7_MARKS),
+    {
+      ...retentionRow("Back within a week", 7, r.week.players, { nowhere: "Under 25%", promising: "35–49%", great: "50%+" }, WEEK_MARKS),
+      how:
+        "Players whose first word was in a 28-day span, and who banked a word again on any of the 7 days after. The " +
+        "table has no row for it, so these marks are the page's: under 25% is going nowhere, 35% promising, 50% great.",
+    },
     retentionRow("D30 retention", 30, r.d30.players, { nowhere: "Under 2%", promising: "5–8%", great: "10%+" }, {
       nowhere: 0.02,
       promising: 0.05,
