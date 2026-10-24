@@ -20,8 +20,9 @@ interface Props {
   /** A live lookup is running and the player is waiting on it. */
   checking?: boolean;
   /**
-   * The word data the verdict needs is still downloading. Typing stays open,
-   * but the button shows a spinner and waits, as on the website.
+   * The word data the verdict needs is still downloading. Typing and the
+   * button stay as they are; only a press that lands before the data shows a
+   * spinner, then sends the word once it is in, as on the website.
    */
   loading?: boolean;
   onSubmit: (word: string) => void;
@@ -39,6 +40,10 @@ export function SubmitForm({
   const theme = useTheme();
   const [value, setValue] = useState('');
   const inputRef = useRef<TextInput>(null);
+  // Submit was pressed before the word data arrived: the button spins until
+  // it does, then sends whatever is in the box.
+  const [queued, setQueued] = useState(false);
+  const waiting = queued && loading;
 
   /*
    * The Wordle shake on a rejection.
@@ -115,16 +120,33 @@ export function SubmitForm({
   });
 
   const trimmed = value.trim();
-  const blocked = disabled || loading || !trimmed;
+  const blocked = disabled || waiting || !trimmed;
 
   function submit() {
     if (blocked) return;
-    onSubmit(value);
-    setValue('');
     // Tapping the on-screen button should not dismiss the keyboard -- the
     // player's next guess is the next thing they want to type.
     inputRef.current?.focus();
+    if (loading) {
+      setQueued(true);
+      return;
+    }
+    onSubmit(value);
+    setValue('');
   }
+
+  // The queued press goes through once the data is in. A box emptied while it
+  // waited has nothing to send, so the press is dropped.
+  useEffect(() => {
+    if (!queued || loading) return;
+    setQueued(false);
+    if (value.trim() && !disabled) {
+      onSubmit(value);
+      setValue('');
+    }
+    // Only the data arriving sends it; `value` is read as it stands then.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queued, loading]);
 
   return (
     <View style={styles.form}>
@@ -167,8 +189,8 @@ export function SubmitForm({
             onPress={submit}
             disabled={blocked}
             accessibilityRole="button"
-            accessibilityLabel={loading ? 'Loading the word list' : 'Submit word'}
-            accessibilityState={{ disabled: blocked, busy: loading }}
+            accessibilityLabel={waiting ? 'Loading the word list' : 'Submit word'}
+            accessibilityState={{ disabled: blocked, busy: waiting }}
             style={({ pressed }) => [
               styles.submit,
               {
@@ -177,7 +199,7 @@ export function SubmitForm({
               },
             ]}
           >
-            {loading && <ActivityIndicator size="small" color={theme.accentFg} />}
+            {waiting && <ActivityIndicator size="small" color={theme.accentFg} />}
             <Text style={[styles.submitText, { color: theme.accentFg }]}>Submit</Text>
           </Pressable>
         </View>

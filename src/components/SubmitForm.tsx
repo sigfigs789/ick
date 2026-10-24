@@ -15,8 +15,10 @@ interface Props {
   /** A live lookup is running and the player is waiting on it. */
   checking?: boolean;
   /**
-   * The word data the verdict needs is still downloading. Typing stays open,
-   * but the button shows a spinner and waits, so a word is never sent into a
+   * The word data the verdict needs is still downloading. Typing and the
+   * button stay as they are -- the download is usually done before the first
+   * word is -- and only a press that lands before it is shows a spinner, then
+   * sends the word the moment the data is in, so a word is never sent into a
    * pause the player cannot see.
    */
   loading?: boolean;
@@ -65,6 +67,10 @@ export function SubmitForm({
   // which reads as a glitch -- the very thing it exists to prevent -- so the
   // pulse always runs to the end of the breath it is in before it stops.
   const [pulsing, setPulsing] = useState(false);
+  // Play was pressed before the word data arrived: the button spins until it
+  // does, then sends whatever is in the box.
+  const [queued, setQueued] = useState(false);
+  const waiting = queued && loading;
 
   useEffect(() => {
     if (checking) {
@@ -95,10 +101,28 @@ export function SubmitForm({
     };
   }, [checking, pulsing]);
 
-  async function handleSubmit(e: FormEvent) {
+  function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const submitted = value;
-    if (!submitted.trim() || disabled || loading) return;
+    if (!value.trim() || disabled) return;
+    if (loading) {
+      setQueued(true);
+      inputRef.current?.focus();
+      return;
+    }
+    void send(value);
+  }
+
+  // The queued press goes through once the data is in. A box emptied while it
+  // waited has nothing to send, so the press is dropped.
+  useEffect(() => {
+    if (!queued || loading) return;
+    setQueued(false);
+    if (value.trim() && !disabled) void send(value);
+    // Only the data arriving sends it; `value` is read as it stands then.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queued, loading]);
+
+  async function send(submitted: string) {
     // Tapping the on-screen Submit button (as opposed to the keyboard's own
     // "go"/"done" key) shouldn't dismiss the mobile keyboard -- re-focus so
     // the player can keep typing their next guess without tapping back in.
@@ -128,7 +152,7 @@ export function SubmitForm({
   }, [feedback]);
 
   return (
-    <form className="submit-form" onSubmit={(e) => void handleSubmit(e)}>
+    <form className="submit-form" onSubmit={handleSubmit}>
       <label className="submit-form__label" htmlFor="word-input">
         {disabled
           ? "You've completed this puzzle"
@@ -160,16 +184,16 @@ export function SubmitForm({
         </span>
         <button
           type="submit"
-          className={loading ? "submit-form__button--loading" : undefined}
-          disabled={disabled || loading || !value.trim()}
-          aria-busy={loading || undefined}
-          aria-label={loading ? "Loading the word list" : undefined}
+          className={waiting ? "submit-form__button--loading" : undefined}
+          disabled={disabled || waiting || !value.trim()}
+          aria-busy={waiting || undefined}
+          aria-label={waiting ? "Loading the word list" : undefined}
           // Without this, tapping Submit on mobile focuses the button first
           // (stealing focus from the input) and closes the keyboard before
           // the click/submit even fires.
           onMouseDown={(e) => e.preventDefault()}
         >
-          {loading && <span className="submit-form__spinner" aria-hidden="true" />}
+          {waiting && <span className="submit-form__spinner" aria-hidden="true" />}
           {submitLabel}
         </button>
       </div>

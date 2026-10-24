@@ -17,27 +17,32 @@ describe("SubmitForm", () => {
     expect(screen.queryByRole("button", { name: /submit/i })).not.toBeInTheDocument();
   });
 
-  it("waits, with a spinner, while the word data downloads", async () => {
+  it("spins only when Play is pressed before the word data is in", async () => {
     const onSubmit = vi.fn();
     const { rerender } = render(
       <SubmitForm drop="str" disabled={false} feedback={null} loading onSubmit={onSubmit} submitLabel="Play" />
     );
 
-    // Typing stays open, but neither the button nor the keyboard sends it.
+    // No spinner until the player actually presses Play.
     const input = screen.getByLabelText(/enter a word containing "STR"/i);
-    await userEvent.type(input, "strange{Enter}");
+    await userEvent.type(input, "strange");
+    expect(screen.getByRole("button", { name: "Play" })).not.toHaveAttribute("aria-busy");
+
+    // A press before the data is in spins and waits.
+    await userEvent.click(screen.getByRole("button", { name: "Play" }));
     const button = screen.getByRole("button", { name: "Loading the word list" });
     expect(button).toBeDisabled();
     expect(button).toHaveAttribute("aria-busy", "true");
     expect(onSubmit).not.toHaveBeenCalled();
     expect(input).toHaveValue("strange");
 
-    // Once it is in, the same word goes through.
+    // Once it is in, the queued word goes through on its own.
     rerender(
       <SubmitForm drop="str" disabled={false} feedback={null} onSubmit={onSubmit} submitLabel="Play" />
     );
-    await userEvent.click(screen.getByRole("button", { name: "Play" }));
+    await act(async () => {});
     expect(onSubmit).toHaveBeenCalledWith("strange");
+    expect(screen.getByRole("button", { name: "Play" })).not.toHaveAttribute("aria-busy");
   });
 
   it("submits the typed word and clears the box", async () => {
