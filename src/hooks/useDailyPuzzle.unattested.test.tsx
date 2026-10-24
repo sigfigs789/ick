@@ -14,7 +14,7 @@ import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
 
 const track = vi.hoisted(() => vi.fn());
-vi.mock("@vercel/analytics", () => ({ track }));
+vi.mock("../eventLog", () => ({ logEvent: track }));
 
 // This suite needs a curated word whose stored score is the unattested
 // stand-in. The latest inflection fold can legitimately rescue every such word

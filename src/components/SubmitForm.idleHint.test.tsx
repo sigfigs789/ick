@@ -8,7 +8,7 @@ import { setReporting } from "../analytics";
 import type { AcceptedWord } from "../game/types";
 
 const track = vi.hoisted(() => vi.fn());
-vi.mock("@vercel/analytics", () => ({ track }));
+vi.mock("../eventLog", () => ({ logEvent: track }));
 const playKeystroke = vi.hoisted(() => vi.fn());
 vi.mock("../audio/sound", () => ({ playKeystroke }));
 

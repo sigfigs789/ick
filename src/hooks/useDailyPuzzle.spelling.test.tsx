@@ -30,7 +30,7 @@ vi.mock("../game/date", async (importOriginal) => {
 });
 
 const track = vi.hoisted(() => vi.fn());
-vi.mock("@vercel/analytics", () => ({ track }));
+vi.mock("../eventLog", () => ({ logEvent: track }));
 
 const DROP = dropForDate(todayDateString()).toLowerCase();
 

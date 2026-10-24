@@ -438,9 +438,8 @@ lives in `supabase/migrations/`.
   — an outage says nothing about a word, and must not overwrite a real verdict.
   `lookups` counts *cache misses*, not plays: `/api/validate` is CDN-cached for
   a day, so treat it as "seen again" rather than as popularity.
-- **`analytics_events`** — a mirror of every event already sent to Vercel
-  Analytics (`src/analytics.ts`), so they can be queried with SQL and kept past
-  the dashboard's retention window. The browser posts each event to
+- **`analytics_events`** — every game event (`src/analytics.ts`, sent by
+  `src/eventLog.ts`), queryable with SQL. Nothing goes to Vercel Analytics. The browser posts each event to
   `api/events.ts` with `sendBeacon` and ignores the result; the endpoint
   validates the shape (snake_case name, at most 32 flat scalar properties) and
   inserts it.

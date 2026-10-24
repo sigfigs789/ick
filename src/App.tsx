@@ -36,7 +36,6 @@ import {
 } from "./game/improvement";
 import { checkStreakClimb, type StreakClimb } from "./game/streakClimb";
 import { totalRarityScore } from "./game/dictionary";
-import { Analytics } from "@vercel/analytics/react";
 import {
   campaignSourceFromSearch,
   trackRedditArrival,
@@ -45,7 +44,6 @@ import {
   trackSessionTime,
   trackVisit,
   watchFirstInteraction,
-  isReporting,
 } from "./analytics";
 import { recordVisit } from "./game/visits";
 import { sharedModeFromSearch } from "./game/onboarding";
@@ -326,10 +324,6 @@ export default function App() {
         )
       )}
 
-      {/* Not mounted where reporting is off: inside a Reddit post the script
-          is blocked by the frame's content policy, and it shouldn't be
-          reaching a third party from there in any case. See analytics.ts. */}
-      {isReporting() && <Analytics />}
       <main className={playMode ? `play play--${playMode}` : undefined}>
         {/* Below the header rather than inside it: which puzzle you are on is
             part of the puzzle, not part of the app's identity -- and the header
