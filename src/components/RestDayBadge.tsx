@@ -5,8 +5,9 @@ import { REST_DAY_PLAYS } from "../game/streakFreeze";
 const REST_DAY_RULE = "3 days played this week, so skipping today can't break the streak.";
 
 /** What the badge means on a weekday, with `played` of the week's days played. */
-function weekdayRule(played: number): string {
+function weekdayRule(played: number, reachable: boolean): string {
   if (played >= REST_DAY_PLAYS) return "Unlocked: skipping Saturday can't break your streak.";
+  if (!reachable) return "Play 3 days Sunday to Friday and skipping Saturday can't break your streak.";
   return `Play 3 days by Friday and skipping Saturday can't break your streak. ${played} of 3 so far.`;
 }
 
@@ -38,8 +39,17 @@ function WeekPie({ played }: { played: number }) {
  * on it; selecting it pins the popup open, and selecting it again, anywhere
  * outside it, or Escape closes it.
  */
-export function RestDayBadge({ className, played }: { className?: string; played?: number }) {
-  const rule = played === undefined ? REST_DAY_RULE : weekdayRule(played);
+export function RestDayBadge({
+  className,
+  played,
+  reachable = true,
+}: {
+  className?: string;
+  played?: number;
+  /** Whether three days can still be played this week; the rule then speaks of next week. */
+  reachable?: boolean;
+}) {
+  const rule = played === undefined ? REST_DAY_RULE : weekdayRule(played, reachable);
   const unlocked = played === undefined || played >= REST_DAY_PLAYS;
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState(false);

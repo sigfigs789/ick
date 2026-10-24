@@ -134,6 +134,15 @@ describe("StreakDisplay", () => {
       />
     );
     expect(screen.getByRole("button", { name: /Lazy Saturday: Unlocked/ }).textContent).toBe("😴");
+    // Out of reach this week: still shown, speaking of the rule for next week.
+    rerender(
+      <StreakDisplay
+        streak={{ ...wednesday, lastCompletedDate: "2026-10-30", playedDates: ["2026-10-30"] }}
+        date="2026-10-30"
+        isToday
+      />
+    );
+    expect(screen.getByRole("button", { name: /Lazy Saturday: Play 3 days Sunday to Friday/ })).toBeInTheDocument();
   });
 
   it("hides the flame until a streak reaches two days", () => {

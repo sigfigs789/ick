@@ -122,7 +122,7 @@ export function StreakDisplay({
   // Sunday to Friday, the week's progress towards a lazy Saturday (a pie, or
   // 😴 once unlocked), beside the freezes. Only for a live streak, which is
   // what a lazy Saturday keeps.
-  const weekPlayed =
+  const week =
     isToday && date !== undefined && streak.currentStreak > 0 ? weekdayRestProgress(streak, date) : null;
   // A past puzzle shows the freezes held on its day; today's shows today's.
   const { banked, cap } = freezesOn(streak, isToday ? undefined : date);
@@ -158,7 +158,9 @@ export function StreakDisplay({
           <span className="streak-display__count">{streak.currentStreak}</span>
           <span className="streak-display__unit">day streak</span>
           {showFreezes && <FreezeBadge banked={banked} cap={cap} />}
-          {weekPlayed !== null && <RestDayBadge played={weekPlayed} className="streak-display__week" />}
+          {week && (
+            <RestDayBadge played={week.played} reachable={week.reachable} className="streak-display__week" />
+          )}
         </div>
       )}
       {showTotal && (
