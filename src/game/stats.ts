@@ -8,9 +8,13 @@
  * not about what may rank.
  *
  * Every score is priced at its own puzzle's date, the way the puzzle showed it.
+ * Except the earliest: a puzzle before the legacy cutover is priced off data this
+ * page never loads, and without it the legacy scale reads a word's Zipf times ten
+ * -- a common word at 50. Those puzzles still count as played, but their words
+ * and totals stay out of the best words and the per-mode scores.
  */
 
-import { rarityScore, totalRarityScore } from "./dictionary";
+import { rarityScore, totalRarityScore, usesLegacyRarity } from "./dictionary";
 import { type GameMode } from "./mode";
 import { isWinningRarity } from "./rank";
 import { playedHistory } from "./storage";
@@ -105,12 +109,13 @@ export function computeStats(
     if (progress.acceptedWords.length === 0) continue;
     days.add(progress.date);
     const mode = progress.mode ?? "standard";
+    const scored = !usesLegacyRarity(progress.date);
     const forMode = modeTotals.get(mode) ?? { puzzles: 0, totals: [] };
     forMode.puzzles++;
     if (progress.completed) {
       finished++;
       if (progress.acceptedWords.some((word) => isWinningRarity(word.rarity))) won++;
-      forMode.totals.push(totalRarityScore(progress.acceptedWords, progress.date));
+      if (scored) forMode.totals.push(totalRarityScore(progress.acceptedWords, progress.date));
     }
     modeTotals.set(mode, forMode);
 
@@ -120,7 +125,7 @@ export function computeStats(
       const found = statWord(progress, accepted);
       const key = found.word.toLowerCase();
       const seen = best.get(key);
-      if (!seen || found.score > seen.score) best.set(key, found);
+      if (scored && (!seen || found.score > seen.score)) best.set(key, found);
       if (!longestWord || found.word.length > longestWord.word.length) longestWord = found;
     }
   }
