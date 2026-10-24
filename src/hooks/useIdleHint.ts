@@ -36,6 +36,8 @@ interface Options {
   /** What is in the box right now. */
   value: string;
   disabled: boolean;
+  /** Whether the box has focus. */
+  focused?: boolean;
 }
 
 type Phase = "typing" | "holding" | "erasing" | "waiting" | "over";
@@ -52,7 +54,7 @@ interface Loop {
   phase: Phase;
   /** How much of the current hint is in the placeholder. */
   chars: number;
-  /** The player typed: the loop is over for this puzzle. */
+  /** The player typed or focused the box: the loop is over for this puzzle. */
   stopped: boolean;
 }
 
@@ -84,20 +86,20 @@ function whenIdle(work: () => void): () => void {
  * Draws the player's arm on mount, then runs the experiment's clock whenever
  * the box is empty, the puzzle is open, no dialog is up and the tab is in view;
  * typing, opening a dialog, hiding the tab or moving to another puzzle starts it
- * over. Focusing the box does not: a player who tapped in and is stuck is the
- * one the hint is for.
+ * over. Focusing the box ends it for the puzzle instead: a player who tapped in
+ * is already finding their own way in, and a hint typed over them is in the way.
  *
  * When the clock runs out the loop starts, in both arms (only treatment sees
  * it): a hint is typed into the placeholder a character at a time, each with a
  * keystroke sound, held for 2s and erased a character at a time; 1s later the
  * next one, three hints in all, and then it is over. A dialog or a hidden tab
- * pauses it. The first character the player types ends it for the puzzle, for
- * this page load.
+ * pauses it. The first character the player types, or focusing the box, ends
+ * it for the puzzle, for this page load.
  *
  * Returns the placeholder to show, if any, and `onSubmitted`, which the form
  * calls with every submission so a submitted hint word is counted.
  */
-export function useIdleHint({ drop, date, acceptedWords, value, disabled }: Options) {
+export function useIdleHint({ drop, date, acceptedWords, value, disabled, focused = false }: Options) {
   const [arm, setArm] = useState<IdleHintArm | null>(null);
   const [visible, setVisible] = useState(pageVisible);
   const [covered, setCovered] = useState(dialogOpen);
@@ -160,8 +162,17 @@ export function useIdleHint({ drop, date, acceptedWords, value, disabled }: Opti
   const live = loop !== null && loop.key === key ? loop : null;
   const started = live !== null;
 
+  // Focusing the box ends the hint for the puzzle, in both arms so they stay
+  // comparable: a clock that has not run out never will, and a loop that has
+  // started stops where it is.
   useEffect(() => {
-    if (!arm || !date || disabled || !empty || !visible || covered || started) return;
+    if (!focused) return;
+    fired.current.add(key);
+    if (live && !live.stopped) setLoop({ ...live, stopped: true });
+  }, [focused, key, live]);
+
+  useEffect(() => {
+    if (!arm || !date || disabled || !empty || !visible || covered || started || focused) return;
     if (fired.current.has(key)) return;
     const timer = window.setTimeout(() => {
       fired.current.add(key);
@@ -181,12 +192,13 @@ export function useIdleHint({ drop, date, acceptedWords, value, disabled }: Opti
       });
     }, IDLE_HINT_DELAY_MS[arm.experiment]);
     return () => window.clearTimeout(timer);
-  }, [arm, date, drop, key, disabled, empty, visible, covered, forced, started]);
+  }, [arm, date, drop, key, disabled, empty, visible, covered, forced, started, focused]);
 
-  // The first character typed ends the loop, and is reported once.
+  // The first character typed ends the loop, and is reported once -- also when
+  // focusing the box ended it a moment earlier, as it does for anyone who types.
   useEffect(() => {
-    if (!live || live.stopped || empty) return;
-    setLoop({ ...live, stopped: true });
+    if (!live || empty) return;
+    if (!live.stopped) setLoop({ ...live, stopped: true });
     if (!arm || !date || forced) return;
     const id = `${live.key}:${live.at}`;
     if (typedReported.current === id) return;
@@ -244,6 +256,6 @@ export function useIdleHint({ drop, date, acceptedWords, value, disabled }: Opti
     [arm, date, live, forced]
   );
 
-  const placeholder = shows && live !== null && !live.stopped && live.chars > 0 ? chars.slice(0, live.chars).join("") : null;
+  const placeholder = shows && !focused && live !== null && !live.stopped && live.chars > 0 ? chars.slice(0, live.chars).join("") : null;
   return { placeholder, onSubmitted };
 }

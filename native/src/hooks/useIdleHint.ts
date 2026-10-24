@@ -34,6 +34,8 @@ interface Options {
    * there is no document to look in here, so the screen says.
    */
   covered?: boolean;
+  /** Whether the box has focus. */
+  focused?: boolean;
 }
 
 type Phase = 'typing' | 'holding' | 'erasing' | 'waiting' | 'over';
@@ -48,11 +50,11 @@ interface Loop {
   phase: Phase;
   /** How much of the current hint is in the placeholder. */
   chars: number;
-  /** The player typed: the loop is over for this puzzle. */
+  /** The player typed or focused the box: the loop is over for this puzzle. */
   stopped: boolean;
 }
 
-/** How long the box sits empty first. Both experiments wait the same today. */
+/** How long the box sits empty first: longer for a player who has been before. */
 function idleDelay(): number {
   try {
     return IDLE_HINT_DELAY_MS[idleHintExperiment()];
@@ -72,9 +74,8 @@ function idleDelay(): number {
  * foreground, a hint is typed into the placeholder a character at a time,
  * held for 2s and erased a character at a time; 1s later the next one, three
  * hints in all, and then it is over. A sheet or the app going to the
- * background pauses it. The first character the player types ends it for the
- * puzzle, for as long as the app stays open. Focusing the box does not: a
- * player who tapped in and is stuck is the one the hint is for.
+ * background pauses it. The first character the player types, or focusing the
+ * box, ends it for the puzzle, for as long as the app stays open.
  *
  * The website plays a keystroke sound per character; the app types in
  * silence -- a buzz per letter would be a phone vibrating in a pocket for
@@ -89,6 +90,7 @@ export function useIdleHint({
   value,
   disabled,
   covered = false,
+  focused = false,
 }: Options): string | null {
   const [visible, setVisible] = useState(() => AppState.currentState === 'active');
   const [loop, setLoop] = useState<Loop | null>(null);
@@ -119,8 +121,14 @@ export function useIdleHint({
   const live = loop !== null && loop.key === key ? loop : null;
   const started = live !== null;
 
+  // Focusing the box ends the hint for the puzzle: a clock that has not run
+  // out never will.
   useEffect(() => {
-    if (!enabled || !date || disabled || !empty || !visible || covered || started) return;
+    if (focused) fired.current.add(key);
+  }, [focused, key]);
+
+  useEffect(() => {
+    if (!enabled || !date || disabled || !empty || !visible || covered || started || focused) return;
     if (fired.current.has(key)) return;
     const timer = setTimeout(() => {
       fired.current.add(key);
@@ -136,11 +144,12 @@ export function useIdleHint({
       });
     }, idleDelay());
     return () => clearTimeout(timer);
-  }, [enabled, date, drop, key, disabled, empty, visible, covered, started]);
+  }, [enabled, date, drop, key, disabled, empty, visible, covered, started, focused]);
 
-  // The first character typed ends the loop. Set during render rather than
-  // from an effect, so the hint is never painted over the first letter.
-  if (live && !live.stopped && !empty) setLoop({ ...live, stopped: true });
+  // The first character typed, or focusing the box, ends the loop. Set during
+  // render rather than from an effect, so the hint is never painted over the
+  // first letter.
+  if (live && !live.stopped && (!empty || focused)) setLoop({ ...live, stopped: true });
 
   const running = live !== null && !live.stopped && !disabled && visible && !covered;
   const text = live === null ? '' : idleHintText(live.words[live.done % live.words.length]);
