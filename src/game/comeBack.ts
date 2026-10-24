@@ -24,14 +24,15 @@ function earnsFreezeOn(days: number): boolean {
  * playing tomorrow grows the streak is a given, and a second line under it
  * only buried the reward that was actually news.
  *
- * Most motivating first: a freeze tomorrow itself, then Saturday off (see
- * `restDayProgress` in game/streakFreeze.ts) -- already unlocked, unlocked by
- * tomorrow, or a few days away -- since it lapses with its week
- * while a freeze keeps; then whichever is nearer of the next freeze that would
- * fit under the cap and beating the best streak (a tie goes to the freeze,
- * the thing they keep), then a record run, and only with nothing else to say,
- * that a streak starts tomorrow. Saturday off is only promised while the week
- * has days enough left to earn it.
+ * Soonest first: of the next freeze that would fit under the cap, a lazy
+ * Saturday (see `restDayProgress` in game/streakFreeze.ts) and beating the
+ * best streak, whichever lands in the fewest days played. A tie goes to the
+ * freeze, the thing they keep, then to the lazy Saturday, which lapses with
+ * its week. A lazy Saturday already unlocked is said every weekday left, so
+ * the day it unlocks is never silent; it counts as a day away, so it gives
+ * way only to a freeze tomorrow. Then a record run, and only with nothing
+ * else to say, that a streak starts tomorrow. A lazy Saturday is only
+ * promised while the week has days enough left to earn it.
  *
  * A freeze past the cap is not kept, so it is not promised. A player already
  * holding one hears which it would be -- a 2nd, a 3rd -- since "your next
@@ -51,40 +52,48 @@ export function streakGoal(streak: StreakState, today: string): string {
   const nth = ["", "", "2nd", "3rd"][banked + 1];
   const capFull = banked > 0 && banked >= freezeCap(best);
 
-  if (keeps(next)) {
-    if (capFull) return `Tomorrow your 🧊 freeze limit goes up to ${banked + 1}, and you earn a freeze to fill it.`;
-    if (nth) return `Tomorrow earns a ${nth} 🧊 streak freeze.`;
-    return "Tomorrow earns a 🧊 freeze, which saves your streak on a day you miss.";
+  // Each reward with the days played until it lands, and its rank in a tie.
+  const goals: { away: number; rank: number; line: string }[] = [];
+
+  // A full cap only rises at 14 days, and a kept freeze is never more than
+  // four weeks out.
+  for (let freezeDay = next; freezeDay <= next + 28; freezeDay++) {
+    if (!keeps(freezeDay)) continue;
+    const away = freezeDay - days;
+    let line: string;
+    if (away === 1) {
+      if (capFull) line = `Tomorrow your 🧊 freeze limit goes up to ${banked + 1}, and you earn a freeze to fill it.`;
+      else if (nth) line = `Tomorrow earns a ${nth} 🧊 streak freeze.`;
+      else line = "Tomorrow earns a 🧊 freeze, which saves your streak on a day you miss.";
+    } else if (capFull) {
+      line = `${away} days until your 🧊 freeze limit goes up to ${banked + 1}.`;
+    } else {
+      line = `${away} days to ${nth ? `a ${nth}` : "your next"} 🧊 streak freeze.`;
+    }
+    goals.push({ away, rank: 0, line });
+    break;
   }
 
   // Only for a streak worth resting: a lost one has nothing for Saturday to keep.
   const rest = days > 0 ? restDayProgress(streak, today) : null;
-  // Once unlocked, said every weekday left, so the day it unlocks is never
-  // silent: it lapses on Saturday, where the far-off goals below can wait.
-  if (rest?.needed === 0) {
-    return rest.saturday === addDays(today, 1)
-      ? "Lazy Saturday unlocked: skip tomorrow and your streak is safe."
-      : "Lazy Saturday unlocked 😴 Skip Saturday and your streak is safe.";
+  if (rest) {
+    const line =
+      rest.needed === 0
+        ? rest.saturday === addDays(today, 1)
+          ? "Lazy Saturday unlocked: skip tomorrow and your streak is safe."
+          : "Lazy Saturday unlocked 😴 Skip Saturday and your streak is safe."
+        : rest.needed === 1
+          ? "Play tomorrow for a lazy Saturday 😴"
+          : `${rest.needed} more days by Friday unlocks a lazy Saturday 😴`;
+    goals.push({ away: Math.max(rest.needed, 1), rank: 1, line });
   }
-  if (rest?.needed === 1) return "Play tomorrow for a lazy Saturday 😴";
-  if (rest && rest.needed > 1) return `${rest.needed} more days by Friday unlocks a lazy Saturday 😴`;
 
-  // A full cap only rises at 14 days, and a kept freeze is never more than
-  // four weeks out.
-  let freezeAway: number | undefined;
-  for (let freezeDay = next + 1; freezeDay <= next + 28; freezeDay++) {
-    if (keeps(freezeDay)) {
-      freezeAway = freezeDay - days;
-      break;
-    }
+  if (best > days) {
+    goals.push({ away: best - days + 1, rank: 2, line: `${best - days + 1} days to beat your best streak of ${best}.` });
   }
-  const bestAway = best > days ? best - days + 1 : undefined;
 
-  if (freezeAway !== undefined && (bestAway === undefined || freezeAway <= bestAway)) {
-    if (capFull) return `${freezeAway} days until your 🧊 freeze limit goes up to ${banked + 1}.`;
-    return `${freezeAway} days to ${nth ? `a ${nth}` : "your next"} 🧊 streak freeze.`;
-  }
-  if (bestAway !== undefined) return `${bestAway} days to beat your best streak of ${best}.`;
+  goals.sort((x, y) => x.away - y.away || x.rank - y.rank);
+  if (goals.length > 0) return goals[0].line;
   if (days >= 2) return "This is your longest streak yet.";
   return "Play tomorrow to start a streak.";
 }

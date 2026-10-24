@@ -129,6 +129,44 @@ describe("streakGoal", () => {
       expect(streakGoal(run(["2026-10-30"]), "2026-10-30")).not.toMatch(/Saturday/);
     });
 
+    it("is ranked by how soon it lands, a tie going to the freeze", () => {
+      // Both two days away: the freeze.
+      expect(
+        streakGoal(streak({ currentStreak: 1, longestStreak: 1, playedDates: ["2026-10-25"] }), "2026-10-25")
+      ).toBe("2 days to your next 🧊 streak freeze.");
+      // Two days to a lazy Saturday, four to the cap rising at 14.
+      expect(
+        streakGoal(
+          streak({ currentStreak: 10, longestStreak: 10, bankedFreezes: 1, playedDates: ["2026-10-25"] }),
+          "2026-10-25"
+        )
+      ).toBe("2 more days by Friday unlocks a lazy Saturday 😴");
+      // Tied with beating the best: the lazy Saturday, which lapses.
+      expect(
+        streakGoal(
+          streak({ currentStreak: 8, longestStreak: 9, bankedFreezes: 2, playedDates: ["2026-10-25"] }),
+          "2026-10-25"
+        )
+      ).toBe("2 more days by Friday unlocks a lazy Saturday 😴");
+    });
+
+    it("once unlocked, gives way only to a freeze tomorrow", () => {
+      const played = ["2026-10-25", "2026-10-26", "2026-10-27"];
+      // The cap rises at 14, three days away.
+      expect(
+        streakGoal(
+          streak({ currentStreak: 11, longestStreak: 11, bankedFreezes: 1, playedDates: played }),
+          "2026-10-27"
+        )
+      ).toBe("Lazy Saturday unlocked 😴 Skip Saturday and your streak is safe.");
+      expect(
+        streakGoal(
+          streak({ currentStreak: 13, longestStreak: 13, bankedFreezes: 1, playedDates: played }),
+          "2026-10-27"
+        )
+      ).toMatch(/^Tomorrow your 🧊 freeze limit goes up to 2/);
+    });
+
     it("comes after a freeze tomorrow earns", () => {
       expect(
         streakGoal(streak({ currentStreak: 2, longestStreak: 2, playedDates: ["2026-10-25"] }), "2026-10-25")
