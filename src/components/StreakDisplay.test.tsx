@@ -286,7 +286,10 @@ describe("StreakDisplay", () => {
     fireEvent.click(badge);
     const popup = screen.getByRole("dialog", { name: "Streak freezes" });
     expect(popup.querySelector("strong")?.textContent).toBe("1 of 2 🧊 acquired");
-    expect(popup.textContent).toContain("Earn one on day 3, then every 7 days.");
+    // Past day 3 and at the top cap: neither rule applies any more.
+    expect(popup.textContent).toContain("You get another one every 7 days of your streak. You can save up to 2 at a time.");
+    expect(popup.textContent).not.toContain("day 3");
+    expect(popup.textContent).not.toContain("14 day");
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -294,6 +297,32 @@ describe("StreakDisplay", () => {
     fireEvent.click(badge);
     fireEvent.pointerDown(document.body);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("tells only the freeze rules still ahead of the player", () => {
+    const rules = (s: StreakState) => {
+      const { unmount } = render(<StreakDisplay streak={s} />);
+      fireEvent.click(screen.getByRole("button", { name: /streak freezes/i }));
+      const text = screen.getByRole("dialog", { name: "Streak freezes" }).textContent;
+      unmount();
+      return text;
+    };
+
+    // Before day 3, with no cap yet.
+    expect(rules({ ...streak, currentStreak: 2, longestStreak: 2 })).toContain(
+      "You get your first one on day 3 of your streak, then another every 7 days of your streak. " +
+        "You can only save 1 at a time. Reach a 14 day streak to save up to 2."
+    );
+    // Day 3's freeze earned, the cap still 1.
+    expect(rules({ ...streak, currentStreak: 5, longestStreak: 5 })).toContain(
+      "You get another one every 7 days of your streak. " +
+        "You can only save 1 at a time. Reach a 14 day streak to save up to 2."
+    );
+    // A new streak before day 3, the cap already 2 from a past one.
+    expect(rules({ ...streak, currentStreak: 1, longestStreak: 20 })).toContain(
+      "You get your first one on day 3 of your streak, then another every 7 days of your streak. " +
+        "You can save up to 2 at a time."
+    );
   });
 
   it("shows a past puzzle the freezes held on its day, and today the ones held now", () => {

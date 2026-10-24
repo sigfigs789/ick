@@ -1,14 +1,11 @@
 import {
-  type FormEvent,
   useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
 } from "react";
-import { trackFeedbackSubmitted } from "../analytics";
 import { modeIsChosen } from "../game/mode";
-import { takesPlayerMessages } from "../game/playerMessages";
 import { todayDateString } from "../game/date";
 import { CommonFormBody } from "./CommonFormModal";
 
@@ -35,8 +32,6 @@ export function InstructionsModal({ open, onClose }: Props) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const backRef = useRef<HTMLButtonElement>(null);
   const moreInfoRef = useRef<HTMLButtonElement>(null);
-  const [feedback, setFeedback] = useState("");
-  const [sent, setSent] = useState(false);
   // The explainer is a page of this card, not a second sheet swapped in for
   // it. Swapping sheets replayed the open animation both ways, so closing the
   // explainer looked like How to play shutting and popping back up; one card
@@ -122,15 +117,6 @@ export function InstructionsModal({ open, onClose }: Props) {
 
   if (!open) return null;
 
-  function submitFeedback(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const note = feedback.trim();
-    if (!note) return;
-    trackFeedbackSubmitted(note);
-    setFeedback("");
-    setSent(true);
-  }
-
   const closeButton = (
     <button
       ref={closeRef}
@@ -195,7 +181,15 @@ export function InstructionsModal({ open, onClose }: Props) {
           ) : (
             <>
               <div className="modal__header">
-                <h2 id="instructions-heading">How to play Word<span className="app__wordmark-ink">Ink</span></h2>
+                <h2 id="instructions-heading">
+                  How to play Word<span className="app__wordmark-ink">Ink</span>
+                  {/* Here rather than on the header's wordmark, which needs the
+                      room on a phone: the rules are where a player learns the
+                      game is still changing. Title so the curious get the reason. */}
+                  <span className="app__beta" title="Still being built — rules and scoring may change.">
+                    beta
+                  </span>
+                </h2>
                 {closeButton}
               </div>
             <p className="modal__copy">
@@ -232,43 +226,6 @@ export function InstructionsModal({ open, onClose }: Props) {
                   frequency, so “plays” is worth what “plays” is worth.
                 </p>
               </div>
-            )}
-            {takesPlayerMessages() && (
-              <form
-                className="word-suggestion feedback-form"
-                onSubmit={submitFeedback}
-              >
-                <div className="word-suggestion__row feedback-form__row">
-                  <textarea
-                    id="game-feedback"
-                    className="feedback-form__input"
-                    aria-label="Share feedback or leave a suggestion"
-                    value={feedback}
-                    onChange={(event) => {
-                      setFeedback(event.target.value);
-                      setSent(false);
-                    }}
-                    placeholder="Share feedback"
-                    rows={2}
-                  />
-                  <button type="submit" disabled={!feedback.trim()}>
-                    Send
-                  </button>
-                </div>
-                {/* role="status" so the confirmation is announced and not only seen:
-                    the box empties either way, and an empty box is not an answer.
-
-                    No link to /feedback from here, deliberately. The word queue is
-                    offered to whoever suggests a word, because a queue of words is
-                    everybody's; a note is something one player wrote to us, and
-                    pointing the next player at the pile of them is a different thing
-                    to publish. See src/routes.ts. */}
-                {sent && (
-                  <p className="word-suggestion__thanks" role="status">
-                    Thanks for the feedback!
-                  </p>
-                )}
-              </form>
             )}
             <p className="modal__signoff">
               Made by one person, for fun. Thanks for playing. 🙂
