@@ -203,6 +203,26 @@ describe("loadStreak", () => {
   });
 });
 
+describe("Saturday rest days", () => {
+  it("carry the streak from Friday to Sunday without counting Saturday", () => {
+    setToday("2026-10-23");
+    recordAcceptedWord(newProgress("2026-10-23", "str"), word("strange"));
+    setToday("2026-10-24");
+    expect(loadStreak().currentStreak).toBe(1);
+    setToday("2026-10-25");
+    recordAcceptedWord(newProgress("2026-10-25", "str"), word("strange"));
+    expect(loadStreak()).toMatchObject({ currentStreak: 2, lastCompletedDate: "2026-10-25" });
+  });
+
+  it("count when played", () => {
+    for (const date of ["2026-10-23", "2026-10-24", "2026-10-25"]) {
+      setToday(date);
+      recordAcceptedWord(newProgress(date, "str"), word("strange"));
+    }
+    expect(loadStreak().currentStreak).toBe(3);
+  });
+});
+
 describe("recordAcceptedWord", () => {
   it("appends the word and persists it", () => {
     const p1 = newProgress("2024-01-01", "str");

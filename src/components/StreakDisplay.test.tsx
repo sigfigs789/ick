@@ -55,6 +55,30 @@ describe("StreakDisplay", () => {
     expect(screen.getByText("Total")).toBeInTheDocument();
   });
 
+  it("dances on a Saturday not played yet, and says Saturdays don't break streaks", () => {
+    // 2026-10-24 is the first Saturday rest day; Friday was played.
+    const friday: StreakState = { ...streak, currentStreak: 5, lastCompletedDate: "2026-10-23" };
+    const { rerender } = render(<StreakDisplay streak={friday} date="2026-10-24" isToday />);
+    const dancer = screen.getByRole("button", { name: /Saturday rest day/ });
+    expect(dancer.textContent).toMatch(/🕺|💃/u);
+    expect(dancer).toHaveAttribute("title", expect.stringContaining("Saturdays don't break streaks"));
+    fireEvent.click(dancer);
+    expect(screen.getByRole("dialog", { name: "Saturday rest day" })).toHaveTextContent(
+      "Saturdays don't break streaks"
+    );
+
+    // Played: fire again.
+    rerender(
+      <StreakDisplay streak={{ ...friday, lastCompletedDate: "2026-10-24" }} date="2026-10-24" isToday />
+    );
+    expect(screen.queryByRole("button", { name: /Saturday rest day/ })).not.toBeInTheDocument();
+    expect(flame()).toBe("🔥");
+
+    // Sunday after a skipped Saturday: fire, no freeze covering anything.
+    rerender(<StreakDisplay streak={friday} date="2026-10-25" isToday />);
+    expect(flame()).toBe("🔥");
+  });
+
   it("hides the flame until a streak reaches two days", () => {
     const { rerender } = render(<StreakDisplay streak={streak} />);
     expect(screen.queryByText("🔥")).not.toBeInTheDocument();

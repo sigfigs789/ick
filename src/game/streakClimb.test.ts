@@ -23,6 +23,7 @@ function row(playerId: string, rank: number | null, current = 5): StreakEntry {
     covered: false,
     atRisk: false,
     lost: rank === null,
+    resting: false,
   };
 }
 

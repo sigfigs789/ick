@@ -27,6 +27,7 @@ import { WEEK_BEST_DAYS, weekLabel, weekStart } from "../game/week";
 import { formatScore, formatTotal } from "../game/dictionary";
 import { navigate } from "../routes";
 import { CongratsBubble } from "./CongratsBubble";
+import { RestDayBadge } from "./RestDayBadge";
 
 type LoadState = "loading" | "ready" | "error";
 
@@ -1071,6 +1072,7 @@ function streakIconTitle(entry: StreakEntry): string | undefined {
 /** What a screen reader hears after a streak row's count. */
 function streakStatus(entry: StreakEntry): string {
   if (entry.lost) return ", lost";
+  if (entry.resting) return ", resting: Saturdays don't break streaks";
   if (entry.current <= 1 && !entry.frozen) return "";
   const held = entry.frozen
     ? ", covered by a saved freeze"
@@ -1117,13 +1119,18 @@ function StreakRow({ entry, isYou }: { entry: StreakEntry; isYou: boolean }) {
       </span>
       <span className="leaderboard__score">
         {/* One icon for how the run stands, as the game marks it (see
-            components/StreakDisplay.tsx): ⏳ when missed days have spent
+            components/StreakDisplay.tsx): 🕺 or 💃 on a Saturday not played
+            yet, which cannot end the run, tapped to say so; ⏳ when missed days have spent
             every saved freeze, so missing today ends it; 🧊 while a saved
             freeze is covering it with one left for today; 💀 for a run that
             has ended, listed for its first two days over; 🔥 for a run played
             through yesterday. None on a live run of one day, which is a start
             rather than a streak. */}
-        {(entry.current > 1 || entry.lost) && (
+        {entry.resting && !entry.lost ? (
+          <>
+            <RestDayBadge playerId={entry.playerId} />{" "}
+          </>
+        ) : (entry.current > 1 || entry.lost) && (
           <span aria-hidden="true" title={streakIconTitle(entry)}>
             {entry.lost
               ? "💀"

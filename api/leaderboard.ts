@@ -452,6 +452,11 @@ interface StreakRow {
    * before 20261025000000.
    */
   lost?: boolean | null;
+  /**
+   * Today is a Saturday rest day and the run has not played it; absent before
+   * 20261103000000.
+   */
+  resting?: boolean | null;
 }
 
 /** One streak row, as the client receives it. */
@@ -469,6 +474,8 @@ interface StreakEntry {
   atRisk?: true;
   /** Sent only when true: the run has ended, and is listed for two days. */
   lost?: true;
+  /** Sent only when true: today is a Saturday the run is skipping, which cannot end it. */
+  resting?: true;
 }
 
 /** The streak board split at the cut, the same way `toBoard` splits the others. */
@@ -493,6 +500,7 @@ function toStreakBoard(
       // it marked covered was the one it called at risk.
       ...((row.at_risk ?? row.covered) === true ? { atRisk: true as const } : {}),
       ...(lost ? { lost: true as const } : {}),
+      ...(row.resting === true ? { resting: true as const } : {}),
     };
     if (place > limit) self = entry;
     else entries.push(entry);
