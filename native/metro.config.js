@@ -42,6 +42,10 @@ const PINNED = new Set([
   'react/jsx-runtime',
   'react/jsx-dev-runtime',
   'react-native',
+  // The chat's profanity filter, which the idle hint checks its words against
+  // (src/game/idleHint.ts). EAS installs only this project, so a package the
+  // shared code imports has to be a dependency here and resolved from here.
+  'obscenity',
 ]);
 
 /*

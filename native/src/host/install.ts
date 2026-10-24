@@ -1,6 +1,7 @@
 import { setReporting } from '../../../src/analytics';
 import { installLocalStorage, installSessionStorage } from './storage';
 import { installFetchBaseUrl } from './net';
+import { installWindowEvents } from './events';
 
 /**
  * Every difference between this host and the website, applied in one place,
@@ -27,6 +28,20 @@ export function installHost(): void {
   // `/api/...` resolved against the site, since there is no page for a
   // root-relative path to be relative to.
   installFetchBaseUrl();
+
+  // `window.dispatchEvent`, which the game calls on every save so the header
+  // can learn a first puzzle was played (see PROGRESS_SAVED_EVENT in
+  // src/game/storage.ts). A missing one would throw mid-save.
+  installWindowEvents();
+
+  // The idle hint for everyone. On the website it is a 50/50 test, drawn only
+  // where events are reported -- which this build never does, so without a
+  // pin no player here would see it. Same call as the Reddit build. Required
+  // here rather than imported: the module pulls in the dictionary, which must
+  // not load before the storage shims above.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { pinIdleHintVariant } = require('../../../src/game/idleHint') as typeof import('../../../src/game/idleHint');
+  pinIdleHintVariant('treatment');
 
   /*
    * Report nothing.

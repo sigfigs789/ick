@@ -3,6 +3,7 @@ import { Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { syncHistoryWhenReady } from '../../src/game/leaderboard';
 import { hasJoined, joinBoard } from '../../src/game/player';
+import { playedPuzzleCount, PROGRESS_SAVED_EVENT } from '../../src/game/storage';
 import { hasSeen, markSeen } from '../../src/game/whatsNew';
 import { InstructionsSheet } from './components/InstructionsSheet';
 import { UpdateBanner } from './components/UpdateBanner';
@@ -12,13 +13,14 @@ import { useUpdateCheck } from './hooks/useUpdateCheck';
 import { FoundWordsScreen } from './screens/FoundWordsScreen';
 import { LeaderboardScreen } from './screens/LeaderboardScreen';
 import { PlayScreen } from './screens/PlayScreen';
+import { StatsScreen } from './screens/StatsScreen';
 import { space } from './theme/tokens';
 import { useTheme } from './theme/useTheme';
 
-type Route = 'game' | 'leaderboard' | 'found-words';
+type Route = 'game' | 'leaderboard' | 'found-words' | 'stats';
 
 /**
- * The three pages, in the order a player meets them: the puzzle, then the two
+ * The pages, in the order a player meets them: the puzzle, then the two
  * things you go and look at once you have played it.
  *
  * Labels, no glyphs -- the website's reasoning holds here and then some. A
@@ -32,6 +34,10 @@ const TABS: { route: Route; label: string }[] = [
   // back a day is a thing it offers, and a tab that promises today then shows
   // Tuesday has misnamed itself.
   { route: 'found-words', label: 'Words found' },
+  // The player's own numbers, beside the words they found -- only once there
+  // are any, as on the website: a tab that opens on zeros is one more thing on
+  // a first run's header to read past.
+  { route: 'stats', label: 'Stats' },
   { route: 'leaderboard', label: 'Leaderboards' },
 ];
 
@@ -46,7 +52,7 @@ const TABS: { route: Route; label: string }[] = [
 const SYNC_STALE_MS = 5 * 60_000;
 
 /**
- * The app: one header, three pages, no router.
+ * The app: one header, four pages, no router.
  *
  * The website has a real router because two of its pages are pages you link
  * someone to, open in a second tab, and reach with a back button. None of that
@@ -68,6 +74,19 @@ export function App() {
   // which is the whole game -- so the rules open themselves once, on a first
   // run, and never again.
   const [showInstructions, setShowInstructions] = useState(() => !hasSeen('instructions'));
+
+  // Whether the Stats tab is up: from the first saved word, which the game
+  // announces on `window` (see src/host/events.ts).
+  const [hasPlayed, setHasPlayed] = useState(() => playedPuzzleCount() > 0);
+  useEffect(() => {
+    if (hasPlayed) return;
+    const check = () => {
+      if (playedPuzzleCount() > 0) setHasPlayed(true);
+    };
+    window.addEventListener(PROGRESS_SAVED_EVENT, check);
+    return () => window.removeEventListener(PROGRESS_SAVED_EVENT, check);
+  }, [hasPlayed]);
+  const backToPlay = () => setRoute('game');
 
   /*
    * Give this device a board identity before anything renders.
@@ -169,7 +188,7 @@ export function App() {
           </View>
 
           <View style={styles.nav} accessibilityRole="tablist">
-            {TABS.map((tab) => {
+            {TABS.filter((tab) => tab.route !== 'stats' || hasPlayed || route === 'stats').map((tab) => {
               const current = tab.route === route;
               return (
                 <Pressable
@@ -203,11 +222,13 @@ export function App() {
         <View style={styles.fill}>
           {behind && route !== 'found-words' && <UpdateBanner />}
           {route === 'leaderboard' ? (
-            <LeaderboardScreen />
+            <LeaderboardScreen onPlay={backToPlay} />
           ) : route === 'found-words' ? (
-            <FoundWordsScreen />
+            <FoundWordsScreen onPlay={backToPlay} />
+          ) : route === 'stats' ? (
+            <StatsScreen onPlay={backToPlay} />
           ) : (
-            <PlayScreen onLeaderboard={() => setRoute('leaderboard')} />
+            <PlayScreen covered={showInstructions} />
           )}
         </View>
 

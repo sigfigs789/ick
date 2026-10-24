@@ -71,3 +71,41 @@ export function signalCelebrate(): void {
 export function signalTap(): void {
   safely(() => Haptics.selectionAsync());
 }
+
+/**
+ * A run of impacts at the given offsets in ms, each best-effort. The timers are
+ * not cancelled: the whole run is over in under half a second.
+ */
+function pattern(steps: readonly [number, Haptics.ImpactFeedbackStyle][]): void {
+  for (const [at, style] of steps) {
+    setTimeout(() => safely(() => Haptics.impactAsync(style)), at);
+  }
+}
+
+/**
+ * The jackpot, for a Mythic or Legend (the website's `sound.jackpot()`): a drum
+ * roll that lands on a heavy hit, after the accept buzz for the word itself.
+ */
+export function signalJackpot(): void {
+  const { Light, Medium, Heavy } = Haptics.ImpactFeedbackStyle;
+  pattern([
+    [70, Light],
+    [140, Light],
+    [210, Medium],
+    [280, Medium],
+    [400, Heavy],
+  ]);
+}
+
+/**
+ * Something climbing -- the improving average, a move up the streak board (the
+ * website's `sound.rising()`): three taps getting heavier, like the arpeggio.
+ */
+export function signalRising(): void {
+  const { Light, Medium, Heavy } = Haptics.ImpactFeedbackStyle;
+  pattern([
+    [0, Light],
+    [110, Medium],
+    [220, Heavy],
+  ]);
+}

@@ -1,0 +1,191 @@
+import { useEffect, useState, type ReactNode } from 'react';
+import { Animated, Easing, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useTheme } from '../theme/useTheme';
+import { useReduceMotion } from './ConfettiBurst';
+
+/** How long a card stays up if nobody taps it: long enough to read twice and screenshot. */
+const CELEBRATION_MS = 7000;
+
+/** The website's springy entrance, cubic-bezier(0.2, 1.4, 0.4, 1). */
+const SPRING_IN = Easing.bezier(0.2, 1.4, 0.4, 1);
+
+/** The website's --card-shadow, in each theme. */
+export function cardShadow(dark: boolean): string {
+  return dark
+    ? '0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 28px rgba(0, 0, 0, 0.35)'
+    : '0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06)';
+}
+
+interface Props {
+  /** The ring's colour, as an `hsl(h, s%, l%)` triple: "140, 58%, 42%". */
+  accent: string;
+  icon: string;
+  /** The icon hops twice once the card has landed (the improving average and the climb). */
+  hop?: boolean;
+  /** Which way the card arrives from: up from below, or down from above. */
+  from: 'below' | 'above';
+  /** How long the entrance takes, in ms. */
+  enterMs: number;
+  title: string;
+  /** The body line, already styled; see `Highlight` and `Tally`. */
+  children: ReactNode;
+  onDone: () => void;
+}
+
+/**
+ * The card the website floats over a finished puzzle for a perfect month, an
+ * improving average and a climb up the streak board (`.perfect-month` and
+ * `.improvement` in index.css): a ringed card near the top of the screen, which
+ * goes by itself after seven seconds or on a tap.
+ *
+ * Floats over the puzzle rather than taking it over: the player may be
+ * mid-guess, and a modal they had to close before their next word would be a
+ * celebration in the way.
+ */
+export function CelebrationCard({ accent, icon, hop = false, from, enterMs, title, children, onDone }: Props) {
+  const theme = useTheme();
+  const reduced = useReduceMotion();
+  const { width } = useWindowDimensions();
+  const [enter] = useState(() => new Animated.Value(0));
+  const [bounce] = useState(() => new Animated.Value(0));
+
+  useEffect(() => {
+    const timeout = setTimeout(onDone, CELEBRATION_MS);
+    return () => clearTimeout(timeout);
+  }, [onDone]);
+
+  useEffect(() => {
+    // The icon's hop: 900ms, twice, starting 420ms in, as the card lands.
+    const hopOnce = Animated.sequence([
+      Animated.timing(bounce, {
+        toValue: 1,
+        duration: 450,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(bounce, {
+        toValue: 0,
+        duration: 450,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }),
+    ]);
+    const run = Animated.parallel([
+      Animated.timing(enter, {
+        toValue: 1,
+        duration: enterMs,
+        easing: SPRING_IN,
+        useNativeDriver: true,
+      }),
+      ...(hop ? [Animated.sequence([Animated.delay(420), Animated.loop(hopOnce, { iterations: 2 })])] : []),
+    ]);
+    run.start();
+    return () => run.stop();
+  }, [enter, bounce, enterMs, hop]);
+
+  const offset = from === 'below' ? 24 : -24;
+  const motion = reduced
+    ? undefined
+    : {
+        opacity: enter.interpolate({ inputRange: [0, 1], outputRange: [0, 1], extrapolate: 'clamp' as const }),
+        transform: [
+          { translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [offset, 0] }) },
+          { scale: enter.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) },
+        ],
+      };
+
+  return (
+    <View style={styles.layer} pointerEvents="box-none">
+      <Animated.View style={[{ width: Math.min(352, width - 32) }, motion]}>
+        <Pressable
+          onPress={onDone}
+          accessibilityRole="button"
+          accessibilityLiveRegion="polite"
+          accessibilityHint="Dismisses this card"
+          style={[
+            styles.card,
+            {
+              backgroundColor: theme.cardBg,
+              borderColor: `hsl(${accent})`,
+              boxShadow: `${cardShadow(theme.dark)}, 0 0 0 6px hsla(${accent}, 0.18)`,
+            },
+          ]}
+        >
+          <Animated.Text
+            style={[
+              styles.icon,
+              hop &&
+                !reduced && {
+                  transform: [
+                    { translateY: bounce.interpolate({ inputRange: [0, 1], outputRange: [0, -6.4] }) },
+                    { rotate: bounce.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-8deg'] }) },
+                    { scale: bounce.interpolate({ inputRange: [0, 1], outputRange: [1, 1.15] }) },
+                  ],
+                },
+            ]}
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+          >
+            {icon}
+          </Animated.Text>
+          <Text style={[styles.title, { color: theme.fg }]}>{title}</Text>
+          <Text style={[styles.body, { color: theme.fgMuted }]}>{children}</Text>
+        </Pressable>
+      </Animated.View>
+    </View>
+  );
+}
+
+/** The figure in the body that is the news: the gain, in the card's own colour. */
+export function Highlight({ color, children }: { color: string; children: ReactNode }) {
+  return <Text style={[styles.highlight, { color }]}>{children}</Text>;
+}
+
+/** The before-and-after in the body, in the page's text colour. */
+export function Tally({ children }: { children: ReactNode }) {
+  const theme = useTheme();
+  return <Text style={[styles.tally, { color: theme.fg }]}>{children}</Text>;
+}
+
+const styles = StyleSheet.create({
+  layer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    alignItems: 'center',
+    paddingTop: 20,
+    zIndex: 21,
+    elevation: 21,
+  },
+  card: {
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderWidth: 2,
+    borderRadius: 16,
+  },
+  icon: {
+    fontSize: 36,
+    lineHeight: 42,
+  },
+  title: {
+    fontSize: 20.8,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  body: {
+    fontSize: 15.2,
+    lineHeight: 21,
+    textAlign: 'center',
+  },
+  highlight: {
+    fontWeight: '800',
+  },
+  tally: {
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
+});

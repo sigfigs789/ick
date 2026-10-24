@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { takesPlayerMessages } from '../../../src/game/playerMessages';
 import { sendFeedback } from '../host/submissions';
 import { radius, space } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
@@ -36,52 +37,51 @@ export function InstructionsSheet({ open, onClose }: Props) {
         <Text style={[styles.strong, { color: theme.rarity.Mythic.dot }]}>INK</Text>le, or <Text style={[styles.strong, { color: theme.rarity.Mythic.dot }]}>INK</Text>ling.
       </Text>
 
-      <Text style={[styles.note, { color: theme.fgMuted, backgroundColor: theme.bgInset }]}>
-        Rarity scores reflect how often a word appears across books, news, movies, websites,
-        and social media — not how complex it is. Values are computed using Zipf's law. The
-        highest ranks are Mythic at 9.5+ and Legend at 9.9+.
-      </Text>
-
-      <View style={styles.form}>
-        <Text style={[styles.label, { color: theme.fg }]}>Share feedback</Text>
-        <TextInput
-          value={note}
-          onChangeText={(text) => {
-            setNote(text);
-            setSent(false);
-          }}
-          placeholder="Share feedback"
-          placeholderTextColor={theme.fgFaint}
-          multiline
-          numberOfLines={3}
-          style={[
-            styles.input,
-            { color: theme.fg, borderColor: theme.border, backgroundColor: theme.cardBg },
-          ]}
-          accessibilityLabel="Share feedback or leave a suggestion"
-        />
-        <Pressable
-          onPress={submit}
-          disabled={!note.trim()}
-          accessibilityRole="button"
-          style={({ pressed }) => [
-            styles.send,
-            { backgroundColor: theme.accent, opacity: !note.trim() ? 0.4 : pressed ? 0.7 : 1 },
-          ]}
-        >
-          <Text style={[styles.sendText, { color: theme.accentFg }]}>Send</Text>
-        </Pressable>
-        {/* Announced as well as seen: the box empties either way, and an empty
-            box is not an answer. */}
-        {sent && (
-          <Text
-            style={[styles.thanks, { color: theme.successFg }]}
-            accessibilityLiveRegion="polite"
-          >
-            Thanks for the feedback!
-          </Text>
-        )}
-      </View>
+      {/* No rarity-scores blurb any more, as on the website: How to play says
+          what the game is, and the scores explain themselves on the board. */}
+      {takesPlayerMessages() && (
+        <View style={styles.form}>
+          <View style={styles.row}>
+            <TextInput
+              value={note}
+              onChangeText={(text) => {
+                setNote(text);
+                setSent(false);
+              }}
+              placeholder="Share feedback"
+              placeholderTextColor={theme.fgFaint}
+              multiline
+              numberOfLines={2}
+              style={[
+                styles.input,
+                { color: theme.fg, borderColor: theme.border, backgroundColor: theme.cardBg },
+              ]}
+              accessibilityLabel="Share feedback or leave a suggestion"
+            />
+            <Pressable
+              onPress={submit}
+              disabled={!note.trim()}
+              accessibilityRole="button"
+              style={({ pressed }) => [
+                styles.send,
+                { backgroundColor: theme.accent, opacity: !note.trim() ? 0.4 : pressed ? 0.7 : 1 },
+              ]}
+            >
+              <Text style={[styles.sendText, { color: theme.accentFg }]}>Send</Text>
+            </Pressable>
+          </View>
+          {/* Announced as well as seen: the box empties either way, and an empty
+              box is not an answer. */}
+          {sent && (
+            <Text
+              style={[styles.thanks, { color: theme.successFg }]}
+              accessibilityLiveRegion="polite"
+            >
+              Thanks for the feedback!
+            </Text>
+          )}
+        </View>
+      )}
 
       <Text style={[styles.signoff, { color: theme.fgFaint }]}>
         Made by one person, for fun. Thanks for playing. 🙂
@@ -98,29 +98,25 @@ const styles = StyleSheet.create({
   strong: {
     fontWeight: '800',
   },
-  note: {
-    fontSize: 13,
-    lineHeight: 19,
-    borderRadius: radius.sm,
-    padding: space.md,
-  },
   form: {
     gap: space.sm,
   },
-  label: {
-    fontSize: 13,
-    fontWeight: '700',
+  /* The box and Send on one row, as the website's feedback form sets them. */
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
   },
   input: {
+    flex: 1,
     borderWidth: 1,
     borderRadius: radius.md,
     padding: space.md,
-    minHeight: 72,
+    minHeight: 56,
     fontSize: 15,
     textAlignVertical: 'top',
   },
   send: {
-    alignSelf: 'flex-start',
     paddingHorizontal: space.lg,
     paddingVertical: space.sm,
     borderRadius: radius.md,

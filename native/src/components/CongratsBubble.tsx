@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   AccessibilityInfo,
   Animated,
@@ -125,12 +125,12 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
    * starts moving before it does.
    */
   const [stillness, setStillness] = useState<boolean | null>(null);
-  const enter = useRef(new Animated.Value(0)).current;
+  const [enter] = useState(() => new Animated.Value(0));
   /** How far along the path the bubble is: leg `n` runs from n to n+1. */
-  const leg = useRef(new Animated.Value(0)).current;
-  const splat = useRef(new Animated.Value(0)).current;
+  const [leg] = useState(() => new Animated.Value(0));
+  const [splat] = useState(() => new Animated.Value(0));
   /** The reader's own bubble breathing: 0 at rest, 1 at the top of the glow. */
-  const glow = useRef(new Animated.Value(0)).current;
+  const [glow] = useState(() => new Animated.Value(0));
   /** The size of the board, so the path can be a share of it rather than points. */
   const [area, setArea] = useState({ width: 0, height: 0 });
   /**
@@ -303,10 +303,12 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
       pointerEvents="box-none"
       onLayout={(event) => setArea(event.nativeEvent.layout)}
     >
-      {/* Over the whole board rather than riding the bubble: confetti as the
-          reader's own win arrives, and the stamp once it is tapped. Skipped for
+      {/* Over the whole board rather than riding the bubble: the grand gold
+          confetti as the reader's own win arrives, and again under the stamp
+          once it is tapped, as the website's jackpot does. Skipped for
           a phone that asked for stillness -- the bubble itself still says it. */}
-      {own && stillness === false && !splatting && <ConfettiBurst />}
+      {own && stillness === false && !splatting && <ConfettiBurst grand />}
+      {own && splatting && stillness === false && <ConfettiBurst grand />}
       {own && splatting && <ChampionStamp progress={splat} accent={theme.bestWordAccent} />}
       <Animated.View
         style={[

@@ -32,4 +32,4 @@
 // way if you ever touch the caching headers.
 export const APP_VERSION = 56;
 export const MIN_VERSION = 56;
-export const MIN_RANKED_VERSION = 42;
+export const MIN_RANKED_VERSION = 56;
