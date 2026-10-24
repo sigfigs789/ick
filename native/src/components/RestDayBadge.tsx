@@ -12,16 +12,25 @@ import { REST_DAY_PLAYS } from '../../../src/game/streakFreeze';
 import { signalTap } from '../host/feedback';
 import { useTheme } from '../theme/useTheme';
 
-/** What the 😴 means on the Saturday itself, for its popup. */
-const REST_DAY_RULE = "3 days played this week, so skipping today can't break the streak.";
+/** What the 😴 means on a day of the weekend itself, for its popup. */
+const REST_DAY_RULE = "3 days played, so the weekend's all yours: skipping today can't break the streak.";
 
-/** What the badge means on a weekday, with `played` of the week's days played. */
-function weekdayRule(played: number, reachable: boolean): string {
-  if (played >= REST_DAY_PLAYS) return "Unlocked: skipping Saturday can't break your streak.";
-  if (!reachable) {
-    return 'Play 3 days Sunday to Friday and unlock a lazy Saturday 😴 that protects your streak on Saturdays';
+/**
+ * What the badge means before the weekend is taken, with `played` of the
+ * week's days played; `sundayOnly` when three would now earn only Sunday.
+ */
+function weekdayRule(played: number, reachable: boolean, sundayOnly: boolean): string {
+  if (played >= REST_DAY_PLAYS) {
+    return sundayOnly
+      ? "Unlocked: Sunday's for snoozing, skipping it can't break your streak."
+      : "Unlocked: kick back all weekend, skipping Saturday and Sunday can't break your streak.";
   }
-  return `Play 3 days by Friday and skipping Saturday can't break your streak. ${played} of 3 so far.`;
+  if (!reachable) {
+    return "Play any 3 days by Friday for a lazy weekend 😴, or by Saturday for a lazy Sunday: skipping them can't break your streak.";
+  }
+  return sundayOnly
+    ? `Play 3 days by Saturday and snooze through Sunday: skipping it can't break your streak. ${played} of 3 so far.`
+    : `Play 3 days by Friday and snooze through the weekend: skipping it can't break your streak. ${played} of 3 so far.`;
 }
 
 /** The side of the screen a popup keeps clear of, the website's 1rem. */
@@ -189,9 +198,9 @@ export function WeekPie({ played, size = 15 }: { played: number; size?: number }
 }
 
 /**
- * The lazy Saturday badge. On the Saturday itself (no `played`), the 😴 shown
- * on a streak taking the Saturday off its week's play earned (see `resting`
- * in src/game/streakFreeze.ts). On a weekday, given the week's days `played`,
+ * The lazy weekend badge. On the weekend itself (no `played`), the 😴 shown
+ * on a streak taking a day of the weekend off its week's play earned (see `resting`
+ * in src/game/streakFreeze.ts). Before it, given the week's days `played`,
  * a pie filling a third a day that turns 😴 on the third (see `isRestDay`).
  * Pressing it opens a popup with the rule; pressing it, or the popup, again
  * closes it.
@@ -199,17 +208,20 @@ export function WeekPie({ played, size = 15 }: { played: number; size?: number }
 export function RestDayBadge({
   played,
   reachable = true,
+  sundayOnly = false,
   style,
   fontSize = 14.4,
 }: {
   played?: number;
   /** Whether three days can still be played this week; the rule then speaks of next week. */
   reachable?: boolean;
+  /** Whether three days would now earn only Sunday, Friday being past or out of reach. */
+  sundayOnly?: boolean;
   style?: StyleProp<ViewStyle>;
   /** The size of the text it sits in, which the 😴 matches. */
   fontSize?: number;
 }) {
-  const rule = played === undefined ? REST_DAY_RULE : weekdayRule(played, reachable);
+  const rule = played === undefined ? REST_DAY_RULE : weekdayRule(played, reachable, sundayOnly);
   const unlocked = played === undefined || played >= REST_DAY_PLAYS;
   const [open, setOpen] = useState(false);
 
@@ -218,9 +230,9 @@ export function RestDayBadge({
       open={open}
       onToggle={() => setOpen((was) => !was)}
       maxWidth={240}
-      title="Lazy Saturday"
+      title="Lazy weekend"
       text={rule}
-      accessibilityLabel={`Lazy Saturday: ${rule}`}
+      accessibilityLabel={`Lazy weekend: ${rule}`}
       style={style}
     >
       {unlocked ? <Text style={{ fontSize }}>😴</Text> : <WeekPie played={played} size={fontSize} />}

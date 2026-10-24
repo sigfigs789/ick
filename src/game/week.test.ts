@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { weekEnd, weekLabel, weekStart } from "./week";
+import {
+  MONDAY_WEEKS_START,
+  nextWeek,
+  previousWeek,
+  weekEnd,
+  weekLabel,
+  weekResetLabel,
+  weekStart,
+} from "./week";
 
 describe("weekly board window", () => {
-  it("starts the week on Sunday", () => {
+  it("started the week on Sunday before the change", () => {
     // 2026-08-23 is a Sunday.
     expect(weekStart("2026-08-23")).toBe("2026-08-23");
     expect(weekStart("2026-08-24")).toBe("2026-08-23");
@@ -20,8 +28,8 @@ describe("weekly board window", () => {
   it("crosses a month and a year boundary", () => {
     // 2026-09-01 is a Tuesday, so its week began in August.
     expect(weekStart("2026-09-01")).toBe("2026-08-30");
-    // 2027-01-01 is a Friday, so its week began in December.
-    expect(weekStart("2027-01-01")).toBe("2026-12-27");
+    // 2027-01-01 is a Friday, so its Monday week began in December.
+    expect(weekStart("2027-01-01")).toBe("2026-12-28");
   });
 
   it("puts one weekend day on a fresh board, which Monday weeks cannot", () => {
@@ -31,6 +39,42 @@ describe("weekly board window", () => {
     const sunday = "2026-08-30";
     expect(weekStart(sunday)).toBe(sunday);
     expect(weekStart(saturday)).not.toBe(saturday);
+  });
+});
+
+describe("moving to Monday weeks", () => {
+  it("ends the last Sunday week on Saturday 2026-10-24", () => {
+    expect(weekStart("2026-10-24")).toBe("2026-10-18");
+    expect(weekEnd("2026-10-18")).toBe("2026-10-24");
+  });
+
+  it("folds the Sunday left over into the first Monday week, which runs eight days", () => {
+    for (const date of ["2026-10-25", "2026-10-26", "2026-10-28", "2026-11-01"]) {
+      expect(weekStart(date)).toBe(MONDAY_WEEKS_START);
+    }
+    expect(weekEnd(MONDAY_WEEKS_START)).toBe("2026-11-01");
+  });
+
+  it("starts the week on Monday after that, keeping Sunday in the week before it", () => {
+    expect(weekStart("2026-11-02")).toBe("2026-11-02");
+    expect(weekStart("2026-11-07")).toBe("2026-11-02");
+    expect(weekStart("2026-11-08")).toBe("2026-11-02");
+    expect(weekStart("2026-11-09")).toBe("2026-11-09");
+    expect(weekEnd("2026-11-02")).toBe("2026-11-08");
+  });
+
+  it("steps across the change a whole week at a time", () => {
+    expect(previousWeek("2026-11-09")).toBe("2026-11-02");
+    expect(previousWeek("2026-11-02")).toBe(MONDAY_WEEKS_START);
+    expect(previousWeek(MONDAY_WEEKS_START)).toBe("2026-10-18");
+    expect(nextWeek("2026-10-18")).toBe(MONDAY_WEEKS_START);
+    expect(nextWeek(MONDAY_WEEKS_START)).toBe("2026-11-02");
+    expect(nextWeek("2026-11-02")).toBe("2026-11-09");
+  });
+
+  it("says the week resets on Sundays until the change, then Mondays", () => {
+    expect(weekResetLabel("2026-10-24")).toBe("Resets on Sundays");
+    expect(weekResetLabel("2026-10-25")).toBe("Resets on Mondays");
   });
 });
 

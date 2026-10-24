@@ -26,18 +26,25 @@
  * perfect month means every day played, and a covered day was not
  * (see game/perfectMonth.ts).
  *
- * A Saturday can be earned as a rest day (from REST_DAY_START): play
- * REST_DAY_PLAYS of the week's puzzles, Sunday to Friday, each on its own day,
- * and that Saturday left unplayed spends no freeze and ends no streak. It is
- * not saved like a freeze: it is that Saturday's or nothing, so it cannot be
- * stockpiled. A Saturday not earned is an ordinary day, and a Saturday played
- * counts like any other day. While an earned Saturday is unplayed the streak
- * shows 😴 (see `resting` and components/RestDayBadge.tsx). Every
- * rule below that counts missed days skips rest days (`missedDays`).
+ * A weekend can be earned as rest days (from REST_DAY_START). The week runs
+ * Monday to Sunday, and its Saturday and Sunday are the weekend. Play
+ * REST_DAY_PLAYS of the week's puzzles before a weekend day, each on its own
+ * day, and that day, left unplayed, spends no freeze and ends no streak. The
+ * first such week, 2026-10-25 to 11-01, also took in the Sunday before its
+ * Monday, as the weekly board's did (see game/week.ts). So
+ * three days played Monday to Friday rest the Saturday and the Sunday, and a
+ * Saturday played as the third rests the Sunday after it. A Sunday played
+ * ends its week, so it counts towards no weekend. A weekend is not saved like
+ * a freeze: it is that week's or nothing, so it cannot be stockpiled. A
+ * weekend not earned is two ordinary days, and a weekend day played counts
+ * like any other day. While an earned weekend day is unplayed the streak shows
+ * 😴 (see `resting` and components/RestDayBadge.tsx). Every rule below that
+ * counts missed days skips rest days (`missedDays`).
  */
 
 import { addDays, dayOfWeek, daysSinceEpoch } from "./date";
 import type { FreezeCount, StreakState } from "./types";
+import { weekStart } from "./week";
 
 /**
  * How long a covered day is remembered. Only the current month is ever asked
@@ -46,38 +53,68 @@ import type { FreezeCount, StreakState } from "./types";
  */
 const FROZEN_DATES_KEPT_DAYS = 62;
 
-/** The first Saturday that can be a rest day. Earlier Saturdays were missed like any day. */
+/**
+ * The first Saturday that can be a rest day, opening the first weekend that
+ * can. Earlier weekends were missed like any day.
+ */
 export const REST_DAY_START = "2026-10-31";
 
-/** Puzzles played on their own day, Sunday to Friday, that earn that Saturday off. */
+/** Puzzles played on their own day in a week, before a weekend day, that earn it off. */
 export const REST_DAY_PLAYS = 3;
 
+const SUNDAY = 0;
 const SATURDAY = 6;
 
 /**
  * How long a played day is remembered: the current week and the last, which
- * is all `isRestDay` ever asks about.
+ * is more than `isRestDay` ever asks about -- a Sunday asks about at most the
+ * seven days before it.
  */
 const PLAYED_DATES_KEPT_DAYS = 14;
 
-/** The Saturday ending the week (Sunday to Saturday) that `date` falls in. */
+/**
+ * The Saturday of the week (Monday to Sunday) that `date` falls in. A Sunday
+ * ends its week -- but for the one week that starts on a Sunday, the first
+ * Monday week (see game/week.ts), which it opens.
+ */
 export function weekSaturday(date: string): string {
-  return addDays(date, SATURDAY - dayOfWeek(date));
-}
-
-/** The days of `saturday`'s week, Sunday to Friday, that were played on their own day. */
-export function weekPlays(streak: StreakState, saturday: string): number {
-  const sunday = addDays(saturday, -6);
-  return (streak.playedDates ?? []).filter((d) => d >= sunday && d < saturday).length;
+  const dow = dayOfWeek(date);
+  if (dow !== SUNDAY) return addDays(date, SATURDAY - dow);
+  return addDays(date, weekStart(date) === date ? SATURDAY : -1);
 }
 
 /**
- * Whether `date` is a rest day: a Saturday the week's play has earned, which
- * a streak can skip for free.
+ * The Saturday whose weekend playing `date` counts towards: its own week's,
+ * or on a Sunday, which ends its week, the next week's.
+ */
+export function earningSaturday(date: string): string {
+  return dayOfWeek(date) === SUNDAY ? addDays(date, 6) : weekSaturday(date);
+}
+
+/**
+ * The days of `saturday`'s week, from its first day to `saturday`, that were
+ * played on their own day: all that can count towards its weekend.
+ */
+export function weekPlays(streak: StreakState, saturday: string): number {
+  return playsBetween(streak, weekStart(saturday), saturday);
+}
+
+/** The days from `from` to `through`, both included, played on their own day. */
+function playsBetween(streak: StreakState, from: string, through: string): number {
+  return (streak.playedDates ?? []).filter((d) => d >= from && d <= through).length;
+}
+
+/**
+ * Whether `date` is a rest day: a Saturday or Sunday that the week's play
+ * before it, from its first day, earned, which a streak can skip for free.
  */
 export function isRestDay(streak: StreakState, date: string): boolean {
+  const dow = dayOfWeek(date);
+  if (dow !== SATURDAY && dow !== SUNDAY) return false;
+  const saturday = weekSaturday(date);
   return (
-    date >= REST_DAY_START && dayOfWeek(date) === SATURDAY && weekPlays(streak, date) >= REST_DAY_PLAYS
+    saturday >= REST_DAY_START &&
+    playsBetween(streak, weekStart(saturday), addDays(date, -1)) >= REST_DAY_PLAYS
   );
 }
 
@@ -330,56 +367,72 @@ export function atRisk(streak: StreakState, today: string): boolean {
 }
 
 /**
- * Whether today is a rest day the streak is taking: a live streak on an
- * earned Saturday not played yet. The game and the streak board show 😴 for it.
+ * Whether today is a rest day the streak is taking: a live streak on a day
+ * of an earned weekend not played yet. The game and the streak board show 😴 for it.
  */
 export function resting(streak: StreakState, today: string): boolean {
   return isRestDay(streak, today) && streak.currentStreak > 0 && streak.lastCompletedDate !== today;
 }
 
 /**
- * The week's days played towards Saturday off, for the weekday badge (see
- * components/RestDayBadge.tsx), and whether three can still be reached --
- * counting today if it is not played yet. Shown even when they cannot, so a
- * player learns of it for next week. Null on a Saturday, which shows 😴
- * itself, and before rest days began.
+ * The days played towards the next weekend off, for the badge (see
+ * components/RestDayBadge.tsx), whether three can still be reached by
+ * Saturday -- counting today if it is not played yet -- and whether three now
+ * earn only the Sunday, Friday having passed or being out of reach. Shown
+ * even when they cannot, so a player learns of it for next week. On a Sunday
+ * it is the next week's, which has not begun. Null on an earned Saturday or
+ * Sunday not played yet, which shows 😴 itself, and before rest days began.
  */
 export function weekdayRestProgress(
   streak: StreakState,
   today: string
-): { played: number; reachable: boolean } | null {
-  const dow = dayOfWeek(today);
-  if (dow === SATURDAY || weekSaturday(today) < REST_DAY_START) return null;
-  const played = weekPlays(streak, weekSaturday(today));
+): { played: number; reachable: boolean; sundayOnly: boolean } | null {
+  const saturday = earningSaturday(today);
+  if (resting(streak, today) || saturday < REST_DAY_START) return null;
+  const played = weekPlays(streak, saturday);
   const playedToday = (streak.playedDates ?? []).includes(today);
-  const daysLeft = SATURDAY - dow - (playedToday ? 1 : 0);
-  return { played, reachable: REST_DAY_PLAYS - played <= daysLeft };
+  // The days still to play through `last`: from the week's first day when that
+  // is after today -- a Sunday, before next week's Monday -- else from today
+  // unless it is played.
+  const opens = weekStart(saturday);
+  const first = opens > today ? opens : today;
+  const left = (last: string) =>
+    Math.max(0, daysSinceEpoch(last, first) + 1 - (first === today && playedToday ? 1 : 0));
+  const byFriday = dayOfWeek(today) !== SATURDAY && played + left(addDays(saturday, -1)) >= REST_DAY_PLAYS;
+  return {
+    played,
+    reachable: played + left(saturday) >= REST_DAY_PLAYS,
+    sundayOnly: !byFriday,
+  };
 }
 
 /**
- * The next Saturday after `date` and what earning it off still takes, for a
- * player who has played `date`: the plays still needed by Friday (0 once it
- * is earned). Null when it can no longer be earned -- too few days are left
- * in the week -- or `date` is itself a Saturday, whose week is over.
+ * The Saturday whose weekend playing `date` counts towards and what earning
+ * it off still takes, for a player who has played `date`: the plays still
+ * needed (0 once it is earned), and whether they earn only the Sunday, as
+ * there are no longer days enough before Saturday. Null when not even the
+ * Sunday can be earned: too few days are left through Saturday.
  */
 export function restDayProgress(
   streak: StreakState,
   date: string
-): { saturday: string; needed: number } | null {
-  if (dayOfWeek(date) === SATURDAY) return null;
-  const saturday = weekSaturday(date);
+): { saturday: string; needed: number; sundayOnly: boolean } | null {
+  const saturday = earningSaturday(date);
   if (saturday < REST_DAY_START) return null;
   const needed = Math.max(0, REST_DAY_PLAYS - weekPlays(streak, saturday));
-  const daysLeft = daysSinceEpoch(saturday, date) - 1;
-  return needed <= daysLeft ? { saturday, needed } : null;
+  // The days after `date` still to play, through Friday and through Saturday.
+  const toFriday = Math.max(0, daysSinceEpoch(saturday, date) - 1);
+  const toSaturday = daysSinceEpoch(saturday, date);
+  if (needed > toSaturday) return null;
+  return { saturday, needed, sundayOnly: needed > toFriday };
 }
 
 /**
  * The streak as it stood on its last played day, which is what the streak
  * board is sent (see game/leaderboard.ts). The board works out the rest from
  * that day alone: the run is alive while the days missed since -- less the
- * earned Saturday, if one lies between -- are no more than the freezes saved
- * then. So the saved count is the one from before any
+ * earned weekend's days, if any lie between -- are no more than the freezes
+ * saved then. So the saved count is the one from before any
  * were spent on the gap -- every covered day since the last played day took
  * one.
  */
@@ -388,7 +441,11 @@ export function streakReport(streak: StreakState): {
   best: number;
   saved: number;
   lastPlayed: string;
-  /** The Saturday after the last played day, when that week's play earned it off. */
+  /**
+   * The Saturday of the last played day's week, when that week's play earned
+   * its Sunday off -- and the Saturday too, unless it was played: the board
+   * rests that day and the Sunday after, the ones not played.
+   */
   restDay?: string;
 } | null {
   const lastPlayed = streak.lastCompletedDate;
@@ -399,9 +456,11 @@ export function streakReport(streak: StreakState): {
     best: Math.max(streak.longestStreak, streak.currentStreak),
     saved: (streak.bankedFreezes ?? 0) + coveredSince,
     lastPlayed,
-    // Only the first Saturday after the last played day can be earned: no
-    // later week has been played.
-    ...(dayOfWeek(lastPlayed) !== SATURDAY && isRestDay(streak, weekSaturday(lastPlayed))
+    // Only the weekend of the last played day's week can be earned: no later
+    // week has been played. A Sunday played has nothing left of its weekend
+    // to rest. Its Sunday is earned whenever its Saturday is, so asking
+    // about the Sunday covers both.
+    ...(dayOfWeek(lastPlayed) !== SUNDAY && isRestDay(streak, addDays(weekSaturday(lastPlayed), 1))
       ? { restDay: weekSaturday(lastPlayed) }
       : {}),
   };

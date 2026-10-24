@@ -6,7 +6,7 @@
  * number and the freezes as a badge, so a player finished, shared or didn't,
  * and had no reason in front of them to return -- which is what D1 measures.
  * `streakGoal` names the one reward most worth returning for: a freeze it
- * earns, a Saturday off, or the best streak it is closing in on.
+ * earns, a weekend off, or the best streak it is closing in on.
  */
 
 import type { AchievementStatus } from "./achievements";
@@ -27,13 +27,13 @@ function earnsFreezeOn(days: number): boolean {
  *
  * Only something still to earn is named, never something already earned.
  * Soonest first: of the next freeze that would fit under the cap, a lazy
- * Saturday (see `restDayProgress` in game/streakFreeze.ts) and beating the
+ * weekend (see `restDayProgress` in game/streakFreeze.ts) and beating the
  * best streak, whichever lands in the fewest days played. A tie goes to the
- * freeze, the thing they keep, then to the lazy Saturday, which lapses with
- * its week. A lazy Saturday is only promised while the week has days enough
+ * freeze, the thing they keep, then to the lazy weekend, which lapses with
+ * its week. A lazy weekend is only promised while the week has days enough
  * left to earn it, and once unlocked is not mentioned again.
  *
- * With none of those ahead -- the freeze cap full, no lazy Saturday left to
+ * With none of those ahead -- the freeze cap full, no lazy weekend left to
  * earn, and the best streak the current one -- it names an achievement still
  * locked (see game/achievements.ts), picked at random from `locked`. With
  * nothing at all left to earn, it is null and nothing is said.
@@ -82,13 +82,16 @@ export function streakGoal(
     break;
   }
 
-  // Only for a streak worth resting: a lost one has nothing for Saturday to keep.
+  // Only for a streak worth resting: a lost one has nothing for the weekend to keep.
   const rest = days > 0 ? restDayProgress(streak, today) : null;
   if (rest && rest.needed > 0) {
-    const line =
-      rest.needed === 1
-        ? "Play tomorrow for a lazy Saturday 😴"
-        : `${rest.needed} more days by Friday unlocks a lazy Saturday 😴`;
+    const line = rest.sundayOnly
+      ? rest.needed === 1
+        ? "Play tomorrow for a lazy Sunday 😴"
+        : `${rest.needed} more days by Saturday unlocks a lazy Sunday 😴`
+      : rest.needed === 1
+        ? "Play tomorrow for a lazy weekend 😴"
+        : `${rest.needed} more days by Friday unlocks a lazy weekend 😴`;
     goals.push({ away: rest.needed, rank: 1, line });
   }
 

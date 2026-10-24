@@ -55,7 +55,7 @@ const OWN_HAPTICS = [30, 40, 30, 40, 30, 40, 60, 60, 160];
  * A bubble drifting around the boards, naming the player who won the window
  * that just closed, which splats into an ink blot when it is hit.
  *
- * It stands for four days after a window closes -- Monday to Thursday for a
+ * It stands for four days after a window closes -- Tuesday to Friday for a
  * week, the second to the fifth for a month (see game/congrats.ts) -- so a
  * player who only opens the boards midweek still gets told. The rest of the
  * time, and once it has been popped, this renders nothing and asks the server
@@ -129,7 +129,7 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
   useEffect(() => {
     // Nothing owed today never gets this far -- either no window is standing or
     // every one that is has been popped here already, which the queue above
-    // settles before any fetch, so a player who popped it on the Monday costs
+    // settles before any fetch, so a player who popped it on the Tuesday costs
     // the server nothing on the Tuesday.
     let live = true;
     // The same endpoint the boards come from, asked for the closed window

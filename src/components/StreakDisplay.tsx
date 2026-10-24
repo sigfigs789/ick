@@ -99,7 +99,7 @@ export function StreakDisplay({
   hasWords = true,
 }: Props) {
   // One icon for how the streak stands, as the streak board marks it (see
-  // components/LeaderboardPage.tsx): 😴 on an earned Saturday not
+  // components/LeaderboardPage.tsx): 😴 on an earned weekend day not
   // played yet, which cannot end the streak; ⏳ when missing today ends the streak,
   // every saved freeze spent; 🧊 while a saved freeze is covering a missed day
   // with one left for today, until today is played; 🔥 otherwise. A past
@@ -119,9 +119,9 @@ export function StreakDisplay({
       : frozen
         ? "A saved freeze is covering your streak"
         : undefined;
-  // Sunday to Friday, the week's progress towards a lazy Saturday (a pie, or
+  // The days played towards the next lazy weekend (a pie, or
   // 😴 once unlocked), beside the freezes. Only for a live streak, which is
-  // what a lazy Saturday keeps.
+  // what a lazy weekend keeps.
   const week =
     isToday && date !== undefined && streak.currentStreak > 0 ? weekdayRestProgress(streak, date) : null;
   // A past puzzle shows the freezes held on its day; today's shows today's.
@@ -138,7 +138,7 @@ export function StreakDisplay({
       className="streak-display"
       aria-label={
         `Current streak: ${streak.currentStreak} days. ` +
-        (restDay ? "Lazy Saturday: skipping today can't break your streak. " : "") +
+        (restDay ? "Lazy weekend: skipping today can't break your streak. " : "") +
         (coveredDay ? "A freeze kept your streak alive on this day. " : "") +
         (frozen ? "A saved freeze is covering your streak. " : "") +
         (risky ? "Play today to keep your streak. " : "") +
@@ -159,7 +159,12 @@ export function StreakDisplay({
           <span className="streak-display__unit">day streak</span>
           {showFreezes && <FreezeBadge banked={banked} cap={cap} />}
           {week && (
-            <RestDayBadge played={week.played} reachable={week.reachable} className="streak-display__week" />
+            <RestDayBadge
+              played={week.played}
+              reachable={week.reachable}
+              sundayOnly={week.sundayOnly}
+              className="streak-display__week"
+            />
           )}
         </div>
       )}

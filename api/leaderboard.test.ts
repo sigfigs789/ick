@@ -142,9 +142,9 @@ describe("api/leaderboard submissions", () => {
     });
   });
 
-  it("records the Saturday off only when it ends the last played day's week", async () => {
+  it("records the Saturday off only when it is in the last played day's week", async () => {
     withEnv();
-    // SUNDAY's week ends on 2026-08-29.
+    // The Monday after SUNDAY, whose week's Saturday is 2026-08-29.
     for (const [restDay, expected] of [
       ["2026-08-29", "2026-08-29"],
       ["2026-09-05", null], // a later Saturday, which no play has earned
@@ -152,9 +152,32 @@ describe("api/leaderboard submissions", () => {
       ["soon", null],
     ]) {
       const fetchMock = stubFetch([[], []]);
-      const streak = { current: 40, best: 52, saved: 2, lastPlayed: SUNDAY, restDay };
+      const streak = { current: 40, best: 52, saved: 2, lastPlayed: "2026-08-24", restDay };
       await handler(post({ ...score(), streak }));
       expect(rpcCall(fetchMock, 1)?.args).toMatchObject({ p_rest_day: expected });
+    }
+  });
+
+  it("records a Saturday played as its own weekend off, its Sunday still to rest", async () => {
+    withEnv();
+    for (const [restDay, expected] of [
+      ["2026-08-29", "2026-08-29"],
+      ["2026-09-05", null],
+    ]) {
+      const fetchMock = stubFetch([[], []]);
+      const streak = { current: 40, best: 52, saved: 2, lastPlayed: "2026-08-29", restDay };
+      await handler(post({ ...score(), streak }));
+      expect(rpcCall(fetchMock, 1)?.args).toMatchObject({ p_rest_day: expected });
+    }
+  });
+
+  it("records no weekend off for a Sunday played, which ends its week", async () => {
+    withEnv();
+    for (const restDay of ["2026-08-22", "2026-08-29"]) {
+      const fetchMock = stubFetch([[], []]);
+      const streak = { current: 40, best: 52, saved: 2, lastPlayed: SUNDAY, restDay };
+      await handler(post({ ...score(), streak }));
+      expect(rpcCall(fetchMock, 1)?.args).toMatchObject({ p_rest_day: null });
     }
   });
 
@@ -678,6 +701,22 @@ describe("api/leaderboard reads", () => {
     // since the 23rd. For the live week it changes nothing -- its Saturday is
     // today or later, and no puzzle exists past today.
     expect(rpcCall(fetchMock)?.args.p_week_until).toBe("2026-08-29");
+  });
+
+  it("runs the first Monday week eight days, to its own Sunday", async () => {
+    withEnv();
+    const fetchMock = stubFetch([OPEN]);
+    // It took in the Sunday the move to Monday weeks left over.
+    await handler(get(`?since=2026-10-25&month=2026-10-01`));
+    expect(rpcCall(fetchMock)?.args.p_week_until).toBe("2026-11-01");
+  });
+
+  it("closes a Monday week on its Sunday", async () => {
+    // Preview, which takes dates ahead of today, as this week has not come yet.
+    withEnv({ ...CONFIGURED, VERCEL_ENV: "preview" });
+    const fetchMock = stubFetch([OPEN]);
+    await handler(get(`?since=2026-11-02&month=2026-11-01`));
+    expect(rpcCall(fetchMock)?.args.p_week_until).toBe("2026-11-08");
   });
 
   it("ends a short month on its own last day", async () => {
