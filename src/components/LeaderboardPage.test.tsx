@@ -340,7 +340,6 @@ describe("the leaderboard page", () => {
       expect(row).not.toHaveTextContent(/🔥|🧊|⏳/u);
     }
     const dancer = within(boardRows("Streaks")[1]).getByRole("button", { name: /Saturday rest day/ });
-    expect(dancer).toHaveAttribute("title", expect.stringContaining("Saturdays don't break streaks"));
     fireEvent.click(dancer);
     expect(within(boardRows("Streaks")[1]).getByRole("dialog")).toHaveTextContent(
       "Saturdays don't break streaks"

@@ -12,6 +12,18 @@ const streak: StreakState = {
   highScore: 0,
 };
 
+// jsdom has no PointerEvent, so a pointer event's `pointerType` would be lost.
+if (typeof window.PointerEvent === "undefined") {
+  class TestPointerEvent extends MouseEvent {
+    pointerType: string;
+    constructor(type: string, init: PointerEventInit = {}) {
+      super(type, init);
+      this.pointerType = init.pointerType ?? "";
+    }
+  }
+  window.PointerEvent = TestPointerEvent as unknown as typeof PointerEvent;
+}
+
 /** The icon beside the count -- the badge carries its own 🧊, so not by text. */
 function flame(): string | undefined {
   return document.querySelector(".streak-display__flame")?.textContent ?? undefined;
@@ -61,7 +73,15 @@ describe("StreakDisplay", () => {
     const { rerender } = render(<StreakDisplay streak={friday} date="2026-10-24" isToday />);
     const dancer = screen.getByRole("button", { name: /Saturday rest day/ });
     expect(dancer.textContent).toMatch(/🕺|💃|😴/u);
-    expect(dancer).toHaveAttribute("title", expect.stringContaining("Saturdays don't break streaks"));
+    // Hovering with a mouse opens the popup, and leaving closes it.
+    const badge = dancer.parentElement as HTMLElement;
+    fireEvent.pointerEnter(badge, { pointerType: "mouse" });
+    expect(screen.getByRole("dialog", { name: "Saturday rest day" })).toHaveTextContent(
+      "Saturdays don't break streaks"
+    );
+    fireEvent.pointerLeave(badge, { pointerType: "mouse" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    // Tapping opens it too.
     fireEvent.click(dancer);
     expect(screen.getByRole("dialog", { name: "Saturday rest day" })).toHaveTextContent(
       "Saturdays don't break streaks"

@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 
 /** What the dancer means, for its hover text and popup. */
-const REST_DAY_RULE = "Saturdays don't break streaks. Skip today and your streak is safe.";
+const REST_DAY_RULE = "Saturdays don't break streaks. Kick back and relax or play and get ahead.";
 
 /** The Saturday faces, one per player. */
 const REST_DAY_ICONS = ["🕺", "💃", "😴"] as const;
@@ -18,12 +18,13 @@ function restDayDancer(playerId: string): (typeof REST_DAY_ICONS)[number] {
 
 /**
  * The dancer shown on a streak taking its Saturday off (see `resting` in
- * game/streakFreeze.ts). Hovering it shows the rule; selecting it opens a popup
- * with the rule, and selecting it again, anywhere outside it, or Escape closes
- * it.
+ * game/streakFreeze.ts). Hovering it with a mouse opens a popup with the rule
+ * while the pointer stays on it; selecting it pins the popup open, and
+ * selecting it again, anywhere outside it, or Escape closes it.
  */
 export function RestDayBadge({ playerId, className }: { playerId: string; className?: string }) {
   const [open, setOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const wrapRef = useRef<HTMLSpanElement>(null);
   const popupId = useId();
 
@@ -44,19 +45,24 @@ export function RestDayBadge({ playerId, className }: { playerId: string; classN
   }, [open]);
 
   return (
-    <span className={`rest-day${className ? ` ${className}` : ""}`} ref={wrapRef}>
+    <span
+      className={`rest-day${className ? ` ${className}` : ""}`}
+      ref={wrapRef}
+      // Mouse only: a tap also fires pointerenter, and the click handles taps.
+      onPointerEnter={(event) => event.pointerType === "mouse" && setHovered(true)}
+      onPointerLeave={(event) => event.pointerType === "mouse" && setHovered(false)}
+    >
       <button
         type="button"
         className="rest-day__button"
-        title={REST_DAY_RULE}
-        aria-expanded={open}
+        aria-expanded={open || hovered}
         aria-controls={popupId}
         aria-label={`Saturday rest day: ${REST_DAY_RULE}`}
         onClick={() => setOpen((was) => !was)}
       >
         {restDayDancer(playerId)}
       </button>
-      {open && (
+      {(open || hovered) && (
         <span className="rest-day__popup" id={popupId} role="dialog" aria-label="Saturday rest day">
           <strong>Saturday rest day</strong>
           <span>{REST_DAY_RULE}</span>
