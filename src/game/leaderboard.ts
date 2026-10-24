@@ -552,7 +552,7 @@ export interface FetchOptions {
 export interface BoardOptions extends FetchOptions {
   /** The single puzzle the daily board counts. */
   day?: string;
-  /** The Sunday the weekly board counts from. */
+  /** The first day of the week the weekly board counts (see game/week.ts). */
   week?: string;
   /** The first of the month the monthly board counts. */
   month?: string;

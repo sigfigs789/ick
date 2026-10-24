@@ -29,7 +29,9 @@
  * A weekend can be earned as rest days (from REST_DAY_START). The week runs
  * Monday to Sunday, and its Saturday and Sunday are the weekend. Play
  * REST_DAY_PLAYS of the week's puzzles before a weekend day, each on its own
- * day, and that day, left unplayed, spends no freeze and ends no streak. So
+ * day, and that day, left unplayed, spends no freeze and ends no streak. The
+ * first such week, 2026-10-25 to 11-01, also took in the Sunday before its
+ * Monday, as the weekly board's did (see game/week.ts). So
  * three days played Monday to Friday rest the Saturday and the Sunday, and a
  * Saturday played as the third rests the Sunday after it. A Sunday played
  * ends its week, so it counts towards no weekend. A weekend is not saved like
@@ -42,6 +44,7 @@
 
 import { addDays, dayOfWeek, daysSinceEpoch } from "./date";
 import type { FreezeCount, StreakState } from "./types";
+import { weekStart } from "./week";
 
 /**
  * How long a covered day is remembered. Only the current month is ever asked
@@ -64,15 +67,20 @@ const SATURDAY = 6;
 
 /**
  * How long a played day is remembered: the current week and the last, which
- * is more than `isRestDay` ever asks about -- a Sunday asks about the six
- * days before it.
+ * is more than `isRestDay` ever asks about -- a Sunday asks about at most the
+ * seven days before it.
  */
 const PLAYED_DATES_KEPT_DAYS = 14;
 
-/** The Saturday of the week (Monday to Sunday) that `date` falls in. */
+/**
+ * The Saturday of the week (Monday to Sunday) that `date` falls in. A Sunday
+ * ends its week -- but for the one week that starts on a Sunday, the first
+ * Monday week (see game/week.ts), which it opens.
+ */
 export function weekSaturday(date: string): string {
   const dow = dayOfWeek(date);
-  return addDays(date, dow === SUNDAY ? -1 : SATURDAY - dow);
+  if (dow !== SUNDAY) return addDays(date, SATURDAY - dow);
+  return addDays(date, weekStart(date) === date ? SATURDAY : -1);
 }
 
 /**
@@ -84,11 +92,11 @@ export function earningSaturday(date: string): string {
 }
 
 /**
- * The days of `saturday`'s week, Monday to `saturday`, that were played on
- * their own day: all that can count towards its weekend.
+ * The days of `saturday`'s week, from its first day to `saturday`, that were
+ * played on their own day: all that can count towards its weekend.
  */
 export function weekPlays(streak: StreakState, saturday: string): number {
-  return playsBetween(streak, addDays(saturday, -5), saturday);
+  return playsBetween(streak, weekStart(saturday), saturday);
 }
 
 /** The days from `from` to `through`, both included, played on their own day. */
@@ -98,7 +106,7 @@ function playsBetween(streak: StreakState, from: string, through: string): numbe
 
 /**
  * Whether `date` is a rest day: a Saturday or Sunday that the week's play
- * before it, from the Monday, earned, which a streak can skip for free.
+ * before it, from its first day, earned, which a streak can skip for free.
  */
 export function isRestDay(streak: StreakState, date: string): boolean {
   const dow = dayOfWeek(date);
@@ -106,7 +114,7 @@ export function isRestDay(streak: StreakState, date: string): boolean {
   const saturday = weekSaturday(date);
   return (
     saturday >= REST_DAY_START &&
-    playsBetween(streak, addDays(saturday, -5), addDays(date, -1)) >= REST_DAY_PLAYS
+    playsBetween(streak, weekStart(saturday), addDays(date, -1)) >= REST_DAY_PLAYS
   );
 }
 
@@ -383,9 +391,11 @@ export function weekdayRestProgress(
   if (resting(streak, today) || saturday < REST_DAY_START) return null;
   const played = weekPlays(streak, saturday);
   const playedToday = (streak.playedDates ?? []).includes(today);
-  // The days still to play through `last`: from Monday on a Sunday, which is
-  // before the week counted, else from today unless it is played.
-  const first = dayOfWeek(today) === SUNDAY ? addDays(today, 1) : today;
+  // The days still to play through `last`: from the week's first day when that
+  // is after today -- a Sunday, before next week's Monday -- else from today
+  // unless it is played.
+  const opens = weekStart(saturday);
+  const first = opens > today ? opens : today;
   const left = (last: string) =>
     Math.max(0, daysSinceEpoch(last, first) + 1 - (first === today && playedToday ? 1 : 0));
   const byFriday = dayOfWeek(today) !== SATURDAY && played + left(addDays(saturday, -1)) >= REST_DAY_PLAYS;

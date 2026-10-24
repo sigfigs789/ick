@@ -703,6 +703,22 @@ describe("api/leaderboard reads", () => {
     expect(rpcCall(fetchMock)?.args.p_week_until).toBe("2026-08-29");
   });
 
+  it("runs the first Monday week eight days, to its own Sunday", async () => {
+    withEnv();
+    const fetchMock = stubFetch([OPEN]);
+    // It took in the Sunday the move to Monday weeks left over.
+    await handler(get(`?since=2026-10-25&month=2026-10-01`));
+    expect(rpcCall(fetchMock)?.args.p_week_until).toBe("2026-11-01");
+  });
+
+  it("closes a Monday week on its Sunday", async () => {
+    // Preview, which takes dates ahead of today, as this week has not come yet.
+    withEnv({ ...CONFIGURED, VERCEL_ENV: "preview" });
+    const fetchMock = stubFetch([OPEN]);
+    await handler(get(`?since=2026-11-02&month=2026-11-01`));
+    expect(rpcCall(fetchMock)?.args.p_week_until).toBe("2026-11-08");
+  });
+
   it("ends a short month on its own last day", async () => {
     withEnv();
     const fetchMock = stubFetch([OPEN]);

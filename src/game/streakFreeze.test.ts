@@ -19,6 +19,7 @@ import {
   streakReport,
   weekdayRestProgress,
   weekPlays,
+  weekSaturday,
   welcomeBack,
 } from "./streakFreeze";
 import type { StreakState } from "./types";
@@ -138,10 +139,27 @@ describe("Weekend rest days", () => {
   });
 
   it("start the week on Monday, so the Sunday before counts for nothing", () => {
+    const fromSunday = streakOf({ playedDates: ["2026-11-01", "2026-11-02", "2026-11-03"] });
+    expect(weekPlays(fromSunday, "2026-11-07")).toBe(2);
+    expect(isRestDay(fromSunday, "2026-11-07")).toBe(false);
+    expect(isRestDay(fromSunday, "2026-11-08")).toBe(false);
+  });
+
+  it("count Sunday 2026-10-25 towards the first weekend, its week having taken it in", () => {
     const fromSunday = streakOf({ playedDates: ["2026-10-25", "2026-10-26", "2026-10-27"] });
-    expect(weekPlays(fromSunday, "2026-10-31")).toBe(2);
-    expect(isRestDay(fromSunday, "2026-10-31")).toBe(false);
-    expect(isRestDay(fromSunday, "2026-11-01")).toBe(false);
+    expect(weekSaturday("2026-10-25")).toBe("2026-10-31");
+    expect(weekPlays(fromSunday, "2026-10-31")).toBe(3);
+    expect(isRestDay(fromSunday, "2026-10-25")).toBe(false);
+    expect(isRestDay(fromSunday, "2026-10-31")).toBe(true);
+    expect(isRestDay(fromSunday, "2026-11-01")).toBe(true);
+    // Played, it is the first of the three, with the whole week still to come.
+    expect(weekdayRestProgress(streakOf({ playedDates: ["2026-10-25"] }), "2026-10-25")).toEqual({
+      played: 1,
+      reachable: true,
+      sundayOnly: false,
+    });
+    // Not played yet, it is one of the days left to play.
+    expect(weekdayRestProgress(streakOf({}), "2026-10-25")?.played).toBe(0);
   });
 
   it("count a Saturday played towards its own Sunday", () => {

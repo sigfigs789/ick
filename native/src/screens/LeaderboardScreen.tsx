@@ -24,7 +24,7 @@ import {
 import { pageCache } from '../../../src/game/pageCache';
 import { loadPlayerId, selfName } from '../../../src/game/player';
 import { rememberStreakRank, streakRankIn } from '../../../src/game/streakClimb';
-import { WEEK_BEST_DAYS, weekLabel, weekStart } from '../../../src/game/week';
+import { WEEK_BEST_DAYS, nextWeek, previousWeek, weekLabel, weekResetLabel, weekStart } from '../../../src/game/week';
 import { useGameMode } from '../../../src/hooks/useGameMode';
 import { CongratsBubble } from '../components/CongratsBubble';
 import { RestDayBadge } from '../components/RestDayBadge';
@@ -412,7 +412,7 @@ export function LeaderboardScreen({ onPlay }: { onPlay?: () => void } = {}) {
             {showsBoard('week') && (
               <Board
                 heading={weekIsLive ? 'This week' : weekLabel(week)}
-                headingDetail={weekIsLive ? 'Resets on Sundays' : 'Final'}
+                headingDetail={weekIsLive ? weekResetLabel(today) : 'Final'}
                 entries={boards.weekly}
                 self={boards.weeklySelf}
                 emptyMessage={weekIsLive ? "Nobody's scored yet this week. Be first." : 'Nobody scored this week.'}
@@ -424,8 +424,8 @@ export function LeaderboardScreen({ onPlay }: { onPlay?: () => void } = {}) {
                 renderRow={scoreRow}
                 canGoBack={week > weekFloor()}
                 canGoForward={!weekIsLive}
-                onBack={() => setWeek(addDays(week, -7))}
-                onForward={() => setWeek(addDays(week, 7))}
+                onBack={() => setWeek(previousWeek(week))}
+                onForward={() => setWeek(nextWeek(week))}
               />
             )}
             {showsBoard('month') && (

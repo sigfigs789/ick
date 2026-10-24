@@ -39,7 +39,7 @@ import { playedOnItsDay } from "./storage";
 import { WEEK_BEST_DAYS, weekStart } from "./week";
 
 export interface WindowTotals {
-  /** Summed rarity score across the puzzle's week, Sunday onward, best WEEK_BEST_DAYS days. */
+  /** Summed rarity score across the puzzle's week, from its first day (see game/week.ts), best WEEK_BEST_DAYS days. */
   week: number;
   /** Summed rarity score across the puzzle's calendar month, best MONTH_BEST_DAYS days from October 2026. */
   month: number;

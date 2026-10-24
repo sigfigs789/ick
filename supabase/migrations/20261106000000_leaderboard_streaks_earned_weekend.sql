@@ -7,7 +7,10 @@
 -- The game still sends one date, the Saturday (`restDay` in `streakReport`),
 -- and the board rests it and the day after, less any played: a Saturday
 -- played is `last_played` itself, so only its Sunday is taken off the gap.
--- A Sunday played ends its week, so it never sends one.
+-- A Sunday played ends its week, so it never sends one. The first such week,
+-- 2026-10-25 to 11-01, also counts the Sunday before its Monday (see
+-- src/game/week.ts); the board needs nothing for that, as it only ever gets
+-- the Saturday.
 --
 -- An unearned weekend is two missed days like any other.
 

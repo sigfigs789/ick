@@ -23,7 +23,7 @@ import {
   nextMonthStart,
   previousMonthStart,
 } from "../game/month";
-import { WEEK_BEST_DAYS, weekLabel, weekStart } from "../game/week";
+import { WEEK_BEST_DAYS, nextWeek, previousWeek, weekLabel, weekResetLabel, weekStart } from "../game/week";
 import { formatScore, formatTotal } from "../game/dictionary";
 import { navigate } from "../routes";
 import { CongratsBubble } from "./CongratsBubble";
@@ -240,7 +240,7 @@ export function LeaderboardPage() {
    *
    * Derived from `today`, which is frozen at mount, so these are the windows the
    * page opened on and the ones "next" walks back to -- a tab left open across a
-   * Sunday keeps naming the week it was opened in rather than silently becoming
+   * Monday keeps naming the week it was opened in rather than silently becoming
    * a page about a different one.
    */
   const thisWeek = weekStart(today);
@@ -253,7 +253,7 @@ export function LeaderboardPage() {
    * time, and a reader comparing last month's standings against this week's is
    * doing exactly the thing having two boards is for. Nothing links them.
    *
-   * Both are the near end of the window -- a Sunday and a first -- because that
+   * Both are the near end of the window -- a Monday and a first -- because that
    * is what the request carries and what the server bounds each board from (see
    * game/leaderboard.ts).
    */
@@ -501,7 +501,7 @@ export function LeaderboardPage() {
             page asserting who you *are* is claiming more than it should. A
             role is what it actually is, and it is the frame that survives
             handles becoming rerollable. It is also the register the rest of
-            the page is written in -- "Resets on Sundays", "Resets at
+            the page is written in -- "Resets on Mondays", "Resets at
             midnight" -- where a warmer line would be the one thing here
             raising its voice. */}
         {playerId && (
@@ -655,7 +655,7 @@ export function LeaderboardPage() {
                   // thing worth saying, and both boards say exactly that. A
                   // window that has turned over says the other half of it: that
                   // what is on screen is not going to change again.
-                  headingDetail={weekIsLive ? "Resets on Sundays" : "Final"}
+                  headingDetail={weekIsLive ? weekResetLabel(today) : "Final"}
                   entries={boards.weekly}
                   self={boards.weeklySelf}
                   emptyMessage={
@@ -674,8 +674,8 @@ export function LeaderboardPage() {
                   renderRow={scoreRow}
                   canGoBack={week > weekFloor()}
                   canGoForward={!weekIsLive}
-                  onBack={() => setWeek(addDays(week, -7))}
-                  onForward={() => setWeek(addDays(week, 7))}
+                  onBack={() => setWeek(previousWeek(week))}
+                  onForward={() => setWeek(nextWeek(week))}
                 />
               )}
               {showsBoard("month") && (

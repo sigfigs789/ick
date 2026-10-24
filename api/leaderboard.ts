@@ -143,7 +143,7 @@ export const config = { runtime: "edge" };
 
 /** The first puzzle. Nothing can be scored before the game existed. */
 const EPOCH = "2026-07-01";
-/** The earliest Sunday a weekly window can start on: the one bracketing EPOCH. */
+/** The earliest day a weekly window can start on: the Sunday bracketing EPOCH, when weeks began on Sundays. */
 const WINDOW_FLOOR = "2026-06-28";
 /** A window start that is the first of some month, as the monthly board's is. */
 const MONTH_START_RE = /^\d{4}-\d{2}-01$/;
@@ -199,14 +199,23 @@ function monthEnd(start: string): string {
 }
 
 /**
- * The Saturday closing the week that starts on `start`.
+ * The first day of the first Monday week, which took in the Sunday before it and
+ * so runs eight days. src/game/week.ts's MONDAY_WEEKS_START, copied rather than
+ * imported so this function does not load the client's date module.
+ */
+const MONDAY_WEEKS_START = "2026-10-25";
+
+/**
+ * The last day of the week that starts on `start`.
  *
  * Six days on, which is what a week is here and everywhere else in this game --
  * the client picks which day a week starts on (src/game/week.ts) and nothing on
- * this side needs to know which one it picked.
+ * this side needs to know which one it picked. The one exception is the first
+ * Monday week, which starts on the Sunday the move to Monday weeks left over and
+ * runs seven days on, to its own Sunday.
  */
 function weekEnd(start: string): string {
-  return daysBefore(start, -6);
+  return daysBefore(start, start === MONDAY_WEEKS_START ? -7 : -6);
 }
 
 // The oldest release whose scores the board will rank. Defined beside
@@ -1204,7 +1213,7 @@ async function handleGet(request: Request): Promise<Response> {
         // Sent at all because the weekly board is no longer always the live week
         // -- a reader can step it back -- and an unbounded window would answer
         // "the week of the 16th" with every score since the 16th. For the live
-        // week it changes nothing: its Saturday is today or later, and no puzzle
+        // week it changes nothing: its last day is today or later, and no puzzle
         // exists past today.
         p_week_until: weekEnd(since),
         p_season_since: month,

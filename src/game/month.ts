@@ -63,7 +63,7 @@ export function nextMonthStart(date: string = todayDateString()): string {
  * `Resets Tuesday, Sep 1`, to sit beside the heading.
  *
  * The one thing worth saying about the window, and the same thing the weekly
- * board says beside its own heading ("Resets on Sundays"). It replaced the
+ * board says beside its own heading ("Resets on Mondays"). It replaced the
  * season's date range: a season had to name its ends because it had ends a
  * reader could not guess, while a month is the window you are already in -- so
  * what is left to say is when it turns over, and unlike the week's answer that
@@ -74,11 +74,11 @@ export function nextMonthStart(date: string = todayDateString()): string {
  * Thursday cannot tell from it whether they have a weekend of play left or one
  * more evening. The weekday is the whole of what the date was for, so it goes
  * first and the date follows as the confirmation, which is also the order the
- * weekly board's "Resets on Sundays" already reads in.
+ * weekly board's "Resets on Mondays" already reads in.
  */
 export function monthResetLabel(date: string = todayDateString()): string {
   const reset = nextMonthStart(date);
-  // Spelled out rather than "Tue", to match the weekly board's own "Sundays" --
+  // Spelled out rather than "Tue", to match the weekly board's own "Mondays" --
   // the two notes sit side by side, and one abbreviating what the other spells
   // reads as two different labels rather than the same one twice.
   const weekday = new Date(`${reset}T00:00:00`).toLocaleDateString(undefined, {
