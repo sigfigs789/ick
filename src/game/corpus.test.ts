@@ -35,20 +35,31 @@ function serve(options: {
   tags?: number[];
   sources?: number[];
   zipf?: number[];
+  /** Served as zipf-attested.bin instead of the bytes derived from `zipf`. */
+  attested?: number[];
   count?: number;
   tagOrder?: string[];
   sourceOrder?: string[];
   ok?: boolean;
 }) {
   const words = options.words ?? WORDS;
+  const bytes = (values: number[] | undefined) =>
+    new Uint8Array(values ?? new Array(words.length).fill(0));
+  // zipf-attested.bin, as the build writes it: a byte for each word a frequency
+  // source measured, in list order, and nothing for the rest.
+  const sources = bytes(options.sources);
+  const zipf = bytes(options.zipf);
+  const measured = sourceBit("wordfreq") | sourceBit("norvig") | sourceBit("google_books") | sourceBit("datamuse");
+  const attested = options.attested
+    ? new Uint8Array(options.attested)
+    : new Uint8Array([...zipf].filter((_, i) => sources[i] & measured));
   const meta = {
     count: options.count ?? words.length,
     tagOrder: options.tagOrder ?? [...CORPUS_TAGS],
     sourceOrder: options.sourceOrder ?? [...CORPUS_SOURCES],
     zipfScale: 32,
+    attested: attested.length,
   };
-  const bytes = (values: number[] | undefined) =>
-    new Uint8Array(values ?? new Array(words.length).fill(0));
   vi.stubGlobal(
     "fetch",
     vi.fn((url: string) => {
@@ -61,7 +72,7 @@ function serve(options: {
             ? { arrayBuffer: () => Promise.resolve(bytes(options.tags).buffer) }
             : url.includes("sources.bin")
               ? { arrayBuffer: () => Promise.resolve(bytes(options.sources).buffer) }
-              : { arrayBuffer: () => Promise.resolve(bytes(options.zipf).buffer) };
+              : { arrayBuffer: () => Promise.resolve(attested.buffer) };
       return Promise.resolve({ ok: true, ...body } as unknown as Response);
     })
   );
@@ -124,6 +135,18 @@ describe("refusing a corpus whose pieces disagree", () => {
     expect(corpusReady()).toBe(false);
   });
 
+  it("refuses a Zipf column that doesn't hold one byte per measured word", async () => {
+    // Every byte after a gap would otherwise be read for the wrong word.
+    const sources = new Array(WORDS.length).fill(0);
+    sources[0] = sourceBit("wordfreq");
+    sources[3] = sourceBit("norvig");
+    serve({ sources, attested: [64] });
+    expect(await loadCorpus()).toBe(false);
+    resetCorpusForTests();
+    serve({ sources, attested: [64, 48, 32] });
+    expect(await loadCorpus()).toBe(false);
+  });
+
   it("refuses a tags array that isn't index-aligned with the words", async () => {
     serve({ tags: [0, 0] });
     expect(await loadCorpus()).toBe(false);
@@ -155,8 +178,10 @@ describe("what it says about a word", () => {
 
   it("scales the zipf byte back, and reads 0 as unattested rather than as 0.0", async () => {
     const zipf = new Array(WORDS.length).fill(0);
+    const sources = new Array(WORDS.length).fill(0);
     zipf[0] = 64; // 64 / 32
-    serve({ zipf });
+    sources[0] = sourceBit("wordfreq");
+    serve({ zipf, sources });
     await loadCorpus();
     expect(corpusEntry("abaci")!.zipf).toBeCloseTo(2.0);
     // The distinction the whole scoring question rests on: a word nothing

@@ -4,7 +4,8 @@ Data generation pipeline for Ick.
 
 Produces two SEPARATE artifacts, per design:
   - src/data/dictionary.json  -> the curated list of words a submission is checked against
-  - src/data/rarity.json      -> precomputed frequency-derived rarity label for each word
+  - src/data/rarity.json      -> each word's frequency (Zipf, in hundredths), index-aligned
+  - src/data/rarity-scale.json -> the highest and lowest of those, for the score scale
   - src/data/rejection-metadata.json -> concise explanations for excluded ESDB entries
   - src/data/derived-rejections.json -> dictionary words that carry a rejection reason
     (obsolete/archaic/dated/abbreviation/proper noun), dated from when they stop being
@@ -84,17 +85,6 @@ RARITY_BANDS = [
 
 WORD_RE = re.compile(r"^[a-z]+$")
 
-# Single-char codes for rarity.json, index-aligned with dictionary.json.
-RARITY_CODE = {
-    "Common": "C",
-    "Uncommon": "U",
-    "Rare": "R",
-    "Extremely Rare": "X",
-    "Elusive": "E",
-    "Mythic": "M",
-}
-
-
 def dump_word_list(words: list[str]) -> str:
     """Serialize the curated dictionary as one word per line.
 
@@ -164,12 +154,27 @@ def refresh_rarity() -> None:
     for label in ("Mythic", *[label for _, label in RARITY_BANDS]):
         print(f"  {label:16s} {hist.get(label, 0)}")
 
-    codes = "".join(RARITY_CODE[rarity_for_zipf(z)] for z in zipfs)
-    zipf_hundredths = [round(z * 100) for z in zipfs]
-    (OUT_DIR / "rarity.json").write_text(
-        json.dumps({"codes": codes, "zipfHundredths": zipf_hundredths}, separators=(",", ":"))
-    )
+    write_rarity([round(z * 100) for z in zipfs])
     print(f"Wrote {OUT_DIR / 'rarity.json'} ({len(dictionary)} entries, index-aligned)")
+
+
+def write_rarity(zipf_hundredths: list[int]) -> None:
+    """Write rarity.json and the two numbers the score scale is drawn from.
+
+    The game fetches rarity.json after it starts (see `scoringReady` in
+    src/game/dictionary.ts), but it needs the scale's ends to show a saved
+    score before then, so they ship on their own in rarity-scale.json. A test
+    (src/game/rarity-scale.test.ts) keeps the two files in step.
+    """
+    (OUT_DIR / "rarity.json").write_text(
+        json.dumps({"zipfHundredths": zipf_hundredths}, separators=(",", ":"))
+    )
+    (OUT_DIR / "rarity-scale.json").write_text(
+        json.dumps(
+            {"maxZipfHundredths": max(zipf_hundredths), "minZipfHundredths": min(zipf_hundredths)},
+            separators=(",", ":"),
+        )
+    )
 
 
 def displayed_zipf(z: float) -> float:
@@ -572,14 +577,11 @@ def main() -> None:
     # instead of applying the Norvig/Google Books waterfall -- run
     # --refresh-rarity afterward to grade the deep tail. Emitted in the same
     # hundredths format the app expects (see refresh_rarity).
-    codes = "".join(RARITY_CODE[rarity_for_zipf(candidates[w])] for w in dictionary)
     zipf_hundredths = [round(candidates[w] * 100) for w in dictionary]
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     (OUT_DIR / "dictionary.json").write_text(dump_word_list(dictionary))
-    (OUT_DIR / "rarity.json").write_text(
-        json.dumps({"codes": codes, "zipfHundredths": zipf_hundredths}, separators=(",", ":"))
-    )
+    write_rarity(zipf_hundredths)
     # Enrich the rejection messages with Wiktextract's reasons (obsolete /
     # archaic / dated / proper-noun / abbreviation). rejection_metadata drops any
     # word that is actually playable, so this only ever adds a message for a word
