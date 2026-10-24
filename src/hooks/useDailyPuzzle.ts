@@ -8,6 +8,7 @@ import {
   loadOrCreateProgress,
   loadStreak,
   recordAcceptedWord,
+  recordVisit,
   recordRejectedAttempt,
   resetProgress,
   retryWord,
@@ -177,6 +178,17 @@ function liveRarity(check: LiveCheck, date: string): RarityInfo {
   return { zipf, rarity: rarityForZipf(zipf, date) };
 }
 
+/**
+ * How long the site has to be open, in a visible tab, before the visit counts
+ * today towards the streak. Long enough that a tab opened by mistake or
+ * restored in the background doesn't count, short enough that just checking in
+ * does.
+ */
+export const VISIT_STREAK_DELAY_MS = 2000;
+
+/** How long the streak strip is told the count just rolled up (see StreakDisplay). */
+const STREAK_ROLL_MS = 1500;
+
 export function useDailyPuzzle() {
   const today = useMemo(() => todayDateString(), []);
   const [viewedDate, setViewedDate] = useState(today);
@@ -196,6 +208,49 @@ export function useDailyPuzzle() {
     loadOrCreateProgress(viewedDate, drop)
   );
   const [streak, setStreak] = useState<StreakState>(() => loadStreak());
+
+  // Opening the site counts today towards the streak, once it has been in view
+  // for a moment (see recordVisit in game/storage.ts). The clock only runs
+  // while the tab is visible, and starts over each time it comes back.
+  useEffect(() => {
+    let timer: number | undefined;
+    let counted = false;
+    const stop = () => {
+      window.clearTimeout(timer);
+      timer = undefined;
+    };
+    const start = () => {
+      if (counted || timer !== undefined || document.visibilityState === "hidden") return;
+      timer = window.setTimeout(() => {
+        timer = undefined;
+        counted = true;
+        if (recordVisit(today)) setStreak(loadStreak());
+      }, VISIT_STREAK_DELAY_MS);
+    };
+    const onVisibilityChange = () => (document.visibilityState === "hidden" ? stop() : start());
+    start();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [today]);
+
+  // The count today's streak rolled up from, while the strip shows it rolling:
+  // set on the render where today first counts, by a visit or by a first word,
+  // whichever comes first.
+  const [streakRolledFrom, setStreakRolledFrom] = useState<number | null>(null);
+  const streakBefore = useRef(streak);
+  const rollTimer = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    const before = streakBefore.current;
+    streakBefore.current = streak;
+    if (streak.lastCompletedDate !== today || before.lastCompletedDate === today) return;
+    setStreakRolledFrom(before.currentStreak);
+    window.clearTimeout(rollTimer.current);
+    rollTimer.current = window.setTimeout(() => setStreakRolledFrom(null), STREAK_ROLL_MS);
+  }, [streak, today]);
+  useEffect(() => () => window.clearTimeout(rollTimer.current), []);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const feedbackKey = useRef(0);
   // Set while a live lookup is running, then switched to its settled form once
@@ -889,6 +944,8 @@ export function useDailyPuzzle() {
     drop,
     progress,
     streak,
+    /** The count today's streak just rolled up from, while it is rolling; otherwise null. */
+    streakRolledFrom,
     feedback,
     submitWord,
     canRetry,

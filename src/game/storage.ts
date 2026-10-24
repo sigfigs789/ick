@@ -433,7 +433,8 @@ export function dismissWelcomeBack(date: string): void {
 }
 
 /**
- * The first valid word immediately advances today's streak. The player can
+ * The first valid word advances today's streak, if a visit has not already
+ * (see recordVisit). The player can
  * still keep guessing up to the day's guess limit, or lock in early, without counting
  * that streak win a second time.
  */
@@ -473,7 +474,7 @@ export function recordAcceptedWord(progress: DailyProgress, word: AcceptedWord):
   });
 
   if (progress.acceptedWords.length === 0) {
-    updateStreakOnValidAnswer(progress.date);
+    advanceStreak(progress.date);
   }
   if (justCompleted && won) {
     incrementCompletionTotal();
@@ -492,14 +493,25 @@ export function recordRejectedAttempt(progress: DailyProgress, rawWord: string):
 }
 
 /**
- * Advance the streak as soon as today's first valid word is accepted.
+ * Count today towards the streak for a player who opened the site and stayed
+ * a moment (see VISIT_STREAK_DELAY_MS in hooks/useDailyPuzzle.ts), word or no
+ * word. Returns whether this visit was the one that counted it, which is when
+ * the streak rolls up on screen.
  */
-function updateStreakOnValidAnswer(date: string): void {
+export function recordVisit(date: string): boolean {
+  return advanceStreak(date);
+}
+
+/**
+ * Advance the streak once a day: on the first visit long enough to count, or
+ * on today's first valid word if that comes first. Returns whether it moved.
+ */
+function advanceStreak(date: string): boolean {
   const streak = loadStreak();
 
-  if (date !== todayDateString()) return;
+  if (date !== todayDateString()) return false;
 
-  if (streak.lastCompletedDate === date) return; // already counted
+  if (streak.lastCompletedDate === date) return false; // already counted
 
   // Yesterday may have been covered by a freeze rather than played, or been a
   // rest day skipped.
@@ -519,6 +531,7 @@ function updateStreakOnValidAnswer(date: string): void {
   };
   // Recorded after the day's freeze is earned, so the day shows what it ended with.
   saveStreak(recordPlayed(recordFreezes(earnFreeze(updated), date), date));
+  return true;
 }
 
 function incrementCompletionTotal(): void {

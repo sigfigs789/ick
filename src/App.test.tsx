@@ -39,6 +39,7 @@ function puzzle(overrides: Record<string, unknown> = {}) {
       completed: false,
     },
     streak: { currentStreak: 0, longestStreak: 0, totalCompleted: 0, crushedIt: 0, elite: 0, highScore: 0 },
+    streakRolledFrom: null,
     feedback: null,
     submitWord,
     canRetry: false,

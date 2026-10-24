@@ -72,6 +72,26 @@ function FreezeBadge({ banked, cap }: { banked: number; cap: number }) {
   );
 }
 
+/**
+ * The streak count. Given the count it just came from, it rolls up from that
+ * one to this, like an odometer, so a day counted by simply opening the site
+ * is seen to count. The global reduced-motion rule (see index.css) cuts the
+ * roll to an instant change.
+ */
+function StreakCount({ value, from }: { value: number; from: number | null }) {
+  if (from === null || from === value) {
+    return <span className="streak-display__count">{value}</span>;
+  }
+  return (
+    <span className="streak-display__count streak-display__count--rolling">
+      <span className="streak-display__reel" key={`${from}-${value}`}>
+        <span aria-hidden="true">{from}</span>
+        <span>{value}</span>
+      </span>
+    </span>
+  );
+}
+
 interface Props {
   streak: StreakState;
   totalRarity?: number;
@@ -88,6 +108,8 @@ interface Props {
   hideEmpty?: boolean;
   /** Whether this puzzle has a banked word, for `hideEmpty`. */
   hasWords?: boolean;
+  /** The count the streak just rolled up from, while it rolls (see StreakCount). */
+  rolledFrom?: number | null;
 }
 
 export function StreakDisplay({
@@ -97,6 +119,7 @@ export function StreakDisplay({
   isToday = false,
   hideEmpty = false,
   hasWords = true,
+  rolledFrom = null,
 }: Props) {
   // One icon for how the streak stands, as the streak board marks it (see
   // components/LeaderboardPage.tsx): 😴 on an earned Saturday not
@@ -155,7 +178,7 @@ export function StreakDisplay({
               {icon}
             </span>
           )}
-          <span className="streak-display__count">{streak.currentStreak}</span>
+          <StreakCount value={streak.currentStreak} from={rolledFrom} />
           <span className="streak-display__unit">day streak</span>
           {showFreezes && <FreezeBadge banked={banked} cap={cap} />}
           {week && (

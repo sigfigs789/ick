@@ -933,8 +933,10 @@ anything that matters.
   the future). Each date's progress persists independently, so revisiting
   one resumes where you left off. Completing an archived puzzle still
   saves and locks it (so it's reviewable later) but never touches the
-  streak — only a valid answer submitted on its own real calendar date
-  counts. Saved freezes cover missed days, one each: a streak earns its
+  streak. A day counts once the site has been open for 2 seconds in a
+  visible tab on that real calendar date, or on its first valid answer if
+  that comes sooner (`recordVisit` in `storage.ts`); the streak count rolls
+  up on screen when it does. Saved freezes cover missed days, one each: a streak earns its
   first on day 3 and then one every 7 days played, and holds up to 1 once
   it has ever reached 3 days and 2 once it has ever reached 14 (the cap
   never goes back down; players holding 3 from the old cap of 3 keep them

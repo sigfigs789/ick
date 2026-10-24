@@ -74,6 +74,7 @@ export default function App() {
     drop,
     progress,
     streak,
+    streakRolledFrom,
     feedback,
     liveNote,
     checking,
@@ -416,10 +417,11 @@ export default function App() {
             isToday={isToday}
             hideEmpty
             hasWords={progress.acceptedWords.length > 0}
+            rolledFrom={isToday ? streakRolledFrom : null}
           />
         )}
 
-        {/* Once today's word is banked -- which is when the streak counts the
+        {/* Once today's word is banked -- by when the streak has counted the
             day, whether or not the puzzle is locked in -- say what coming
             back tomorrow is worth (see game/comeBack.ts). Straight under the
             streak it talks about (in the guess log on a finished puzzle), so

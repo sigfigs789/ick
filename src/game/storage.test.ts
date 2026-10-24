@@ -9,6 +9,7 @@ import {
   playedOnItsDay,
   recordAcceptedWord,
   recordRejectedAttempt,
+  recordVisit,
   resetProgress,
   retryWord,
   forfeitRetry,
@@ -516,6 +517,35 @@ describe("streak continuation", () => {
     expect(streak.currentStreak).toBe(2); // unchanged
     expect(streak.totalCompleted).toBe(3); // the archive win still counts toward the score
     expect(streak.crushedIt).toBe(3);
+  });
+});
+
+describe("recordVisit", () => {
+  it("counts today towards the streak without a word", () => {
+    expect(recordVisit("2024-01-01")).toBe(true);
+    setToday("2024-01-02");
+    expect(recordVisit("2024-01-02")).toBe(true);
+    const streak = loadStreak();
+    expect(streak.currentStreak).toBe(2);
+    expect(streak.lastCompletedDate).toBe("2024-01-02");
+    expect(streak.totalCompleted).toBe(0);
+  });
+
+  it("counts a day once, whether the visit or the first word comes first", () => {
+    expect(recordVisit("2024-01-01")).toBe(true);
+    expect(recordVisit("2024-01-01")).toBe(false);
+    recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
+    expect(loadStreak().currentStreak).toBe(1);
+
+    setToday("2024-01-02");
+    recordAcceptedWord(newProgress("2024-01-02", "str"), word("strong"));
+    expect(recordVisit("2024-01-02")).toBe(false);
+    expect(loadStreak().currentStreak).toBe(2);
+  });
+
+  it("never counts a day other than today", () => {
+    expect(recordVisit("2023-12-31")).toBe(false);
+    expect(loadStreak().currentStreak).toBe(0);
   });
 });
 

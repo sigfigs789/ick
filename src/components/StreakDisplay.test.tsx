@@ -330,4 +330,18 @@ describe("StreakDisplay", () => {
     expect(screen.queryByText("Elite")).not.toBeInTheDocument();
     expect(screen.queryByText("High score")).not.toBeInTheDocument();
   });
+
+  it("rolls the count up from the one it just came from", () => {
+    const { container, rerender } = render(
+      <StreakDisplay streak={{ ...streak, currentStreak: 5 }} rolledFrom={4} />
+    );
+    const reel = container.querySelector(".streak-display__reel");
+    expect(reel?.children[0]).toHaveTextContent("4");
+    expect(reel?.children[0]).toHaveAttribute("aria-hidden", "true");
+    expect(reel?.children[1]).toHaveTextContent("5");
+
+    rerender(<StreakDisplay streak={{ ...streak, currentStreak: 5 }} rolledFrom={null} />);
+    expect(container.querySelector(".streak-display__reel")).toBeNull();
+    expect(container.querySelector(".streak-display__count")).toHaveTextContent("5");
+  });
 });
