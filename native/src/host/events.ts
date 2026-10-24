@@ -23,6 +23,19 @@ export function installWindowEvents(): void {
     };
   }
 
+  // The chat keeps a line for this player alone and announces it with a
+  // CustomEvent naming its puzzle (see src/game/chatNotices.ts).
+  if (typeof target.CustomEvent !== 'function') {
+    const Base = target.Event as new (type: string) => { type: string };
+    target.CustomEvent = class CustomEvent extends Base {
+      readonly detail: unknown;
+      constructor(type: string, init?: { detail?: unknown }) {
+        super(type);
+        this.detail = init?.detail;
+      }
+    };
+  }
+
   if (typeof target.dispatchEvent === 'function') return;
 
   const listeners = new Map<string, Set<Listener>>();

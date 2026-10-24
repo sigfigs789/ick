@@ -5953,6 +5953,37 @@ h2 {
 .chat__tray-more:hover {
   background: var(--bg-inset);
 }
+/* Report and Block, under the tray on another player's message. */
+.chat__moderate {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+}
+.chat__moderate-button,
+.chat__unblock {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.chat__moderate-button:hover,
+.chat__unblock:hover {
+  background: var(--bg-inset);
+}
+.chat__blocked {
+  margin-top: auto;
+  color: var(--fg-faint);
+  font-size: 0.78rem;
+  text-align: center;
+}
+.chat__unblock {
+  padding: 0.05rem 0.5rem;
+}
 /* The full picker, over the lower part of the panel. */
 .chat__picker {
   position: absolute;

@@ -28,8 +28,8 @@
 //   cache only delays the unread dot by a few seconds.
 //
 // POST /api/chat   { playerId, body, date }
-//   -> 201 { message }, 400 malformed, 422 { reason: "profane" | ... },
-//      429 rate-limited, 503 no credentials
+//   -> 201 { message }, 400 malformed, 403 { reason: "banned" },
+//      422 { reason: "profane" | ... }, 429 rate-limited, 503 no credentials
 //   The handle is computed here from the id, never taken from the client, and
 //   the id is never sent back out -- so the only way to post as somebody is to
 //   know their id, which only their browser holds.
@@ -42,6 +42,15 @@
 //   Puts the player's `emoji` on line `id` of puzzle `date`'s room, or takes it
 //   back when `on` is false, and answers that line's reactions afterwards.
 //   Like a message, a reaction goes out under the handle, never the id.
+//
+// POST /api/chat   { playerId, date, report: { id } }
+//   -> 200 { ok: true }, 400 malformed, 404 no such message (or it is hidden,
+//      a notice, or the reporter's own), 429 rate-limited, 503 no credentials,
+//      503 { reason: "not-migrated" } when the flags migration is not on the
+//      project
+//   Reports line `id` of puzzle `date`'s room. The third player to report a
+//   message hides it from the room; see src/game/chatModeration.ts and the
+//   20261105000000 migration for the rest. Blocking is the client's alone.
 //
 // POST /api/chat   { playerId, banked: { date, mode, word, tier, score } }
 //   -> 201 { message } when the word earned a notice, 202 { message: null }
@@ -131,6 +140,8 @@ interface ReactionRow {
  */
 const REACTIONS_NOT_MIGRATED =
   "reactions are not on the project; apply supabase/migrations/20261014040000_chat_reactions.sql";
+const FLAGS_NOT_MIGRATED =
+  "reports are not on the project; apply supabase/migrations/20261105000000_chat_flags.sql";
 
 function toReaction(row: ReactionRow): Reaction | null {
   if (typeof row.emoji !== "string" || !Array.isArray(row.handles) || row.handles.length === 0) {
@@ -301,11 +312,12 @@ async function handlePost(request: Request): Promise<Response> {
     return reply(400, { ok: false, reason: "malformed" });
   }
 
-  const { playerId, body, banked, react, date: rawDate } = parsed as {
+  const { playerId, body, banked, react, report, date: rawDate } = parsed as {
     playerId?: unknown;
     body?: unknown;
     banked?: unknown;
     react?: unknown;
+    report?: unknown;
     date?: unknown;
   };
   if (typeof playerId !== "string" || !PLAYER_RE.test(playerId)) {
@@ -313,6 +325,7 @@ async function handlePost(request: Request): Promise<Response> {
   }
   if (banked !== undefined) return handleBanked(playerId, banked);
   if (react !== undefined) return handleReact(playerId, rawDate, react);
+  if (report !== undefined) return handleReport(playerId, rawDate, report);
   if (typeof body !== "string") return reply(400, { ok: false, reason: "bad-body" });
   const date = roomFor(rawDate);
   if (!date) return reply(400, { ok: false, reason: "bad-date" });
@@ -332,6 +345,7 @@ async function handlePost(request: Request): Promise<Response> {
     });
     const row = rows?.[0];
     if (row?.status === "rate-limited") return reply(429, { ok: false, reason: "rate-limited" });
+    if (row?.status === "banned") return reply(403, { ok: false, reason: "banned" });
     if (row?.status !== "ok" || row.id == null) throw new Error("chat_post answered nothing");
     return reply(201, { ok: true, message: toMessage(row as MessageRow) });
   } catch (error: unknown) {
@@ -377,6 +391,40 @@ async function handleReact(playerId: string, rawDate: unknown, raw: unknown): Pr
       return reply(503, { ok: false, reason: "not-migrated" });
     }
     console.error("[chat] react failed:", error instanceof Error ? error.message : error);
+    return reply(502, { ok: false, reason: "unavailable" });
+  }
+}
+
+async function handleReport(playerId: string, rawDate: unknown, raw: unknown): Promise<Response> {
+  const date = roomFor(rawDate);
+  if (!date) return reply(400, { ok: false, reason: "bad-date" });
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return reply(400, { ok: false, reason: "bad-report" });
+  }
+  const { id } = raw as Record<string, unknown>;
+  if (typeof id !== "number" || !Number.isSafeInteger(id) || id < 1) {
+    return reply(400, { ok: false, reason: "bad-id" });
+  }
+
+  if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
+
+  try {
+    const rows = await rpc<{ status: string }[] | null>("chat_flag", {
+      p_player: playerId,
+      p_date: date,
+      p_message: id,
+    });
+    const status = rows?.[0]?.status;
+    if (status === "missing") return reply(404, { ok: false, reason: "missing" });
+    if (status === "rate-limited") return reply(429, { ok: false, reason: "rate-limited" });
+    if (status !== "ok") throw new Error("chat_flag answered nothing");
+    return reply(200, { ok: true });
+  } catch (error: unknown) {
+    if (rpcMissing(error)) {
+      console.error(`[chat] ${FLAGS_NOT_MIGRATED}`);
+      return reply(503, { ok: false, reason: "not-migrated" });
+    }
+    console.error("[chat] report failed:", error instanceof Error ? error.message : error);
     return reply(502, { ok: false, reason: "unavailable" });
   }
 }

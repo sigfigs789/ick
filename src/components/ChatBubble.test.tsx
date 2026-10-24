@@ -732,4 +732,37 @@ describe("ChatBubble reactions", () => {
     await userEvent.click(screen.getByRole("button", { name: "Close reactions" }));
     expect(screen.queryByRole("dialog", { name: "Pick a reaction" })).not.toBeInTheDocument();
   });
+
+  it("reports another player's message from the tray and hides it here", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const fetchMock = room([], { ok: true });
+    await openRoom();
+    await userEvent.click(screen.getByRole("button", { name: "Add reaction" }));
+    await userEvent.click(screen.getByRole("button", { name: "Report" }));
+    expect(await screen.findByText("Reported. Thanks — we'll take a look.")).toBeInTheDocument();
+    expect(screen.queryByText("found quixotic")).not.toBeInTheDocument();
+    expect(posted(fetchMock)).toEqual({ playerId: PLAYER, date: DAY, report: { id: 5 } });
+  });
+
+  it("blocks a player until unblocked, sending nothing", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const fetchMock = room([]);
+    await openRoom();
+    await userEvent.click(screen.getByRole("button", { name: "Add reaction" }));
+    await userEvent.click(screen.getByRole("button", { name: "Block CalmOtter3" }));
+    expect(screen.queryByText("found quixotic")).not.toBeInTheDocument();
+    expect(posted(fetchMock)).toBeUndefined();
+    await userEvent.click(screen.getByRole("button", { name: "Unblock" }));
+    expect(await screen.findByText("found quixotic")).toBeInTheDocument();
+  });
+
+  it("offers neither on the player's own message", async () => {
+    const own = { ...MESSAGE, handle: handleFor(PLAYER) };
+    vi.stubGlobal("fetch", vi.fn(async (url: string) =>
+      url.includes("latest") ? json({ latest: 5 }) : json({ messages: [own], reactions: [] }),
+    ));
+    await openRoom();
+    await userEvent.click(screen.getByRole("button", { name: "Add reaction" }));
+    expect(screen.queryByRole("button", { name: "Report" })).not.toBeInTheDocument();
+  });
 });

@@ -129,11 +129,36 @@ feedback box inside the app is the route that exists.
 
 ## Age rating
 
-Expect **4+**. The questionnaire answers are all "None" or "No". The one that
-needs thought is user-generated content: the app displays other players' found
-words, but every one of them comes from the curated dictionary, so a player
-cannot put arbitrary text on another player's screen. Answer that question as
-no.
+Expect it to rise from **4+** with the first build that has the chat. Until then it was 4+,
+because the only thing one player could put on another's screen was a word
+from the curated dictionary. The chat changes that: players type free text that
+other players read.
+
+In App Store Connect → App Information → Age Rating, change only these answers:
+
+| Question | Answer |
+| --- | --- |
+| User-Generated Content | **Yes** |
+| Messaging and Chat | **Yes** |
+| Parental Controls, Age Assurance | **No** |
+| Everything else | unchanged ("None" / "No") |
+
+Apple's calculator sets the rating from those answers. Take whatever it gives
+rather than overriding it, and update this line with the result.
+
+What guideline 1.2 asks of an app with user-generated content, and where each
+lives:
+
+- **Filtering:** `obscenity` plus the slur list, in the app and again on the
+  server (`src/game/chat.ts`, `api/chat.ts`).
+- **Report:** hold a message → Report (`src/game/chatModeration.ts`); three
+  reports hide it for everybody (the 20261105000000 migration).
+- **Block:** hold a message → Block; kept on the device.
+- **Acting on reports:** the `chat_flagged` view, `hidden` on a message, and
+  `chat_bans` for a player.
+- **Agreeing to terms:** the app shows the chat rules and links the terms of use
+  before the first chat opens; nothing is shown or posted until "Agree and join".
+- **Contact:** the email on https://www.wordink.app/terms.html.
 
 ## App privacy — the nutrition label
 
@@ -143,7 +168,7 @@ install invented for itself; none of it is used for tracking.**
 | Question | Answer |
 | --- | --- |
 | Does the app collect data? | Yes |
-| Data types | **Identifiers** → User ID (the app's own random UUID). **Usage Data** → Product Interaction (scores and words played). |
+| Data types | **Identifiers** → User ID (the app's own random UUID). **Usage Data** → Product Interaction (scores and words played). **User Content** → Other User Content (chat messages, and the reports a player makes). |
 | Purpose | App Functionality only |
 | Linked to the user? | Yes — linked to that random identifier |
 | Used for tracking? | **No** |
@@ -165,6 +190,11 @@ Word suggestions and feedback are sent only when the player types them into a
 box and presses the button that says it will send them. Those are covered by
 "Product Interaction" above.
 
+Chat messages are the one thing a player types that other players see. They are
+stored with the random identifier (for rate limits and bans) and shown under the
+handle, so "Other User Content" is linked, App Functionality, not tracking. Who a
+player blocks never leaves the device.
+
 ## Notes for the reviewer
 
 ```
@@ -179,6 +209,14 @@ fully playable.
 The leaderboard and the "Words found" feed read from https://www.wordink.app,
 which is the same game running as a website. That is the only host the app
 contacts.
+
+Chat: the speech-bubble button at the top right opens the chat for the puzzle
+on screen. The first time, it shows the chat rules and terms, which must be
+accepted before anything is shown. Messages are filtered for profanity on the
+device and on the server. Press and hold any other player's message to report
+it or block its author; a reported message disappears for the reporter at once,
+and three reports remove it for everyone. Reports are reviewed by the developer,
+who can remove messages and ban players from the chat.
 ```
 
 ## Screenshots

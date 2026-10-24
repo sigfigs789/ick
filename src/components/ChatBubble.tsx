@@ -17,6 +17,19 @@ import {
 } from "../game/chat";
 import { playChatMessage, playChatNotice } from "../audio/sound";
 import { CHAT_PRIVATE_EVENT, CHAT_PRIVATE_KEY, onBankedNotice, privateNotices } from "../game/chatNotices";
+import {
+  CHAT_BLOCKED_KEY,
+  CHAT_MODERATION_EVENT,
+  CHAT_REPORTED_KEY,
+  REPORT_RESULT_TEXT,
+  blockHandle,
+  blockedHandles,
+  canModerate,
+  moderated,
+  reportLine,
+  reportedLines,
+  unblockAll,
+} from "../game/chatModeration";
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
 import { dropForDate, FIRST_PUZZLE } from "../game/drop";
 import { handleFor } from "../game/handle";
@@ -31,6 +44,22 @@ import {
   ReactionTray,
 } from "./ChatReactions";
 import { useHold } from "../hooks/useHold";
+import {
+  CHAT_SEEN_KEY,
+  byLine,
+  loadSeen,
+  merge,
+  newestId,
+  noticeIcon,
+  saveSeen,
+  timeOf,
+  type ChatMessage,
+  type Reactions,
+  type Seen,
+} from "../game/chatRoom";
+
+export { CHAT_SEEN_KEY };
+export type { ChatMessage };
 
 /**
  * How often an open room asks for new messages.
@@ -49,42 +78,6 @@ export const CHAT_POLL_MS = 4000;
  */
 export const CHAT_CHECK_MS = 30_000;
 
-/**
- * The newest message id this browser has had on screen in each puzzle's room,
- * as `{ "2026-10-13": 812, ... }`. A puzzle missing from it has been read not
- * at all, so anything in its room is unread -- a new player included.
- */
-export const CHAT_SEEN_KEY = "ick:chat-seen-by-puzzle";
-
-/** How many puzzles' read marks are kept; the oldest go first. */
-const SEEN_KEPT = 30;
-
-type Seen = Record<string, number>;
-
-function loadSeen(): Seen {
-  try {
-    const parsed: unknown = JSON.parse(localStorage.getItem(CHAT_SEEN_KEY) ?? "{}");
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
-    return Object.fromEntries(
-      Object.entries(parsed).filter(([, id]) => typeof id === "number" && Number.isFinite(id)),
-    ) as Seen;
-  } catch {
-    return {};
-  }
-}
-
-function saveSeen(date: string, id: number): void {
-  try {
-    const seen = loadSeen();
-    if ((seen[date] ?? 0) >= id) return;
-    seen[date] = id;
-    const kept = Object.keys(seen).sort().slice(-SEEN_KEPT);
-    localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify(Object.fromEntries(kept.map((d) => [d, seen[d]]))));
-  } catch {
-    // Private mode: the dot falls back to this page's memory of what was seen.
-  }
-}
-
 /** A hide/show flicker is not time spent; see game/sessionTime.ts. */
 const MIN_SEGMENT_MS = 1000;
 /** A stretch the browser never ended (a slept laptop) is clamped, not counted whole. */
@@ -95,64 +88,6 @@ function newViewId(): string {
   return c && typeof c.randomUUID === "function"
     ? c.randomUUID()
     : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-}
-
-export interface ChatMessage {
-  id: number;
-  handle: string;
-  body: string;
-  at: string;
-  /**
-   * Absent for a player's message. A notice the room posted itself: "find" the
-   * first time anybody banks a 9.5+ word on the puzzle, and "earlier" for the
-   * line only the player who banked it after them sees (kept in this browser;
-   * see game/chatNotices.ts). "top" and "tier" are notices from before they were
-   * once per word. Its body already names the player, so it is shown as one
-   * line of its own.
-   */
-  kind?: "top" | "tier" | "find" | "earlier";
-  /** What a "find" or "earlier" notice is about. */
-  word?: string;
-  mode?: "standard" | "freeform";
-  /** "Mythic" or "Legend", which the notice is colored by. */
-  tier?: string;
-}
-
-const NOTICE_ICONS: Record<NonNullable<ChatMessage["kind"]>, string> = {
-  top: "🥇",
-  tier: "✨",
-  find: "✨",
-  earlier: "🔎",
-};
-
-/**
- * A Standard find is the harder one, so it never sparkles: ✨ is Freeform's. It
- * takes one of these instead, picked by the notice's id so every player sees
- * the same one on the same line: any celebration but a star or sparkle, which
- * would read as Freeform's. 💎 is kept for a Legend at 9.99 or more, and only
- * it. 🥇 is shared with the retired top-score notices, which only a few old
- * rooms still hold; 🔎 is left out, being the "earlier" line's.
- */
-const STANDARD_FIND_ICONS = [
-  "🔥", "👑", "⚡", "🎯", "🤯", "💥", "🚀", "🥇", "🏅", "🏆", "🕺", "💃", "🎉",
-  "🎊", "🥳", "🙌", "👏", "💪", "🤩", "😎", "🎆", "🍾", "🥂", "🪅", "🎈", "🤘",
-];
-const TOP_LEGEND_ICON = "💎";
-const TOP_LEGEND_MIN = 9.99;
-
-/**
- * The score a find notice's body ends with: "abaci 9.99!", or "abaci 9.99" or
- * "(9.99) in standard mode" on a line posted before.
- */
-function noticeScore(body: string): number | null {
-  const match = /(?:\((\d+(?:\.\d+)?)\) in (?:standard|freeform) mode| (\d+\.\d+)!?)$/.exec(body);
-  return match ? Number(match[1] ?? match[2]) : null;
-}
-
-function noticeIcon(message: ChatMessage & { kind: NonNullable<ChatMessage["kind"]> }): string {
-  if (message.kind !== "find" || message.mode !== "standard") return NOTICE_ICONS[message.kind];
-  if (message.tier === "Legend" && (noticeScore(message.body) ?? 0) >= TOP_LEGEND_MIN) return TOP_LEGEND_ICON;
-  return STANDARD_FIND_ICONS[message.id % STANDARD_FIND_ICONS.length];
 }
 
 /**
@@ -215,11 +150,12 @@ function NoticeBody({ message }: { message: ChatMessage }) {
   );
 }
 
-const PROBLEM_TEXT: Record<ChatProblem | "rate-limited" | "unavailable", string> = {
+const PROBLEM_TEXT: Record<ChatProblem | "rate-limited" | "banned" | "unavailable", string> = {
   empty: "",
   "too-long": `Keep it under ${CHAT_MAX_LENGTH} characters.`,
   profane: "Let's keep it clean. Try saying that another way.",
   "rate-limited": "Slow down a little. Try again in a few seconds.",
+  banned: "You've been removed from the chat for breaking its rules.",
   unavailable: "Couldn't send. Try again in a moment.",
 };
 
@@ -241,27 +177,6 @@ const REACT_PROBLEM_TEXT: Record<
  * would otherwise flick the chip back before it catches up.
  */
 const OWN_REACTION_HOLD_MS = 8000;
-
-/** Reactions by line id. */
-type Reactions = Record<number, Reaction[]>;
-
-/** A room's reactions as the endpoint lists them, by line. */
-function byLine(list: unknown): Reactions | null {
-  if (!Array.isArray(list)) return null;
-  const out: Reactions = {};
-  for (const item of list as { id?: unknown; emoji?: unknown; handles?: unknown }[]) {
-    if (
-      typeof item?.id !== "number" ||
-      typeof item.emoji !== "string" ||
-      !Array.isArray(item.handles) ||
-      item.handles.length === 0
-    ) {
-      continue;
-    }
-    (out[item.id] ??= []).push({ emoji: item.emoji, handles: item.handles.map(String) });
-  }
-  return out;
-}
 
 /**
  * What the dot is about: a player's message (blue) or only notices the room
@@ -290,12 +205,6 @@ function unreadKind({ latest, message, notice }: Latest, seen: number): Unread {
   return latest > seen ? "message" : null;
 }
 
-function timeOf(at: string): string {
-  const date = new Date(at);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-}
-
 /**
  * Every room read this visit: its messages and the newest id among them.
  *
@@ -305,20 +214,6 @@ function timeOf(at: string): string {
  * the whole room again.
  */
 const roomCache = pageCache<{ messages: ChatMessage[]; lastId: number; reactions: Reactions }>();
-
-/** The newest id among `messages`, 0 for none. */
-function newestId(messages: readonly ChatMessage[]): number {
-  return messages.reduce((id, m) => Math.max(id, m.id), 0);
-}
-
-/** Merge a page of messages into what is shown, in id order, without repeats. */
-function merge(shown: ChatMessage[], incoming: ChatMessage[]): ChatMessage[] {
-  if (incoming.length === 0) return shown;
-  const seen = new Set(shown.map((m) => m.id));
-  const fresh = incoming.filter((m) => !seen.has(m.id));
-  if (fresh.length === 0) return shown;
-  return [...shown, ...fresh].sort((a, b) => a.id - b.id);
-}
 
 /**
  * The chat: a small button in the corner of every page that opens a room of
@@ -366,6 +261,9 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   const [newFrom, setNewFrom] = useState<number | null>(null);
   /** The lines that were waiting unread when the room was opened, each marked as new. */
   const [fresh, setFresh] = useState<ReadonlySet<number>>(NO_FRESH);
+  /** Handles this browser blocked and lines it reported; see game/chatModeration.ts. */
+  const [blocked, setBlocked] = useState(blockedHandles);
+  const [reported, setReported] = useState(reportedLines);
 
   const lastId = useRef(0);
   /** The room `messages` and `lastId` belong to, so a late answer for another is dropped. */
@@ -419,8 +317,28 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     };
   }, [date]);
 
-  /** The room as shown: its messages with this player's private lines among them. */
-  const shown = merge(messages, privates);
+  // Blocks and reports, re-read when they change here or in another tab.
+  useEffect(() => {
+    const reload = () => {
+      setBlocked(blockedHandles());
+      setReported(reportedLines());
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === CHAT_BLOCKED_KEY || event.key === CHAT_REPORTED_KEY) reload();
+    };
+    window.addEventListener(CHAT_MODERATION_EVENT, reload);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(CHAT_MODERATION_EVENT, reload);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
+
+  /**
+   * The room as shown: its messages with this player's private lines among
+   * them, less what this browser reported or blocked.
+   */
+  const shown = moderated(merge(messages, privates), blocked, reported);
 
   // Opening the chat goes to the puzzle the game is on.
   useEffect(() => {
@@ -858,6 +776,22 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     }
   }
 
+  /** Report line `id` after the player confirms; it is hidden here either way it goes. */
+  async function report(id: number) {
+    closeReactions();
+    if (!playerId) return;
+    if (!window.confirm("Report this message? It will be hidden for you and sent to us for review.")) return;
+    setNotice(REPORT_RESULT_TEXT[await reportLine(playerId, date, id)]);
+  }
+
+  /** Block `handle` on this browser after the player confirms. */
+  function block(handle: string) {
+    closeReactions();
+    if (!window.confirm(`Block ${handle}? You won't see their messages in any chat.`)) return;
+    blockHandle(handle);
+    setNotice(`Blocked ${handle}.`);
+  }
+
   async function send(event: FormEvent) {
     event.preventDefault();
     if (sending || !playerId) return;
@@ -885,7 +819,12 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
         setDraft("");
         sentThisView.current += 1;
         trackChatMessageSent(viewId.current, body.length);
-      } else if (data.reason === "profane" || data.reason === "too-long" || data.reason === "rate-limited") {
+      } else if (
+        data.reason === "profane" ||
+        data.reason === "too-long" ||
+        data.reason === "rate-limited" ||
+        data.reason === "banned"
+      ) {
         setNotice(PROBLEM_TEXT[data.reason]);
         trackChatMessageBlocked(viewId.current, data.reason);
       } else {
@@ -968,9 +907,28 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
                       onTray={() => trayFor(message.id)}
                       onReact={(emoji) => void react(message.id, emoji)}
                       onMore={() => setPicking(true)}
+                      onReport={
+                        canModerate(message, ownHandle) ? () => void report(message.id) : undefined
+                      }
+                      onBlock={canModerate(message, ownHandle) ? () => block(message.handle) : undefined}
                     />
                   </Fragment>
                 ))
+              )}
+              {blocked.size > 0 && (
+                <li className="chat__blocked">
+                  {blocked.size === 1 ? "1 player blocked" : `${blocked.size} players blocked`} ·{" "}
+                  <button
+                    type="button"
+                    className="chat__unblock"
+                    onClick={() => {
+                      unblockAll();
+                      setNotice("");
+                    }}
+                  >
+                    Unblock
+                  </button>
+                </li>
               )}
             </ol>
           </div>
@@ -1036,7 +994,8 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
 
 /**
  * One line of the room: a player's message or a notice, with its reactions
- * under it. Reacting is the button beside it, or holding the line down.
+ * under it. Reacting is the button beside it, or holding the line down; the
+ * same tray offers Report and Block on another player's message.
  */
 const NO_FRESH: ReadonlySet<number> = new Set();
 
@@ -1050,6 +1009,8 @@ function ChatLine({
   onTray,
   onReact,
   onMore,
+  onReport,
+  onBlock,
 }: {
   message: ChatMessage;
   own: boolean;
@@ -1060,6 +1021,9 @@ function ChatLine({
   onTray: () => void;
   onReact: (emoji: string) => void;
   onMore: () => void;
+  /** Present only on a line the player may report: another player's message. */
+  onReport?: () => void;
+  onBlock?: () => void;
 }) {
   const hold = useHold(onTray);
   // A private line is nobody else's to see, so it takes no reactions.
@@ -1105,6 +1069,16 @@ function ChatLine({
       {canReact && <ReactButton open={trayOpen} onClick={onTray} />}
       <ReactionChips reactions={reactions} ownHandle={ownHandle} disabled={!canReact} onToggle={onReact} />
       {trayOpen && <ReactionTray onPick={onReact} onMore={onMore} />}
+      {trayOpen && onReport && onBlock && (
+        <span className="chat__moderate">
+          <button type="button" className="chat__moderate-button" onClick={onReport}>
+            Report
+          </button>
+          <button type="button" className="chat__moderate-button" onClick={onBlock}>
+            Block {message.handle}
+          </button>
+        </span>
+      )}
     </li>
   );
 }
