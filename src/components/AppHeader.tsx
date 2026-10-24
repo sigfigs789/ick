@@ -68,7 +68,7 @@ function Icon({ children }: { children: ReactNode }) {
  * screen reader and a mouse both get the word the glyph stands for.
  */
 const TABS: readonly Tab[] = [
-  // A list, because the page is one: the words players found, ranked.
+  // A book: the record of the words players found.
   // "Words found" rather than "Today's finds": the page does not only hold
   // today's -- it opens there, but stepping back a day is a thing it offers,
   // and a tab that promises today then shows Tuesday has misnamed itself. The
@@ -78,12 +78,8 @@ const TABS: readonly Tab[] = [
     label: "Words found",
     icon: (
       <Icon>
-        <path d="M9 6h12" />
-        <path d="M9 12h12" />
-        <path d="M9 18h12" />
-        <path d="M4 6h.01" />
-        <path d="M4 12h.01" />
-        <path d="M4 18h.01" />
+        <path d="M2 4h6a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H2z" />
+        <path d="M22 4h-6a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h7z" />
       </Icon>
     ),
   },
