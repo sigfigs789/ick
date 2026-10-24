@@ -385,6 +385,16 @@ h2 {
 button.app__menu-item:hover {
   background: var(--bg-inset);
 }
+/* Rules between the rows, so each reads as its own button. */
+button.app__menu-item + button.app__menu-item {
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+}
+.app__menu-chevron {
+  color: var(--fg-faint);
+  font-size: 1.2em;
+  line-height: 1;
+}
 /* The mode switch alone, under a rule: the chip names the mode itself. */
 .app__menu-mode {
   display: flex;

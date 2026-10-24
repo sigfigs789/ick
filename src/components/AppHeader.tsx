@@ -59,6 +59,15 @@ function Icon({ children }: { children: ReactNode }) {
   );
 }
 
+/** The "›" at the end of a menu row, which says the row opens something. */
+function MenuChevron() {
+  return (
+    <span className="app__menu-chevron" aria-hidden="true">
+      ›
+    </span>
+  );
+}
+
 /**
  * The pages beside the puzzle, as icons on the one bar -- the shape every daily
  * word game's header has settled on, and the only one that holds a wordmark and
@@ -404,6 +413,7 @@ export function AppHeader({
             <div className="app__menu-panel" id="app-menu">
               <button type="button" className="app__menu-item" onClick={openRules}>
                 How to play
+                <MenuChevron />
               </button>
               {onOpenSheet && (
                 <>
@@ -413,6 +423,7 @@ export function AppHeader({
                     onClick={() => openSheet("suggest-word")}
                   >
                     Suggest a word
+                    <MenuChevron />
                   </button>
                   <button
                     type="button"
@@ -420,6 +431,7 @@ export function AppHeader({
                     onClick={() => openSheet("feedback")}
                   >
                     Feedback
+                    <MenuChevron />
                   </button>
                 </>
               )}
