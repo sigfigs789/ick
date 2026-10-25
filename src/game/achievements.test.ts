@@ -119,6 +119,79 @@ describe("achievements", () => {
     }
   });
 
+  it("needs two Mythic or better words in one puzzle for Double myth", () => {
+    const split = [day("2026-10-01", [word("Mythic")]), day("2026-10-02", [word("Legend")])];
+    expect(statusOf("double-mythic", { history: split }).earnedOn).toBeNull();
+    const together = [...split, day("2026-10-03", [word("Mythic"), word("Common"), word("Legend")])];
+    expect(statusOf("double-mythic", { history: together }).earnedOn).toBe("2026-10-03");
+  });
+
+  it("needs every guess spent and Mythic or better for Pantheon", () => {
+    const short = day("2026-10-10", [word("Mythic"), word("Legend")]);
+    const slip = day("2026-10-11", [word("Mythic"), word("Mythic"), word("Elusive"), word("Legend")]);
+    const all = day("2026-10-12", [word("Mythic"), word("Legend"), word("Mythic"), word("Mythic")]);
+    expect(statusOf("pantheon", { history: [short, slip] }).earnedOn).toBeNull();
+    expect(statusOf("pantheon", { history: [short, slip, all] }).earnedOn).toBe("2026-10-12");
+  });
+
+  it("counts Legends for Legendarium and words for the bigger word counts", () => {
+    const legends = statusOf("legend-10", {
+      history: [day("2026-10-01", [word("Legend"), word("Legend"), word("Mythic")])],
+    });
+    expect(legends.progress).toEqual({ current: 2, target: 10 });
+    const words = statusOf("words-500", {
+      history: [day("2026-10-01", [word("Common"), word("Rare")])],
+    });
+    expect(words.progress).toEqual({ current: 2, target: 500 });
+  });
+
+  it("dates a Straight in to the first puzzle opened with a win", () => {
+    const history = [
+      day("2026-10-01", [word("Common"), word("Rare")]),
+      day("2026-10-02", [word("Elusive"), word("Common")]),
+    ];
+    expect(statusOf("straight-in", { history }).earnedOn).toBe("2026-10-02");
+  });
+
+  it("needs a win with nothing turned away for Clean copy", () => {
+    const history = [
+      day("2026-10-01", [word("Rare")], { rejectedAttempts: ["inkk"] }),
+      day("2026-10-02", [word("Common")]),
+      day("2026-10-03", [word("Rare")], { completed: false }),
+      day("2026-10-04", [word("Rare")]),
+    ];
+    expect(statusOf("clean-copy", { history }).earnedOn).toBe("2026-10-04");
+  });
+
+  it("needs the retry spent and a win for Second chance", () => {
+    const history = [
+      day("2026-10-01", [word("Common")], { retryUsed: true }),
+      day("2026-10-02", [word("Rare")]),
+      day("2026-10-03", [word("Rare")], { retryUsed: true }),
+    ];
+    expect(statusOf("second-chance", { history }).earnedOn).toBe("2026-10-03");
+  });
+
+  it("needs a word of 14 letters or more for Sesquipedalian", () => {
+    const history = [
+      day("2026-10-01", [word("Rare", "inkhornisms")]),
+      day("2026-10-02", [word("Common", "thinkingnesses")]),
+    ];
+    expect(statusOf("sesquipedalian", { history }).earnedOn).toBe("2026-10-02");
+  });
+
+  it("finds an archive play only on a puzzle that says when it was played", () => {
+    const history = [
+      day("2026-09-01", [word("Common")]),
+      day("2026-09-02", [word("Common")], { firstWordAt: "2026-09-02T09:00:00" }),
+      day("2026-09-03", [word("Common")], { firstWordAt: "2026-10-20T09:00:00" }),
+    ];
+    expect(statusOf("archive-play", { history, onItsDay: ["2026-09-02"] }).earnedOn).toBe("2026-09-03");
+    expect(
+      statusOf("archive-play", { history: history.slice(0, 2), onItsDay: ["2026-09-02"] }).earnedOn
+    ).toBeNull();
+  });
+
   it("keeps a badge already earned even when the record no longer shows it", () => {
     expect(statusOf("first-legend", {}, { "first-legend": "2026-10-05" }).earnedOn).toBe("2026-10-05");
   });

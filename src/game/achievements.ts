@@ -174,14 +174,30 @@ function fullSpectrum({ history }: AchievementRecord): Check {
   return { earnedOn: null, progress: { current: seen.size, target: CURRENT_TIERS.length } };
 }
 
-/** Every guess spent, each one Rare or better. */
-function cleanSweep(progress: DailyProgress): boolean {
-  return (
+/** Every guess spent, each one passing `test`. */
+function everyGuess(test: (rarity: Rarity) => boolean) {
+  return (progress: DailyProgress): boolean =>
     progress.completed &&
     progress.acceptedWords.length >= maxGuessesFor(progress.date) &&
-    progress.acceptedWords.every((word) => isWinningRarity(word.rarity))
-  );
+    progress.acceptedWords.every((word) => test(word.rarity));
 }
+
+function hasWin(progress: DailyProgress): boolean {
+  return progress.acceptedWords.some((word) => isWinningRarity(word.rarity));
+}
+
+/** A finished win with not one guess turned away. */
+function cleanCopy(progress: DailyProgress): boolean {
+  return progress.completed && progress.rejectedAttempts.length === 0 && hasWin(progress);
+}
+
+/** The puzzle's retry spent, and a Rare or better word found all the same. */
+function secondChance(progress: DailyProgress): boolean {
+  return Boolean(progress.retryUsed) && hasWin(progress);
+}
+
+/** A word as long as "sesquipedalian" or longer. */
+const LONG_WORD = "sesquipedalian".length;
 
 /** Every guess spent, and only the last one Rare or better. */
 function downToTheWire(progress: DailyProgress): boolean {
@@ -198,13 +214,26 @@ function bothWays({ history }: AchievementRecord): Check {
   const wonBy = new Map<string, Set<string>>();
   for (const progress of history) {
     if (!modeIsChosen(progress.date) || !progress.mode) continue;
-    if (!progress.acceptedWords.some((word) => isWinningRarity(word.rarity))) continue;
+    if (!hasWin(progress)) continue;
     const modes = wonBy.get(progress.date) ?? new Set();
     modes.add(progress.mode);
     wonBy.set(progress.date, modes);
     if (modes.size === 2) return { earnedOn: progress.date };
   }
   return { earnedOn: null };
+}
+
+/**
+ * A puzzle played after its own day, out of the archive. Only a puzzle that
+ * says when it was played counts: an old save with no timestamp cannot tell an
+ * archive day from a day played on time.
+ */
+function fromTheArchive({ history, onItsDay }: AchievementRecord): Check {
+  const onTime = new Set(onItsDay);
+  const hit = history.find(
+    (progress) => Boolean(progress.firstWordAt ?? progress.completedAt) && !onTime.has(progress.date)
+  );
+  return { earnedOn: hit?.date ?? null };
 }
 
 /** The earliest of a suggestion date, over the suggestions that have one. */
@@ -264,6 +293,30 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     check: daysPlayed(100),
   },
   {
+    id: "days-365",
+    group: "Getting started",
+    icon: "📔",
+    title: "Almanac",
+    description: "Play on 365 different days.",
+    check: daysPlayed(365),
+  },
+  {
+    id: "archive-play",
+    group: "Getting started",
+    icon: "🕰️",
+    title: "Time traveller",
+    description: "Play a past puzzle from the archive.",
+    check: fromTheArchive,
+  },
+  {
+    id: "first-extremely-rare",
+    group: "Rarity",
+    icon: "🔍",
+    title: "Sharp eye",
+    description: "Find an Extremely Rare word.",
+    check: firstWord((rarity) => rarity === "Extremely Rare"),
+  },
+  {
     id: "first-elusive",
     group: "Rarity",
     icon: "🪙",
@@ -288,6 +341,14 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     check: firstWord((rarity) => rarity === "Legend"),
   },
   {
+    id: "double-mythic",
+    group: "Rarity",
+    icon: "🔱",
+    title: "Double myth",
+    description: "Find two Mythic or better words in one puzzle.",
+    check: firstPuzzle((progress) => countOf(MYTHIC_OR_BETTER)(progress) >= 2),
+  },
+  {
     id: "double-legend",
     group: "Rarity",
     icon: "⚡",
@@ -302,6 +363,22 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Full spectrum",
     description: "Find a word in every tier, Common to Legend.",
     check: fullSpectrum,
+  },
+  {
+    id: "pantheon",
+    group: "Rarity",
+    icon: "🌌",
+    title: "Pantheon",
+    description: "Finish a puzzle with every guess Mythic or better.",
+    check: firstPuzzle(everyGuess((rarity) => MYTHIC_OR_BETTER.includes(rarity))),
+  },
+  {
+    id: "streak-3",
+    group: "Streaks",
+    icon: "🎩",
+    title: "Hat trick",
+    description: "Reach a 3 day streak.",
+    check: streakOf(3),
   },
   {
     id: "streak-7",
@@ -368,6 +445,14 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     check: countTo(100, countOf(MYTHIC_OR_BETTER)),
   },
   {
+    id: "legend-10",
+    group: "Collections",
+    icon: "🌟",
+    title: "Legendarium",
+    description: "Find 10 Legends.",
+    check: countTo(10, countOf(["Legend"])),
+  },
+  {
     id: "words-100",
     group: "Collections",
     icon: "📚",
@@ -376,12 +461,47 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     check: countTo(100, (progress) => progress.acceptedWords.length),
   },
   {
+    id: "words-500",
+    group: "Collections",
+    icon: "🗃️",
+    title: "Five hundred words",
+    description: "Bank 500 words.",
+    check: countTo(500, (progress) => progress.acceptedWords.length),
+  },
+  {
+    id: "words-1000",
+    group: "Collections",
+    icon: "🏰",
+    title: "Thousand words",
+    description: "Bank 1,000 words.",
+    check: countTo(1000, (progress) => progress.acceptedWords.length),
+  },
+  {
     id: "clean-sweep",
     group: "Style",
     icon: "🧹",
     title: "Clean sweep",
     description: "Finish a puzzle with every guess Rare or better.",
-    check: firstPuzzle(cleanSweep),
+    check: firstPuzzle(everyGuess(isWinningRarity)),
+  },
+  {
+    id: "straight-in",
+    group: "Style",
+    icon: "🏹",
+    title: "Straight in",
+    description: "Make the first word of a puzzle Rare or better.",
+    check: firstPuzzle(
+      (progress) =>
+        progress.acceptedWords.length > 0 && isWinningRarity(progress.acceptedWords[0].rarity)
+    ),
+  },
+  {
+    id: "clean-copy",
+    group: "Style",
+    icon: "📝",
+    title: "Clean copy",
+    description: "Finish a puzzle with a Rare or better word and no guess turned away.",
+    check: firstPuzzle(cleanCopy),
   },
   {
     id: "down-to-the-wire",
@@ -390,6 +510,22 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Down to the wire",
     description: "Find a Rare or better word with your last guess, after every other fell short.",
     check: firstPuzzle(downToTheWire),
+  },
+  {
+    id: "second-chance",
+    group: "Style",
+    icon: "🔁",
+    title: "Second chance",
+    description: "Spend a puzzle's retry and still find a Rare or better word.",
+    check: firstPuzzle(secondChance),
+  },
+  {
+    id: "sesquipedalian",
+    group: "Style",
+    icon: "📏",
+    title: "Sesquipedalian",
+    description: `Bank a word of ${LONG_WORD} letters or more, as long as "sesquipedalian".`,
+    check: firstPuzzle((progress) => progress.acceptedWords.some((w) => w.word.length >= LONG_WORD)),
   },
   {
     id: "both-ways",
