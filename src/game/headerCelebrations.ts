@@ -12,8 +12,8 @@
  *
  * Each group's cards come due in that order through the day -- the best word
  * as the site opens, a perfect month and a new best on the first word, the
- * average and the climb on the finish -- so the first card to claim its
- * group's day is the one with priority. The claim is kept in storage, so a
+ * climb a moment after that word, the average on the finish -- so the first
+ * card to claim its group's day is the one with priority. The claim is kept in storage, so a
  * reload between the first word and the finish does not let a second card in.
  */
 

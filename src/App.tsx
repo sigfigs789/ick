@@ -72,8 +72,8 @@ import {
 } from "./game/sessionTime";
 
 /**
- * How long after a finish the streak board is read: long enough for the
- * finishing word's write to land (see game/leaderboard.ts, submitScore).
+ * How long after the streak goes up the streak board is read: long enough for
+ * that word's write to land (see game/leaderboard.ts, submitScore).
  */
 const STREAK_CHECK_DELAY_MS = 1500;
 
@@ -315,10 +315,21 @@ export default function App() {
       sound.rising();
       setImprovement(rise);
     }
-    // And a climb up the streak board (see game/streakClimb.ts), read from the
-    // server after a moment so the finishing word's write has landed. It waits
-    // its turn behind the cards above, as they wait behind each other, and
-    // gives way to a longest streak yet, the other streak header celebration.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finishedToday, date]);
+
+  // A climb up the streak board (see game/streakClimb.ts), looked for only on
+  // the submission that takes the streak up a day -- today's first word -- as
+  // that is how a player passes somebody else's run. Read from the server
+  // after a moment so that word's write has landed. A longest streak yet comes
+  // on the same word and claims the streak header celebration first, so it
+  // keeps the climb away; the climb waits its turn behind any other card.
+  const streakUpToday = isToday && streak.lastCompletedDate === date;
+  const wasStreakUp = useRef({ date, up: streakUpToday });
+  useEffect(() => {
+    const before = wasStreakUp.current;
+    wasStreakUp.current = { date, up: streakUpToday };
+    if (!streakUpToday || before.date !== date || before.up) return;
     let cancelled = false;
     const check = window.setTimeout(() => {
       void checkStreakClimb(date).then((found) => {
@@ -329,8 +340,7 @@ export default function App() {
       cancelled = true;
       window.clearTimeout(check);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [finishedToday, date]);
+  }, [streakUpToday, date]);
   // Its chime when the card actually shows, which is after any card ahead of it.
   const climbShown = !showPerfectMonth && !newBest && !improvement && climb !== null;
   useEffect(() => {

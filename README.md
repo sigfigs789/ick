@@ -921,8 +921,8 @@ month has its own). They tap away or go by themselves.
 
 | Group | Card | When it comes due |
 |---|---|---|
-| Streak | `NewBestCelebration` — "Your longest streak yet!" | the first word on the day the streak passes the player's best |
-| Streak | `StreakClimbCelebration` — "Up the streak board!" | a moment after today's puzzle is finished |
+| Streak | `NewBestCelebration` — "Your longest streak yet!" | today's first word, when it takes the streak past the player's best |
+| Streak | `StreakClimbCelebration` — "Up the streak board!" | a moment after today's first word takes the streak up, if it passed somebody else's run |
 | News | `BestWordNewsCard` — yesterday's best word | as the site opens; every time the player found it, but only once ever when somebody else did (from their 4th day played) |
 | News | `PerfectMonthCelebration` — "Perfect {month}!" | the first word that completes a month without a missed day |
 | News | `ImprovementCelebration` — "You're on the rise!" | the finish, at most once a week |
