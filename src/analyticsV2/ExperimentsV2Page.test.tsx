@@ -130,6 +130,28 @@ describe("ExperimentsV2Page", () => {
     expect(screen.getAllByRole("table")).toHaveLength(1);
   });
 
+  it("draws the share name test, new and returning players apart", async () => {
+    const shareName = {
+      since: "2026-10-26",
+      arms: [
+        { variant: "shown", segment: "all", assigned: 200, d1: { cohort: 180, returned: 60 } },
+        { variant: "shown", segment: "new", assigned: 80, d1: { cohort: 70, returned: 20 } },
+        { variant: "hidden", segment: "all", assigned: 200, d1: { cohort: 180, returned: 55 } },
+        { variant: "hidden", segment: "new", assigned: 90, d1: { cohort: 80, returned: 20 } },
+      ],
+    };
+    const body = { wordOfDay: null, comeBack: null, headerCelebrations: null, shareName };
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(body), { status: 200 })));
+    render(<ExperimentsV2Page />);
+
+    expect(await screen.findByRole("heading", { name: "Username in shares" })).toBeTruthy();
+    expect(
+      screen.getByRole("table", { name: "Everyone drawn: with the username in shares against without." }),
+    ).toBeTruthy();
+    // Everyone, then new players, then returning players.
+    expect(screen.getAllByRole("table")).toHaveLength(3);
+  });
+
   it("says so when the database sent no experiment", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ wordOfDay: null, comeBack: null }), { status: 200 })));
     render(<ExperimentsV2Page />);

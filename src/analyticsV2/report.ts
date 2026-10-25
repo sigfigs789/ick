@@ -126,6 +126,7 @@ export interface Experiments {
   wordOfDay: Experiment | null;
   comeBack: Experiment | null;
   headerCelebrations: Experiment | null;
+  shareName: Experiment | null;
   /** The draw days counted, both ends, or null for everyone drawn. */
   span: { from: string; to: string } | null;
 }
@@ -291,6 +292,7 @@ export async function fetchExperiments(today: string, span?: { from: string; to:
     wordOfDay: parseExperiment(body.wordOfDay),
     comeBack: parseExperiment(body.comeBack),
     headerCelebrations: parseExperiment(body.headerCelebrations),
+    shareName: parseExperiment(body.shareName),
     span: span ?? null,
   };
 }

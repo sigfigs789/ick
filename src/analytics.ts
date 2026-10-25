@@ -23,6 +23,7 @@ import { parseSourceCode, type ModeAssignment } from "./game/onboarding";
 import { IDLE_HINT_DELAY_MS, currentIdleHintArm, type IdleHintArm } from "./game/idleHint";
 import type { ComeBackVariant } from "./game/comeBackTest";
 import type { HeaderCelebrationsVariant } from "./game/headerCelebrationsTest";
+import type { ShareNameVariant } from "./game/shareNameTest";
 import type { WordOfDayVariant } from "./game/wordOfDay";
 import { APP_VERSION } from "./version";
 import { isBotUserAgent } from "./game/botUa";
@@ -884,6 +885,25 @@ export function trackComeBackAssigned(variant: ComeBackVariant, date: string) {
 export function trackHeaderCelebrationsAssigned(variant: HeaderCelebrationsVariant, date: string) {
   send("header_celebrations_assigned", {
     variant,
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
+    live_date: todayDateString(),
+    mode: modeOf(date),
+  });
+}
+
+/**
+ * The share name test's draw (see game/shareNameTest.ts), once per player, on
+ * the first share built with no "Show username" choice saved. Shaped like the
+ * come-back test's, for `analytics_v2_experiment`, which splits new players
+ * from returning ones by their first word; `returning` is the browser's own
+ * view of the same thing (a word banked on an earlier puzzle), kept so the two
+ * can be checked against each other.
+ */
+export function trackShareNameAssigned(variant: ShareNameVariant, date: string, returning: boolean) {
+  send("share_name_assigned", {
+    variant,
+    returning,
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),
     live_date: todayDateString(),
