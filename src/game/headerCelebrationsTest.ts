@@ -44,6 +44,20 @@ export function assignHeaderCelebrationsArm(
 }
 
 /**
+ * The arm already drawn, or null before the draw -- read without drawing, for
+ * a card that must respect the split but should not be what enrols a player in
+ * it (see the achievement card in App.tsx).
+ */
+export function drawnHeaderCelebrationsArm(): HeaderCelebrationsVariant | null {
+  try {
+    const stored = localStorage.getItem(ASSIGNMENT_KEY);
+    return isVariant(stored) ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * An arm forced with `?header-celebrations=hidden` (or `=shown`), for seeing
  * either without waiting on a draw; a hand-picked tester (see testers.ts) is
  * forced to shown. A forced arm is never stored or reported, so it cannot leak

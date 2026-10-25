@@ -16,6 +16,7 @@ import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
 import { ImprovementCelebration } from "./components/ImprovementCelebration";
 import { StreakClimbCelebration } from "./components/StreakClimbCelebration";
 import { NewBestCelebration } from "./components/NewBestCelebration";
+import { AchievementCelebration } from "./components/AchievementCelebration";
 import { QuickShareButton } from "./components/QuickShareButton";
 import { YesterdaysBest } from "./components/YesterdaysBest";
 import { ComeBackCard } from "./components/ComeBackCard";
@@ -29,12 +30,17 @@ import { useAcceptedSuggestions } from "./hooks/useAcceptedSuggestions";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { isWinningRarity } from "./game/rank";
 import { celebrationFor } from "./game/celebration";
+import { earnedIds, newlyEarned, syncAchievements, type Achievement } from "./game/achievements";
 import type { Rarity } from "./game/types";
 import { completedWholeMonth } from "./game/perfectMonth";
 import { welcomeBack } from "./game/streakFreeze";
 import { beatBestToday } from "./game/newBest";
 import { claimHeaderCelebration, type HeaderCelebrationGroup } from "./game/headerCelebrations";
-import { assignHeaderCelebrationsArm, forcedHeaderCelebrationsVariant } from "./game/headerCelebrationsTest";
+import {
+  assignHeaderCelebrationsArm,
+  drawnHeaderCelebrationsArm,
+  forcedHeaderCelebrationsVariant,
+} from "./game/headerCelebrationsTest";
 import { dismissWelcomeBack, welcomeBackDismissedOn } from "./game/storage";
 import {
   averageImprovement,
@@ -147,6 +153,10 @@ export default function App() {
   const endImprovement = useCallback(() => setImprovement(null), []);
   const [climb, setClimb] = useState<StreakClimb | null>(null);
   const endClimb = useCallback(() => setClimb(null), []);
+  const [unlocked, setUnlocked] = useState<{ key: number; achievements: Achievement[] } | null>(
+    null,
+  );
+  const endUnlocked = useCallback(() => setUnlocked(null), []);
   const sound = useSound();
   // Half of players never see the word of the day; the draw is the first
   // finished puzzle, where it would first appear (see game/wordOfDay.ts).
@@ -241,6 +251,38 @@ export default function App() {
     }
     // sound.accept/reject are stable; only new feedback events should
     // trigger playback.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feedback]);
+
+  // An achievement earned by a submission (see game/achievements.ts), announced
+  // with its own card rather than left for the Stats page to turn up. The
+  // badges held as the page opened are the baseline, so a player's earlier
+  // badges -- earned before this card existed, or kept by the Stats page --
+  // are never announced. Every verdict is a chance, a rejection included, as
+  // the day's first submission banks the streak either way. A second badge
+  // while the card is up joins it rather than waiting its turn.
+  const earnedAchievements = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    earnedAchievements.current = earnedIds(syncAchievements(streak));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the baseline, once
+  }, []);
+  useEffect(() => {
+    const before = earnedAchievements.current;
+    if (!feedback || !before) return;
+    const statuses = syncAchievements(streak);
+    earnedAchievements.current = earnedIds(statuses);
+    const fresh = newlyEarned(before, statuses);
+    // Kept from the players the header celebrations test hides the cards from,
+    // but never the thing that draws a player into it: every player earns a
+    // badge on their first word, which would enrol them all on day one.
+    const arm = forcedHeaderCelebrationsVariant() ?? drawnHeaderCelebrationsArm();
+    if (fresh.length === 0 || arm === "hidden") return;
+    setUnlocked((current) => ({
+      key: feedback.key,
+      achievements: [...(current?.achievements ?? []), ...fresh],
+    }));
+    // Read alongside the verdict that earned it: the word, the streak and the
+    // record are all written before the verdict is shown.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedback]);
 
@@ -384,13 +426,22 @@ export default function App() {
       bestWordNewsEverShown(),
     );
     if (!kind) return;
-    const busy = showPerfectMonth || improvement || climb || burst || welcome;
+    const busy = showPerfectMonth || improvement || climb || burst || unlocked || welcome;
     if (kind === "other" && busy) return;
     if (!showHeaderCelebration("news", date)) return;
     markBestWordNewsShown(yesterdaysBest.day);
     setBestNews({ kind, resolved: yesterdaysBest });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- decided on arrival only
   }, [yesterdaysBest]);
+
+  // The achievement card's fanfare when the card actually shows, which is after
+  // any card ahead of it and after the word's own burst.
+  const unlockedShown =
+    !showPerfectMonth && !newBest && !improvement && !climb && !bestNews && !burst && unlocked !== null;
+  useEffect(() => {
+    if (unlockedShown) sound.achievement();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unlockedShown, unlocked?.key]);
 
   const guessEntry = (
     <>
@@ -442,12 +493,20 @@ export default function App() {
           resolved={bestNews.resolved}
           onDone={endBestNews}
         />
+      ) : burst ? (
+        // Ahead of the achievement card, so a word's own moment -- a jackpot
+        // stamp most of all -- plays out before the badge it earned.
+        <Fragment key={burst.key}>
+          <ConfettiBurst grand={burst.grand} />
+          {burst.grand && <JackpotStamp rarity={burst.rarity} date={date} />}
+        </Fragment>
       ) : (
-        burst && (
-          <Fragment key={burst.key}>
-            <ConfettiBurst grand={burst.grand} />
-            {burst.grand && <JackpotStamp rarity={burst.rarity} date={date} />}
-          </Fragment>
+        unlocked && (
+          <AchievementCelebration
+            key={unlocked.key}
+            achievements={unlocked.achievements}
+            onDone={endUnlocked}
+          />
         )
       )}
 
