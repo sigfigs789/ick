@@ -19,7 +19,7 @@
 //                  sources, window, scores } }, for /analyticsV2: its own
 //   report, from its own function (see the 2026-10-30 migration).
 // GET /api/review?list=experiments-v2&today=YYYY-MM-DD
-//   -> { wordOfDay, comeBack }, for /experimentsV2: each experiment's arms
+//   -> { wordOfDay, comeBack, headerCelebrations }, for /experimentsV2: each experiment's arms
 //   (see the 2026-11-01 analytics_v2_experiment migration).
 //   400 bad-list / bad-limit / bad-date, 401 unauthorised, 405 wrong method,
 //   503 no credentials, 502 upstream unavailable.
@@ -388,11 +388,12 @@ async function handleGet(request: Request): Promise<Response> {
           { p_today: today, p_event: event },
           ANALYTICS_TIMEOUT_MS,
         );
-      const [wordOfDay, comeBack] = await Promise.all([
+      const [wordOfDay, comeBack, headerCelebrations] = await Promise.all([
         experiment("word_of_day_assigned"),
         experiment("come_back_assigned"),
+        experiment("header_celebrations_assigned"),
       ]);
-      return reply(200, { wordOfDay, comeBack }, ANALYTICS_V2_CACHE);
+      return reply(200, { wordOfDay, comeBack, headerCelebrations }, ANALYTICS_V2_CACHE);
     }
     if (list === "analytics") {
       // The window's ends and the viewer's own puzzle, sent as-is rather than

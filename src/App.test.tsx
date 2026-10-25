@@ -7,6 +7,7 @@ import { useSound } from "./hooks/useSound";
 import { markSeen } from "./game/whatsNew";
 import { addDays } from "./game/date";
 import { checkStreakClimb } from "./game/streakClimb";
+import { claimHeaderCelebration } from "./game/headerCelebrations";
 
 vi.mock("./hooks/useDailyPuzzle", () => ({ useDailyPuzzle: vi.fn() }));
 vi.mock("./hooks/useSound", () => ({ useSound: vi.fn() }));
@@ -64,6 +65,8 @@ describe("App", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    // In the header celebrations test's arm that sees them (see game/headerCelebrationsTest.ts).
+    localStorage.setItem("ick:header-celebrations-test", "shown");
     // Every test but the welcome one below is about the puzzle behind the
     // rules, so start them as a returning player who has already read them.
     markSeen("instructions");
@@ -183,6 +186,27 @@ describe("App", () => {
       expect(vi.mocked(useSound).mock.results[0].value.rising).toHaveBeenCalledTimes(1);
     });
 
+    it("is hidden from the header celebrations test's hidden arm", () => {
+      storeRisingWeek();
+      window.history.pushState(null, "", "/?header-celebrations=hidden");
+      vi.mocked(useDailyPuzzle).mockReturnValue(day(false));
+      const { rerender } = render(<App />);
+      vi.mocked(useDailyPuzzle).mockReturnValue(day(true));
+      rerender(<App />);
+      expect(screen.queryByText("You're on the rise!")).not.toBeInTheDocument();
+      expect(vi.mocked(useSound).mock.results[0].value.rising).not.toHaveBeenCalled();
+    });
+
+    it("gives way to a news card that already had today", () => {
+      storeRisingWeek();
+      claimHeaderCelebration("news", today); // yesterday's best word, say
+      vi.mocked(useDailyPuzzle).mockReturnValue(day(false));
+      const { rerender } = render(<App />);
+      vi.mocked(useDailyPuzzle).mockReturnValue(day(true));
+      rerender(<App />);
+      expect(screen.queryByText("You're on the rise!")).not.toBeInTheDocument();
+    });
+
     it("is not celebrated on a puzzle that mounts already finished", () => {
       storeRisingWeek();
       vi.mocked(useDailyPuzzle).mockReturnValue(day(true));
@@ -249,6 +273,26 @@ describe("App", () => {
       expect(checkStreakClimb).toHaveBeenCalledWith(today);
       expect(screen.getByText("Up the streak board!")).toBeInTheDocument();
       expect(vi.mocked(useSound).mock.results[0].value.rising).toHaveBeenCalledTimes(1);
+    });
+
+    it("gives way to a longest streak yet that day", async () => {
+      vi.useFakeTimers();
+      vi.mocked(checkStreakClimb).mockResolvedValue({ from: 12, to: 9 });
+      const streak = { currentStreak: 9, longestStreak: 9, totalCompleted: 9, crushedIt: 0, elite: 0, highScore: 0, bestToBeat: 9, lastCompletedDate: "2026-08-12" };
+      const passed = { ...streak, currentStreak: 10, longestStreak: 10, lastCompletedDate: today };
+      vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ streak }) as ReturnType<typeof useDailyPuzzle>);
+      const { rerender } = render(<App />);
+
+      vi.mocked(useDailyPuzzle).mockReturnValue({ ...day(false), streak: passed });
+      rerender(<App />);
+      expect(screen.getByText("Your longest streak yet!")).toBeInTheDocument();
+
+      vi.mocked(useDailyPuzzle).mockReturnValue({ ...day(true), streak: passed });
+      rerender(<App />);
+      await act(() => vi.advanceTimersByTimeAsync(1500));
+      expect(checkStreakClimb).toHaveBeenCalledWith(today);
+      await act(() => vi.advanceTimersByTimeAsync(7000)); // the new best's card goes
+      expect(screen.queryByText("Up the streak board!")).not.toBeInTheDocument();
     });
 
     it("is not looked for on a puzzle that mounts already finished", async () => {

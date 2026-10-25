@@ -6,7 +6,7 @@ import { fetchExperiments, type Experiments } from "./report";
 import { ExperimentView } from "./ExperimentView";
 
 /**
- * The experiments, at /experimentsV2: each 50/50 test's call, then its arms for
+ * The experiments, at /experimentsV2: each split test's call, then its arms for
  * everyone drawn, new players and returning players.
  *
  * Moved off /analyticsV2 onto their own read (`list=experiments-v2`), so this
@@ -30,7 +30,9 @@ export function ExperimentsV2Page() {
       onRefresh={refresh}
       onRetry={retry}
       empty="No experiment is running."
-      isEmpty={!experiments || (!experiments.wordOfDay && !experiments.comeBack)}
+      isEmpty={
+        !experiments || (!experiments.wordOfDay && !experiments.comeBack && !experiments.headerCelebrations)
+      }
     >
       {experiments && <List experiments={experiments} />}
     </ReviewPage>
@@ -72,6 +74,26 @@ function List({ experiments }: { experiments: Experiments }) {
                 Half of players never see the line under the streak that says what tomorrow is worth. Each is drawn
                 once, the first time it would appear: a word banked on today&rsquo;s puzzle. Try either arm with{" "}
                 <code>?come-back=hidden</code> or <code>=shown</code>; a forced arm, or a tester, is not counted.
+              </>
+            }
+          />
+        </Section>
+      )}
+
+      {experiments.headerCelebrations && (
+        <Section
+          title="Header celebrations"
+          note="Whether the cards over the top of today's puzzle move the scorecard. Over players."
+        >
+          <ExperimentView
+            experiment={experiments.headerCelebrations}
+            subject="the header celebrations"
+            about={
+              <>
+                A quarter of players never see the header celebrations: no longest streak yet, climb up the streak
+                board, yesterday&rsquo;s best word, perfect month or rising average. Each is drawn once, the first time
+                one of those cards would show. Try either arm with <code>?header-celebrations=hidden</code> or{" "}
+                <code>=shown</code>; a forced arm, or a tester, is not counted.
               </>
             }
           />
