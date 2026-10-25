@@ -92,6 +92,21 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
 - **Sharing** (`src/game/share.ts`, `src/components/ShareImageButton.tsx`):
   two ways to share a result, both spoiler-free by default via the same
   toggle in `ResultsPanel`.
+  - **Username** (`src/game/shareName.ts`): a shared result says "Playing
+    as <handle>" unless the player switches "Show username" off. For a
+    player who has never set that toggle, the default is a 50/50 test
+    (`src/game/shareNameTest.ts`): `shown` keeps the name on and `hidden`
+    starts with it off. A player is drawn the first time a share is built and
+    keeps that arm, even after setting the toggle (intent-to-treat); the
+    switch is reported as `share_name_toggled` against the arm, so each arm's
+    override rate can be read. A player who had already set the toggle when
+    the test arrived is marked out of it for good at startup and never drawn.
+    The draw
+    is a `share_name_assigned` event (with `returning`: a word banked on an
+    earlier puzzle). The arms are scored on `/experimentsV2` for everyone,
+    new players and returning players. Force either arm with
+    `?share-name=hidden` or `=shown`. Testers are forced to `hidden`. A
+    forced arm or a host that reports nothing is never drawn.
   - **Text**: `buildShareText`'s `spoilerFree` option (default `true`)
     swaps between rarity squares and the actual words.
   - **Image**: `ShareImageButton` rasterizes the results card (via

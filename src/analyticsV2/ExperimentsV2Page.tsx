@@ -56,7 +56,11 @@ export function ExperimentsV2Page() {
       onRetry={retry}
       empty="No experiment is running."
       isEmpty={
-        !experiments || (!experiments.wordOfDay && !experiments.comeBack && !experiments.headerCelebrations)
+        !experiments ||
+        (!experiments.wordOfDay &&
+          !experiments.comeBack &&
+          !experiments.headerCelebrations &&
+          !experiments.shareName)
       }
     >
       {picker}
@@ -124,6 +128,29 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
                 board, yesterday&rsquo;s best word, perfect month or rising average. Each is drawn once, the first time
                 one of those cards would show. Try either arm with <code>?header-celebrations=hidden</code> or{" "}
                 <code>=shown</code>; a forced arm, or a tester, is not counted.
+              </>
+            }
+          />
+        </Section>
+      )}
+
+      {experiments.shareName && (
+        <Section
+          title="Username in shares"
+          note={`Whether a shared result saying who played it, by default, moves the scorecard. Over players, new and returning apart.${drawn}`}
+        >
+          <ExperimentView
+            experiment={experiments.shareName}
+            subject="the username in shares"
+            about={
+              <>
+                Half of players who have never set the share panel&rsquo;s &ldquo;Show username&rdquo; toggle start
+                with it off, so their shares leave out &ldquo;Playing as&rdquo;; a player who has set it keeps their
+                choice and is never drawn. Each is drawn once, the first time a share is built, and keeps the arm
+                after setting the toggle; that switch is logged as <code>share_name_toggled</code>, the override
+                rate for each arm. Watch the sharing guardrail here as closely as D1. Try either arm with{" "}
+                <code>?share-name=hidden</code> or <code>=shown</code>; a forced arm, or a tester (forced to hidden),
+                is not counted.
               </>
             }
           />

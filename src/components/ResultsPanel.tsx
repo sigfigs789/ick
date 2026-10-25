@@ -4,6 +4,7 @@ import { RainbowWord } from "./RainbowWord";
 import { MODE_LABELS, modeForDate } from "../game/mode";
 import { loadReveal, saveReveal } from "../game/reveal";
 import { loadShowName, saveShowName } from "../game/shareName";
+import { drawShareName, reportShareNameToggle } from "./shareNameDraw";
 import { loadPlayerId, selfName } from "../game/player";
 import { ShareButton } from "./ShareButton";
 import type { AcceptedWord, StreakState } from "../game/types";
@@ -107,12 +108,17 @@ export function ResultsPanel({
     setRevealState(next);
     saveReveal(next);
   };
-  // On until the player switches it off, and remembered once they do (see
-  // game/shareName.ts).
-  const [showName, setShowNameState] = useState<boolean>(loadShowName);
+  // The share name test's default until the player sets it, and remembered
+  // once they do (see game/shareName.ts). The Share beside the guess log has
+  // normally drawn the arm already; drawn here too for a panel opened first.
+  const [showName, setShowNameState] = useState<boolean>(() => {
+    drawShareName(date);
+    return loadShowName();
+  });
   const setShowName = (next: boolean) => {
     setShowNameState(next);
     saveShowName(next);
+    reportShareNameToggle(next, date);
   };
   // The name the board calls this player, so the share and their row agree. A
   // browser that could not mint an id has no name, and the line is left off.
