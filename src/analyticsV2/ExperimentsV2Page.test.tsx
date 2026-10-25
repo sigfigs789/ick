@@ -40,11 +40,11 @@ describe("ExperimentsV2Page", () => {
     expect(everyone.textContent).toContain("30%");
     expect(everyone.textContent).toContain("+10 pts *");
     // Returning is everyone less new: 70 of 200 shown (35%), 50 of 200 hidden (25%).
-    const returning = rowOf("Returning players alone: drawn on a later day, who had played before.", "D1 retention");
+    const returning = rowOf("Returning players alone: drawn on a later day, who had played before. They stay returning for good.", "D1 retention");
     expect(returning.textContent).toContain("35%");
     expect(returning.textContent).toContain("70/200");
     expect(returning.textContent).toContain("25%");
-    expect(rowOf("Returning players alone: drawn on a later day, who had played before.", "Players drawn").textContent).toBe(
+    expect(rowOf("Returning players alone: drawn on a later day, who had played before. They stay returning for good.", "Players drawn").textContent).toBe(
       "Players drawn200200",
     );
     // Drawn only after a first word, so the arms cannot differ on activation; the row says so rather than show 100%.

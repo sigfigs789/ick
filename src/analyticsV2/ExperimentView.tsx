@@ -49,8 +49,11 @@ const SEGMENT_NAMES: Record<Segment, string> = { all: "Everyone", new: "New", re
 
 const captions = (subject: string): Record<Segment, string> => ({
   all: `Everyone drawn: with ${subject} against without.`,
-  new: "New players alone: drawn on the day of their first word, who never saw the game with it before.",
-  returning: "Returning players alone: drawn on a later day, who had played before.",
+  new:
+    "New players alone: drawn on the day of their first word, who never saw the game with it before. " +
+    "They stay new for this experiment on every day they come back.",
+  returning:
+    "Returning players alone: drawn on a later day, who had played before. They stay returning for good.",
 });
 
 function ArmTable({ experiment, segment, subject }: { experiment: Experiment; segment: Segment; subject: string }) {

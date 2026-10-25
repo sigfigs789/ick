@@ -25,7 +25,11 @@ import {
  */
 
 export type Variant = "shown" | "hidden";
-/** Everyone drawn; those drawn on the day of their first word; and everyone else. */
+/**
+ * Everyone drawn; those drawn on the day of their first word; and everyone
+ * else. A player's segment is fixed by the day they were drawn, never by the
+ * day of a later visit: a new player's every return counts under `new`.
+ */
 export type Segment = "all" | "new" | "returning";
 
 export interface Arm {
