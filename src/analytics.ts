@@ -22,6 +22,7 @@ import { todayDateString } from "./game/date";
 import { parseSourceCode, type ModeAssignment } from "./game/onboarding";
 import { IDLE_HINT_DELAY_MS, currentIdleHintArm, type IdleHintArm } from "./game/idleHint";
 import type { ComeBackVariant } from "./game/comeBackTest";
+import type { HeaderCelebrationsVariant } from "./game/headerCelebrationsTest";
 import type { WordOfDayVariant } from "./game/wordOfDay";
 import { APP_VERSION } from "./version";
 import { isBotUserAgent } from "./game/botUa";
@@ -867,6 +868,21 @@ export function trackWordOfDayAssigned(variant: WordOfDayVariant, date: string) 
  */
 export function trackComeBackAssigned(variant: ComeBackVariant, date: string) {
   send("come_back_assigned", {
+    variant,
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
+    live_date: todayDateString(),
+    mode: modeOf(date),
+  });
+}
+
+/**
+ * The header celebrations test's draw (see game/headerCelebrationsTest.ts),
+ * once per player, on the first live puzzle a card would have shown on. Shaped
+ * like the come-back test's, for `analytics_v2_experiment`.
+ */
+export function trackHeaderCelebrationsAssigned(variant: HeaderCelebrationsVariant, date: string) {
+  send("header_celebrations_assigned", {
     variant,
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),

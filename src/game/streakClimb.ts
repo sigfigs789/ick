@@ -5,12 +5,11 @@
  * function), so a player climbs it by playing: each day they keep the run going,
  * they pass whoever's run is one day shorter, and a run ending above them moves
  * them up as well. This compares the rank the player holds now with the last one
- * this browser saw them at -- on the streak board itself, or at the end of the
- * last puzzle they finished -- so "climbed" means "since you last looked".
+ * this browser saw them at -- on the streak board itself, or on the last day
+ * their streak went up -- so "climbed" means "since you last looked".
  *
- * Asked once today's puzzle is finished, as the improving average is (see
- * game/improvement.ts), and only for a player who has joined the board: nobody
- * else has a rank to climb. A browser with no rank remembered yet learns one and
+ * Asked only on the word that takes the streak up a day (today's first), and
+ * only for a player who has joined the board: nobody else has a rank to climb. A browser with no rank remembered yet learns one and
  * says nothing, since there is nothing to compare it with.
  *
  * Nothing here can get in the way of a game. The read is one small request, and

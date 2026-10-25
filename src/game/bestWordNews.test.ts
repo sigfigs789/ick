@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   BEST_WORD_NEWS_MIN_DAYS,
+  bestWordNewsEverShown,
   bestWordNewsFor,
   bestWordNewsShown,
   daysPlayed,
@@ -29,19 +30,23 @@ beforeEach(() => localStorage.clear());
 
 describe("bestWordNewsFor", () => {
   it("celebrates a finder of the best word however new they are", () => {
-    expect(bestWordNewsFor([OTHER, SELF], SELF, 0)).toBe("self");
-    expect(bestWordNewsFor([SELF.toUpperCase()], SELF, 1)).toBe("self");
+    expect(bestWordNewsFor([OTHER, SELF], SELF, 0, false)).toBe("self");
+    expect(bestWordNewsFor([SELF.toUpperCase()], SELF, 1, true)).toBe("self");
   });
 
   it("tells everybody else only from their fourth day played", () => {
-    expect(bestWordNewsFor([OTHER], SELF, BEST_WORD_NEWS_MIN_DAYS - 1)).toBeNull();
-    expect(bestWordNewsFor([OTHER], SELF, BEST_WORD_NEWS_MIN_DAYS)).toBe("other");
-    expect(bestWordNewsFor([OTHER], null, 10)).toBe("other");
+    expect(bestWordNewsFor([OTHER], SELF, BEST_WORD_NEWS_MIN_DAYS - 1, false)).toBeNull();
+    expect(bestWordNewsFor([OTHER], SELF, BEST_WORD_NEWS_MIN_DAYS, false)).toBe("other");
+    expect(bestWordNewsFor([OTHER], null, 10, false)).toBe("other");
+  });
+
+  it("tells everybody else only if they have never seen the card", () => {
+    expect(bestWordNewsFor([OTHER], SELF, 10, true)).toBeNull();
   });
 
   it("says nothing when the finders could not be read", () => {
-    expect(bestWordNewsFor(null, SELF, 10)).toBeNull();
-    expect(bestWordNewsFor([], SELF, 10)).toBeNull();
+    expect(bestWordNewsFor(null, SELF, 10, false)).toBeNull();
+    expect(bestWordNewsFor([], SELF, 10, false)).toBeNull();
   });
 });
 
@@ -60,5 +65,11 @@ describe("the once-a-day record", () => {
     markBestWordNewsShown("2026-10-24");
     expect(bestWordNewsShown("2026-10-24")).toBe(true);
     expect(bestWordNewsShown("2026-10-25")).toBe(false);
+  });
+
+  it("knows whether any card was ever shown", () => {
+    expect(bestWordNewsEverShown()).toBe(false);
+    markBestWordNewsShown("2026-10-24");
+    expect(bestWordNewsEverShown()).toBe(true);
   });
 });

@@ -125,6 +125,7 @@ export interface Report {
 export interface Experiments {
   wordOfDay: Experiment | null;
   comeBack: Experiment | null;
+  headerCelebrations: Experiment | null;
   /** The draw days counted, both ends, or null for everyone drawn. */
   span: { from: string; to: string } | null;
 }
@@ -286,5 +287,10 @@ export async function fetchReport(today: string, span?: { from: string; to: stri
 export async function fetchExperiments(today: string, span?: { from: string; to: string }): Promise<Experiments> {
   const query = span ? `&from=${span.from}&to=${span.to}` : "";
   const body = await readReport(`/api/review?list=experiments-v2&today=${today}${query}`);
-  return { wordOfDay: parseExperiment(body.wordOfDay), comeBack: parseExperiment(body.comeBack), span: span ?? null };
+  return {
+    wordOfDay: parseExperiment(body.wordOfDay),
+    comeBack: parseExperiment(body.comeBack),
+    headerCelebrations: parseExperiment(body.headerCelebrations),
+    span: span ?? null,
+  };
 }

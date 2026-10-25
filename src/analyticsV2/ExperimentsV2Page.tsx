@@ -8,8 +8,9 @@ import { describe, PAST_30, PAST_7, sameSpan, SINCE_START, spanOf, TODAY, type C
 import { WindowPicker } from "./WindowPicker";
 
 /**
- * The experiments, at /experimentsV2: each 50/50 test's call, then its arms for
- * everyone drawn, new players and returning players.
+ * The experiments, at /experimentsV2: each split test's call, then its arms for
+ * everyone drawn, new players and returning players (the header celebrations
+ * test, for everyone drawn alone).
  *
  * Moved off /analyticsV2 onto their own read (`list=experiments-v2`), so this
  * page does not wait on the dashboard's report and the dashboard does not wait
@@ -54,7 +55,9 @@ export function ExperimentsV2Page() {
       onRefresh={refresh}
       onRetry={retry}
       empty="No experiment is running."
-      isEmpty={!experiments || (!experiments.wordOfDay && !experiments.comeBack)}
+      isEmpty={
+        !experiments || (!experiments.wordOfDay && !experiments.comeBack && !experiments.headerCelebrations)
+      }
     >
       {picker}
       {experiments && <List experiments={experiments} today={today} />}
@@ -100,6 +103,27 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
                 Half of players never see the line under the streak that says what tomorrow is worth. Each is drawn
                 once, the first time it would appear: a word banked on today&rsquo;s puzzle. Try either arm with{" "}
                 <code>?come-back=hidden</code> or <code>=shown</code>; a forced arm, or a tester, is not counted.
+              </>
+            }
+          />
+        </Section>
+      )}
+
+      {experiments.headerCelebrations && (
+        <Section
+          title="Header celebrations"
+          note={`Whether the cards over the top of today's puzzle move the scorecard. Over everyone drawn.${drawn}`}
+        >
+          <ExperimentView
+            experiment={experiments.headerCelebrations}
+            subject="the header celebrations"
+            segments={["all"]}
+            about={
+              <>
+                A quarter of players never see the header celebrations: no longest streak yet, climb up the streak
+                board, yesterday&rsquo;s best word, perfect month or rising average. Each is drawn once, the first time
+                one of those cards would show. Try either arm with <code>?header-celebrations=hidden</code> or{" "}
+                <code>=shown</code>; a forced arm, or a tester, is not counted.
               </>
             }
           />

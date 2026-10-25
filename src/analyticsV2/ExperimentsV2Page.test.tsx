@@ -40,11 +40,11 @@ describe("ExperimentsV2Page", () => {
     expect(everyone.textContent).toContain("30%");
     expect(everyone.textContent).toContain("+10 pts *");
     // Returning is everyone less new: 70 of 200 shown (35%), 50 of 200 hidden (25%).
-    const returning = rowOf("Returning players alone: drawn on a later day, who had played before.", "D1 retention");
+    const returning = rowOf("Returning players alone: drawn on a later day, who had played before. They stay returning for good.", "D1 retention");
     expect(returning.textContent).toContain("35%");
     expect(returning.textContent).toContain("70/200");
     expect(returning.textContent).toContain("25%");
-    expect(rowOf("Returning players alone: drawn on a later day, who had played before.", "Players drawn").textContent).toBe(
+    expect(rowOf("Returning players alone: drawn on a later day, who had played before. They stay returning for good.", "Players drawn").textContent).toBe(
       "Players drawn200200",
     );
     // Drawn only after a first word, so the arms cannot differ on activation; the row says so rather than show 100%.
@@ -108,6 +108,26 @@ describe("ExperimentsV2Page", () => {
     await waitFor(() =>
       expect(fetchMock.mock.calls.some(([u]) => String(u).includes("&from=2026-10-10&to=2026-10-22"))).toBe(true),
     );
+  });
+
+  it("draws the header celebrations test", async () => {
+    const headerCelebrations = {
+      since: "2026-10-26",
+      arms: [
+        { variant: "shown", segment: "all", assigned: 300, d1: { cohort: 280, returned: 90 } },
+        { variant: "hidden", segment: "all", assigned: 100, d1: { cohort: 95, returned: 25 } },
+      ],
+    };
+    const body = { wordOfDay: null, comeBack: null, headerCelebrations };
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(body), { status: 200 })));
+    render(<ExperimentsV2Page />);
+
+    expect(await screen.findByRole("heading", { name: "Header celebrations" })).toBeTruthy();
+    expect(
+      screen.getByRole("table", { name: "Everyone drawn: with the header celebrations against without." }),
+    ).toBeTruthy();
+    // Read over everyone drawn alone, not split into new and returning players.
+    expect(screen.getAllByRole("table")).toHaveLength(1);
   });
 
   it("says so when the database sent no experiment", async () => {
