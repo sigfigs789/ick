@@ -52,6 +52,9 @@ export function BestWordNewsCard({
       {kind === "self" && <ConfettiBurst rising />}
       <div className="improvement improvement--best" role="status">
         <button type="button" className="improvement__card" onClick={onDone} title="Dismiss">
+          <span className="improvement__close" aria-hidden="true">
+            ×
+          </span>
           <span className="improvement__icon" aria-hidden="true">
             {kind === "self" ? "🏆" : "👑"}
           </span>

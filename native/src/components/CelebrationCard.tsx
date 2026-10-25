@@ -111,6 +111,14 @@ export function CelebrationCard({ accent, icon, hop = false, from, enterMs, titl
             },
           ]}
         >
+          {/* Only the sign that the card closes: the whole card is the button. */}
+          <Text
+            style={[styles.close, { color: theme.fgMuted }]}
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+          >
+            ×
+          </Text>
           <Animated.Text
             style={[
               styles.icon,
@@ -166,6 +174,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderWidth: 2,
     borderRadius: 16,
+  },
+  close: {
+    position: 'absolute',
+    top: 6,
+    right: 10,
+    fontSize: 20,
+    lineHeight: 20,
   },
   icon: {
     fontSize: 36,
