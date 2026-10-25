@@ -12,6 +12,7 @@ import { LeaderboardPage } from "./LeaderboardPage";
 import { hasJoined, joinBoard } from "../game/player";
 import { handleFor } from "../game/handle";
 import { todayDateString } from "../game/date";
+import { dropForDate } from "../game/drop";
 import { MODE_CHOICE_START, resetModeCache, setMode } from "../game/mode";
 import { setDevDateOverride } from "../dev/devDate";
 
@@ -1104,6 +1105,9 @@ describe("stepping the boards through past windows", () => {
     );
     render(<LeaderboardPage />);
     await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
+    expect(
+      within(board("Today")).getByText(`\u201c${dropForDate(FRIDAY)}\u201d`),
+    ).toBeInTheDocument();
 
     await userEvent.click(step("Previous day"));
 
@@ -1114,6 +1118,11 @@ describe("stepping the boards through past windows", () => {
     );
     expect(
       within(board("Aug 27")).getByText("Final"),
+    ).toBeInTheDocument();
+    // Between the arrows, the drop that day asked for -- the date alone does not
+    // say which puzzle the board is about.
+    expect(
+      within(board("Aug 27")).getByText(`\u201c${dropForDate(YESTERDAY)}\u201d`),
     ).toBeInTheDocument();
     expect(askedDays).toEqual([FRIDAY, YESTERDAY]);
     // The long windows did not move: a day is not a week's worth of anything,
