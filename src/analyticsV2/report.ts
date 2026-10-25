@@ -105,6 +105,7 @@ export interface Report {
 export interface Experiments {
   wordOfDay: Experiment | null;
   comeBack: Experiment | null;
+  headerCelebrations: Experiment | null;
 }
 
 type Json = Record<string, unknown>;
@@ -240,5 +241,9 @@ export async function fetchReport(today: string): Promise<Report> {
 /** The experiments, counted up to the puzzle the reader is on. */
 export async function fetchExperiments(today: string): Promise<Experiments> {
   const body = await readReport(`/api/review?list=experiments-v2&today=${today}`);
-  return { wordOfDay: parseExperiment(body.wordOfDay), comeBack: parseExperiment(body.comeBack) };
+  return {
+    wordOfDay: parseExperiment(body.wordOfDay),
+    comeBack: parseExperiment(body.comeBack),
+    headerCelebrations: parseExperiment(body.headerCelebrations),
+  };
 }

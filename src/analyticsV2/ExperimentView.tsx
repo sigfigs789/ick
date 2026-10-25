@@ -7,16 +7,19 @@ import { count, percent, STANDING_NAMES, type Standing } from "./scorecard";
  * An experiment on /experimentsV2: the call first, then the two arms side by
  * side on the scorecard's own measures, for everyone drawn, then new and
  * returning players apart. `subject` names the thing tested ("the word of the
- * day"); `about` says who is drawn when, and how to force an arm.
+ * day"); `about` says who is drawn when, and how to force an arm. `segments`
+ * narrows the tables, for a test read over everyone drawn alone.
  */
 export function ExperimentView({
   experiment,
   subject,
   about,
+  segments = SEGMENTS,
 }: {
   experiment: Experiment;
   subject: string;
   about: ReactNode;
+  segments?: readonly Segment[];
 }) {
   const call = verdict(experiment, subject);
   return (
@@ -25,7 +28,7 @@ export function ExperimentView({
         <strong className="av2__verdict-headline">{call.headline}</strong>
         <p className="av2__verdict-reason">{call.reason}</p>
       </div>
-      {SEGMENTS.map((segment) => (
+      {segments.map((segment) => (
         <ArmTable key={segment} experiment={experiment} segment={segment} subject={subject} />
       ))}
       <p className="review__meta av2__note">
@@ -40,7 +43,7 @@ export function ExperimentView({
   );
 }
 
-const SEGMENTS: Segment[] = ["all", "new", "returning"];
+const SEGMENTS: readonly Segment[] = ["all", "new", "returning"];
 
 const SEGMENT_NAMES: Record<Segment, string> = { all: "Everyone", new: "New", returning: "Returning" };
 

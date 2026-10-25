@@ -31,6 +31,8 @@ import type { Rarity } from "./game/types";
 import { completedWholeMonth } from "./game/perfectMonth";
 import { welcomeBack } from "./game/streakFreeze";
 import { beatBestToday } from "./game/newBest";
+import { claimHeaderCelebration, type HeaderCelebrationGroup } from "./game/headerCelebrations";
+import { assignHeaderCelebrationsArm, forcedHeaderCelebrationsVariant } from "./game/headerCelebrationsTest";
 import { dismissWelcomeBack, welcomeBackDismissedOn } from "./game/storage";
 import {
   averageImprovement,
@@ -43,6 +45,7 @@ import { totalRarityScore } from "./game/dictionary";
 import { addDays } from "./game/date";
 import { loadPlayerId } from "./game/player";
 import {
+  bestWordNewsEverShown,
   bestWordNewsFor,
   bestWordNewsShown,
   daysPlayed,
@@ -51,6 +54,8 @@ import {
 } from "./game/bestWordNews";
 import {
   campaignSourceFromSearch,
+  isReporting,
+  trackHeaderCelebrationsAssigned,
   trackRedditArrival,
   trackShareArrival,
   trackTwitterArrival,
@@ -67,10 +72,27 @@ import {
 } from "./game/sessionTime";
 
 /**
- * How long after a finish the streak board is read: long enough for the
- * finishing word's write to land (see game/leaderboard.ts, submitScore).
+ * How long after the streak goes up the streak board is read: long enough for
+ * that word's write to land (see game/leaderboard.ts, submitScore).
  */
 const STREAK_CHECK_DELAY_MS = 1500;
+
+/**
+ * Whether a header celebration due now may show: its group has not had its
+ * card today (see game/headerCelebrations.ts), and the player is in the arm of
+ * the test that sees them (see game/headerCelebrationsTest.ts). The arm is
+ * drawn here, the first time a card is due. A host that reports nothing has
+ * nobody to measure a draw, so it always shows the cards and never draws.
+ */
+function showHeaderCelebration(group: HeaderCelebrationGroup, date: string): boolean {
+  if (!claimHeaderCelebration(group, date)) return false;
+  const forced = forcedHeaderCelebrationsVariant();
+  if (forced || !isReporting()) return forced !== "hidden";
+  const drawn = assignHeaderCelebrationsArm();
+  if (!drawn) return true;
+  if (drawn.fresh) trackHeaderCelebrationsAssigned(drawn.variant, date);
+  return drawn.variant === "shown";
+}
 
 export default function App() {
   useForceUpdate();
@@ -237,12 +259,15 @@ export default function App() {
   // on the word that finishes it. Remembered by date rather than as a flag, so
   // stepping back through the archive and forward to today again does not
   // throw a second party -- and a reload after the fact, which mounts already
-  // perfect, throws none.
+  // perfect, throws none. One of the news header celebrations (see
+  // game/headerCelebrations.ts): yesterday's best word, shown as the site
+  // opened, keeps it away.
   const perfectMonth = isToday && completedWholeMonth(streak, date);
   const celebratedMonth = useRef(perfectMonth ? date : null);
   useEffect(() => {
     if (!perfectMonth || celebratedMonth.current === date) return;
     celebratedMonth.current = date;
+    if (!showHeaderCelebration("news", date)) return;
     // The month banks on the day's first word, so the only chime it could
     // clash with is that same word being Rare -- which has just played one.
     if (!hasWinningWord) sound.complete();
@@ -254,11 +279,13 @@ export default function App() {
   // celebrated on the submission that takes it there. Only that one day of the
   // streak passes it, and remembered by date as the perfect month is, so a
   // reload that day, which mounts already past it, throws no second party.
+  // It leads the streak header celebrations, so it keeps the day's climb away.
   const beatBest = isToday ? beatBestToday(streak, date) : null;
   const celebratedBest = useRef(beatBest !== null ? date : null);
   useEffect(() => {
     if (beatBest === null || celebratedBest.current === date) return;
     celebratedBest.current = date;
+    if (!showHeaderCelebration("streak", date)) return;
     setNewBest({ days: streak.currentStreak, best: beatBest });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [beatBest, date]);
@@ -274,7 +301,8 @@ export default function App() {
   // the first moment the average it joins means anything. Only on the finish
   // itself, as the Rare burst above is only on the word: a puzzle that mounts
   // already finished, by reload or by stepping back from the archive, throws
-  // none. The record of the last celebration keeps it to one a week.
+  // none. The record of the last celebration keeps it to one a week, and it
+  // shows only if no other news header celebration had today.
   const finishedToday = isToday && progress.completed;
   const wasFinished = useRef({ date, finished: finishedToday });
   useEffect(() => {
@@ -282,26 +310,37 @@ export default function App() {
     wasFinished.current = { date, finished: finishedToday };
     if (!finishedToday || before.date !== date || before.finished) return;
     const rise = improvementCelebrationDue(date) && averageImprovement(date, progress.mode);
-    if (rise) {
+    if (rise && showHeaderCelebration("news", date)) {
       markImprovementCelebrated(date);
       sound.rising();
       setImprovement(rise);
     }
-    // And a climb up the streak board (see game/streakClimb.ts), read from the
-    // server after a moment so the finishing word's write has landed. It waits
-    // its turn behind the cards above, as they wait behind each other.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finishedToday, date]);
+
+  // A climb up the streak board (see game/streakClimb.ts), looked for only on
+  // the submission that takes the streak up a day -- today's first word -- as
+  // that is how a player passes somebody else's run. Read from the server
+  // after a moment so that word's write has landed. A longest streak yet comes
+  // on the same word and claims the streak header celebration first, so it
+  // keeps the climb away; the climb waits its turn behind any other card.
+  const streakUpToday = isToday && streak.lastCompletedDate === date;
+  const wasStreakUp = useRef({ date, up: streakUpToday });
+  useEffect(() => {
+    const before = wasStreakUp.current;
+    wasStreakUp.current = { date, up: streakUpToday };
+    if (!streakUpToday || before.date !== date || before.up) return;
     let cancelled = false;
     const check = window.setTimeout(() => {
       void checkStreakClimb(date).then((found) => {
-        if (found && !cancelled) setClimb(found);
+        if (found && !cancelled && showHeaderCelebration("streak", date)) setClimb(found);
       });
     }, STREAK_CHECK_DELAY_MS);
     return () => {
       cancelled = true;
       window.clearTimeout(check);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [finishedToday, date]);
+  }, [streakUpToday, date]);
   // Its chime when the card actually shows, which is after any card ahead of it.
   const climbShown = !showPerfectMonth && !newBest && !improvement && climb !== null;
   useEffect(() => {
@@ -311,9 +350,10 @@ export default function App() {
 
   // Yesterday's best word, announced as the site opens (see
   // game/bestWordNews.ts): its finder is celebrated, and a player with a few
-  // days behind them is told who found it -- but only when nothing else is
-  // up, since it is somebody else's news. Decided once per mount, on the
-  // answer's arrival, and once a day for good.
+  // days behind them who has never seen the card is told who found it, once
+  // ever -- and only when nothing else is up, since it is somebody else's news. Decided once per mount, on the
+  // answer's arrival, and once a day for good. It leads the news header
+  // celebrations, so it keeps the day's perfect month and rising average away.
   const yesterdaysBest = useYesterdaysBest(isToday ? addDays(date, -1) : undefined);
   const [bestNews, setBestNews] = useState<{
     kind: BestWordNewsKind;
@@ -325,10 +365,16 @@ export default function App() {
     if (!yesterdaysBest || bestNewsDecided.current) return;
     bestNewsDecided.current = true;
     if (bestWordNewsShown(yesterdaysBest.day)) return;
-    const kind = bestWordNewsFor(yesterdaysBest.finderIds, loadPlayerId(), daysPlayed());
+    const kind = bestWordNewsFor(
+      yesterdaysBest.finderIds,
+      loadPlayerId(),
+      daysPlayed(),
+      bestWordNewsEverShown(),
+    );
     if (!kind) return;
     const busy = showPerfectMonth || improvement || climb || burst || welcome;
     if (kind === "other" && busy) return;
+    if (!showHeaderCelebration("news", date)) return;
     markBestWordNewsShown(yesterdaysBest.day);
     setBestNews({ kind, resolved: yesterdaysBest });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- decided on arrival only

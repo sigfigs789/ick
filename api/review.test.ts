@@ -478,14 +478,19 @@ describe("api/review", () => {
     const response = await handler(get("?list=experiments-v2&today=2026-10-22"));
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ wordOfDay: body, comeBack: body });
+    expect(await response.json()).toEqual({ wordOfDay: body, comeBack: body, headerCelebrations: body });
     const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
     expect(calls.map((c) => String(c[0]).split("/").pop())).toEqual([
+      "analytics_v2_experiment",
       "analytics_v2_experiment",
       "analytics_v2_experiment",
     ]);
     expect(JSON.parse(String(calls[0][1].body))).toEqual({ p_today: "2026-10-22", p_event: "word_of_day_assigned" });
     expect(JSON.parse(String(calls[1][1].body))).toEqual({ p_today: "2026-10-22", p_event: "come_back_assigned" });
+    expect(JSON.parse(String(calls[2][1].body))).toEqual({
+      p_today: "2026-10-22",
+      p_event: "header_celebrations_assigned",
+    });
     expect((await handler(get("?list=experiments-v2"))).status).toBe(400);
   });
 

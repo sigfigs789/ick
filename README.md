@@ -912,6 +912,37 @@ than being quietly dropped. That is enough for ordinary noise and is not a
 defence against a determined forgery. Worth knowing before this board is used for
 anything that matters.
 
+## Header celebrations
+
+The cards that float over the top of today's puzzle to celebrate something or
+bring the player news are known collectively as **HeaderCelebrations**. Each
+is its own component, sharing the `.improvement` card styles (the perfect
+month has its own). They tap away or go by themselves.
+
+| Group | Card | When it comes due |
+|---|---|---|
+| Streak | `NewBestCelebration` — "Your longest streak yet!" | today's first word, when it takes the streak past the player's best |
+| Streak | `StreakClimbCelebration` — "Up the streak board!" | a moment after today's first word takes the streak up, if it passed somebody else's run |
+| News | `BestWordNewsCard` — yesterday's best word | as the site opens; every time the player found it, but only once ever when somebody else did (from their 4th day played) |
+| News | `PerfectMonthCelebration` — "Perfect {month}!" | the first word that completes a month without a missed day |
+| News | `ImprovementCelebration` — "You're on the rise!" | the finish, at most once a week |
+
+**One card per group per day** (`src/game/headerCelebrations.ts`). Each
+group's cards are listed in priority order, which is also the order they
+come due through the day, so the first card to claim its group's day wins and
+the rest of that group stay away until tomorrow. The claim is kept in
+`localStorage`, so a reload between the first word and the finish doesn't let
+a second card in. The two groups are independent: a player can see one streak
+card and one news card on the same day, one after the other.
+
+**A 75/25 test** (`src/game/headerCelebrationsTest.ts`): 75% of players see
+the header celebrations and 25% see none of them (no card, confetti or
+chime). A player is drawn the first time a card would show and keeps that arm.
+The draw is a `header_celebrations_assigned` event, and the arms are scored on
+`/experimentsV2` over everyone drawn, not split into new and returning players. Force either arm with `?header-celebrations=hidden` or
+`=shown`. A forced arm, a tester or a host that reports nothing always sees
+the cards and is never drawn.
+
 ## Design decisions worth knowing about
 
 - **Plurals/conjugations are accepted** as distinct words, but two forms

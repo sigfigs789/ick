@@ -8,6 +8,7 @@ import { markSeen } from "./game/whatsNew";
 import { PLAYER_KEY } from "./game/player";
 import { PROGRESS_PREFIX } from "./game/storage";
 import { addDays } from "./game/date";
+import { markBestWordNewsShown } from "./game/bestWordNews";
 
 vi.mock("./hooks/useDailyPuzzle", () => ({ useDailyPuzzle: vi.fn() }));
 vi.mock("./hooks/useSound", () => ({ useSound: vi.fn() }));
@@ -82,6 +83,8 @@ function playedDays(days: number) {
 beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
+  // In the header celebrations test's arm that sees them (see game/headerCelebrationsTest.ts).
+  localStorage.setItem("ick:header-celebrations-test", "shown");
   markSeen("instructions");
   localStorage.setItem(PLAYER_KEY, JSON.stringify({ id: SELF }));
   vi.mocked(useSound).mockReturnValue({
@@ -115,6 +118,22 @@ describe("yesterday's best word news", () => {
 
     render(<App />);
     expect(screen.queryByText("Yesterday's best word")).toBeNull();
+  });
+
+  it("never tells a player about somebody else's word once they have seen the card", () => {
+    playedDays(4);
+    markBestWordNewsShown(addDays(YESTERDAY, -2)); // their own best word, say, or somebody else's
+    vi.mocked(useYesterdaysBest).mockReturnValue(best([OTHER]));
+    render(<App />);
+    expect(screen.queryByText("Yesterday's best word")).toBeNull();
+  });
+
+  it("still celebrates the finder after they have seen the card", () => {
+    playedDays(4);
+    markBestWordNewsShown(addDays(YESTERDAY, -2));
+    vi.mocked(useYesterdaysBest).mockReturnValue(best([SELF]));
+    render(<App />);
+    expect(screen.getByText("You had yesterday's best word!")).toBeTruthy();
   });
 
   it("tells a newer player nothing", () => {
