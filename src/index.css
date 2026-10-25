@@ -1848,6 +1848,30 @@ button.app__menu-item + button.app__menu-item {
 .folded-live-notice__line + .folded-live-notice__line {
   margin-top: 0.35rem;
 }
+/* The thank-you for an accepted suggestion (SuggestionAcceptedNotice): the
+   fold notice's bubble, in the flow, pointing at nothing. */
+.de-prefix-hint.suggestion-accepted {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  margin: 0 0 0.9rem;
+}
+.de-prefix-hint.suggestion-accepted::after {
+  content: none;
+}
+.suggestion-accepted__icon {
+  flex: none;
+  font-size: 1.1rem;
+  line-height: 1.3;
+}
+.suggestion-accepted__line {
+  margin: 0;
+}
+.suggestion-accepted__achievement {
+  margin-top: 0.35rem;
+  font-weight: 600;
+}
 /* Over the input for a player back after their streak ended (see
    components/WelcomeBackCard.tsx). In the flow, so it pushes the input down
    rather than covering the drop, and gone once a word is played. */

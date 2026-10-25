@@ -24,7 +24,12 @@
 //   -> { wordOfDay, comeBack, headerCelebrations }, for /experimentsV2: each experiment's arms
 //   (see the 2026-11-01 analytics_v2_experiment migration), over the players
 //   drawn from `from` to `to` when both are given (2026-11-09).
-//   400 bad-list / bad-limit / bad-date, 401 unauthorised, 405 wrong method,
+// GET /api/review?list=my-suggestions&player=<uuid>
+//   -> { suggestions: [{ word, at, mark }] }, one player's own suggestions,
+//   newest first, with the mark each one wears on the queue (see the
+//   2026-11-10 player_suggestions migration). The game reads it to thank a
+//   player whose word got in.
+//   400 bad-list / bad-limit / bad-date / bad-player, 401 unauthorised, 405 wrong method,
 //   503 no credentials, 502 upstream unavailable.
 //
 // POST /api/review
@@ -59,6 +64,9 @@
 //   suggested-words  anybody. The word rules sheet points whoever just suggested
 //                    a word at the queue it joined, so a keyless reader is the
 //                    ordinary case. A queue of words is everybody's.
+//   my-suggestions   anybody, for the same reason: it is that queue filtered to
+//                    the words one board identity suggested, and the identity
+//                    is a UUID the browser made up.
 //   analytics        anybody. Every number in it is an aggregate -- nobody can
 //                    be read out of it -- and the maintainer wants to open it
 //                    without a key. Still linked from nowhere.
@@ -119,6 +127,13 @@ interface SuggestedRow {
   outcome: string | null;
 }
 
+/** One row as `list_player_suggestions` returns it. */
+interface PlayerSuggestionRow {
+  word: string;
+  suggested_at: string;
+  status: string | null;
+}
+
 /** One row as `list_feedback` returns it. */
 interface FeedbackRow {
   id: number;
@@ -170,6 +185,8 @@ function asMark(value: string | null): Mark | null {
 
 /** The word a queue mark is about: the game's own input rule. */
 const WORD_RE = /^[a-z]{2,30}$/;
+/** A board identity: the v4-shaped UUID game/player.ts mints. */
+const PLAYER_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // A mark is three fields; nothing here needs a large body.
 const MAX_BODY_BYTES = 2 * 1024;
 
@@ -336,6 +353,7 @@ async function handleGet(request: Request): Promise<Response> {
   const list = params.get("list");
   if (
     list !== "suggested-words" &&
+    list !== "my-suggestions" &&
     list !== "feedback" &&
     list !== "freeform" &&
     list !== "analytics" &&
@@ -353,7 +371,9 @@ async function handleGet(request: Request): Promise<Response> {
   // has always read it without one, which is a thing to opt into rather than to
   // wake up to.
   const open =
-    list === "suggested-words" || list === "analytics" || list === "analytics-v2" || list === "experiments-v2";
+    list === "suggested-words" ||
+    list === "my-suggestions" ||
+    list === "analytics" || list === "analytics-v2" || list === "experiments-v2";
   if (!open && (process.env.REVIEW_TOKEN ?? "") !== "" && !authorised(request)) {
     return reply(401, { ok: false, reason: "unauthorised" });
   }
@@ -375,6 +395,20 @@ async function handleGet(request: Request): Promise<Response> {
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   try {
+    if (list === "my-suggestions") {
+      const player = params.get("player") ?? "";
+      if (!PLAYER_RE.test(player)) return reply(400, { ok: false, reason: "bad-player" });
+      const rows = await rpc<PlayerSuggestionRow[] | null>("list_player_suggestions", {
+        p_player: player.toLowerCase(),
+      });
+      return reply(200, {
+        suggestions: (rows ?? []).map((row) => ({
+          word: row.word,
+          at: row.suggested_at,
+          mark: asMark(row.status),
+        })),
+      });
+    }
     if (list === "analytics-v2" || list === "experiments-v2") {
       // One date: the puzzle the reader is on, which every window ends at.
       const today = params.get("today");

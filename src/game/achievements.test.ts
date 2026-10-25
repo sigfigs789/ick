@@ -6,6 +6,7 @@ import {
   type AchievementRecord,
 } from "./achievements";
 import { addDays } from "./date";
+import { setPlayerMessages } from "./playerMessages";
 import type { AcceptedWord, DailyProgress, Rarity, StreakState } from "./types";
 
 function word(rarity: Rarity, w = rarity.toLowerCase().replace(" ", "")): AcceptedWord {
@@ -91,6 +92,31 @@ describe("achievements", () => {
       history: [day("2026-10-01", tiers.map((t) => word(t))), day("2026-10-02", [word("Legend")])],
     });
     expect(done.earnedOn).toBe("2026-10-02");
+  });
+
+  it("dates the suggestion badges to the first suggestion and the first acceptance", () => {
+    const suggestions = [
+      { word: "zibeline", suggestedOn: "2026-10-04" },
+      { word: "quockerwodger", suggestedOn: "2026-10-02", acceptedOn: "2026-10-09" },
+    ];
+    expect(statusOf("word-suggested", { suggestions }).earnedOn).toBe("2026-10-02");
+    expect(statusOf("suggestion-accepted", { suggestions }).earnedOn).toBe("2026-10-09");
+    expect(statusOf("suggestion-accepted", { suggestions: suggestions.slice(0, 1) }).earnedOn).toBeNull();
+    expect(statusOf("word-suggested", {}).earnedOn).toBeNull();
+  });
+
+  it("leaves the suggestion badges off a host with no suggestion box", () => {
+    setPlayerMessages(false);
+    try {
+      const ids = achievementStatuses({ history: [], onItsDay: [], streak: noStreak }, {}, TODAY).map(
+        (s) => s.achievement.id
+      );
+      expect(ids).not.toContain("word-suggested");
+      expect(ids).not.toContain("suggestion-accepted");
+      expect(ids).toContain("first-word");
+    } finally {
+      setPlayerMessages(true);
+    }
   });
 
   it("keeps a badge already earned even when the record no longer shows it", () => {

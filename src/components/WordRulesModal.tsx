@@ -3,6 +3,7 @@ import { trackWordSuggestion } from "../analytics";
 import { usesFreeformRules } from "../game/dictionary";
 import { modeIsChosen } from "../game/mode";
 import { takesPlayerMessages } from "../game/playerMessages";
+import { recordSuggestion } from "../game/suggestions";
 import { useGameMode } from "../hooks/useGameMode";
 import { navigate } from "../routes";
 
@@ -83,6 +84,9 @@ export function WordRulesModal({ open, date, onClose }: Props) {
   );
 }
 
+/** What the review queue accepts as a word (see the suggested_words migration). */
+const SUGGESTION_RE = /^[a-z]{2,30}$/;
+
 /**
  * The box for suggesting a word, shared by Word rules (where a turned-away word
  * sends a player) and the "?" menu's Suggest a word.
@@ -102,12 +106,17 @@ export function WordSuggestionForm({
 }) {
   const [suggestion, setSuggestion] = useState("");
   const [sent, setSent] = useState(false);
+  const [firstSuggestion, setFirstSuggestion] = useState(false);
 
   function submitSuggestion(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const word = suggestion.trim().toLowerCase();
     if (!word) return;
     trackWordSuggestion(word);
+    // Kept on the device so the player can be thanked if it gets in (see
+    // game/suggestions.ts). Only a word the queue would take: anything else
+    // never comes back with a verdict.
+    setFirstSuggestion(SUGGESTION_RE.test(word) && recordSuggestion(word));
     setSuggestion("");
     setSent(true);
   }
@@ -137,7 +146,12 @@ export function WordSuggestionForm({
       {/* role="status" so the confirmation is announced and not only seen. */}
       {sent && (
         <p className="word-suggestion__thanks" role="status">
-          Thanks for the suggestion!{" "}
+          Thanks for the suggestion! We'll let you know if it gets in.{" "}
+          {firstSuggestion && (
+            <span className="word-suggestion__achievement">
+              Achievement unlocked: 💡 Word scout.{" "}
+            </span>
+          )}
           <button
             type="button"
             className="word-suggestion__link"

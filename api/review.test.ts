@@ -132,6 +132,35 @@ describe("api/review", () => {
     expect((await handler(get("?list=feedback&limit=lots"))).status).toBe(400);
   });
 
+  it("reads one player's own suggestions, without a key", async () => {
+    withEnv({ ...CONFIGURED, REVIEW_TOKEN: "secret" });
+    const fetchMock = stubFetch([
+      { word: "zibeline", suggested_at: "2026-10-20T09:00:00Z", status: "accepted" },
+      { word: "snollygoster", suggested_at: "2026-10-18T09:00:00Z", status: "new" },
+    ]);
+    const player = "3f2b8c4e-1a2b-4c3d-8e9f-0a1b2c3d4e5f";
+    const response = await handler(get(`?list=my-suggestions&player=${player}`));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      suggestions: [
+        { word: "zibeline", at: "2026-10-20T09:00:00Z", mark: "accepted" },
+        { word: "snollygoster", at: "2026-10-18T09:00:00Z", mark: null },
+      ],
+    });
+    const call = rpcCall(fetchMock);
+    expect(call?.url).toContain("/rpc/list_player_suggestions");
+    expect(call?.args).toEqual({ p_player: player });
+  });
+
+  it("refuses a player that is not a board identity", async () => {
+    withEnv();
+    const fetchMock = stubFetch([]);
+    expect((await handler(get("?list=my-suggestions"))).status).toBe(400);
+    expect((await handler(get("?list=my-suggestions&player=bob"))).status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("answers reads and marks, and nothing else", async () => {
     withEnv();
     stubFetch([]);

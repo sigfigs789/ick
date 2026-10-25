@@ -9,6 +9,7 @@ import { ResultsPanel } from "./components/ResultsPanel";
 import { WordRulesModal } from "./components/WordRulesModal";
 import { PuzzleNav } from "./components/PuzzleNav";
 import { FoldedLiveNotice } from "./components/FoldedLiveNotice";
+import { SuggestionAcceptedNotice } from "./components/SuggestionAcceptedNotice";
 import { ConfettiBurst } from "./components/ConfettiBurst";
 import { JackpotStamp } from "./components/JackpotStamp";
 import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
@@ -24,6 +25,7 @@ import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { useWordOfDay } from "./hooks/useWordOfDay";
 import { useYesterdaysBest, type ResolvedBest } from "./hooks/useYesterdaysBest";
+import { useAcceptedSuggestions } from "./hooks/useAcceptedSuggestions";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { isWinningRarity } from "./game/rank";
 import { celebrationFor } from "./game/celebration";
@@ -127,6 +129,8 @@ export default function App() {
     foldNotices,
     dismissFoldNotices,
   } = useDailyPuzzle();
+  // Words the player suggested that have since been accepted, thanked for once.
+  const acceptedSuggestions = useAcceptedSuggestions();
   // Which of the two games this is, when the switch decides it at all. Carried
   // as a class on the column, so the cards and the input wear the mode as the
   // header's switch does (see index.css).
@@ -470,6 +474,11 @@ export default function App() {
           date={date}
           notices={foldNotices}
           onDismiss={dismissFoldNotices}
+        />
+        <SuggestionAcceptedNotice
+          words={acceptedSuggestions.words}
+          firstAcceptance={acceptedSuggestions.firstAcceptance}
+          onDismiss={acceptedSuggestions.dismiss}
         />
         {/* The input sits straight under the drop, so it stays where it is
             as words land below it rather than being pushed down the page by
