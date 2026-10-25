@@ -18,6 +18,8 @@ interface Props {
   streak?: StreakState;
   /** The puzzle's date, so scores use the system in effect that day. */
   date?: string;
+  /** Whether `date` is today's puzzle, for the finished streak's today state and lazy weekend pie. */
+  isToday?: boolean;
   /** The retry is unspent and there is a word to spend it on. */
   canRetry?: boolean;
   /** The retry is unspent, whether or not there is yet anything to spend it on. */
@@ -52,6 +54,7 @@ export function GuessLog({
   completed = false,
   streak,
   date,
+  isToday = false,
   canRetry = false,
   retryOffered = false,
   retrySpent = false,
@@ -269,6 +272,7 @@ export function GuessLog({
           streak={streak}
           totalRarity={totalRarityScore(acceptedWords, date)}
           date={date}
+          isToday={isToday}
           hideEmpty
           hasWords={acceptedWords.length > 0}
           style={styles.trackers}
