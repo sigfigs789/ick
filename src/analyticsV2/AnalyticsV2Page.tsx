@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type CSSProperties, type ReactNode } 
 import { ReviewPage } from "../components/ReviewPage";
 import { useReviewList } from "../components/reviewList";
 import { todayDateString } from "../game/date";
-import { fetchReport, type Rate, type Report, type Source } from "./report";
+import { fetchReport, type Range, type Rate, type Report, type Scores, type Source } from "./report";
 import {
   addDays,
   average,
@@ -14,6 +14,8 @@ import {
   STANDING_NAMES,
   type Row,
 } from "./scorecard";
+import { daysIn, describe, lower, PAST_30, PAST_7, sameSpan, spanOf, TODAY, type Choice } from "./window";
+import { WindowPicker } from "./WindowPicker";
 
 /**
  * The daily dashboard, at /analyticsV2.
@@ -28,9 +30,12 @@ import {
  * beside them where they help.
  *
  * Built on its own report (report.ts, and the analytics_v2 function behind
- * it), not on /analytics. Weeks run Monday to Sunday. Windows are the last
- * 28 closed days unless a number says otherwise; today's puzzle is still
- * filling up and is left out.
+ * it), not on /analytics. Weeks run Monday to Sunday.
+ *
+ * The window picked at the top -- today so far, the past 7 or 30 closed days,
+ * or any two dates -- moves the acquisition, engagement, virality and "why"
+ * numbers. The scorecard, retention, active players and the week tables keep
+ * their own fixed windows, which the scorecard's bands are set against.
  *
  * The experiments have a page of their own, /experimentsV2.
  *
@@ -38,7 +43,15 @@ import {
  */
 export function AnalyticsV2Page() {
   const today = todayDateString();
-  const load = useCallback(async () => [await fetchReport(today)], [today]);
+  const [choice, setChoice] = useState<Choice>(DEFAULT_CHOICE);
+  // Never null here: this page has no "since it started".
+  const span = spanOf(choice, today);
+  const from = span?.from;
+  const to = span?.to;
+  const load = useCallback(
+    async () => [await fetchReport(today, from && to ? { from, to } : undefined)],
+    [today, from, to],
+  );
   const { rows, state, refreshing, refresh, retry } = useReviewList(load);
   const report = rows[0];
   // Yesterday's report is only for the scorecard's day-on-day change, so it is
@@ -69,30 +82,42 @@ export function AnalyticsV2Page() {
       empty="Nobody has played yet."
       isEmpty={!report}
     >
-      {report && <Dashboard report={report} before={before} />}
+      {report && (
+        <>
+          <WindowPicker
+            choice={choice}
+            presets={PRESETS}
+            today={today}
+            counting={report.range !== null && !sameSpan(windowOf(report), span)}
+            onChoose={setChoice}
+          />
+          <Dashboard report={report} before={before} />
+        </>
+      )}
     </ReviewPage>
   );
 }
 
 function Dashboard({ report, before }: { report: Report; before: Report | null }) {
-  const w = report.window;
+  // The window's numbers: the reader's range, or the last 28 closed days from a
+  // database that does not count one yet.
+  const span = windowOf(report);
+  const w = span.window;
+  const label = describe(span, report.today);
   const yesterday = addDays(report.today, -1);
   const sunday = lastSunday(report.today);
   const lastWeek = report.weekly[1];
-  const from28 = addDays(report.today, -28);
   // A visitor number over a window that starts before visits were recorded
   // against players is not a number.
   const tracked = (from: string) => report.trackedSince !== null && report.trackedSince <= from;
-  const newPlayers28 = report.daily
-    .filter((d) => d.date >= from28 && d.date <= yesterday)
-    .reduce((sum, d) => sum + d.newPlayers, 0);
+  const days = daysIn(span);
   const dau7 = average(report.daily, yesterday, 7);
   const dau28 = average(report.daily, yesterday, 28);
   const dau7Before = average(report.daily, addDays(yesterday, -28), 7);
   const dau28Before = average(report.daily, addDays(yesterday, -28), 28);
   const visitors7 = average(report.daily, yesterday, 7, "visitors");
-  const finished = report.scores.tiers.reduce((sum, t) => sum + t.finished, 0);
-  const top = report.scores.tiers
+  const finished = span.scores.tiers.reduce((sum, t) => sum + t.finished, 0);
+  const top = span.scores.tiers
     .filter((t) => t.tier === "Mythic" || t.tier === "Legend")
     .reduce((sum, t) => sum + t.finished, 0);
 
@@ -104,26 +129,31 @@ function Dashboard({ report, before }: { report: Report; before: Report | null }
           leaderboard) are known, so a visitor number reaching further back is left blank.
         </p>
       )}
+      {report.trackedSince && !tracked(span.from) && (
+        <p className="review__meta av2__note">
+          The window starts before {report.trackedSince}, so its visitor numbers only count from then.
+        </p>
+      )}
 
       <Section
         title="Scorecard"
-        note="Each category against the bands for a small daily browser word game. Over players. Arrows are the change since yesterday."
+        note="Each category against the bands for a small daily browser word game. Over players. Arrows are the change since yesterday. Each row keeps its own window, whatever is picked above."
       >
         <Scorecard rows={scorecard(report)} before={before ? scorecard(before) : []} />
       </Section>
 
-      <Section title="Acquisition" note="Last 28 days.">
+      <Section title="Acquisition" note={`${label}.`}>
         <Tiles
           tiles={[
             { label: "Unique visitors", value: count(w.visitors) },
             { label: "First-time visitors", value: count(w.firstVisits) },
-            { label: "First-time players", value: count(newPlayers28), note: "banked their first-ever word" },
+            { label: "First-time players", value: count(w.newPlayers), note: "banked their first-ever word" },
           ]}
         />
-        <SourceTable sources={report.sources} />
+        <SourceTable sources={span.sources} />
       </Section>
 
-      <Section title="Retention" note="Players: back means banked a word again on exactly day N.">
+      <Section title="Retention" note="Players: back means banked a word again on exactly day N. Fixed windows, whatever is picked above.">
         <Tiles
           tiles={(["d1", "d7", "d30"] as const).map((d) => {
             const n = Number(d.slice(1));
@@ -140,7 +170,10 @@ function Dashboard({ report, before }: { report: Report; before: Report | null }
         <CohortTable report={report} />
       </Section>
 
-      <Section title="Engagement" note="Active means banked a word. Last 28 days unless it says otherwise.">
+      <Section
+        title="Engagement"
+        note={`Active means banked a word. Active players are over the days they say; the rest are ${lower(label)}.`}
+      >
         <Tiles
           tiles={[
             { label: "Daily active players", value: fixed(dau7), note: `last 7 days · ${fixed(visitors7)} visitors a day` },
@@ -164,7 +197,7 @@ function Dashboard({ report, before }: { report: Report; before: Report | null }
         {lastWeek && <Frequency daysPlayed={lastWeek.daysPlayed} players={lastWeek.players} start={lastWeek.start} />}
       </Section>
 
-      <Section title="Virality" note="Last 28 days.">
+      <Section title="Virality" note={`${label}.`}>
         <Tiles
           tiles={[
             { label: "Share rate", value: ratio(w.sharedDays, w.playerDays), note: `of player-days · ${count(w.sharers)} sharers` },
@@ -186,10 +219,10 @@ function Dashboard({ report, before }: { report: Report; before: Report | null }
           ]}
         />
         <WeeksTable report={report} sunday={sunday} />
-        <SourceGrowthTable sources={report.sources} priorTracked={tracked(addDays(report.today, -56))} />
+        <SourceGrowthTable sources={span.sources} days={days} priorTracked={tracked(addDays(span.from, -days))} />
       </Section>
 
-      <Section title="Why players come back" note="The numbers particular to WordInk. Last 28 days.">
+      <Section title="Why players come back" note={`The numbers particular to WordInk. ${label}.`}>
         <h3 className="av2__subheading">Activation rate</h3>
         <Tiles
           tiles={[
@@ -228,7 +261,7 @@ function Dashboard({ report, before }: { report: Report; before: Report | null }
 
         <h3 className="av2__subheading">Score satisfaction</h3>
         {finished === 0 ? (
-          <p className="review__meta av2__note">No finished puzzles in the last 28 days.</p>
+          <p className="review__meta av2__note">No finished puzzles in this window.</p>
         ) : (
           <>
             <Tiles
@@ -236,8 +269,8 @@ function Dashboard({ report, before }: { report: Report; before: Report | null }
                 { label: "Top ratings", value: ratio(top, finished), note: "of finished puzzles ended on Mythic or Legend" },
               ]}
             />
-            <ScoreBuckets buckets={report.scores.buckets} />
-            <TierTable report={report} finished={finished} />
+            <ScoreBuckets buckets={span.scores.buckets} />
+            <TierTable scores={span.scores} finished={finished} />
           </>
         )}
 
@@ -258,6 +291,22 @@ function Dashboard({ report, before }: { report: Report; before: Report | null }
         />
       </Section>
     </div>
+  );
+}
+
+const DEFAULT_CHOICE: Choice = PAST_30.choice;
+const PRESETS = [TODAY, PAST_7, PAST_30];
+
+/** The numbers the window moves, as the report counted them. */
+function windowOf(report: Report): Range {
+  return (
+    report.range ?? {
+      from: addDays(report.today, -28),
+      to: addDays(report.today, -1),
+      window: report.window,
+      sources: report.sources,
+      scores: report.scores,
+    }
   );
 }
 
@@ -494,14 +543,15 @@ function WeeksTable({ report, sunday }: { report: Report; sunday: string }) {
   );
 }
 
-function SourceGrowthTable({ sources, priorTracked }: { sources: Source[]; priorTracked: boolean }) {
+function SourceGrowthTable({ sources, days, priorTracked }: { sources: Source[]; days: number; priorTracked: boolean }) {
   const rows = sources.filter((s) => s.recentPlayers > 0 || s.priorPlayers > 0);
   if (rows.length === 0) return null;
+  const before = days === 1 ? "The day before" : `${days} days before`;
   return (
     <>
       <Table
-        caption="Growth by acquisition source: new players over the last 28 days against the 28 before."
-        head={["Source", "Last 28 days", "28 days before", "Change"]}
+        caption="Growth by acquisition source: new players over the window against the same number of days before it."
+        head={["Source", "This window", before, "Change"]}
         rows={rows.map((s) => [
           sourceName(s.source),
           count(s.recentPlayers),
@@ -511,7 +561,7 @@ function SourceGrowthTable({ sources, priorTracked }: { sources: Source[]; prior
       />
       {!priorTracked && (
         <p className="review__meta av2__note">
-          The 28 days before reach back past when sources were first recorded, so there is nothing to grow from yet.
+          The days before reach back past when sources were first recorded, so there is nothing to grow from yet.
         </p>
       )}
     </>
@@ -537,12 +587,12 @@ function ScoreBuckets({ buckets }: { buckets: Record<number, number> }) {
   );
 }
 
-function TierTable({ report, finished }: { report: Report; finished: number }) {
+function TierTable({ scores, finished }: { scores: Scores; finished: number }) {
   return (
     <Table
       caption="Finished puzzles by the rating of the best word, a player's day once: how often each lands, and whether players shared or came back after it."
       head={["Best word", "Finished", "Of all", "Shared", "Played next day"]}
-      rows={report.scores.tiers.map((t) => [
+      rows={scores.tiers.map((t) => [
         t.tier,
         count(t.finished),
         ratio(t.finished, finished),

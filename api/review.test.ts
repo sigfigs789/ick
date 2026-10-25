@@ -470,6 +470,30 @@ describe("api/review", () => {
     expect((await handler(get("?list=analytics-v2&today=2026-13-40"))).status).toBe(400);
   });
 
+  it("passes the reader's window to the v2 report, both ends or neither", async () => {
+    withEnv(CONFIGURED);
+    const fetchMock = stubFetch({ today: "2026-10-22" });
+
+    const response = await handler(get("?list=analytics-v2&today=2026-10-22&from=2026-10-15&to=2026-10-21"));
+
+    expect(response.status).toBe(200);
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+    expect(JSON.parse(String(calls[0][1].body))).toEqual({
+      p_today: "2026-10-22",
+      p_from: "2026-10-15",
+      p_to: "2026-10-21",
+    });
+    for (const bad of [
+      "&from=2026-10-15",
+      "&to=2026-10-21",
+      "&from=2026-10-21&to=2026-10-15",
+      "&from=2026-10-15&to=2026-10-23",
+      "&from=2026-02-30&to=2026-10-21",
+    ]) {
+      expect((await handler(get(`?list=analytics-v2&today=2026-10-22${bad}`))).status).toBe(400);
+    }
+  });
+
   it("serves the experiments on their own, without the v2 report", async () => {
     withEnv(CONFIGURED);
     const body = { arms: [] };
@@ -492,6 +516,27 @@ describe("api/review", () => {
       p_event: "header_celebrations_assigned",
     });
     expect((await handler(get("?list=experiments-v2"))).status).toBe(400);
+  });
+
+  it("passes the reader's window to both experiments, both ends or neither", async () => {
+    withEnv(CONFIGURED);
+    const fetchMock = stubFetch({ arms: [] });
+
+    const response = await handler(get("?list=experiments-v2&today=2026-10-22&from=2026-10-15&to=2026-10-22"));
+
+    expect(response.status).toBe(200);
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+    for (const [i, event] of ["word_of_day_assigned", "come_back_assigned"].entries()) {
+      expect(JSON.parse(String(calls[i][1].body))).toEqual({
+        p_today: "2026-10-22",
+        p_event: event,
+        p_from: "2026-10-15",
+        p_to: "2026-10-22",
+      });
+    }
+    for (const bad of ["&from=2026-10-15", "&from=2026-10-21&to=2026-10-15", "&from=2026-10-15&to=2026-10-23"]) {
+      expect((await handler(get(`?list=experiments-v2&today=2026-10-22${bad}`))).status).toBe(400);
+    }
   });
 
   it("no longer serves the idle hint report on its own", async () => {

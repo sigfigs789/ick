@@ -1,9 +1,11 @@
-import { useCallback, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { ReviewPage } from "../components/ReviewPage";
 import { useReviewList } from "../components/reviewList";
 import { todayDateString } from "../game/date";
 import { fetchExperiments, type Experiments } from "./report";
 import { ExperimentView } from "./ExperimentView";
+import { describe, PAST_30, PAST_7, sameSpan, SINCE_START, spanOf, TODAY, type Choice } from "./window";
+import { WindowPicker } from "./WindowPicker";
 
 /**
  * The experiments, at /experimentsV2: each split test's call, then its arms for
@@ -14,13 +16,35 @@ import { ExperimentView } from "./ExperimentView";
  * page does not wait on the dashboard's report and the dashboard does not wait
  * on the experiments.
  *
+ * The window picked at the top counts the players drawn in it, since the
+ * experiment started unless picked otherwise. It chooses who is in the test,
+ * not which of their days count: a player drawn on the window's last day is
+ * still followed to their day 1 and day 7.
+ *
  * Unlinked from the game and open without a key: every number is an aggregate.
  */
 export function ExperimentsV2Page() {
   const today = todayDateString();
-  const load = useCallback(async () => [await fetchExperiments(today)], [today]);
+  const [choice, setChoice] = useState<Choice>(SINCE_START.choice);
+  const span = spanOf(choice, today);
+  const from = span?.from;
+  const to = span?.to;
+  const load = useCallback(
+    async () => [await fetchExperiments(today, from && to ? { from, to } : undefined)],
+    [today, from, to],
+  );
   const { rows, state, refreshing, refresh, retry } = useReviewList(load);
   const experiments = rows[0];
+  // Kept up while another window loads, as the window it was counted over.
+  const picker = experiments && (
+    <WindowPicker
+      choice={choice}
+      presets={PRESETS}
+      today={today}
+      counting={!sameSpan(experiments.span, span)}
+      onChoose={setChoice}
+    />
+  );
   return (
     <ReviewPage
       title="Experiments v2"
@@ -35,18 +59,22 @@ export function ExperimentsV2Page() {
         !experiments || (!experiments.wordOfDay && !experiments.comeBack && !experiments.headerCelebrations)
       }
     >
-      {experiments && <List experiments={experiments} />}
+      {picker}
+      {experiments && <List experiments={experiments} today={today} />}
     </ReviewPage>
   );
 }
 
-function List({ experiments }: { experiments: Experiments }) {
+const PRESETS = [SINCE_START, TODAY, PAST_7, PAST_30];
+
+function List({ experiments, today }: { experiments: Experiments; today: string }) {
+  const drawn = experiments.span ? ` Players drawn: ${describe(experiments.span, today)}.` : "";
   return (
     <div className="av2">
       {experiments.wordOfDay && (
         <Section
           title="Word of the day"
-          note="Whether showing the word of the day under a finished puzzle moves the scorecard. Over players."
+          note={`Whether showing the word of the day under a finished puzzle moves the scorecard. Over players.${drawn}`}
         >
           <ExperimentView
             experiment={experiments.wordOfDay}
@@ -65,7 +93,7 @@ function List({ experiments }: { experiments: Experiments }) {
       {experiments.comeBack && (
         <Section
           title="Come-back tip"
-          note="Whether the line under the streak saying what tomorrow is worth moves the scorecard. Over players."
+          note={`Whether the line under the streak saying what tomorrow is worth moves the scorecard. Over players.${drawn}`}
         >
           <ExperimentView
             experiment={experiments.comeBack}
@@ -84,7 +112,7 @@ function List({ experiments }: { experiments: Experiments }) {
       {experiments.headerCelebrations && (
         <Section
           title="Header celebrations"
-          note="Whether the cards over the top of today's puzzle move the scorecard. Over everyone drawn."
+          note={`Whether the cards over the top of today's puzzle move the scorecard. Over everyone drawn.${drawn}`}
         >
           <ExperimentView
             experiment={experiments.headerCelebrations}
@@ -114,3 +142,4 @@ function Section({ title, note, children }: { title: string; note: string; child
     </section>
   );
 }
+

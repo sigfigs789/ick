@@ -2,7 +2,7 @@
 // feeds a list, and the way a timestamp is written. Their own file for the
 // reason rarityStyles.ts is: a module that exports a component and a helper
 // side by side breaks fast refresh for the component.
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { nextMark, setMark, type Mark } from "../game/review";
 
 export type LoadState = "loading" | "ready" | "error";
@@ -26,16 +26,21 @@ export function useReviewList<T>(load: () => Promise<T[]>): {
   const [state, setState] = useState<LoadState>("loading");
   const [refreshing, setRefreshing] = useState(false);
 
+  // Only the latest read may land: a page whose `load` changes (a new window on
+  // /analyticsV2) would otherwise draw whichever answer came back last.
+  const latest = useRef(0);
   const read = useCallback(() => {
+    const id = ++latest.current;
     load()
       .then((next) => {
+        if (id !== latest.current) return;
         setRows(next);
         setState("ready");
       })
       // Unlike the finds feed, a failed re-read is not swallowed: these lists are
       // not polled, so every read here is one somebody asked for, and quietly
       // leaving the old rows up would answer a question they did not ask.
-      .catch(() => setState("error"));
+      .catch(() => id === latest.current && setState("error"));
   }, [load]);
 
   useEffect(() => {
