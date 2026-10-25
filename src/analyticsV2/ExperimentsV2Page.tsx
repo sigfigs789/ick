@@ -60,7 +60,8 @@ export function ExperimentsV2Page() {
         (!experiments.wordOfDay &&
           !experiments.comeBack &&
           !experiments.headerCelebrations &&
-          !experiments.shareName)
+          !experiments.shareName &&
+          !experiments.inputPlacement)
       }
     >
       {picker}
@@ -151,6 +152,28 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
                 rate for each arm. Watch the sharing guardrail here as closely as D1. Try either arm with{" "}
                 <code>?share-name=hidden</code> or <code>=shown</code>; a forced arm, or a tester (forced to hidden),
                 is not counted.
+              </>
+            }
+          />
+        </Section>
+      )}
+
+      {experiments.inputPlacement && (
+        <Section
+          title="Input below the guess log"
+          note={`Whether moving the guess input from under the drop to below the guess log moves the scorecard. Over players, new and returning apart.${drawn}`}
+        >
+          <ExperimentView
+            experiment={experiments.inputPlacement}
+            subject="the input below the guess log"
+            about={
+              <>
+                Half of players get the guess input, and the feedback under it, below the guess log instead of straight
+                under the drop. In the tables, Shown is the input below and Hidden is the input above, where it has
+                always been. Each is drawn once, the first time the input appears on an unfinished puzzle, which can be
+                before their first word: a player drawn who never banks one is counted as returning. Try either arm
+                with <code>?input-placement=below</code> or <code>=above</code>; a forced arm, or a tester (forced to
+                below), is not counted.
               </>
             }
           />

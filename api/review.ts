@@ -437,13 +437,18 @@ async function handleGet(request: Request): Promise<Response> {
           { p_today: today, p_event: event, ...span },
           ANALYTICS_TIMEOUT_MS,
         );
-      const [wordOfDay, comeBack, headerCelebrations, shareName] = await Promise.all([
+      const [wordOfDay, comeBack, headerCelebrations, shareName, inputPlacement] = await Promise.all([
         experiment("word_of_day_assigned"),
         experiment("come_back_assigned"),
         experiment("header_celebrations_assigned"),
         experiment("share_name_assigned"),
+        experiment("input_placement_assigned"),
       ]);
-      return reply(200, { wordOfDay, comeBack, headerCelebrations, shareName }, ANALYTICS_V2_CACHE);
+      return reply(
+        200,
+        { wordOfDay, comeBack, headerCelebrations, shareName, inputPlacement },
+        ANALYTICS_V2_CACHE,
+      );
     }
     if (list === "analytics") {
       // The window's ends and the viewer's own puzzle, sent as-is rather than
