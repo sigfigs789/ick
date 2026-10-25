@@ -134,7 +134,9 @@ describe("StreakDisplay", () => {
     const pie = screen.getByRole("button", { name: /Lazy weekend/ });
     expect(pie.querySelector("svg")).not.toBeNull();
     fireEvent.click(pie);
-    expect(screen.getByRole("dialog", { name: "Lazy weekend" })).toHaveTextContent("2 of 3 so far");
+    expect(screen.getByRole("dialog", { name: "Lazy weekend" })).toHaveTextContent(
+      "Play any 3 days this week and your streak is paused through the weekend. 2 of 3 days played so far."
+    );
     // The streak icon is untouched on a weekday.
     expect(flame()).toBe("🔥");
 

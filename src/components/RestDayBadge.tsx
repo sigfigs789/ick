@@ -19,7 +19,7 @@ function weekdayRule(played: number, reachable: boolean, sundayOnly: boolean): s
   }
   return sundayOnly
     ? `Play 3 days by Saturday and snooze through Sunday: skipping it can't break your streak. ${played} of 3 so far.`
-    : `Play 3 days by Friday and snooze through the weekend: skipping it can't break your streak. ${played} of 3 so far.`;
+    : `Play any 3 days this week and your streak is paused through the weekend. ${played} of 3 days played so far.`;
 }
 
 /** A pie a third full for each day played, drawn in the text colour. */
