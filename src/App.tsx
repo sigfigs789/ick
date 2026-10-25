@@ -9,6 +9,7 @@ import { ResultsPanel } from "./components/ResultsPanel";
 import { WordRulesModal } from "./components/WordRulesModal";
 import { PuzzleNav } from "./components/PuzzleNav";
 import { FoldedLiveNotice } from "./components/FoldedLiveNotice";
+import { SuggestionAcceptedNotice } from "./components/SuggestionAcceptedNotice";
 import { ConfettiBurst } from "./components/ConfettiBurst";
 import { JackpotStamp } from "./components/JackpotStamp";
 import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
@@ -24,6 +25,7 @@ import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { useWordOfDay } from "./hooks/useWordOfDay";
 import { useYesterdaysBest, type ResolvedBest } from "./hooks/useYesterdaysBest";
+import { useAcceptedSuggestions } from "./hooks/useAcceptedSuggestions";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { isWinningRarity } from "./game/rank";
 import { celebrationFor } from "./game/celebration";
@@ -167,6 +169,16 @@ export default function App() {
     dismissWelcomeBack(date);
     setWelcomeDismissedOn(date);
   };
+  // Words the player suggested that have since been accepted, thanked for once
+  // and only on a day nothing else has shown: the header celebration cards keep
+  // it away themselves, and so do the welcome back, a fold notice and the
+  // burst of a Rare word.
+  const acceptedSuggestions = useAcceptedSuggestions(
+    welcome !== null ||
+      (isToday && welcomeDismissedOn === date) ||
+      foldNotices.length > 0 ||
+      burst !== null,
+  );
 
   // The compact share-link code identifies its origin without exposing a
   // long UTM parameter in the result text.
@@ -470,6 +482,11 @@ export default function App() {
           date={date}
           notices={foldNotices}
           onDismiss={dismissFoldNotices}
+        />
+        <SuggestionAcceptedNotice
+          words={acceptedSuggestions.words}
+          firstAcceptance={acceptedSuggestions.firstAcceptance}
+          onDismiss={acceptedSuggestions.dismiss}
         />
         {/* The input sits straight under the drop, so it stays where it is
             as words land below it rather than being pushed down the page by

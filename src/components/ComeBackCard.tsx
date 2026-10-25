@@ -40,9 +40,17 @@ export function ComeBackCard({ streak, date }: Props) {
   }, [date]);
 
   // The achievements still locked, for when nothing nearer is ahead. Memoized:
-  // reading them walks the stored history.
+  // reading them walks the stored history. The suggestion badges are left out:
+  // they are not won by coming back to play.
   const goal = useMemo(
-    () => streakGoal(streak, date, syncAchievements(streak).filter((status) => !status.earnedOn)),
+    () =>
+      streakGoal(
+        streak,
+        date,
+        syncAchievements(streak).filter(
+          (status) => !status.earnedOn && !status.achievement.viaSuggestions
+        )
+      ),
     [streak, date]
   );
 

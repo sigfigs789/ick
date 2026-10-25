@@ -20,9 +20,17 @@ import { nextMonthStart } from "./month";
 import { isWinningRarity } from "./rank";
 import { CURRENT_TIERS } from "./stats";
 import { playedHistory, playedOnItsDay } from "./storage";
+import { takesPlayerMessages } from "./playerMessages";
+import { suggestedWords, type SuggestedWordRecord } from "./suggestions";
 import type { DailyProgress, Rarity, StreakState } from "./types";
 
-export type AchievementGroup = "Getting started" | "Rarity" | "Streaks" | "Collections" | "Style";
+export type AchievementGroup =
+  | "Getting started"
+  | "Rarity"
+  | "Streaks"
+  | "Collections"
+  | "Style"
+  | "Word scouting";
 
 export const ACHIEVEMENT_GROUPS: readonly AchievementGroup[] = [
   "Getting started",
@@ -30,6 +38,7 @@ export const ACHIEVEMENT_GROUPS: readonly AchievementGroup[] = [
   "Streaks",
   "Collections",
   "Style",
+  "Word scouting",
 ];
 
 /** What an achievement needs to know about the player. */
@@ -39,6 +48,8 @@ export interface AchievementRecord {
   /** The dates played on their own day, either mode. */
   onItsDay: readonly string[];
   streak: Pick<StreakState, "currentStreak" | "longestStreak" | "lastCompletedDate">;
+  /** The words this player has suggested (see game/suggestions.ts). */
+  suggestions?: readonly SuggestedWordRecord[];
 }
 
 /**
@@ -57,6 +68,11 @@ export interface Achievement {
   title: string;
   description: string;
   check: (record: AchievementRecord, today: string) => Check;
+  /**
+   * Earned through the suggestion box, so left off a host that has none (see
+   * game/playerMessages.ts) rather than shown as a badge nobody there can get.
+   */
+  viaSuggestions?: true;
 }
 
 export interface AchievementStatus {
@@ -189,6 +205,16 @@ function bothWays({ history }: AchievementRecord): Check {
     if (modes.size === 2) return { earnedOn: progress.date };
   }
   return { earnedOn: null };
+}
+
+/** The earliest of a suggestion date, over the suggestions that have one. */
+function firstSuggestion(
+  dateOf: (suggestion: SuggestedWordRecord) => string | undefined
+): Achievement["check"] {
+  return ({ suggestions = [] }) => {
+    const dates = suggestions.flatMap((s) => dateOf(s) ?? []).sort();
+    return { earnedOn: dates[0] ?? null };
+  };
 }
 
 function countOf(rarities: readonly Rarity[]) {
@@ -373,6 +399,24 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     description: "Find a Rare or better word in the same puzzle in Standard and Freeform.",
     check: bothWays,
   },
+  {
+    id: "word-suggested",
+    group: "Word scouting",
+    icon: "💡",
+    title: "Word scout",
+    description: "Suggest a word for the dictionary.",
+    check: firstSuggestion((s) => s.suggestedOn),
+    viaSuggestions: true,
+  },
+  {
+    id: "suggestion-accepted",
+    group: "Word scouting",
+    icon: "📖",
+    title: "In the dictionary",
+    description: "Have a word you suggested accepted, so everybody can play it.",
+    check: firstSuggestion((s) => s.acceptedOn),
+    viaSuggestions: true,
+  },
 ];
 
 const EARNED_KEY = "ick:achievements";
@@ -403,7 +447,9 @@ export function achievementStatuses(
   kept: Readonly<Record<string, string>>,
   today: string
 ): AchievementStatus[] {
-  return ACHIEVEMENTS.map((achievement) => {
+  return ACHIEVEMENTS.filter(
+    (achievement) => !achievement.viaSuggestions || takesPlayerMessages()
+  ).map((achievement) => {
     const keptOn = kept[achievement.id];
     if (keptOn) return { achievement, earnedOn: keptOn };
     const { earnedOn, progress } = achievement.check(record, today);
@@ -417,6 +463,7 @@ export function syncAchievements(streak: StreakState): AchievementStatus[] {
     history: playedHistory(),
     onItsDay: playedOnItsDay().map((progress) => progress.date),
     streak,
+    suggestions: suggestedWords(),
   };
   const kept = readEarned();
   const statuses = achievementStatuses(record, kept, todayDateString());
