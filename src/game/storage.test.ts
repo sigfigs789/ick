@@ -518,6 +518,18 @@ describe("streak continuation", () => {
     expect(streak.longestStreak).toBe(3);
   });
 
+  it("keeps the best a streak set out to beat, so passing it counts once", () => {
+    complete("2024-01-01");
+    complete("2024-01-02");
+    expect(loadStreak()).toMatchObject({ currentStreak: 2, bestToBeat: 0 }); // a first streak
+    complete("2024-01-10"); // a new streak, out to beat 2
+    complete("2024-01-11");
+    complete("2024-01-12");
+    expect(loadStreak()).toMatchObject({ currentStreak: 3, longestStreak: 3, bestToBeat: 2 });
+    complete("2024-01-13");
+    expect(loadStreak()).toMatchObject({ currentStreak: 4, longestStreak: 4, bestToBeat: 2 });
+  });
+
   it("only counts a given day's completion once", () => {
     const done = complete("2024-01-01");
     // A word arriving after the limit -- a live lookup landing late -- must not

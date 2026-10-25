@@ -191,6 +191,32 @@ describe("App", () => {
     });
   });
 
+  describe("a longest streak yet", () => {
+    const today = "2026-08-13";
+    const base = { totalCompleted: 9, crushedIt: 0, elite: 0, highScore: 0, bestToBeat: 9 };
+    const before = { ...base, currentStreak: 9, longestStreak: 9, lastCompletedDate: "2026-08-12" };
+    const after = { ...base, currentStreak: 10, longestStreak: 10, lastCompletedDate: today };
+
+    it("is celebrated on the submission that passes the best", () => {
+      vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ streak: before }) as ReturnType<typeof useDailyPuzzle>);
+      const { rerender } = render(<App />);
+      expect(screen.queryByText("Your longest streak yet!")).not.toBeInTheDocument();
+
+      vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ streak: after }) as ReturnType<typeof useDailyPuzzle>);
+      rerender(<App />);
+      expect(screen.getByRole("button", { name: /longest streak yet/i })).toHaveTextContent(
+        "10 days — past your best of 9."
+      );
+      expect(vi.mocked(useSound).mock.results[0].value.rising).toHaveBeenCalledTimes(1);
+    });
+
+    it("is not thrown again on a reload that day", () => {
+      vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ streak: after }) as ReturnType<typeof useDailyPuzzle>);
+      render(<App />);
+      expect(screen.queryByText("Your longest streak yet!")).not.toBeInTheDocument();
+    });
+  });
+
   describe("a climb up the streak board", () => {
     const today = "2026-08-13";
 

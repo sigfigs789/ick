@@ -14,6 +14,7 @@ import { JackpotStamp } from "./components/JackpotStamp";
 import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
 import { ImprovementCelebration } from "./components/ImprovementCelebration";
 import { StreakClimbCelebration } from "./components/StreakClimbCelebration";
+import { NewBestCelebration } from "./components/NewBestCelebration";
 import { QuickShareButton } from "./components/QuickShareButton";
 import { YesterdaysBest } from "./components/YesterdaysBest";
 import { ComeBackCard } from "./components/ComeBackCard";
@@ -29,6 +30,7 @@ import { celebrationFor } from "./game/celebration";
 import type { Rarity } from "./game/types";
 import { completedWholeMonth } from "./game/perfectMonth";
 import { welcomeBack } from "./game/streakFreeze";
+import { beatBestToday } from "./game/newBest";
 import { dismissWelcomeBack, welcomeBackDismissedOn } from "./game/storage";
 import {
   averageImprovement,
@@ -115,6 +117,8 @@ export default function App() {
   );
   const [showPerfectMonth, setShowPerfectMonth] = useState(false);
   const endPerfectMonth = useCallback(() => setShowPerfectMonth(false), []);
+  const [newBest, setNewBest] = useState<{ days: number; best: number } | null>(null);
+  const endNewBest = useCallback(() => setNewBest(null), []);
   const [improvement, setImprovement] = useState<Improvement | null>(null);
   const endImprovement = useCallback(() => setImprovement(null), []);
   const [climb, setClimb] = useState<StreakClimb | null>(null);
@@ -246,6 +250,25 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perfectMonth, date]);
 
+  // The streak going past the player's longest before it (see game/newBest.ts),
+  // celebrated on the submission that takes it there. Only that one day of the
+  // streak passes it, and remembered by date as the perfect month is, so a
+  // reload that day, which mounts already past it, throws no second party.
+  const beatBest = isToday ? beatBestToday(streak, date) : null;
+  const celebratedBest = useRef(beatBest !== null ? date : null);
+  useEffect(() => {
+    if (beatBest === null || celebratedBest.current === date) return;
+    celebratedBest.current = date;
+    setNewBest({ days: streak.currentStreak, best: beatBest });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [beatBest, date]);
+  // Its chime when the card actually shows, which is after a perfect month's.
+  const newBestShown = !showPerfectMonth && newBest !== null;
+  useEffect(() => {
+    if (newBestShown) sound.rising();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newBestShown]);
+
   // The player's average on the way up (see game/improvement.ts), celebrated
   // when today's puzzle is finished -- the day's total is final then, so it is
   // the first moment the average it joins means anything. Only on the finish
@@ -280,7 +303,7 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finishedToday, date]);
   // Its chime when the card actually shows, which is after any card ahead of it.
-  const climbShown = !showPerfectMonth && !improvement && climb !== null;
+  const climbShown = !showPerfectMonth && !newBest && !improvement && climb !== null;
   useEffect(() => {
     if (climbShown) sound.rising();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -346,6 +369,10 @@ export default function App() {
           days={Number(date.slice(8, 10))}
           onDone={endPerfectMonth}
         />
+      ) : newBest ? (
+        // After the perfect month's card too, as both bank on the day's first
+        // submission.
+        <NewBestCelebration days={newBest.days} best={newBest.best} onDone={endNewBest} />
       ) : improvement ? (
         // After the perfect month's card, if both land on one finish.
         <ImprovementCelebration improvement={improvement} onDone={endImprovement} />
