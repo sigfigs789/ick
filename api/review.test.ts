@@ -536,9 +536,11 @@ describe("api/review", () => {
       comeBack: body,
       headerCelebrations: body,
       shareName: body,
+      inputPlacement: body,
     });
     const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
     expect(calls.map((c) => String(c[0]).split("/").pop())).toEqual([
+      "analytics_v2_experiment",
       "analytics_v2_experiment",
       "analytics_v2_experiment",
       "analytics_v2_experiment",
@@ -551,6 +553,10 @@ describe("api/review", () => {
       p_event: "header_celebrations_assigned",
     });
     expect(JSON.parse(String(calls[3][1].body))).toEqual({ p_today: "2026-10-22", p_event: "share_name_assigned" });
+    expect(JSON.parse(String(calls[4][1].body))).toEqual({
+      p_today: "2026-10-22",
+      p_event: "input_placement_assigned",
+    });
     expect((await handler(get("?list=experiments-v2"))).status).toBe(400);
   });
 

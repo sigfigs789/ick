@@ -28,6 +28,7 @@ import { useWordOfDay } from "./hooks/useWordOfDay";
 import { useYesterdaysBest, type ResolvedBest } from "./hooks/useYesterdaysBest";
 import { useAcceptedSuggestions } from "./hooks/useAcceptedSuggestions";
 import { useForceUpdate } from "./hooks/useForceUpdate";
+import { useInputPlacement } from "./hooks/useInputPlacement";
 import { isWinningRarity } from "./game/rank";
 import { celebrationFor } from "./game/celebration";
 import { earnedIds, newlyEarned, syncAchievements, type Achievement } from "./game/achievements";
@@ -443,6 +444,9 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unlockedShown, unlocked?.key]);
 
+  // Above the guess log or below it, by the input placement test (see
+  // game/inputPlacementTest.ts), drawn the first time the input shows.
+  const inputPlacement = useInputPlacement(date, !progress.completed);
   const guessEntry = (
     <>
       {!progress.completed && (
@@ -547,16 +551,17 @@ export default function App() {
           firstAcceptance={acceptedSuggestions.firstAcceptance}
           onDismiss={acceptedSuggestions.dismiss}
         />
-        {/* The input sits straight under the drop, so it stays where it is
-            as words land below it rather than being pushed down the page by
-            each one. */}
         {welcome && (
           <WelcomeBackCard
             welcome={welcome}
             onDismiss={closeWelcome}
           />
         )}
-        {guessEntry}
+        {/* The input sits straight under the drop, so it stays where it is
+            as words land below it rather than being pushed down the page by
+            each one -- unless the input placement test puts it below the
+            guess log, after the words already played. */}
+        {inputPlacement === "above" && guessEntry}
         <GuessLog
           acceptedWords={progress.acceptedWords}
           completed={progress.completed}
@@ -585,6 +590,7 @@ export default function App() {
             ) : undefined
           }
         />
+        {inputPlacement === "below" && guessEntry}
 
         {!progress.completed && !isToday && (
           <p className="archive-note">

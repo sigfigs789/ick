@@ -127,6 +127,8 @@ export interface Experiments {
   comeBack: Experiment | null;
   headerCelebrations: Experiment | null;
   shareName: Experiment | null;
+  /** Its `shown` arm is the input below the guess log, `hidden` above (see game/inputPlacementTest.ts). */
+  inputPlacement: Experiment | null;
   /** The draw days counted, both ends, or null for everyone drawn. */
   span: { from: string; to: string } | null;
 }
@@ -293,6 +295,7 @@ export async function fetchExperiments(today: string, span?: { from: string; to:
     comeBack: parseExperiment(body.comeBack),
     headerCelebrations: parseExperiment(body.headerCelebrations),
     shareName: parseExperiment(body.shareName),
+    inputPlacement: parseExperiment(body.inputPlacement),
     span: span ?? null,
   };
 }
