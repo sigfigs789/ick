@@ -88,6 +88,8 @@ describe("ExperimentsV2Page", () => {
     expect(
       screen.getByRole("table", { name: "Everyone drawn: with the header celebrations against without." }),
     ).toBeTruthy();
+    // Read over everyone drawn alone, not split into new and returning players.
+    expect(screen.getAllByRole("table")).toHaveLength(1);
   });
 
   it("says so when the database sent no experiment", async () => {

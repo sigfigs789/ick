@@ -45,6 +45,7 @@ import { totalRarityScore } from "./game/dictionary";
 import { addDays } from "./game/date";
 import { loadPlayerId } from "./game/player";
 import {
+  bestWordNewsEverShown,
   bestWordNewsFor,
   bestWordNewsShown,
   daysPlayed,
@@ -339,8 +340,8 @@ export default function App() {
 
   // Yesterday's best word, announced as the site opens (see
   // game/bestWordNews.ts): its finder is celebrated, and a player with a few
-  // days behind them is told who found it -- but only when nothing else is
-  // up, since it is somebody else's news. Decided once per mount, on the
+  // days behind them who has never seen the card is told who found it, once
+  // ever -- and only when nothing else is up, since it is somebody else's news. Decided once per mount, on the
   // answer's arrival, and once a day for good. It leads the news header
   // celebrations, so it keeps the day's perfect month and rising average away.
   const yesterdaysBest = useYesterdaysBest(isToday ? addDays(date, -1) : undefined);
@@ -354,7 +355,12 @@ export default function App() {
     if (!yesterdaysBest || bestNewsDecided.current) return;
     bestNewsDecided.current = true;
     if (bestWordNewsShown(yesterdaysBest.day)) return;
-    const kind = bestWordNewsFor(yesterdaysBest.finderIds, loadPlayerId(), daysPlayed());
+    const kind = bestWordNewsFor(
+      yesterdaysBest.finderIds,
+      loadPlayerId(),
+      daysPlayed(),
+      bestWordNewsEverShown(),
+    );
     if (!kind) return;
     const busy = showPerfectMonth || improvement || climb || burst || welcome;
     if (kind === "other" && busy) return;

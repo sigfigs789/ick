@@ -923,7 +923,7 @@ month has its own). They tap away or go by themselves.
 |---|---|---|
 | Streak | `NewBestCelebration` — "Your longest streak yet!" | the first word on the day the streak passes the player's best |
 | Streak | `StreakClimbCelebration` — "Up the streak board!" | a moment after today's puzzle is finished |
-| News | `BestWordNewsCard` — yesterday's best word | as the site opens |
+| News | `BestWordNewsCard` — yesterday's best word | as the site opens; every time the player found it, but only once ever when somebody else did (from their 4th day played) |
 | News | `PerfectMonthCelebration` — "Perfect {month}!" | the first word that completes a month without a missed day |
 | News | `ImprovementCelebration` — "You're on the rise!" | the finish, at most once a week |
 
@@ -939,7 +939,7 @@ card and one news card on the same day, one after the other.
 the header celebrations and 25% see none of them (no card, confetti or
 chime). A player is drawn the first time a card would show and keeps that arm.
 The draw is a `header_celebrations_assigned` event, and the arms are scored on
-`/experimentsV2`. Force either arm with `?header-celebrations=hidden` or
+`/experimentsV2` over everyone drawn, not split into new and returning players. Force either arm with `?header-celebrations=hidden` or
 `=shown`. A forced arm, a tester or a host that reports nothing always sees
 the cards and is never drawn.
 

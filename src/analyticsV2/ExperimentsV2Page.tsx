@@ -7,7 +7,8 @@ import { ExperimentView } from "./ExperimentView";
 
 /**
  * The experiments, at /experimentsV2: each split test's call, then its arms for
- * everyone drawn, new players and returning players.
+ * everyone drawn, new players and returning players (the header celebrations
+ * test, for everyone drawn alone).
  *
  * Moved off /analyticsV2 onto their own read (`list=experiments-v2`), so this
  * page does not wait on the dashboard's report and the dashboard does not wait
@@ -83,11 +84,12 @@ function List({ experiments }: { experiments: Experiments }) {
       {experiments.headerCelebrations && (
         <Section
           title="Header celebrations"
-          note="Whether the cards over the top of today's puzzle move the scorecard. Over players."
+          note="Whether the cards over the top of today's puzzle move the scorecard. Over everyone drawn."
         >
           <ExperimentView
             experiment={experiments.headerCelebrations}
             subject="the header celebrations"
+            segments={["all"]}
             about={
               <>
                 A quarter of players never see the header celebrations: no longest streak yet, climb up the streak
