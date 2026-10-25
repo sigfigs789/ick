@@ -940,6 +940,19 @@ the rest of that group stay away until tomorrow. The claim is kept in
 a second card in. The two groups are independent: a player can see one streak
 card and one news card on the same day, one after the other.
 
+**Achievements unlocked** (`AchievementCelebration`) sit outside the groups:
+a badge is earned when it is earned, so its card claims no group's day and
+can show on any puzzle, archived ones too. After every verdict the app works
+out the achievements again (`syncAchievements`) and celebrates any that were
+not held when the page opened. A word that earns several lists them on one
+card. It waits behind every other card and behind the word's own confetti
+burst or jackpot stamp, then plays its own fanfare (`playAchievement`). The
+suggestion box's two badges are left out, because the box and the accepted-word
+thank-you already announce them. The 75/25 test below hides the card from its
+`hidden` arm, but the card never draws a player into the test: every player
+earns a badge on their first word, so drawing there would enrol all of them on
+day one.
+
 **A 75/25 test** (`src/game/headerCelebrationsTest.ts`): 75% of players see
 the header celebrations and 25% see none of them (no card, confetti or
 chime). A player is drawn the first time a card would show and keeps that arm.

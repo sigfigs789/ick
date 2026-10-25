@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { playAccept, playApplause, playComplete, playJackpot, playReject, playRising, vibrate } from "../audio/sound";
+import { playAccept, playAchievement, playApplause, playComplete, playJackpot, playReject, playRising, vibrate } from "../audio/sound";
 import { hapticPatternFor } from "../game/celebration";
 import type { Rarity } from "../game/types";
 
@@ -13,6 +13,7 @@ export function useSound() {
   const jackpot = useCallback(() => playJackpot(), []);
   const applause = useCallback((closed: "week" | "month") => playApplause(closed), []);
   const rising = useCallback(() => playRising(), []);
+  const achievement = useCallback(() => playAchievement(), []);
 
-  return { accept, reject, complete, jackpot, applause, rising };
+  return { accept, reject, complete, jackpot, applause, rising, achievement };
 }

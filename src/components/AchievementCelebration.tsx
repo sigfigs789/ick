@@ -1,0 +1,71 @@
+import { useEffect } from "react";
+import { ConfettiBurst } from "./ConfettiBurst";
+import type { Achievement } from "../game/achievements";
+
+/** How long the card stays up if nobody taps it, as the other cards do. */
+const CELEBRATION_MS = 7000;
+
+/**
+ * The moment a word earns an achievement (see game/achievements.ts) -- until
+ * now a badge turned up on the Stats page with nobody having said a word.
+ *
+ * The improving average's card, in ink violet, with the badge itself as the
+ * centrepiece and gold confetti falling around it. It floats over the puzzle
+ * and goes by itself or on a tap. A word that earns several at once (a first
+ * word that is also a Legend) lists them all on the one card.
+ */
+export function AchievementCelebration({
+  achievements,
+  onDone,
+}: {
+  achievements: readonly Achievement[];
+  onDone: () => void;
+}) {
+  useEffect(() => {
+    const timeout = window.setTimeout(onDone, CELEBRATION_MS);
+    return () => window.clearTimeout(timeout);
+  }, [onDone]);
+
+  if (achievements.length === 0) return null;
+  const [only] = achievements;
+  const several = achievements.length > 1;
+  return (
+    <>
+      <ConfettiBurst grand />
+      <div className="improvement improvement--achievement" role="status">
+        <button type="button" className="improvement__card" onClick={onDone} title="Dismiss">
+          <span className="improvement__close" aria-hidden="true">
+            ×
+          </span>
+          <span className="achievement-unlocked__eyebrow">
+            {several ? `${achievements.length} achievements unlocked` : "Achievement unlocked"}
+          </span>
+          {several ? (
+            <span className="achievement-unlocked__list">
+              {achievements.map((achievement) => (
+                <span className="achievement-unlocked__item" key={achievement.id}>
+                  <span className="achievement-unlocked__item-icon" aria-hidden="true">
+                    {achievement.icon}
+                  </span>
+                  <span className="achievement-unlocked__item-title">{achievement.title}</span>
+                </span>
+              ))}
+            </span>
+          ) : (
+            <>
+              <span className="achievement-unlocked__medal" aria-hidden="true">
+                <span className="achievement-unlocked__rays" />
+                <span className="achievement-unlocked__badge">{only.icon}</span>
+              </span>
+              <span className="improvement__title">{only.title}</span>
+              <span className="improvement__body">{only.description}</span>
+            </>
+          )}
+          <span className="achievement-unlocked__footnote">
+            {several ? "They're on your Stats page." : "It's on your Stats page."}
+          </span>
+        </button>
+      </div>
+    </>
+  );
+}

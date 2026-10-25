@@ -94,6 +94,7 @@ beforeEach(() => {
     jackpot: vi.fn(),
     applause: vi.fn(),
     rising: vi.fn(),
+    achievement: vi.fn(),
   });
   vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as unknown as ReturnType<typeof useDailyPuzzle>);
 });

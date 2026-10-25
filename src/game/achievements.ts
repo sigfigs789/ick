@@ -473,3 +473,23 @@ export function syncAchievements(streak: StreakState): AchievementStatus[] {
   if (Object.keys(earned).length !== Object.keys(kept).length) writeEarned({ ...kept, ...earned });
   return statuses;
 }
+
+/** The ids of the achievements earned in `statuses`. */
+export function earnedIds(statuses: readonly AchievementStatus[]): Set<string> {
+  return new Set(statuses.flatMap(({ achievement, earnedOn }) => (earnedOn ? [achievement.id] : [])));
+}
+
+/**
+ * The achievements in `statuses` earned since `before` (see earnedIds), for
+ * the card that celebrates them (see components/AchievementCelebration.tsx).
+ * The suggestion box's two are left out: each is announced where it is earned,
+ * by the box itself and by the thank-you for an accepted word.
+ */
+export function newlyEarned(
+  before: ReadonlySet<string>,
+  statuses: readonly AchievementStatus[]
+): Achievement[] {
+  return statuses.flatMap(({ achievement, earnedOn }) =>
+    earnedOn && !before.has(achievement.id) && !achievement.viaSuggestions ? [achievement] : []
+  );
+}

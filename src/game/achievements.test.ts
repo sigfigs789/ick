@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ACHIEVEMENTS,
   achievementStatuses,
+  earnedIds,
+  newlyEarned,
   syncAchievements,
   type AchievementRecord,
 } from "./achievements";
@@ -150,5 +152,31 @@ describe("syncAchievements", () => {
     const later = syncAchievements(streak);
     expect(later.find((s) => s.achievement.id === "first-legend")?.earnedOn).toBe("2026-10-20");
     vi.useRealTimers();
+  });
+});
+
+describe("newlyEarned", () => {
+  const record: AchievementRecord = {
+    history: [day("2026-10-01", [word("Common")]), day("2026-10-03", [word("Mythic")])],
+    onItsDay: [],
+    streak: noStreak,
+    suggestions: [{ word: "inkle", suggestedOn: "2026-10-02" }],
+  };
+
+  beforeEach(() => setPlayerMessages(true));
+
+  it("lists only what was earned since the snapshot, leaving out the suggestion box's", () => {
+    const before = earnedIds(achievementStatuses({ ...record, history: record.history.slice(0, 1) }, {}, TODAY));
+    expect(before.has("first-word")).toBe(true);
+    const ids = newlyEarned(before, achievementStatuses(record, {}, TODAY)).map((a) => a.id);
+    expect(ids).toContain("first-mythic");
+    expect(ids).toContain("first-win");
+    expect(ids).not.toContain("first-word");
+    expect(ids).not.toContain("word-suggested");
+  });
+
+  it("lists nothing when nothing changed", () => {
+    const statuses = achievementStatuses(record, {}, TODAY);
+    expect(newlyEarned(earnedIds(statuses), statuses)).toEqual([]);
   });
 });
