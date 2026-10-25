@@ -18,6 +18,12 @@ interface Props {
   streak?: StreakState;
   /** Puzzle date, so scores use the scoring system in effect that day. */
   date?: string;
+  /**
+   * Whether `date` is today's puzzle, for the streak shown once it is
+   * finished: today's freeze state and the lazy weekend pie (see
+   * StreakDisplay.tsx).
+   */
+  isToday?: boolean;
   /** This puzzle's one retry is still unspent and there is a word to spend it on. */
   canRetry?: boolean;
   /**
@@ -57,6 +63,7 @@ export function GuessLog({
   completed = false,
   streak,
   date,
+  isToday = false,
   canRetry = false,
   retryOffered = false,
   retrySpent = false,
@@ -370,6 +377,7 @@ export function GuessLog({
             streak={streak}
             totalRarity={totalRarityScore(acceptedWords, date)}
             date={date}
+            isToday={isToday}
             hideEmpty={newUi}
             hasWords={acceptedWords.length > 0}
           />

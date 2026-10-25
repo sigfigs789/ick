@@ -303,6 +303,7 @@ export function PlayScreen({ covered = false }: Props) {
           completed={progress.completed}
           streak={streak}
           date={date}
+          isToday={isToday}
           canRetry={canRetry}
           retryOffered={retryOffered}
           retrySpent={retrySpent}

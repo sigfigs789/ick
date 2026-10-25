@@ -173,6 +173,19 @@ describe("GuessLog", () => {
     expect(screen.queryByText("Elite")).not.toBeInTheDocument();
     expect(screen.queryByText(/guess.*left/i)).not.toBeInTheDocument();
   });
+
+  it("keeps the lazy weekend pie on today's finished puzzle", () => {
+    const words: AcceptedWord[] = [{ word: "strut", rarity: "Rare", zipf: 3.2 }];
+    const week = { ...streak, currentStreak: 2, playedDates: ["2026-11-02", "2026-11-03"] };
+    const { rerender } = render(
+      <GuessLog acceptedWords={words} completed streak={week} date="2026-11-03" isToday newUi />,
+    );
+    expect(screen.getByRole("button", { name: /Lazy weekend: .*2 of 3 days played/ })).toBeInTheDocument();
+
+    // An archive puzzle is not this week's, so it shows no pie.
+    rerender(<GuessLog acceptedWords={words} completed streak={week} date="2026-11-03" newUi />);
+    expect(screen.queryByRole("button", { name: /Lazy weekend/ })).not.toBeInTheDocument();
+  });
 });
 
 describe("GuessLog retry", () => {

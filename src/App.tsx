@@ -562,6 +562,7 @@ export default function App() {
           completed={progress.completed}
           streak={streak}
           date={date}
+          isToday={isToday}
           canRetry={canRetry}
           retryOffered={retryOffered}
           retrySpent={retrySpent}
