@@ -106,7 +106,7 @@ describe("streakGoal", () => {
       streak({ currentStreak: 8, longestStreak: 20, bankedFreezes: 2, playedDates });
 
     it("counts down the days still needed while the week has room", () => {
-      expect(streakGoal(run(["2026-10-26"]), "2026-10-26")).toBe("2 more days by Friday unlocks a lazy weekend 😴");
+      expect(streakGoal(run(["2026-10-26"]), "2026-10-26")).toBe("Play 2 more days this week and unlock a lazy weekend 😴");
       expect(streakGoal(run(["2026-10-27", "2026-10-28"]), "2026-10-28")).toBe(
         "Play tomorrow for a lazy weekend 😴"
       );
@@ -114,7 +114,7 @@ describe("streakGoal", () => {
       expect(streakGoal(run(["2026-10-27", "2026-10-30"]), "2026-10-30")).toBe("Play tomorrow for a lazy Sunday 😴");
       expect(streakGoal(run(["2026-10-29"]), "2026-10-29")).toBe("2 more days by Saturday unlocks a lazy Sunday 😴");
       // A Sunday played looks to the next week.
-      expect(streakGoal(run(["2026-11-01"]), "2026-11-01")).toBe("3 more days by Friday unlocks a lazy weekend 😴");
+      expect(streakGoal(run(["2026-11-01"]), "2026-11-01")).toBe("Play 3 more days this week and unlock a lazy weekend 😴");
     });
 
     it("is not mentioned once unlocked", () => {
@@ -141,14 +141,14 @@ describe("streakGoal", () => {
           streak({ currentStreak: 10, longestStreak: 10, bankedFreezes: 1, playedDates: ["2026-10-26"] }),
           "2026-10-26"
         )
-      ).toBe("2 more days by Friday unlocks a lazy weekend 😴");
+      ).toBe("Play 2 more days this week and unlock a lazy weekend 😴");
       // Tied with beating the best: the lazy weekend, which lapses.
       expect(
         streakGoal(
           streak({ currentStreak: 8, longestStreak: 9, bankedFreezes: 2, playedDates: ["2026-10-26"] }),
           "2026-10-26"
         )
-      ).toBe("2 more days by Friday unlocks a lazy weekend 😴");
+      ).toBe("Play 2 more days this week and unlock a lazy weekend 😴");
     });
 
     it("comes after a freeze tomorrow earns", () => {

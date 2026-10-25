@@ -91,7 +91,7 @@ export function streakGoal(
         : `${rest.needed} more days by Saturday unlocks a lazy Sunday 😴`
       : rest.needed === 1
         ? "Play tomorrow for a lazy weekend 😴"
-        : `${rest.needed} more days by Friday unlocks a lazy weekend 😴`;
+        : `Play ${rest.needed} more days this week and unlock a lazy weekend 😴`;
     goals.push({ away: rest.needed, rank: 1, line });
   }
 
