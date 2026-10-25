@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import {
   atRisk,
+  freezeRules,
   freezesOn,
   resting,
   savedFreezeCovering,
@@ -11,11 +12,6 @@ import {
 import type { StreakState } from '../../../src/game/types';
 import { useTheme } from '../theme/useTheme';
 import { BadgePopup, RestDayBadge } from './RestDayBadge';
-
-/** How saved freezes work, for the freeze badge's popup. */
-const FREEZE_RULES =
-  '🧊 saves your streak on a missed day. Earn one on day 3, then every 7 days. ' +
-  'Hold 1, or 2 after a 14 day streak.';
 
 function freezeSummary(banked: number, cap: number): string {
   if (banked === 0) return 'No 🧊 acquired';
@@ -31,7 +27,7 @@ const TEXT_SIZE = 14.4;
  * The 🧊 saved/max badge. Pressing it opens a popup with the count and the
  * rules; pressing it, or the popup, again closes it.
  */
-function FreezeBadge({ banked, cap }: { banked: number; cap: number }) {
+function FreezeBadge({ banked, cap, currentStreak }: { banked: number; cap: number; currentStreak: number }) {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
   return (
@@ -40,7 +36,7 @@ function FreezeBadge({ banked, cap }: { banked: number; cap: number }) {
       onToggle={() => setOpen((was) => !was)}
       maxWidth={272}
       title={freezeSummary(banked, cap)}
-      text={FREEZE_RULES}
+      text={freezeRules(currentStreak, cap)}
       accessibilityLabel={`Streak freezes: ${banked} of ${cap}`}
       style={styles.freezes}
     >
@@ -88,7 +84,7 @@ export function StreakDisplay({
 }: Props) {
   const theme = useTheme();
   // One icon for how the streak stands, as the streak board marks it: 😴 on
-  // an earned Saturday not played yet, which cannot end the streak; ⏳ when
+  // an earned weekend day not played yet, which cannot end the streak; ⏳ when
   // missing today ends the streak, every saved freeze spent; 🧊 while a saved
   // freeze is covering a missed day with one left for today, until today is
   // played; 🔥 otherwise. A past puzzle whose day a freeze covered shows 🧊
@@ -98,9 +94,9 @@ export function StreakDisplay({
   const risky = !restDay && isToday && date !== undefined && atRisk(streak, date);
   const coveredDay = !isToday && date !== undefined && wasFrozen(streak, date);
   const icon = risky ? '⏳' : frozen || coveredDay ? '🧊' : streak.currentStreak >= 2 ? '🔥' : null;
-  // Sunday to Friday, the week's progress towards a lazy Saturday (a pie, or
+  // The days played towards the next lazy weekend (a pie, or
   // 😴 once unlocked), beside the freezes. Only for a live streak, which is
-  // what a lazy Saturday keeps.
+  // what a lazy weekend keeps.
   const week =
     isToday && date !== undefined && streak.currentStreak > 0
       ? weekdayRestProgress(streak, date)
@@ -117,7 +113,7 @@ export function StreakDisplay({
 
   const summary =
     `Current streak: ${streak.currentStreak} days. ` +
-    (restDay ? "Lazy Saturday: skipping today can't break your streak. " : '') +
+    (restDay ? "Lazy weekend: skipping today can't break your streak. " : '') +
     (coveredDay ? 'A freeze kept your streak alive on this day. ' : '') +
     (frozen ? 'A saved freeze is covering your streak. ' : '') +
     (risky ? 'Play today to keep your streak. ' : '') +
@@ -143,11 +139,12 @@ export function StreakDisplay({
             <Text style={[styles.count, { color: theme.fg }]}>{streak.currentStreak}</Text>
             <Text style={[styles.text, { color: theme.fgMuted }]}>day streak</Text>
           </View>
-          {showFreezes && <FreezeBadge banked={banked} cap={cap} />}
+          {showFreezes && <FreezeBadge banked={banked} cap={cap} currentStreak={streak.currentStreak} />}
           {week && (
             <RestDayBadge
               played={week.played}
               reachable={week.reachable}
+              sundayOnly={week.sundayOnly}
               fontSize={TEXT_SIZE}
               style={styles.week}
             />

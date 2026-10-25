@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compare, emptyArm, parseExperiment, playersNeeded, standings, verdict, type Arm, type Experiment } from "./experiment";
+import { arm, compare, emptyArm, parseExperiment, playersNeeded, standings, verdict, type Arm, type Experiment } from "./experiment";
 
 function arms(shownD1: [number, number], hiddenD1: [number, number], week?: [[number, number], [number, number]]): Experiment {
   const make = (variant: "shown" | "hidden", d1: [number, number], wk?: [number, number]): Arm => ({
@@ -20,10 +20,28 @@ describe("word of the day experiment", () => {
         { variant: "other", segment: "all" },
       ],
     })!;
-    expect(parsed.arms).toHaveLength(1);
+    // The one it knows, and the returning arm worked out from it.
+    expect(parsed.arms.map((a) => a.segment)).toEqual(["all", "returning"]);
     expect(parsed.arms[0].week).toEqual({ cohort: 2, returned: 1, days: 3 });
     expect(parsed.arms[0].d7).toEqual({ cohort: 0, returned: 0 });
     expect(parseExperiment(undefined)).toBeNull();
+  });
+
+  it("works out returning players as everyone drawn less the new", () => {
+    const parsed = parseExperiment({
+      arms: [
+        { variant: "shown", segment: "all", assigned: 10, d1: { cohort: 8, returned: 4 }, week: { cohort: 6, returned: 3, days: 9 }, sharedDays: 5 },
+        { variant: "shown", segment: "new", assigned: 4, d1: { cohort: 3, returned: 1 }, week: { cohort: 2, returned: 1, days: 2 }, sharedDays: 1 },
+        { variant: "hidden", segment: "all", assigned: 6 },
+      ],
+    })!;
+    const shown = arm(parsed, "shown", "returning");
+    expect(shown.assigned).toBe(6);
+    expect(shown.d1).toEqual({ cohort: 5, returned: 3 });
+    expect(shown.week).toEqual({ cohort: 4, returned: 2, days: 7 });
+    expect(shown.sharedDays).toBe(4);
+    // No new players in the hidden arm: everyone drawn is returning.
+    expect(arm(parsed, "hidden", "returning").assigned).toBe(6);
   });
 
   it("tests a gap between two rates", () => {
@@ -66,6 +84,6 @@ describe("word of the day experiment", () => {
 
   it("places each arm against the scorecard's bands", () => {
     const a = { ...emptyArm("shown", "all"), d1: { returned: 30, cohort: 100 }, d7: { returned: 1, cohort: 10 } };
-    expect(standings(a)).toEqual({ d1: "promising", d7: null, share: null });
+    expect(standings(a)).toEqual({ d1: "promising", d7: null, week: null, share: null });
   });
 });

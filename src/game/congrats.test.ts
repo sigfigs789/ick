@@ -37,6 +37,33 @@ describe("which win a day congratulates", () => {
     }
   });
 
+  it("names a Monday week's winner from the Tuesday to the Friday", () => {
+    // The week of Nov 2 closes on Sunday the 8th; Monday the 9th is the quiet
+    // day the Sunday used to be.
+    for (const date of ["2026-11-10", "2026-11-11", "2026-11-12", "2026-11-13"]) {
+      expect(pendingCongratsSpot(date)).toMatchObject({ window: "week", start: "2026-11-02" });
+    }
+    for (const date of ["2026-11-09", "2026-11-14", "2026-11-15"]) {
+      expect(pendingCongratsSpot(date)).toBeNull();
+    }
+  });
+
+  it("names the last Sunday week Monday to Thursday, and the eight-day week after it from the Tuesday", () => {
+    // The week of Oct 18 closed on Saturday the 24th, and the Sunday after it
+    // opened the first Monday week, so its run is the one Sunday weeks had.
+    for (const date of ["2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29"]) {
+      expect(pendingCongratsSpot(date)).toMatchObject({ window: "week", start: "2026-10-18" });
+    }
+    expect(pendingCongratsSpot("2026-10-25")).toBeNull();
+    expect(pendingCongratsSpot("2026-10-30")).toBeNull();
+    // That first Monday week ran Oct 25 to Nov 1. October's month is owed beside it.
+    for (const date of ["2026-11-03", "2026-11-04", "2026-11-05", "2026-11-06"]) {
+      expect(congratsSpots(date).find((s) => s.window === "week")?.start).toBe("2026-10-25");
+    }
+    expect(pendingCongratsSpots("2026-11-02").some((s) => s.window === "week")).toBe(false);
+    expect(pendingCongratsSpot("2026-11-07")).toBeNull();
+  });
+
   it("says nothing on the days either side of that run", () => {
     // The Sunday a window has just closed on, which is deliberately quiet --
     // the board is still moving at the boundary -- and the Friday and Saturday,
@@ -64,17 +91,17 @@ describe("which win a day congratulates", () => {
   });
 
   it("offers the month first when both are owed, and the week once it is popped", () => {
-    // 2026-11-02 is a Monday, where both runs begin on the same day.
+    // 2026-11-03 is a Tuesday, the second day of both the week and the month.
     const month = { window: "month", start: "2026-10-01", mode: "standard" } as const;
     const freeformMonth = { ...month, mode: "freeform" } as const;
-    expect(pendingCongratsSpot("2026-11-02")).toEqual(month);
+    expect(pendingCongratsSpot("2026-11-03")).toEqual(month);
 
     // Popping the larger result does not swallow the smaller ones: the month's
     // Freeform winner is next, then the week's two.
     markCongratsPopped(month);
-    expect(pendingCongratsSpot("2026-11-02")).toEqual(freeformMonth);
+    expect(pendingCongratsSpot("2026-11-03")).toEqual(freeformMonth);
     markCongratsPopped(freeformMonth);
-    expect(pendingCongratsSpots("2026-11-02")).toEqual([
+    expect(pendingCongratsSpots("2026-11-03")).toEqual([
       { window: "week", start: "2026-10-25", mode: "standard" },
       { window: "week", start: "2026-10-25", mode: "freeform" },
     ]);
@@ -105,16 +132,16 @@ describe("which win a day congratulates", () => {
 
   it("keeps a month's win from a player who was not around for it", () => {
     localStorage.clear();
-    // 2026-11-02 owes October's month and the last week of it. A player whose
+    // 2026-11-03 owes October's month and the last week of it. A player whose
     // first puzzle was today's is told about the week only.
-    playedOn("2026-11-02");
-    expect(pendingCongratsSpots("2026-11-02").map((s) => s.window)).toEqual([
+    playedOn("2026-11-03");
+    expect(pendingCongratsSpots("2026-11-03").map((s) => s.window)).toEqual([
       "week",
       "week",
     ]);
     // One word banked in October is enough to have been there for it.
     playedOn("2026-10-30");
-    expect(pendingCongratsSpots("2026-11-02").map((s) => s.window)).toEqual([
+    expect(pendingCongratsSpots("2026-11-03").map((s) => s.window)).toEqual([
       "month",
       "month",
       "week",

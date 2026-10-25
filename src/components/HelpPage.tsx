@@ -2,6 +2,7 @@ import {
   ANALYTICS_PATH,
   ANALYTICS_V2_PATH,
   DEAD_STREAKS_PATH,
+  EXPERIMENTS_V2_PATH,
   FEEDBACK_PATH,
   FOLD_REVIEW_PATH,
   FOLDED_LIVE_PATH,
@@ -34,6 +35,7 @@ const PLAYER_PAGES: PageLink[] = [
 const CURATOR_PAGES: PageLink[] = [
   { path: ANALYTICS_PATH, label: "Analytics", note: "Who plays and whether they come back." },
   { path: ANALYTICS_V2_PATH, label: "Analytics v2", note: "The daily dashboard, scored against the benchmarks." },
+  { path: EXPERIMENTS_V2_PATH, label: "Experiments v2", note: "Each experiment for everyone, new and returning players." },
   { path: DEAD_STREAKS_PATH, label: "Dead streaks", note: "Streaks that ended and never came back." },
   { path: FEEDBACK_PATH, label: "Feedback", note: "Notes players have left.", keyed: true },
   { path: FREEFORM_FEEDBACK_PATH, label: "Freeform feedback", note: "The Freeform week verdict.", keyed: true },

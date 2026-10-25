@@ -67,7 +67,7 @@ describe("StreakDisplay", () => {
     expect(screen.getByText("Total")).toBeInTheDocument();
   });
 
-  it("shows 😴 on an earned Saturday not played yet, and says it can't break the streak", () => {
+  it("shows 😴 on an earned weekend day not played yet, and says it can't break the streak", () => {
     // 2026-10-31 is the first Saturday that can be earned; three days that week were played.
     const friday: StreakState = {
       ...streak,
@@ -76,42 +76,54 @@ describe("StreakDisplay", () => {
       playedDates: ["2026-10-28", "2026-10-29", "2026-10-30"],
     };
     const { rerender } = render(<StreakDisplay streak={friday} date="2026-10-31" isToday />);
-    const dancer = screen.getByRole("button", { name: /Lazy Saturday/ });
+    const dancer = screen.getByRole("button", { name: /Lazy weekend/ });
     expect(dancer.textContent).toBe("😴");
     // Hovering with a mouse opens the popup, and leaving closes it.
     const badge = dancer.parentElement as HTMLElement;
     fireEvent.pointerEnter(badge, { pointerType: "mouse" });
-    expect(screen.getByRole("dialog", { name: "Lazy Saturday" })).toHaveTextContent(
+    expect(screen.getByRole("dialog", { name: "Lazy weekend" })).toHaveTextContent(
       "can't break the streak"
     );
     fireEvent.pointerLeave(badge, { pointerType: "mouse" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     // Tapping opens it too.
     fireEvent.click(dancer);
-    expect(screen.getByRole("dialog", { name: "Lazy Saturday" })).toHaveTextContent(
+    expect(screen.getByRole("dialog", { name: "Lazy weekend" })).toHaveTextContent(
       "can't break the streak"
     );
 
-    // Played: fire again.
+    // Played: fire again, with Sunday still to snooze through.
     rerender(
-      <StreakDisplay streak={{ ...friday, lastCompletedDate: "2026-10-31" }} date="2026-10-31" isToday />
+      <StreakDisplay
+        streak={{ ...friday, lastCompletedDate: "2026-10-31", playedDates: [...friday.playedDates!, "2026-10-31"] }}
+        date="2026-10-31"
+        isToday
+      />
     );
-    expect(screen.queryByRole("button", { name: /Lazy Saturday/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Lazy weekend/ })).toHaveAccessibleName(/Unlocked: Sunday's for snoozing/);
     expect(flame()).toBe("🔥");
 
-    // Sunday after a skipped Saturday: fire, no freeze covering anything.
+    // Sunday after a skipped Saturday: still 😴, no freeze covering anything.
     rerender(<StreakDisplay streak={friday} date="2026-11-01" isToday />);
+    expect(flame()).toBe("😴");
+    expect(screen.queryByLabelText(/A saved freeze is covering/)).not.toBeInTheDocument();
+
+    // Monday after the whole weekend skipped: fire.
+    rerender(<StreakDisplay streak={friday} date="2026-11-02" isToday />);
     expect(flame()).toBe("🔥");
 
-    // Not earned: an ordinary day, where the streak has missed nothing yet.
+    // Not earned: an ordinary day, where the streak has missed nothing yet,
+    // and playing it as the third would rest Sunday.
     rerender(
-      <StreakDisplay streak={{ ...friday, playedDates: ["2026-10-30"] }} date="2026-10-31" isToday />
+      <StreakDisplay streak={{ ...friday, playedDates: ["2026-10-29", "2026-10-30"] }} date="2026-10-31" isToday />
     );
-    expect(screen.queryByRole("button", { name: /Lazy Saturday/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Lazy weekend/ })).toHaveAccessibleName(
+      /by Saturday and snooze through Sunday.*2 of 3 so far/
+    );
     expect(flame()).toBe("🔥");
   });
 
-  it("shows the week's progress to a lazy Saturday on a weekday, then 😴", () => {
+  it("shows the week's progress to a lazy weekend on a weekday, then 😴", () => {
     const wednesday: StreakState = {
       ...streak,
       currentStreak: 5,
@@ -119,10 +131,12 @@ describe("StreakDisplay", () => {
       playedDates: ["2026-10-26", "2026-10-27"],
     };
     const { rerender } = render(<StreakDisplay streak={wednesday} date="2026-10-28" isToday />);
-    const pie = screen.getByRole("button", { name: /Lazy Saturday/ });
+    const pie = screen.getByRole("button", { name: /Lazy weekend/ });
     expect(pie.querySelector("svg")).not.toBeNull();
     fireEvent.click(pie);
-    expect(screen.getByRole("dialog", { name: "Lazy Saturday" })).toHaveTextContent("2 of 3 so far");
+    expect(screen.getByRole("dialog", { name: "Lazy weekend" })).toHaveTextContent(
+      "Play any 3 days this week and your streak is paused through the weekend. 2 of 3 days played so far."
+    );
     // The streak icon is untouched on a weekday.
     expect(flame()).toBe("🔥");
 
@@ -133,7 +147,7 @@ describe("StreakDisplay", () => {
         isToday
       />
     );
-    expect(screen.getByRole("button", { name: /Lazy Saturday: Unlocked/ }).textContent).toBe("😴");
+    expect(screen.getByRole("button", { name: /Lazy weekend: Unlocked/ }).textContent).toBe("😴");
     // Out of reach this week: still shown, speaking of the rule for next week.
     rerender(
       <StreakDisplay
@@ -142,7 +156,7 @@ describe("StreakDisplay", () => {
         isToday
       />
     );
-    expect(screen.getByRole("button", { name: /Lazy Saturday: Play 3 days Sunday to Friday and unlock a lazy Saturday 😴/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Lazy weekend: Play any 3 days by Friday for a lazy weekend 😴/ })).toBeInTheDocument();
   });
 
   it("hides the flame until a streak reaches two days", () => {
@@ -274,7 +288,10 @@ describe("StreakDisplay", () => {
     fireEvent.click(badge);
     const popup = screen.getByRole("dialog", { name: "Streak freezes" });
     expect(popup.querySelector("strong")?.textContent).toBe("1 of 2 🧊 acquired");
-    expect(popup.textContent).toContain("Earn one on day 3, then every 7 days.");
+    // Past day 3 and at the top cap: neither rule applies any more.
+    expect(popup.textContent).toContain("You get another one every 7 days of your streak. You can save up to 2 at a time.");
+    expect(popup.textContent).not.toContain("day 3");
+    expect(popup.textContent).not.toContain("14 day");
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -282,6 +299,32 @@ describe("StreakDisplay", () => {
     fireEvent.click(badge);
     fireEvent.pointerDown(document.body);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("tells only the freeze rules still ahead of the player", () => {
+    const rules = (s: StreakState) => {
+      const { unmount } = render(<StreakDisplay streak={s} />);
+      fireEvent.click(screen.getByRole("button", { name: /streak freezes/i }));
+      const text = screen.getByRole("dialog", { name: "Streak freezes" }).textContent;
+      unmount();
+      return text;
+    };
+
+    // Before day 3, with no cap yet.
+    expect(rules({ ...streak, currentStreak: 2, longestStreak: 2 })).toContain(
+      "You get your first one on day 3 of your streak, then another every 7 days of your streak. " +
+        "You can only save 1 at a time. Reach a 14 day streak to save up to 2."
+    );
+    // Day 3's freeze earned, the cap still 1.
+    expect(rules({ ...streak, currentStreak: 5, longestStreak: 5 })).toContain(
+      "You get another one every 7 days of your streak. " +
+        "You can only save 1 at a time. Reach a 14 day streak to save up to 2."
+    );
+    // A new streak before day 3, the cap already 2 from a past one.
+    expect(rules({ ...streak, currentStreak: 1, longestStreak: 20 })).toContain(
+      "You get your first one on day 3 of your streak, then another every 7 days of your streak. " +
+        "You can save up to 2 at a time."
+    );
   });
 
   it("shows a past puzzle the freezes held on its day, and today the ones held now", () => {

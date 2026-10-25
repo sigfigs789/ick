@@ -48,19 +48,6 @@ const PINNED = new Set([
   'obscenity',
 ]);
 
-/*
- * The one bare import the shared code makes that has no meaning here.
- *
- * `src/analytics.ts` reports to Vercel Analytics, which is a browser SDK: it
- * wants a `<script>` and a page. This build reports nothing at all (see
- * src/host/install.ts), so the import is redirected to a stub whose `track` is
- * a no-op -- the alternative being an edit to shared code for the benefit of
- * one host, which is the thing this arrangement exists to avoid.
- */
-const STUBS = {
-  '@vercel/analytics': path.resolve(projectRoot, 'src/host/stubs/vercel-analytics.js'),
-};
-
 /** Resolve as though asked from this project, not from wherever the import sits. */
 const asProject = (context) => ({
   ...context,
@@ -68,8 +55,6 @@ const asProject = (context) => ({
 });
 
 config.resolver.resolveRequest = (context, moduleName, platform) => {
-  const stub = STUBS[moduleName];
-  if (stub) return { type: 'sourceFile', filePath: stub };
   if (PINNED.has(moduleName)) {
     return context.resolveRequest(asProject(context), moduleName, platform);
   }

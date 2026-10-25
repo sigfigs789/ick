@@ -3,23 +3,23 @@
  *
  * The boards themselves say who is *leading* -- rank 1 wears the gold on every
  * one of them, live or closed (see LeaderboardPage). What they never do is
- * point at a result: a week that ended on Saturday is three taps back by
- * Monday, and nobody steps back to a board they were not already on. So once a
+ * point at a result: a week that ended on Sunday is three taps back by
+ * Tuesday, and nobody steps back to a board they were not already on. So once a
  * window has closed and settled, the page says the winner's name out loud, once.
  *
  * Only two windows get it. A day's board turns over every night, and a
  * congratulation every morning is wallpaper; a week and a month are results
  * worth naming. Both open a day *after* the window closes rather than the
  * moment it does, because a board is still moving at the boundary -- a player
- * finishing Saturday's puzzle late on Saturday night writes into a week that
+ * finishing Sunday's puzzle late on Sunday night writes into a week that
  * has technically ended, and the name congratulated has to be the final one,
  * not the one that happened to be top at midnight.
  *
  * A congratulation is owed to a *player*, not to a day, and a player who did
- * not open the board on the Monday is not a player who wanted no congratulation.
+ * not open the board on the Tuesday is not a player who wanted no congratulation.
  * So each one stands for four days rather than one, and the visitor who arrives
- * on the Thursday is told the same thing the Monday visitor was. Four and not
- * the whole week, because a result goes stale: by the Friday the board has half
+ * on the Friday is told the same thing the Tuesday visitor was. Four and not
+ * the whole week, because a result goes stale: by the Saturday the board has half
  * a new week on it and last week's winner is old news, said late.
  *
  * What retires it is being popped, which is permanent -- one splat and that
@@ -32,18 +32,18 @@
  * news to the whole game, not only to the half of it on the same switch.
  */
 
-import { addDays, todayDateString } from "./date";
+import { addDays, daysSinceEpoch, todayDateString } from "./date";
 import { MODE_CHOICE_START, MODE_LABELS, type GameMode } from "./mode";
 import { nextMonthStart, previousMonthStart } from "./month";
 import { playedBefore } from "./storage";
-import { weekStart } from "./week";
+import { previousWeek, weekEnd, weekStart } from "./week";
 
 /** A window that has closed and is worth naming a winner for. */
 export interface CongratsSpot {
   window: "week" | "month";
   /**
-   * The near end of the closed window -- the Sunday it started on, or its
-   * first. The same shape the boards are asked for (see game/leaderboard.ts),
+   * The near end of the closed window -- the day its week started on (see
+   * game/week.ts), or its first. The same shape the boards are asked for (see game/leaderboard.ts),
    * so it goes straight into a request.
    */
   start: string;
@@ -56,12 +56,18 @@ const POPPED_PREFIX = "ick:congrats:";
 /**
  * The wins `date` still owes a congratulation for, largest first.
  *
- * Four days each. The week's stands from the Monday to the Thursday; the
- * month's from the second to the fifth. Neither opens the moment its window
- * shuts -- not the Sunday, not the first -- because the board underneath is
- * still settling then and the name on top is not yet the final one. And neither
- * outlives its four days: a congratulation arriving on the Friday is a result
- * said late, over a board that is half a new week old.
+ * Four days each. The week's stands from the second to the fifth day of the
+ * next week -- Tuesday to Friday, now weeks run Monday to Sunday (see
+ * game/week.ts) -- and the month's from the second to the fifth of the next
+ * month. Neither opens the moment its window shuts -- not the Monday, not the
+ * first -- because the board underneath is still settling then and the name on
+ * top is not yet the final one. And neither outlives its four days: a
+ * congratulation arriving on the Saturday is a result said late, over a board
+ * that is half a new week old.
+ *
+ * The last Sunday week, which closed on Saturday 2026-10-24, is named Monday to
+ * Thursday as the Sunday weeks were: the week after it starts on the Sunday the
+ * move to Monday weeks left over, so its second day is the Monday.
  *
  * Several can be owed at once, and they all float at once. The order is the
  * month before the week, the larger result, and within a window Standard --
@@ -79,13 +85,12 @@ export function congratsSpots(date: string = todayDateString()): CongratsSpot[] 
     const start = previousMonthStart(date);
     windows.push({ window: "month", start, end: addDays(nextMonthStart(start), -1) });
   }
-  const weekdayOf = weekday(date);
-  if (weekdayOf >= 1 && weekdayOf <= 4) {
-    // The Sunday *before* this week's: weeks run Sunday to Saturday (see
-    // game/week.ts), so on any of these days the week that closed is the one
-    // that started eight days before this week's Monday.
-    const start = addDays(weekStart(date), -7);
-    windows.push({ window: "week", start, end: addDays(start, 6) });
+  const thisWeek = weekStart(date);
+  const intoWeek = daysSinceEpoch(date, thisWeek);
+  if (intoWeek >= 1 && intoWeek <= 4) {
+    // The week before this one, whichever day weeks start on (see game/week.ts).
+    const start = previousWeek(thisWeek);
+    windows.push({ window: "week", start, end: weekEnd(start) });
   }
   return windows.flatMap(({ window, start, end }) => {
     const spots: CongratsSpot[] = [{ window, start, mode: "standard" }];
@@ -149,16 +154,6 @@ export function wanderPath(random: () => number = Math.random): WanderStop[] {
     x: random() * 2 - 1,
     y: random(),
   }));
-}
-
-/**
- * The weekday of a calendar date, 0 on Sunday -- read off a UTC-midnight date
- * so no host timezone offset can shift it a day, exactly as game/week.ts reads
- * its own.
- */
-function weekday(date: string): number {
-  const [y, m, d] = date.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
 }
 
 /**

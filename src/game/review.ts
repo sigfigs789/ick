@@ -398,9 +398,9 @@ export interface AnalyticsReport {
   botsFiltered: number;
   daily: Array<{ date: string; closed: boolean; groups: Record<Group, DayMetrics> }>;
   /**
-   * Weekly active and playing players, newest week first: Sunday to Saturday,
+   * Weekly active and playing players, newest week first: Monday to Sunday,
    * the latest the week `today` is in, up to 13 weeks whatever the window (see
-   * the 2026-10-27 and 2026-10-30 migrations). New is a player whose
+   * the 2026-10-27, 2026-10-30 and 2026-11-07 migrations). New is a player whose
    * first-ever day is in the week.
    */
   weekly: WeekActives[];

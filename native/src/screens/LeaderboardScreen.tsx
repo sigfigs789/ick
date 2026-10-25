@@ -24,7 +24,7 @@ import {
 import { pageCache } from '../../../src/game/pageCache';
 import { loadPlayerId, selfName } from '../../../src/game/player';
 import { rememberStreakRank, streakRankIn } from '../../../src/game/streakClimb';
-import { WEEK_BEST_DAYS, weekLabel, weekStart } from '../../../src/game/week';
+import { WEEK_BEST_DAYS, nextWeek, previousWeek, weekLabel, weekResetLabel, weekStart } from '../../../src/game/week';
 import { useGameMode } from '../../../src/hooks/useGameMode';
 import { CongratsBubble } from '../components/CongratsBubble';
 import { RestDayBadge } from '../components/RestDayBadge';
@@ -412,7 +412,7 @@ export function LeaderboardScreen({ onPlay }: { onPlay?: () => void } = {}) {
             {showsBoard('week') && (
               <Board
                 heading={weekIsLive ? 'This week' : weekLabel(week)}
-                headingDetail={weekIsLive ? 'Resets on Sundays' : 'Final'}
+                headingDetail={weekIsLive ? weekResetLabel(today) : 'Final'}
                 entries={boards.weekly}
                 self={boards.weeklySelf}
                 emptyMessage={weekIsLive ? "Nobody's scored yet this week. Be first." : 'Nobody scored this week.'}
@@ -424,8 +424,8 @@ export function LeaderboardScreen({ onPlay }: { onPlay?: () => void } = {}) {
                 renderRow={scoreRow}
                 canGoBack={week > weekFloor()}
                 canGoForward={!weekIsLive}
-                onBack={() => setWeek(addDays(week, -7))}
-                onForward={() => setWeek(addDays(week, 7))}
+                onBack={() => setWeek(previousWeek(week))}
+                onForward={() => setWeek(nextWeek(week))}
               />
             )}
             {showsBoard('month') && (
@@ -697,7 +697,7 @@ function Row({ entry, isYou, last }: { entry: BoardEntry; isYou: boolean; last: 
 /** What a screen reader hears after a streak row's count. */
 function streakStatus(entry: StreakEntry): string {
   if (entry.lost) return ', lost';
-  if (entry.resting) return ", lazy Saturday: skipping it can't break the streak";
+  if (entry.resting) return ", lazy weekend: skipping it can't break the streak";
   if (entry.current <= 1 && !entry.frozen) return '';
   const held = entry.frozen
     ? ', covered by a saved freeze'
@@ -714,7 +714,7 @@ function streakStatus(entry: StreakEntry): string {
  *
  * The same row as a scored board's, with the run where the total goes and the
  * longest run where the best find goes. One icon says how the run stands: 😴 on
- * an earned Saturday not played yet (pressed to say why, see RestDayBadge); ⏳ when missed days
+ * an earned weekend day not played yet (pressed to say why, see RestDayBadge); ⏳ when missed days
  * have spent every saved freeze; 🧊 while a freeze is covering it; 💀 for a run
  * that has ended, kept for its first two days over, struck through and unranked;
  * 🔥 for a run played through yesterday. None on a live run of one day.

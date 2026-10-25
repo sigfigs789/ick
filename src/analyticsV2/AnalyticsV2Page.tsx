@@ -3,12 +3,11 @@ import { ReviewPage } from "../components/ReviewPage";
 import { useReviewList } from "../components/reviewList";
 import { todayDateString } from "../game/date";
 import { fetchReport, type Rate, type Report, type Source } from "./report";
-import { ExperimentView } from "./ExperimentView";
 import {
   addDays,
   average,
   count,
-  lastSaturday,
+  lastSunday,
   moved,
   percent,
   scorecard,
@@ -29,15 +28,17 @@ import {
  * beside them where they help.
  *
  * Built on its own report (report.ts, and the analytics_v2 function behind
- * it), not on /analytics. Weeks run Sunday to Saturday. Windows are the last
+ * it), not on /analytics. Weeks run Monday to Sunday. Windows are the last
  * 28 closed days unless a number says otherwise; today's puzzle is still
  * filling up and is left out.
+ *
+ * The experiments have a page of their own, /experimentsV2.
  *
  * Unlinked from the game and open without a key: every number is an aggregate.
  */
 export function AnalyticsV2Page() {
   const today = todayDateString();
-  const load = useCallback(async () => [await fetchReport(today, true)], [today]);
+  const load = useCallback(async () => [await fetchReport(today)], [today]);
   const { rows, state, refreshing, refresh, retry } = useReviewList(load);
   const report = rows[0];
   // Yesterday's report is only for the scorecard's day-on-day change, so it is
@@ -76,7 +77,7 @@ export function AnalyticsV2Page() {
 function Dashboard({ report, before }: { report: Report; before: Report | null }) {
   const w = report.window;
   const yesterday = addDays(report.today, -1);
-  const saturday = lastSaturday(report.today);
+  const sunday = lastSunday(report.today);
   const lastWeek = report.weekly[1];
   const from28 = addDays(report.today, -28);
   // A visitor number over a window that starts before visits were recorded
@@ -110,44 +111,6 @@ function Dashboard({ report, before }: { report: Report; before: Report | null }
       >
         <Scorecard rows={scorecard(report)} before={before ? scorecard(before) : []} />
       </Section>
-
-      {report.wordOfDay && (
-        <Section
-          title="Experiment: word of the day"
-          note="Whether showing the word of the day under a finished puzzle moves the scorecard. Over players."
-        >
-          <ExperimentView
-            experiment={report.wordOfDay}
-            subject="the word of the day"
-            about={
-              <>
-                Half of players never see the word under a finished puzzle&rsquo;s drop. Each is drawn once, the first
-                time they finish a puzzle. Try either arm with <code>?word-of-day=hidden</code> or <code>=shown</code>;
-                a forced arm is not counted.
-              </>
-            }
-          />
-        </Section>
-      )}
-
-      {report.comeBack && (
-        <Section
-          title="Experiment: come-back tip"
-          note="Whether the line under the streak saying what tomorrow is worth moves the scorecard. Over players."
-        >
-          <ExperimentView
-            experiment={report.comeBack}
-            subject="the come-back tip"
-            about={
-              <>
-                Half of players never see the line under the streak that says what tomorrow is worth. Each is drawn
-                once, the first time it would appear: a word banked on today&rsquo;s puzzle. Try either arm with{" "}
-                <code>?come-back=hidden</code> or <code>=shown</code>; a forced arm, or a tester, is not counted.
-              </>
-            }
-          />
-        </Section>
-      )}
 
       <Section title="Acquisition" note="Last 28 days.">
         <Tiles
@@ -222,7 +185,7 @@ function Dashboard({ report, before }: { report: Report; before: Report | null }
             { label: "Rolling 28-day DAU", value: fixed(dau28), note: `${change(dau28, dau28Before)} on the 28 days before` },
           ]}
         />
-        <WeeksTable report={report} saturday={saturday} />
+        <WeeksTable report={report} sunday={sunday} />
         <SourceGrowthTable sources={report.sources} priorTracked={tracked(addDays(report.today, -56))} />
       </Section>
 
@@ -458,7 +421,7 @@ function SourceTable({ sources }: { sources: Source[] }) {
 }
 
 const COHORT_CAPTION =
-  "Weekly cohorts: players by the week of their first word (Sunday to Saturday), and the share who banked a word in each week after.";
+  "Weekly cohorts: players by the week of their first word (Monday to Sunday), and the share who banked a word in each week after.";
 
 function CohortTable({ report }: { report: Report }) {
   const cohorts = report.cohorts.filter((c) => c.players > 0).slice(0, 10);
@@ -512,15 +475,15 @@ function Frequency({ daysPlayed, players, start }: { daysPlayed: Record<number, 
   );
 }
 
-function WeeksTable({ report, saturday }: { report: Report; saturday: string }) {
+function WeeksTable({ report, sunday }: { report: Report; sunday: string }) {
   const weeks = report.weekly.slice(0, 9);
   if (weeks.length === 0) return null;
   return (
     <Table
-      caption="New against returning players, week by week (Sunday to Saturday). The top week is still counting."
+      caption="New against returning players, week by week (Monday to Sunday). The top week is still counting."
       head={["Week of", "Players", "New", "Returning", "Change", "Visitors"]}
       rows={weeks.map((w, i) => [
-        w.start > saturday ? `${w.start} (so far)` : w.start,
+        w.start > sunday ? `${w.start} (so far)` : w.start,
         count(w.players),
         count(w.newPlayers),
         count(w.players - w.newPlayers),

@@ -30,7 +30,7 @@ vi.mock("../game/date", async (importOriginal) => {
 });
 
 const track = vi.hoisted(() => vi.fn());
-vi.mock("@vercel/analytics", () => ({ track }));
+vi.mock("../eventLog", () => ({ logEvent: track }));
 
 // The puzzle's live fold rejections are read on every open; these tests count
 // the Merriam-Webster requests, so that read is answered off the network.

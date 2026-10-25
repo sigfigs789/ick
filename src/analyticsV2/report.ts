@@ -24,7 +24,7 @@ export interface Day {
 }
 
 export interface Cohort {
-  /** The Sunday the week starts on. */
+  /** The Monday the week starts on. */
   start: string;
   /** Players whose first word was in the week. */
   players: number;
@@ -92,15 +92,19 @@ export interface Report {
   /** The first day a visit was recorded against a player; visitor numbers before it are not numbers. */
   trackedSince: string | null;
   daily: Day[];
-  retention: Record<"d1" | "d7" | "d30", { players: Rate; visitors: Rate }>;
+  /** Back on exactly day N, and `week`: back on any of the 7 days after. */
+  retention: Record<"d1" | "d7" | "d30" | "week", { players: Rate; visitors: Rate }>;
   cohorts: Cohort[];
   weekly: Week[];
   sources: Source[];
   window: Window;
   scores: { tiers: Tier[]; buckets: Record<number, number> };
-  /** The experiments, when they were asked for (see experiment.ts). */
-  wordOfDay?: Experiment | null;
-  comeBack?: Experiment | null;
+}
+
+/** The experiments on /experimentsV2 (see experiment.ts); null for one the database sent nothing for. */
+export interface Experiments {
+  wordOfDay: Experiment | null;
+  comeBack: Experiment | null;
 }
 
 type Json = Record<string, unknown>;
@@ -147,7 +151,7 @@ export function parseReport(raw: unknown): Report {
         players: num(d.players),
         newPlayers: num(d.newPlayers),
       })),
-    retention: { d1: retention("d1"), d7: retention("d7"), d30: retention("d30") },
+    retention: { d1: retention("d1"), d7: retention("d7"), d30: retention("d30"), week: retention("week") },
     cohorts: arr(r.cohorts)
       .filter((c) => str(c.start))
       .map((c) => ({
@@ -227,9 +231,14 @@ async function readReport(url: string): Promise<Json> {
   }
 }
 
-/** The report for the puzzle the reader is on, with the experiments when `experiments` asks for them. */
-export async function fetchReport(today: string, experiments = false): Promise<Report> {
-  const body = await readReport(`/api/review?list=analytics-v2&today=${today}${experiments ? "&experiments=1" : ""}`);
-  if (!experiments) return parseReport(body.report);
-  return { ...parseReport(body.report), wordOfDay: parseExperiment(body.wordOfDay), comeBack: parseExperiment(body.comeBack) };
+/** The report for the puzzle the reader is on. */
+export async function fetchReport(today: string): Promise<Report> {
+  const body = await readReport(`/api/review?list=analytics-v2&today=${today}`);
+  return parseReport(body.report);
+}
+
+/** The experiments, counted up to the puzzle the reader is on. */
+export async function fetchExperiments(today: string): Promise<Experiments> {
+  const body = await readReport(`/api/review?list=experiments-v2&today=${today}`);
+  return { wordOfDay: parseExperiment(body.wordOfDay), comeBack: parseExperiment(body.comeBack) };
 }

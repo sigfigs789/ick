@@ -126,41 +126,13 @@ describe("AnalyticsV2Page", () => {
     expect(screen.queryByLabelText(/since yesterday/)).toBeNull();
   });
 
-  it("draws the word of the day experiment and its call when the report carries it", async () => {
-    const wordOfDay = {
-      since: "2026-11-01",
-      arms: [
-        { variant: "shown", segment: "all", assigned: 320, d1: { cohort: 300, returned: 90 }, d7: { cohort: 200, returned: 20 } },
-        { variant: "hidden", segment: "all", assigned: 310, d1: { cohort: 300, returned: 60 }, d7: { cohort: 200, returned: 12 } },
-      ],
-    };
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ report: REPORT, wordOfDay }), { status: 200 }));
+  it("no longer asks for the experiments, which have their own page", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ report: REPORT }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
     render(<AnalyticsV2Page />);
 
-    expect(await screen.findByRole("heading", { name: "Experiment: word of the day" })).toBeTruthy();
-    expect(String((fetchMock.mock.calls[0] as unknown[])[0])).toContain("experiments=1");
-    expect(screen.getByText("Keep the word of the day")).toBeTruthy();
-    const d1 = screen.getAllByRole("rowheader", { name: "D1 retention" })[1].closest("tr")!;
-    expect(d1.textContent).toContain("30%");
-    expect(d1.textContent).toContain("+10 pts *");
-  });
-
-  it("draws the come-back tip experiment beside the word of the day", async () => {
-    const comeBack = {
-      since: "2026-11-01",
-      arms: [
-        { variant: "shown", segment: "all", assigned: 320, d1: { cohort: 300, returned: 60 } },
-        { variant: "hidden", segment: "all", assigned: 310, d1: { cohort: 300, returned: 90 } },
-      ],
-    };
-    const body = { report: REPORT, wordOfDay: { since: null, arms: [] }, comeBack };
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(body), { status: 200 })));
-    render(<AnalyticsV2Page />);
-
-    expect(await screen.findByRole("heading", { name: "Experiment: come-back tip" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Experiment: word of the day" })).toBeTruthy();
-    expect(screen.getByText("Remove the come-back tip")).toBeTruthy();
-    expect(screen.getByRole("table", { name: "Everyone drawn: with the come-back tip against without." })).toBeTruthy();
+    await screen.findByRole("heading", { name: "Scorecard" });
+    expect(String((fetchMock.mock.calls[0] as unknown[])[0])).not.toContain("experiments");
+    expect(screen.queryByRole("heading", { name: /Experiment/ })).toBeNull();
   });
 });

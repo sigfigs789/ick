@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ACHIEVEMENT_GROUPS, syncAchievements, type AchievementStatus } from "../game/achievements";
 import { formatDateLabel } from "../game/date";
 import { formatTotal } from "../game/dictionary";
 import { MODE_LABELS } from "../game/mode";
-import { CURRENT_TIERS, loadStats, TOP_WORDS, type PlayerStats } from "../game/stats";
+import { CURRENT_TIERS, loadStats, TOP_WORDS, type PlayerStats, type StatWord } from "../game/stats";
 import { loadStreak } from "../game/storage";
 import type { Rarity } from "../game/types";
 import { navigate } from "../routes";
@@ -118,7 +118,8 @@ function RarityBars({ byRarity }: { byRarity: PlayerStats["byRarity"] }) {
 }
 
 function BestWords({ stats }: { stats: PlayerStats }) {
-  const [shown, setShown] = useState(stats.bestWordsShown);
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
   // Empty when every word found was on a legacy-scored puzzle (see game/stats.ts).
   if (stats.topWords.length === 0) return null;
   const total = stats.topWords.length;
@@ -127,40 +128,104 @@ function BestWords({ stats }: { stats: PlayerStats }) {
       <h2 className="stats__heading" id="stats-best">
         Best words
       </h2>
-      <ol className="stats__words">
-        {stats.topWords.slice(0, shown).map((word) => (
-          <li className="stats__word" key={`${word.word}-${word.date}`}>
-            <span className="stats__word-text">{word.word}</span>
-            <span className="stats__word-date">
-              {formatDateLabel(word.date)}
-              {word.mode === "freeform" ? ` · ${MODE_LABELS.freeform}` : ""}
-            </span>
-            <RarityBadge rarity={word.rarity} zipf={word.zipf} date={word.date} />
-          </li>
-        ))}
-      </ol>
-      {(shown < total || shown > stats.bestWordsShown) && (
+      <BestWordList words={stats.topWords.slice(0, TOP_WORDS)} />
+      {total > TOP_WORDS && (
         <div className="stats__more">
-          {shown < total && (
-            <button
-              type="button"
-              className="stats__link"
-              onClick={() => setShown((n) => Math.min(total, n + TOP_WORDS))}
-            >
-              Show more
-            </button>
-          )}
-          {shown > stats.bestWordsShown && (
-            <button type="button" className="stats__link" onClick={() => setShown(stats.bestWordsShown)}>
-              Show fewer
-            </button>
-          )}
+          <button type="button" className="stats__link" onClick={() => setOpen(true)}>
+            Show more
+          </button>
           <span className="stats__more-count">
-            {shown} of {total}
+            {TOP_WORDS} of {total}
           </span>
         </div>
       )}
+      {open && <AllBestWords words={stats.topWords} onClose={close} />}
     </section>
+  );
+}
+
+function BestWordList({ words }: { words: StatWord[] }) {
+  return (
+    <ol className="stats__words">
+      {words.map((word) => (
+        <li className="stats__word" key={`${word.word}-${word.date}`}>
+          <span className="stats__word-text">{word.word}</span>
+          <span className="stats__word-date">
+            {formatDateLabel(word.date)}
+            {word.mode === "freeform" ? ` · ${MODE_LABELS.freeform}` : ""}
+          </span>
+          <RarityBadge rarity={word.rarity} zipf={word.zipf} date={word.date} />
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** How many more rows the modal renders each time the reader nears the bottom. */
+const MODAL_BATCH = 30;
+
+/**
+ * Every best word, in a modal that renders a batch at a time and adds the
+ * next as the sentinel below the list scrolls into view -- a long record
+ * runs to thousands of words, each with a badge.
+ */
+function AllBestWords({ words, onClose }: { words: StatWord[]; onClose: () => void }) {
+  const [shown, setShown] = useState(MODAL_BATCH);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => closeRef.current?.focus(), []);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || shown >= words.length) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShown((n) => Math.min(words.length, n + MODAL_BATCH));
+        }
+      },
+      { root: scrollRef.current, rootMargin: "0px 0px 400px 0px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [shown, words.length]);
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        ref={scrollRef}
+        className="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="all-best-words-heading"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal__header">
+          <h2 id="all-best-words-heading">Best words</h2>
+          <button
+            ref={closeRef}
+            type="button"
+            className="modal__close"
+            onClick={onClose}
+            aria-label="Close best words"
+          >
+            ×
+          </button>
+        </div>
+        <BestWordList words={words.slice(0, shown)} />
+        {shown < words.length && <div ref={sentinelRef} className="stats__sentinel" aria-hidden="true" />}
+      </div>
+    </div>
   );
 }
 

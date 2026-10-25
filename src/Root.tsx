@@ -6,6 +6,7 @@ import { ChatBubble } from "./components/ChatBubble";
 import { FreeformModal } from "./components/FreeformModal";
 import { PageErrorBoundary } from "./components/PageErrorBoundary";
 import { InstructionsModal } from "./components/InstructionsModal";
+import { MenuSheetModal, type MenuSheet } from "./components/MenuSheetModal";
 import { DevDateBar } from "./dev/DevDateBar";
 import { DEV_TOOLS } from "./dev/devTools";
 import { todayDateString } from "./game/date";
@@ -15,9 +16,10 @@ import { useGameMode } from "./hooks/useGameMode";
 import { takeFreshAssignment } from "./game/onboarding";
 import { syncHistoryWhenReady } from "./game/leaderboard";
 import { hasJoined, joinBoard } from "./game/player";
-import { PROGRESS_SAVED_EVENT, playedPuzzleCount } from "./game/storage";
+import { playedPuzzleCount } from "./game/storage";
 import { hasSeen, headerBadgeFor, markSeen } from "./game/whatsNew";
 import { takesPlayerMessages } from "./game/playerMessages";
+import { isVercelHost } from "./game/vercelHost";
 import { lazyPage } from "./lazyPage";
 import { useRoute } from "./routes";
 
@@ -41,6 +43,10 @@ const AnalyticsPage = lazyPage(
 const AnalyticsV2Page = lazyPage(
   () => import("./analyticsV2/AnalyticsV2Page"),
   (m) => m.AnalyticsV2Page,
+);
+const ExperimentsV2Page = lazyPage(
+  () => import("./analyticsV2/ExperimentsV2Page"),
+  (m) => m.ExperimentsV2Page,
 );
 const DeadStreaksPage = lazyPage(
   () => import("./components/DeadStreaksPage"),
@@ -139,6 +145,8 @@ export function Root() {
   const [showInstructions, setShowInstructions] = useState(
     () => route !== "transfer" && !hasSeen("instructions"),
   );
+  /** Feedback or Suggest a word, opened from the header's "?" menu. */
+  const [menuSheet, setMenuSheet] = useState<MenuSheet | null>(null);
 
   /**
    * Today's date, read once per mount.
@@ -353,21 +361,6 @@ export function Root() {
   }, []);
 
   /**
-   * Whether this browser has banked a word, which is what puts the Stats tab on
-   * the header. Rechecked whenever a puzzle is saved until it is true, so the
-   * tab appears with a first-timer's first word rather than on their next visit.
-   */
-  const [hasPlayed, setHasPlayed] = useState(() => playedPuzzleCount() > 0);
-  useEffect(() => {
-    if (hasPlayed) return;
-    const check = () => {
-      if (playedPuzzleCount() > 0) setHasPlayed(true);
-    };
-    window.addEventListener(PROGRESS_SAVED_EVENT, check);
-    return () => window.removeEventListener(PROGRESS_SAVED_EVENT, check);
-  }, [hasPlayed]);
-
-  /**
    * Fetch the two pages the header's tabs lead to once the browser is idle, so
    * tapping a tab does not wait on a download.
    *
@@ -399,6 +392,15 @@ export function Root() {
       <AppHeader
         route={route}
         onHowToPlay={() => setShowInstructions(true)}
+        // Shown on previews too, so the sheets can be seen and tried there;
+        // reporting is off on those hosts, so what is sent goes nowhere (see
+        // src/main.tsx). Only a Reddit post, which has no way to send them at
+        // all, leaves them off.
+        onOpenSheet={
+          takesPlayerMessages() || isVercelHost(window.location.hostname)
+            ? setMenuSheet
+            : undefined
+        }
         // One slot, two eras, never both at once. Until MODE_CHOICE_START the
         // header is the trial's and nothing here changes -- the button opens the
         // week's notice, exactly as it does today. From that date the trial is
@@ -409,7 +411,6 @@ export function Root() {
         badge={freeformBadge}
         badgeLabel={badge?.label}
         onBadgeDone={retireBadge}
-        showStats={hasPlayed}
       />
       {/* Under the header, so the header stays put while a page's chunk is
           on its way -- only the page's own area waits, and only the first
@@ -441,6 +442,8 @@ export function Root() {
             <AnalyticsPage />
           ) : route === "analytics-v2" ? (
             <AnalyticsV2Page />
+          ) : route === "experiments-v2" ? (
+            <ExperimentsV2Page />
           ) : route === "transfer" ? (
             <TransferPage />
           ) : route === "leaderboard-total" ? (
@@ -469,6 +472,7 @@ export function Root() {
       {DEV_TOOLS && <DevDateBar />}
       {/* The chat room's corner button, on every page that has a chat room. */}
       {takesPlayerMessages() && <ChatBubble lifted={DEV_TOOLS} />}
+      <MenuSheetModal sheet={menuSheet} onClose={() => setMenuSheet(null)} />
       <InstructionsModal
         open={showInstructions}
         onClose={() => {

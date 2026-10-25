@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseReport, type Report } from "./report";
-import { addDays, dauTrend, lastSaturday, scorecard, stand } from "./scorecard";
+import { addDays, dauTrend, lastSunday, scorecard, stand } from "./scorecard";
 
 const TODAY = "2026-10-22"; // a Thursday
 
@@ -30,10 +30,11 @@ describe("bands", () => {
 });
 
 describe("weeks", () => {
-  it("run Sunday to Saturday", () => {
-    expect(lastSaturday(TODAY)).toBe("2026-10-17");
-    expect(lastSaturday("2026-10-18")).toBe("2026-10-17");
-    expect(lastSaturday("2026-10-17")).toBe("2026-10-10");
+  it("run Monday to Sunday", () => {
+    expect(lastSunday(TODAY)).toBe("2026-10-18");
+    expect(lastSunday("2026-10-19")).toBe("2026-10-18");
+    expect(lastSunday("2026-10-18")).toBe("2026-10-11");
+    expect(lastSunday("2026-10-24")).toBe("2026-10-18");
   });
 });
 
@@ -48,29 +49,31 @@ describe("scorecard", () => {
     expect(activation(20, 15)).toMatchObject({ value: null, standing: null });
   });
 
-  it("bands D1, D7 and D30 over players, and waits for a cohort big enough to judge", () => {
+  it("bands D1, D7, back within a week and D30 over players, and waits for a cohort big enough to judge", () => {
     const rows = scorecard(
       report(() => 10, {
         retention: {
           d1: { players: { cohort: 100, returned: 30 } },
           d7: { players: { cohort: 100, returned: 8 } },
+          week: { players: { cohort: 100, returned: 36 } },
           d30: { players: { cohort: 10, returned: 5 } },
         },
       }),
     );
     expect(rows[1]).toMatchObject({ metric: "D1 retention", value: "30%", standing: "promising" });
     expect(rows[2]).toMatchObject({ value: "8%", standing: "between" });
-    expect(rows[3]).toMatchObject({ value: null, standing: null });
+    expect(rows[3]).toMatchObject({ metric: "Back within a week", value: "36%", standing: "promising" });
+    expect(rows[4]).toMatchObject({ value: null, standing: null });
   });
 
   it("reads the DAU trend from the last four full weeks against the four before, as a monthly rate", () => {
-    const end = lastSaturday(TODAY);
+    const end = lastSunday(TODAY);
     const growing = report((date) => (date > addDays(end, -28) ? 12 : 10));
     const trend = dauTrend(growing);
     expect(trend?.recent).toBe(12);
     expect(trend?.before).toBe(10);
-    expect(scorecard(growing)[4]).toMatchObject({ value: "+22%/mo", standing: "great" });
-    expect(scorecard(report(() => 10))[4]).toMatchObject({ value: "0%/mo", standing: "nowhere" });
+    expect(scorecard(growing)[5]).toMatchObject({ value: "+22%/mo", standing: "great" });
+    expect(scorecard(report(() => 10))[5]).toMatchObject({ value: "0%/mo", standing: "nowhere" });
   });
 
   it("calls sharing great only when it is consistent and share links bring a tenth of new players", () => {
@@ -83,7 +86,7 @@ describe("scorecard", () => {
             { source: "direct", recentPlayers: 100 - fromShares },
           ],
         }),
-      )[5];
+      )[6];
     expect(sharing(3, 0).standing).toBe("nowhere");
     expect(sharing(7, 50).standing).toBe("between");
     expect(sharing(15, 5).standing).toBe("promising");
@@ -99,6 +102,6 @@ describe("scorecard", () => {
         ],
       }),
     );
-    expect(rows[6]).toMatchObject({ value: "25%", standing: "promising" });
+    expect(rows[7]).toMatchObject({ value: "25%", standing: "promising" });
   });
 });

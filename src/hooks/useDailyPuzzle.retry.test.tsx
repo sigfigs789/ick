@@ -8,7 +8,7 @@ import { joinBoard } from "../game/player";
 import dictionaryWords from "../data/dictionary.json";
 
 const track = vi.hoisted(() => vi.fn());
-vi.mock("@vercel/analytics", () => ({ track }));
+vi.mock("../eventLog", () => ({ logEvent: track }));
 
 /**
  * A fixed puzzle to play, pinned rather than read off the clock.

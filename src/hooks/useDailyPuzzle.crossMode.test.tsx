@@ -15,7 +15,7 @@ vi.mock("../game/date", async (importOriginal) => ({
 }));
 
 const track = vi.hoisted(() => vi.fn());
-vi.mock("@vercel/analytics", () => ({ track }));
+vi.mock("../eventLog", () => ({ logEvent: track }));
 
 const { useDailyPuzzle } = await import("./useDailyPuzzle");
 const { dropForDate } = await import("../game/drop");

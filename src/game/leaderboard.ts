@@ -97,7 +97,7 @@ export interface StreakEntry {
    */
   lost: boolean;
   /**
-   * Today is a Saturday off the run's week earned, not played yet: missing it cannot
+   * Today is a day of the weekend off the run's week earned, not played yet: missing it cannot
    * end the run, and the board shows 😴 (see `resting` in
    * game/streakFreeze.ts). Playing turns it back to 🔥.
    */
@@ -552,7 +552,7 @@ export interface FetchOptions {
 export interface BoardOptions extends FetchOptions {
   /** The single puzzle the daily board counts. */
   day?: string;
-  /** The Sunday the weekly board counts from. */
+  /** The first day of the week the weekly board counts (see game/week.ts). */
   week?: string;
   /** The first of the month the monthly board counts. */
   month?: string;

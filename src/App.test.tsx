@@ -10,7 +10,6 @@ import { checkStreakClimb } from "./game/streakClimb";
 
 vi.mock("./hooks/useDailyPuzzle", () => ({ useDailyPuzzle: vi.fn() }));
 vi.mock("./hooks/useSound", () => ({ useSound: vi.fn() }));
-vi.mock("@vercel/analytics/react", () => ({ Analytics: () => null }));
 vi.mock("./game/streakClimb", () => ({ checkStreakClimb: vi.fn(async () => null) }));
 
 const submitWord = vi.fn();

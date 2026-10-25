@@ -143,7 +143,7 @@ export const config = { runtime: "edge" };
 
 /** The first puzzle. Nothing can be scored before the game existed. */
 const EPOCH = "2026-07-01";
-/** The earliest Sunday a weekly window can start on: the one bracketing EPOCH. */
+/** The earliest day a weekly window can start on: the Sunday bracketing EPOCH, when weeks began on Sundays. */
 const WINDOW_FLOOR = "2026-06-28";
 /** A window start that is the first of some month, as the monthly board's is. */
 const MONTH_START_RE = /^\d{4}-\d{2}-01$/;
@@ -199,14 +199,23 @@ function monthEnd(start: string): string {
 }
 
 /**
- * The Saturday closing the week that starts on `start`.
+ * The first day of the first Monday week, which took in the Sunday before it and
+ * so runs eight days. src/game/week.ts's MONDAY_WEEKS_START, copied rather than
+ * imported so this function does not load the client's date module.
+ */
+const MONDAY_WEEKS_START = "2026-10-25";
+
+/**
+ * The last day of the week that starts on `start`.
  *
  * Six days on, which is what a week is here and everywhere else in this game --
  * the client picks which day a week starts on (src/game/week.ts) and nothing on
- * this side needs to know which one it picked.
+ * this side needs to know which one it picked. The one exception is the first
+ * Monday week, which starts on the Sunday the move to Monday weeks left over and
+ * runs seven days on, to its own Sunday.
  */
 function weekEnd(start: string): string {
-  return daysBefore(start, -6);
+  return daysBefore(start, start === MONDAY_WEEKS_START ? -7 : -6);
 }
 
 // The oldest release whose scores the board will rank. Defined beside
@@ -453,7 +462,7 @@ interface StreakRow {
    */
   lost?: boolean | null;
   /**
-   * Today is a Saturday rest day and the run has not played it; absent before
+   * Today is a weekend rest day and the run has not played it; absent before
    * 20261103000000.
    */
   resting?: boolean | null;
@@ -474,7 +483,7 @@ interface StreakEntry {
   atRisk?: true;
   /** Sent only when true: the run has ended, and is listed for two days. */
   lost?: true;
-  /** Sent only when true: today is a Saturday the run is skipping, which cannot end it. */
+  /** Sent only when true: today is a weekend day the run is skipping, which cannot end it. */
   resting?: true;
 }
 
@@ -733,7 +742,10 @@ interface StreakReport {
   best: number;
   saved: number;
   lastPlayed: string;
-  /** The Saturday after `lastPlayed`, when that week's play earned it off. */
+  /**
+   * The Saturday of `lastPlayed`'s week, when that week's play earned its
+   * Sunday off: that Saturday, unless played, and the Sunday after rest.
+   */
   restDay: string | null;
 }
 
@@ -773,16 +785,19 @@ function readStreakReport(raw: unknown): StreakReport | null {
 }
 
 /**
- * The earned Saturday off, or null. It can only be the Saturday that ends
- * `lastPlayed`'s week (see `streakReport` in src/game/streakFreeze.ts);
- * anything else is dropped, and the run is judged as if none was earned.
+ * The Saturday opening the earned weekend off, or null. It can only be the
+ * Saturday of `lastPlayed`'s week (Monday to Sunday), which is `lastPlayed`
+ * itself when that is a Saturday, its Sunday still to rest (see
+ * `streakReport` in src/game/streakFreeze.ts). A Sunday played has no
+ * weekend left to rest. Anything else is dropped, and the run is judged as
+ * if none was earned.
  */
 function readRestDay(raw: unknown, lastPlayed: string): string | null {
   // Not `validPuzzleDate`: the Saturday is usually still ahead. Pinning it to
   // the already-checked `lastPlayed` bounds it instead.
   if (typeof raw !== "string" || !DATE_RE.test(raw)) return null;
   const lastPlayedDay = new Date(`${lastPlayed}T00:00:00Z`).getUTCDay();
-  if (lastPlayedDay === 6) return null;
+  if (lastPlayedDay === 0) return null;
   const saturday = new Date(Date.parse(`${lastPlayed}T00:00:00Z`) + (6 - lastPlayedDay) * 86_400_000)
     .toISOString()
     .slice(0, 10);
@@ -1198,7 +1213,7 @@ async function handleGet(request: Request): Promise<Response> {
         // Sent at all because the weekly board is no longer always the live week
         // -- a reader can step it back -- and an unbounded window would answer
         // "the week of the 16th" with every score since the 16th. For the live
-        // week it changes nothing: its Saturday is today or later, and no puzzle
+        // week it changes nothing: its last day is today or later, and no puzzle
         // exists past today.
         p_week_until: weekEnd(since),
         p_season_since: month,

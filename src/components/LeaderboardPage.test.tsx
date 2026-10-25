@@ -339,7 +339,7 @@ describe("the leaderboard page", () => {
       expect(row).toHaveTextContent(/😴/u);
       expect(row).not.toHaveTextContent(/🔥|🧊|⏳/u);
     }
-    const dancer = within(boardRows("Streaks")[1]).getByRole("button", { name: /Lazy Saturday/ });
+    const dancer = within(boardRows("Streaks")[1]).getByRole("button", { name: /Lazy weekend/ });
     fireEvent.click(dancer);
     expect(within(boardRows("Streaks")[1]).getByRole("dialog")).toHaveTextContent(
       "can't break the streak"
@@ -577,6 +577,18 @@ describe("the leaderboard page", () => {
     expect(region).not.toHaveTextContent("From Sunday on");
     expect(region).not.toHaveTextContent(/Resets in \d/);
     expect(region).not.toHaveTextContent(/Aug \d+ – \d+/);
+  });
+
+  it("says the weekly board resets on Mondays once weeks start on Monday", async () => {
+    // A Friday in the first Monday week, which opened on Sunday 2026-10-25.
+    onDay("2026-10-30");
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    const region = board("This week");
+    expect(region).toHaveTextContent("Resets on Mondays");
+    expect(region).not.toHaveTextContent("Sundays");
   });
 
   it("drops the subtitle over the two boards", async () => {

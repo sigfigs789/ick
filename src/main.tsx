@@ -14,11 +14,12 @@ import { isVercelHost } from './game/vercelHost'
 // asked for during the first render -- reloads the tab (see chunkRecovery.ts).
 installChunkRecovery()
 
-// A preview or *.vercel.app alias is the people building the game: no Vercel
-// Analytics and no event mirror from it (see game/vercelHost.ts). The endpoints
+// A preview or *.vercel.app alias is the people building the game: no events
+// from it (see game/vercelHost.ts). The endpoints
 // drop its events and scores as well; this keeps the dashboard clean too. The
-// message boxes go with it -- notes and suggestions ride the event mirror, so
-// left up they would say "Thanks" and send nothing (see game/playerMessages.ts).
+// chat goes with it (see game/playerMessages.ts). The menu's Feedback and
+// Suggest a word sheets stay, so their UI can be seen on a preview; what they
+// send rides the event log, which is off here (see Root.tsx).
 if (isVercelHost(window.location.hostname)) {
   setReporting(false)
   setPlayerMessages(false)

@@ -321,7 +321,7 @@ const GROWTH_WEEKS = 12;
 /**
  * Weekly active and playing players, each with its growth on the week before,
  * and the share of the active ones who played, by grouping.
- * Weeks run Sunday to Saturday, the latest the one today's puzzle is in, and do not follow the window.
+ * Weeks run Monday to Sunday, the latest the one today's puzzle is in, and do not follow the window.
  */
 function GrowthSection({ weekly }: { weekly: WeekActives[] }) {
   const [group, setGroup] = useState<Group>("all");
@@ -329,7 +329,7 @@ function GrowthSection({ weekly }: { weekly: WeekActives[] }) {
     <Section
       title="Growth"
       benchmark={growthBenchmark(weekly)}
-      note={`The latest ${GROWTH_WEEKS} weeks, whatever the window: each week runs Sunday to Saturday, so the latest is still counting up.`}
+      note={`The latest ${GROWTH_WEEKS} weeks, whatever the window: each week runs Monday to Sunday, so the latest is still counting up.`}
     >
       <ul className="review__meta analytics__bullets">
         <li><strong>Weekly active players</strong>: opened the game on any puzzle that week</li>
@@ -399,7 +399,7 @@ function CohortSection({ cohorts }: { cohorts: Cohort[] }) {
     <Section
       title="Retention by arrival week"
       benchmark={cohortBenchmark(cohorts)}
-      note="The latest 13 weeks, whatever the window. Each row is the players whose first-ever visit fell in that Sunday-to-Saturday week; each column the share of them who turned up in a later week. The last cell in each row is still counting up."
+      note="The latest 13 weeks, whatever the window. Each row is the players whose first-ever visit fell in that Monday-to-Sunday week; each column the share of them who turned up in a later week. The last cell in each row is still counting up."
     >
       <div className="analytics__groups" role="group" aria-label="Arrivals">
         {(["players", "guessers"] as const).map((w) => (
@@ -469,7 +469,7 @@ function CoreSection({ weekly }: { weekly: WeekActives[] }) {
     <Section
       title="Core players"
       benchmark={coreBenchmark(weekly)}
-      note={`The latest ${GROWTH_WEEKS} weeks, whatever the window, Sunday to Saturday; the latest is still counting up. Players who banked a word that week, by how many of its 7 puzzles they played.`}
+      note={`The latest ${GROWTH_WEEKS} weeks, whatever the window, Monday to Sunday; the latest is still counting up. Players who banked a word that week, by how many of its 7 puzzles they played.`}
     >
       <div className="analytics__table-wrap">
         <table className="analytics__table">
@@ -519,7 +519,7 @@ function ResurrectedSection({ weekly }: { weekly: WeekActives[] }) {
     <Section
       title="Resurrected players"
       benchmark={resurrectedBenchmark(weekly)}
-      note={`The latest ${GROWTH_WEEKS} weeks, whatever the window, Sunday to Saturday; the latest is still counting up.`}
+      note={`The latest ${GROWTH_WEEKS} weeks, whatever the window, Monday to Sunday; the latest is still counting up.`}
     >
       <ul className="review__meta analytics__bullets">
         <li><strong>Kept</strong>: played the week before too</li>

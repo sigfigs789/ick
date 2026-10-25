@@ -438,9 +438,8 @@ lives in `supabase/migrations/`.
   — an outage says nothing about a word, and must not overwrite a real verdict.
   `lookups` counts *cache misses*, not plays: `/api/validate` is CDN-cached for
   a day, so treat it as "seen again" rather than as popularity.
-- **`analytics_events`** — a mirror of every event already sent to Vercel
-  Analytics (`src/analytics.ts`), so they can be queried with SQL and kept past
-  the dashboard's retention window. The browser posts each event to
+- **`analytics_events`** — every game event (`src/analytics.ts`, sent by
+  `src/eventLog.ts`), queryable with SQL. Nothing goes to Vercel Analytics. The browser posts each event to
   `api/events.ts` with `sendBeacon` and ignores the result; the endpoint
   validates the shape (snake_case name, at most 32 flat scalar properties) and
   inserts it.
@@ -598,7 +597,7 @@ history brought in by a backfill, or a score from a clock already on the first o
 next month, would count toward a month it is not in. On screen it says **Resets
 Tuesday, Sep 1** — the weekday leads because that is the half a player can act
 on; a bare date is one they still have to place in their own week. Unlike the
-week's "Resets on Sundays" the answer moves, so it is computed rather than a
+week's "Resets on Mondays" the answer moves, so it is computed rather than a
 constant on the page.
 
 **The find is held back for now.** Each row used to carry the player's rarest

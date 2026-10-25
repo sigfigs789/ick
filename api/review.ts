@@ -18,6 +18,9 @@
 //   -> { report: { today, trackedSince, daily, retention, cohorts, weekly,
 //                  sources, window, scores } }, for /analyticsV2: its own
 //   report, from its own function (see the 2026-10-30 migration).
+// GET /api/review?list=experiments-v2&today=YYYY-MM-DD
+//   -> { wordOfDay, comeBack }, for /experimentsV2: each experiment's arms
+//   (see the 2026-11-01 analytics_v2_experiment migration).
 //   400 bad-list / bad-limit / bad-date, 401 unauthorised, 405 wrong method,
 //   503 no credentials, 502 upstream unavailable.
 //
@@ -333,7 +336,8 @@ async function handleGet(request: Request): Promise<Response> {
     list !== "feedback" &&
     list !== "freeform" &&
     list !== "analytics" &&
-    list !== "analytics-v2"
+    list !== "analytics-v2" &&
+    list !== "experiments-v2"
   ) {
     return reply(400, { ok: false, reason: "bad-list" });
   }
@@ -345,7 +349,8 @@ async function handleGet(request: Request): Promise<Response> {
   // unset token: that would take the feedback page away from a deployment that
   // has always read it without one, which is a thing to opt into rather than to
   // wake up to.
-  const open = list === "suggested-words" || list === "analytics" || list === "analytics-v2";
+  const open =
+    list === "suggested-words" || list === "analytics" || list === "analytics-v2" || list === "experiments-v2";
   if (!open && (process.env.REVIEW_TOKEN ?? "") !== "" && !authorised(request)) {
     return reply(401, { ok: false, reason: "unauthorised" });
   }
@@ -367,32 +372,27 @@ async function handleGet(request: Request): Promise<Response> {
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   try {
-    if (list === "analytics-v2") {
+    if (list === "analytics-v2" || list === "experiments-v2") {
       // One date: the puzzle the reader is on, which every window ends at.
       const today = params.get("today");
       if (today === null || !isCalendarDate(today)) return reply(400, { ok: false, reason: "bad-date" });
-      // The experiments ride along only when asked for: the page's second
-      // fetch, yesterday's report for the scorecard's change, has no use for them.
       // Given longer than the game's 2 seconds: these are whole-history reads,
       // and a dashboard that waits a few seconds beats one that fails.
+      if (list === "analytics-v2") {
+        const report = await rpc<Record<string, unknown> | null>("analytics_v2", { p_today: today }, ANALYTICS_TIMEOUT_MS);
+        return reply(200, { report: report ?? {} }, ANALYTICS_V2_CACHE);
+      }
       const experiment = (event: string) =>
-        params.get("experiments") === "1"
-          ? rpc<Record<string, unknown> | null>(
-              "analytics_v2_experiment",
-              { p_today: today, p_event: event },
-              ANALYTICS_TIMEOUT_MS,
-            )
-          : null;
-      const [report, wordOfDay, comeBack] = await Promise.all([
-        rpc<Record<string, unknown> | null>("analytics_v2", { p_today: today }, ANALYTICS_TIMEOUT_MS),
+        rpc<Record<string, unknown> | null>(
+          "analytics_v2_experiment",
+          { p_today: today, p_event: event },
+          ANALYTICS_TIMEOUT_MS,
+        );
+      const [wordOfDay, comeBack] = await Promise.all([
         experiment("word_of_day_assigned"),
         experiment("come_back_assigned"),
       ]);
-      return reply(
-        200,
-        wordOfDay === null ? { report: report ?? {} } : { report: report ?? {}, wordOfDay, comeBack },
-        ANALYTICS_V2_CACHE,
-      );
+      return reply(200, { wordOfDay, comeBack }, ANALYTICS_V2_CACHE);
     }
     if (list === "analytics") {
       // The window's ends and the viewer's own puzzle, sent as-is rather than

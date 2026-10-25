@@ -340,8 +340,8 @@ function playedOnDate(timestamp: string, date: string): boolean {
 
 /**
  * Sent on `window` after a puzzle's record is saved, so what depends on whether
- * anything has been played -- the header's Stats tab -- can notice the first
- * word without waiting for a navigation.
+ * anything has been played -- the native app's Stats tab -- can notice the
+ * first word without waiting for a navigation.
  */
 export const PROGRESS_SAVED_EVENT = "ick:progress-saved";
 
@@ -395,7 +395,7 @@ export function loadStreak(): StreakState {
 /**
  * The streak with its played days filled in from the stored puzzles, once,
  * for a save from before they were kept: the days already played this week
- * count towards Saturday off (see `isRestDay` in game/streakFreeze.ts).
+ * count towards a weekend off (see `isRestDay` in game/streakFreeze.ts).
  */
 function withPlayedDates(streak: StreakState): StreakState {
   if (streak.playedDates) return streak;

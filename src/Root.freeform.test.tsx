@@ -157,28 +157,35 @@ describe("the mode switch, from the choice date on", () => {
     localStorage.setItem("ick:seen:instructions", "1");
   });
 
-  const modeButton = () => screen.getByRole("button", { name: /switch to/i });
+  /** The mode that is checked in the "?" menu's toggle, opening it first. */
+  const checkedMode = async () => {
+    if (!screen.queryByRole("radiogroup", { name: "Mode" })) {
+      await userEvent.click(screen.getByRole("button", { name: "Help and settings" }));
+    }
+    return screen.getByRole("radio", { checked: true });
+  };
 
-  it("opens on Standard for a player who has never chosen", () => {
+  it("opens on Standard for a player who has never chosen", async () => {
     render(<Root />);
-    expect(modeButton()).toHaveTextContent("Standard");
+    expect(await checkedMode()).toHaveTextContent("Standard");
   });
 
   it("remembers the choice, in this session and the next", async () => {
     const first = render(<Root />);
-    await userEvent.click(modeButton());
-    expect(modeButton()).toHaveTextContent("Freeform");
+    await checkedMode();
+    await userEvent.click(screen.getByRole("radio", { name: "Freeform" }));
+    expect(await checkedMode()).toHaveTextContent("Freeform");
     first.unmount();
 
     // A mode is a setting, not a session: a player who switched on Monday is
     // still in Freeform on Tuesday without being asked again.
     render(<Root />);
-    expect(modeButton()).toHaveTextContent("Freeform");
+    expect(await checkedMode()).toHaveTextContent("Freeform");
   });
 
-  it("puts no badge under the switch", () => {
+  it("puts no badge under the switch", async () => {
     render(<Root />);
-    expect(modeButton()).toBeInTheDocument();
+    expect(await checkedMode()).toBeInTheDocument();
     expect(screen.queryByText(/change mode/i)).toBeNull();
   });
 

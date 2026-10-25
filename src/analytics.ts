@@ -1,4 +1,3 @@
-import { track } from "@vercel/analytics";
 import {
   isUnattestedZipf,
   rarityScore,
@@ -26,81 +25,14 @@ import type { ComeBackVariant } from "./game/comeBackTest";
 import type { WordOfDayVariant } from "./game/wordOfDay";
 import { APP_VERSION } from "./version";
 import { isBotUserAgent } from "./game/botUa";
-import { visitorTag } from "./game/visitor";
+import { logEvent, type EventProps } from "./eventLog";
 
-/** The scalar property values both Vercel Analytics and /api/events accept. */
-type EventProps = Record<string, string | number | boolean | null>;
-
-/**
- * Mirror one event into Supabase, alongside the copy Vercel Analytics receives.
- *
- * Fire-and-forget by construction: `sendBeacon` hands the request to the browser,
- * which delivers it on its own time and even after the page goes away, and there
- * is no response to read. Nothing about the game waits on this or changes if it
- * fails -- the dictionary the game plays against is the shipped one, and this
- * endpoint is write-only.
- *
- * Skipped under test, where there is no server to post to and a stray request
- * would be noise. `npm run dev` does serve /api/events (see vite.config.ts), so
- * the path is exercisable locally.
- *
- * Every row carries `player_id`, the board identity (see game/player.ts), so
- * the log can be read per player rather than only per event: which mode a player
- * settles on, whether a switch sticks, whether they come back the next day. None
- * of that is a count of events. Added here rather than at each call so no event
- * can be written without it, and only here -- Vercel's dashboard has no way to
- * group by a UUID, and every property it is sent costs one of the few it keeps.
- * Null for a browser that has no id yet or cannot store one.
- *
- * Checks `reporting` itself as well as through `send`, because a couple of
- * events address this sink directly and the id must never leave a host that has
- * reporting off -- inside a Reddit post it is the player's account name.
- */
-function mirror(name: string, props?: EventProps): void {
-  if (import.meta.env.MODE === "test" || !reporting) return;
-  try {
-    // A known visitor's tag (see game/visitor.ts) rides on every row for the
-    // same reason the id does, and only when there is one: the report sets
-    // those browsers apart from the players.
-    const visitor = visitorTag();
-    const body = JSON.stringify({
-      name,
-      props: {
-        ...props,
-        player_id: loadPlayerId(),
-        ...(visitor ? { visitor } : {}),
-      },
-    });
-    if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
-      navigator.sendBeacon("/api/events", new Blob([body], { type: "application/json" }));
-      return;
-    }
-    // Older Safari has no sendBeacon; `keepalive` gets the same survive-unload
-    // behaviour out of fetch.
-    void fetch("/api/events", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body,
-      keepalive: true,
-    }).catch(() => {});
-  } catch {
-    // Recording an event must never be able to break the move that produced it.
-  }
-}
-
-/**
- * Record one event in both places: Vercel Analytics, which every event here has
- * always gone to, and the game's own Supabase table, which keeps it queryable
- * past the dashboard's retention window. Vercel is called first so a problem with
- * the mirror cannot cost the event its primary destination.
- */
 /**
  * Whether this host reports anything at all.
  *
- * True on this site, which is what all of the above is for. False inside a
- * Reddit post, and not as a preference: the frame's content policy blocks
- * Vercel's scripts outright, and `/api/events` is a path that build does not
- * serve -- so every event would be a blocked script and a request into nothing.
+ * True on this site. False inside a Reddit post, and not as a preference:
+ * `/api/events` is a path that build does not serve, so every event would be a
+ * request into nothing.
  *
  * There is a better reason than either. Reporting from inside a post would send
  * what Reddit's players do to a third party, which is the one thing that build
@@ -113,27 +45,23 @@ export function setReporting(enabled: boolean): void {
   reporting = enabled;
 }
 
-/** Whether events are being reported, for the components that mount the SDKs. */
+/** Whether events are being reported. */
 export function isReporting(): boolean {
   return reporting;
 }
 
 /**
- * `mirrorOnly` rides along to Supabase alone: ids that join rows to each other,
- * which Vercel can do nothing with and would spend one of its few kept
- * properties on (see `mirror`).
+ * Record one event in the game's own Supabase table (see eventLog.ts). `extra`
+ * is merged in: ids and experiment arms that join rows to each other, kept
+ * apart at the call sites only because they are not the event's own dimensions.
  */
-function send(name: string, props?: EventProps, mirrorOnly?: EventProps): void {
+function send(name: string, props?: EventProps, extra?: EventProps): void {
   if (!reporting) return;
-  // Called with one argument when there are no properties, exactly as before, so
-  // an event with no dimensions still reaches Vercel as a bare event name.
-  if (props) track(name, props);
-  else track(name);
-  mirror(name, mirrorOnly ? { ...props, ...mirrorOnly } : props);
+  logEvent(name, extra ? { ...props, ...extra } : props);
 }
 
 /**
- * Send game activity to Vercel.
+ * Send game activity to the event log.
  *
  * What identity may ride along, since this used to say "without
  * player-identifying information" and that was broader than the real rule: the
@@ -391,20 +319,11 @@ export function trackMerriamWebsterFailed(date: string, drop: string, check: Liv
 }
 
 /**
- * Record free-text feedback left in the How to play panel.
- *
- * The box takes a note of any length, and the whole of it goes to the Supabase
- * mirror, which is what the feedback review page reads. Vercel Analytics caps a
- * property value at 255 characters, so the copy on its dashboard is the opening
- * of the note; the two sinks are addressed separately here rather than through
- * `send` so that difference is visible instead of costing the full text.
+ * Record free-text feedback left in the How to play panel. The whole note is
+ * sent, whatever its length: the feedback review page reads it from the log.
  */
-const VERCEL_VALUE_CHARS = 255;
-
 export function trackFeedbackSubmitted(rawFeedback: string) {
-  const note = rawFeedback.trim();
-  track("feedback_submitted", { feedback: note.slice(0, VERCEL_VALUE_CHARS) });
-  mirror("feedback_submitted", { feedback: note });
+  send("feedback_submitted", { feedback: rawFeedback.trim() });
 }
 
 /**
@@ -429,8 +348,7 @@ export function trackFeedbackSubmitted(rawFeedback: string) {
  *
  * It is the board identity, minted on open and already sent with every score --
  * not a new thing to carry, and nothing personal: a UUID this browser invented
- * (see game/player.ts). It goes to both sinks through `send`, so the tally is
- * the same one wherever it is read. Null where a browser has no id at all
+ * (see game/player.ts). Null where a browser has no id at all
  * (private browsing with storage off); such a vote still counts, it just cannot
  * be collapsed with another from the same person.
  *
@@ -445,9 +363,8 @@ export function trackFreeformVote(vote: "love" | "boo", date: string) {
  * The free-text note left under the Freeform week vote.
  *
  * Split from the vote rather than sent with it, because the two are given at
- * different moments and either can arrive without the other. Addressed to both
- * sinks by hand for the same reason `trackFeedbackSubmitted` is: Vercel truncates
- * a property at 255 characters and the Supabase mirror is what gets read.
+ * different moments and either can arrive without the other. The whole note is
+ * sent, as with `trackFeedbackSubmitted`.
  *
  * The vote is carried along when there is one, so a note can be read next to the
  * verdict it explains without joining two tables on a timestamp. The voter id
@@ -460,15 +377,7 @@ export function trackFreeformFeedback(
   date: string,
   vote: "love" | "boo" | null
 ) {
-  const note = rawFeedback.trim();
-  const voter = loadPlayerId();
-  track("freeform_feedback", {
-    feedback: note.slice(0, VERCEL_VALUE_CHARS),
-    date,
-    vote,
-    voter,
-  });
-  mirror("freeform_feedback", { feedback: note, date, vote, voter });
+  send("freeform_feedback", { feedback: rawFeedback.trim(), date, vote, voter: loadPlayerId() });
 }
 
 /** Record player suggestions for future curated-list reviews. */
@@ -753,7 +662,7 @@ export function trackStatsOpened(from: "header") {
 /**
  * The chat room, in four events. Every one carries the live `puzzle_date`, so
  * the report counts chat per puzzle the way it counts everything else, and
- * `player_id` rides along from `mirror` -- which is what makes distinct viewers
+ * `player_id` rides along from `logEvent` -- which is what makes distinct viewers
  * and senders countable at all.
  *
  * `view_id` is one opening of the panel, and groups `chat_time`'s reports the
@@ -893,9 +802,8 @@ export function campaignSourceFromSearch(search: string): "share" | "twitter" | 
 }
 
 /**
- * The idle hint experiment (see game/idleHint.ts), in four events, all to both
- * sinks. Each carries `experiment` (`new` or `returning`) and `variant`
- * (`control` or `treatment`), and `player_id` rides along from `mirror`, which
+ * The idle hint experiment (see game/idleHint.ts), in four events. Each carries `experiment` (`new` or `returning`) and `variant`
+ * (`control` or `treatment`), and `player_id` rides along from `logEvent`, which
  * is what `idle_hint_report` joins every later play, share and return to.
  *
  * - `idle_hint_assigned`: the draw, once per player per experiment.
@@ -924,10 +832,9 @@ function idleHintProps(arm: IdleHintArm, date: string) {
 }
 
 /**
- * The arm the session is in, for the mirror alone, on the events the key
+ * The arm the session is in, carried as an extra, on the events the key
  * numbers are made of (answers, completions, shares, session time) -- so the
- * log can be split by arm without a join. Vercel never sees these: it keeps
- * few properties, and the experiment's report is read from Supabase.
+ * log can be split by arm without a join.
  */
 function idleHintArmProps(): EventProps {
   const arm = currentIdleHintArm();

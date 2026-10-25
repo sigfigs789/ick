@@ -9,17 +9,33 @@
  *
  * The copy is pinned rather than trusted: `windows.test.ts` walks several years
  * of dates through both implementations and fails the moment they disagree. If
- * the week ever stops starting on Sunday, that test is what will say so.
+ * the day a week starts on ever changes again, that test is what will say so.
  */
 
-/** The Sunday on or before `date`, as YYYY-MM-DD. */
+/**
+ * The first day of the first Monday week. Weeks ran Sunday to Saturday before
+ * it; that week also took in the Sunday the change left over, so it starts on
+ * that Sunday and runs eight days.
+ */
+const MONDAY_WEEKS_START = '2026-10-25';
+
+/**
+ * The day the week `date` falls in starts on, as YYYY-MM-DD: the Monday on or
+ * before it, or before MONDAY_WEEKS_START the Sunday -- and for the first Monday
+ * week, MONDAY_WEEKS_START itself.
+ */
 export function weekStartOf(date: string): string {
   const [y, m, d] = date.split('-').map(Number);
   // Built and read through UTC fields so the host's offset can never shift the
   // weekday by a day -- the same reason the game's own copy does it this way.
   const dt = new Date(Date.UTC(y!, m! - 1, d!));
-  dt.setUTCDate(dt.getUTCDate() - dt.getUTCDay());
-  return isoDate(dt);
+  if (date < MONDAY_WEEKS_START) {
+    dt.setUTCDate(dt.getUTCDate() - dt.getUTCDay());
+    return isoDate(dt);
+  }
+  dt.setUTCDate(dt.getUTCDate() - ((dt.getUTCDay() + 6) % 7));
+  const monday = isoDate(dt);
+  return monday <= '2026-10-26' ? MONDAY_WEEKS_START : monday;
 }
 
 /** The first of the month `date` falls in, as YYYY-MM-DD. */
@@ -37,11 +53,11 @@ export function monthEndOf(start: string): string {
   return isoDate(new Date(Date.UTC(y!, m!, 0)));
 }
 
-/** The Saturday closing the week that `start` opens. */
+/** The last day of the week that `start` opens: six days on, or seven for the first Monday week. */
 export function weekEndOf(start: string): string {
   const [y, m, d] = start.split('-').map(Number);
   const dt = new Date(Date.UTC(y!, m! - 1, d!));
-  dt.setUTCDate(dt.getUTCDate() + 6);
+  dt.setUTCDate(dt.getUTCDate() + (start === MONDAY_WEEKS_START ? 7 : 6));
   return isoDate(dt);
 }
 
