@@ -89,6 +89,9 @@ export interface Tier extends Rate {
   shared: number;
 }
 
+/** Back on exactly day N; `week` and `month`: back on any of the 7, or 30, days after. */
+export type Retention = Record<"d1" | "d7" | "d30" | "week" | "month", { players: Rate; visitors: Rate }>;
+
 /** The window the reader picked, counted the way the last 28 closed days are. */
 export interface Range {
   from: string;
@@ -97,6 +100,14 @@ export interface Range {
   /** Against the same number of days just before. */
   sources: Source[];
   scores: Scores;
+  /**
+   * Over the players (or visitors) whose first word (or visit) was in the
+   * window and whose day N is over; null from a database that does not count
+   * it yet (before the 2026-11-11 migration).
+   */
+  retention: Retention | null;
+  /** The same number of days just before the window; null as for `retention`. */
+  prior: { playerDays: number; visitorDays: number } | null;
 }
 
 export interface Scores {
@@ -109,8 +120,8 @@ export interface Report {
   /** The first day a visit was recorded against a player; visitor numbers before it are not numbers. */
   trackedSince: string | null;
   daily: Day[];
-  /** Back on exactly day N; `week` and `month`: back on any of the 7, or 30, days after. */
-  retention: Record<"d1" | "d7" | "d30" | "week" | "month", { players: Rate; visitors: Rate }>;
+  /** Over the 28 days up to the last one with day N over. */
+  retention: Retention;
   cohorts: Cohort[];
   weekly: Week[];
   sources: Source[];
@@ -205,19 +216,32 @@ function parseScores(raw: unknown): Scores {
   };
 }
 
+function parseRetention(raw: unknown): Retention {
+  const r = obj(raw);
+  const one = (key: string) => ({ players: rate(obj(r[key]).players), visitors: rate(obj(r[key]).visitors) });
+  return { d1: one("d1"), d7: one("d7"), d30: one("d30"), week: one("week"), month: one("month") };
+}
+
 function parseRange(raw: unknown): Range | null {
   const r = obj(raw);
   const from = str(r.from);
   const to = str(r.to);
   if (from === null || to === null) return null;
-  return { from, to, window: parseWindow(r.window), sources: parseSources(r.sources), scores: parseScores(r.scores) };
+  const prior = r.prior === undefined || r.prior === null ? null : obj(r.prior);
+  return {
+    from,
+    to,
+    window: parseWindow(r.window),
+    sources: parseSources(r.sources),
+    scores: parseScores(r.scores),
+    retention: r.retention === undefined || r.retention === null ? null : parseRetention(r.retention),
+    prior: prior && { playerDays: num(prior.playerDays), visitorDays: num(prior.visitorDays) },
+  };
 }
 
 /** The report as typed values; anything the database left out reads as zero rather than taking the page down. */
 export function parseReport(raw: unknown): Report {
   const r = obj(raw);
-  const ret = obj(r.retention);
-  const retention = (key: string) => ({ players: rate(obj(ret[key]).players), visitors: rate(obj(ret[key]).visitors) });
   return {
     today: str(r.today) ?? "",
     trackedSince: str(r.trackedSince),
@@ -230,7 +254,7 @@ export function parseReport(raw: unknown): Report {
         players: num(d.players),
         newPlayers: num(d.newPlayers),
       })),
-    retention: { d1: retention("d1"), d7: retention("d7"), d30: retention("d30"), week: retention("week"), month: retention("month") },
+    retention: parseRetention(r.retention),
     cohorts: arr(r.cohorts)
       .filter((c) => str(c.start))
       .map((c) => ({

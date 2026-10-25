@@ -19,7 +19,8 @@
 //                  sources, window, scores, range } }, for /analyticsV2: its
 //   own report, from its own function (see the 2026-10-30 migration). `from`
 //   and `to` come together and pick the window `range` is counted over (see
-//   the 2026-11-09 analytics_v2_windows migration).
+//   the 2026-11-09 analytics_v2_windows migration; its retention and prior
+//   days, 2026-11-11).
 // GET /api/review?list=experiments-v2&today=YYYY-MM-DD[&from=YYYY-MM-DD&to=YYYY-MM-DD]
 //   -> { wordOfDay, comeBack, headerCelebrations }, for /experimentsV2: each experiment's arms
 //   (see the 2026-11-01 analytics_v2_experiment migration), over the players
