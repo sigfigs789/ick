@@ -5,7 +5,6 @@ import { loadPlayerId } from "../game/player";
 import { takesPlayerMessages } from "../game/playerMessages";
 import {
   checkSuggestions,
-  claimSuggestionNotice,
   isFirstAcceptance,
   markThanked,
   unthankedAcceptedWords,
@@ -36,6 +35,8 @@ function current(): Omit<AcceptedSuggestions, "dismiss"> {
  * card has claimed today (see game/headerCelebrations.ts) and `busy` -- the
  * caller's other things on screen today -- is false. It is decided once, when
  * the words are first known; on a busy day they wait, unthanked, for another.
+ * On a quiet day they count as thanked as soon as the notice shows, so each set
+ * of accepted words is announced once, and only a later set brings it back.
  */
 export function useAcceptedSuggestions(busy: boolean): AcceptedSuggestions {
   const [state, setState] = useState(current);
@@ -61,16 +62,16 @@ export function useAcceptedSuggestions(busy: boolean): AcceptedSuggestions {
   useEffect(() => {
     if (!loaded || allowed !== null || words.length === 0) return;
     const today = todayDateString();
-    const othersToday =
-      busy || headerCelebrationShown("streak", today) || headerCelebrationShown("news", today);
-    setAllowed(claimSuggestionNotice(today, othersToday));
+    const quiet =
+      !busy && !headerCelebrationShown("streak", today) && !headerCelebrationShown("news", today);
+    // Thanked the moment it shows, closed or not: one notice per set of words,
+    // never the same set again on a reload or another day.
+    if (quiet) markThanked(words);
+    setAllowed(quiet);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- decided once, on the words' arrival
   }, [loaded, words]);
 
-  const dismiss = useCallback(() => {
-    markThanked(words);
-    setState({ words: [], firstAcceptance: false });
-  }, [words]);
+  const dismiss = useCallback(() => setState({ words: [], firstAcceptance: false }), []);
 
   if (!allowed) return { words: [], firstAcceptance: false, dismiss };
   return { ...state, dismiss };

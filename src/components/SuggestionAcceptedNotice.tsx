@@ -16,7 +16,8 @@ function wordList(words: readonly string[]): string {
  * A thank-you over the puzzle when a word the player suggested has been
  * accepted into the dictionary (see game/suggestions.ts). Stays until it is
  * closed, like the fold notice beside it, so it is not missed by a player who
- * looked away as the page opened.
+ * looked away as the page opened. It shows once per set of words: leaving the
+ * page without closing it does not bring it back.
  */
 export function SuggestionAcceptedNotice({ words, firstAcceptance, onDismiss }: Props) {
   if (words.length === 0) return null;

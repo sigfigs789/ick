@@ -32,6 +32,27 @@ describe("useAcceptedSuggestions", () => {
     expect(result.current.firstAcceptance).toBe(true);
   });
 
+  it("shows a set of words once, closed or not, and again only for a new word", async () => {
+    accept("zibeline", "snollygoster");
+    const first = renderHook(() => useAcceptedSuggestions(false));
+    await waitFor(() => expect(first.result.current.words).toEqual(["zibeline", "snollygoster"]));
+    first.unmount();
+
+    // A reload, never having closed it: the same words are not announced again.
+    const again = renderHook(() => useAcceptedSuggestions(false));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(again.result.current.words).toEqual([]);
+    again.unmount();
+
+    // A word accepted later brings the notice back, for that word alone.
+    const stored = JSON.parse(localStorage.getItem(SUGGESTIONS_KEY)!);
+    stored.words.push({ word: "quockerwodger", suggestedOn: "2026-10-02", acceptedOn: "2026-10-24", thanked: false });
+    localStorage.setItem(SUGGESTIONS_KEY, JSON.stringify(stored));
+    const later = renderHook(() => useAcceptedSuggestions(false));
+    await waitFor(() => expect(later.result.current.words).toEqual(["quockerwodger"]));
+    expect(later.result.current.firstAcceptance).toBe(false);
+  });
+
   it("waits for another day once a header celebration has shown today", async () => {
     accept("zibeline");
     claimHeaderCelebration("news", todayDateString());
