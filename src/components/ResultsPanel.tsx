@@ -4,7 +4,7 @@ import { RainbowWord } from "./RainbowWord";
 import { MODE_LABELS, modeForDate } from "../game/mode";
 import { loadReveal, saveReveal } from "../game/reveal";
 import { loadShowName, saveShowName } from "../game/shareName";
-import { drawShareName } from "./shareNameDraw";
+import { drawShareName, reportShareNameToggle } from "./shareNameDraw";
 import { loadPlayerId, selfName } from "../game/player";
 import { ShareButton } from "./ShareButton";
 import type { AcceptedWord, StreakState } from "../game/types";
@@ -118,6 +118,7 @@ export function ResultsPanel({
   const setShowName = (next: boolean) => {
     setShowNameState(next);
     saveShowName(next);
+    reportShareNameToggle(next, date);
   };
   // The name the board calls this player, so the share and their row agree. A
   // browser that could not mint an id has no name, and the line is left off.

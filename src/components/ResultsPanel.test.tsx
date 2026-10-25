@@ -2,10 +2,14 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { trackShareNameAssigned } = vi.hoisted(() => ({ trackShareNameAssigned: vi.fn() }));
+const { trackShareNameAssigned, trackShareNameToggled } = vi.hoisted(() => ({
+  trackShareNameAssigned: vi.fn(),
+  trackShareNameToggled: vi.fn(),
+}));
 vi.mock("../analytics", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../analytics")>()),
   trackShareNameAssigned,
+  trackShareNameToggled,
 }));
 
 import { ResultsPanel } from "./ResultsPanel";
@@ -209,6 +213,7 @@ describe("ResultsPanel username", () => {
     // game/shareNameTest.ts), unless a test says otherwise.
     localStorage.setItem("ick:share-name-test", "shown");
     trackShareNameAssigned.mockClear();
+    trackShareNameToggled.mockClear();
   });
 
   it("says who is playing by default, in place of the week and month totals", () => {
@@ -264,6 +269,25 @@ describe("ResultsPanel username", () => {
     expect(screen.getByRole("checkbox", { name: /show username/i })).toBeChecked();
     expect(localStorage.getItem("ick:share-name-test")).toBeNull();
     expect(trackShareNameAssigned).not.toHaveBeenCalled();
+  });
+
+  it("keeps a drawn player's arm when they set the toggle, and reports the override", async () => {
+    localStorage.setItem("ick:share-name-test", "hidden");
+    render(<ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} />);
+    await userEvent.click(screen.getByRole("checkbox", { name: /show username/i }));
+    expect(preview()).toContain(`Playing as ${handleFor(PLAYER_ID)}`);
+    expect(localStorage.getItem("ick:share-name-test")).toBe("hidden");
+    expect(trackShareNameToggled).toHaveBeenCalledWith("hidden", true, "2025-01-01");
+  });
+
+  it("never draws a player kept out for setting the toggle before the test", async () => {
+    localStorage.setItem("ick:share-name-test", "excluded");
+    render(<ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} />);
+    expect(screen.getByRole("checkbox", { name: /show username/i })).toBeChecked();
+    expect(localStorage.getItem("ick:share-name-test")).toBe("excluded");
+    expect(trackShareNameAssigned).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole("checkbox", { name: /show username/i }));
+    expect(trackShareNameToggled).not.toHaveBeenCalled();
   });
 
   it("offers no toggle to a browser with no name to share", () => {

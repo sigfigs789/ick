@@ -1,4 +1,4 @@
-import { drawnShareNameArm, forcedShareNameVariant } from "./shareNameTest";
+import { drawnShareNameArm, excludeFromShareNameTest, forcedShareNameVariant } from "./shareNameTest";
 
 /**
  * The results panel's "Show username" choice, remembered across puzzles.
@@ -36,6 +36,16 @@ function storedShowName(): boolean | null {
  */
 export function hasChosenShowName(): boolean {
   return storedShowName() !== null;
+}
+
+/**
+ * Run once at startup, before anything renders: a player who had already set
+ * the toggle when the test arrived is kept out of it for good, even if storage
+ * later loses the choice. Every share path draws before the toggle can be set,
+ * so a choice already saved here was made before the test started.
+ */
+export function excludeShareNameIfChosen(): void {
+  if (hasChosenShowName()) excludeFromShareNameTest();
 }
 
 /**

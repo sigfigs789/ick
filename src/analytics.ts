@@ -911,6 +911,23 @@ export function trackShareNameAssigned(variant: ShareNameVariant, date: string, 
   });
 }
 
+/**
+ * A player in the share name test setting "Show username" themselves. They keep
+ * their arm (the test is scored intent-to-treat), so this is how often each
+ * arm's default gets overridden: hidden players switching their name back on
+ * is the clearest sign the new default is unwanted. `show` is the new setting.
+ */
+export function trackShareNameToggled(variant: ShareNameVariant, show: boolean, date: string) {
+  send("share_name_toggled", {
+    variant,
+    show,
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
+    live_date: todayDateString(),
+    mode: modeOf(date),
+  });
+}
+
 export function trackIdleHintAssigned(arm: IdleHintArm, date: string) {
   send("idle_hint_assigned", { ...idleHintProps(arm, date), mode: modeOf(date) });
 }

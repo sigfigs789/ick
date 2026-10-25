@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { DEFAULT_SHOW_NAME, hasChosenShowName, loadShowName, saveShowName } from "./shareName";
-import { assignShareNameArm } from "./shareNameTest";
+import {
+  DEFAULT_SHOW_NAME,
+  excludeShareNameIfChosen,
+  hasChosenShowName,
+  loadShowName,
+  saveShowName,
+} from "./shareName";
+import { assignShareNameArm, isExcludedFromShareNameTest } from "./shareNameTest";
 
 describe("the Show username choice", () => {
   beforeEach(() => {
@@ -39,5 +45,24 @@ describe("the Show username choice", () => {
     assignShareNameArm(() => 0.9);
     saveShowName(true);
     expect(loadShowName()).toBe(true);
+  });
+
+  it("keeps a player who chose before the test out of it for good", () => {
+    saveShowName(false);
+    excludeShareNameIfChosen();
+    expect(isExcludedFromShareNameTest()).toBe(true);
+    localStorage.removeItem("ick:share-name");
+    expect(assignShareNameArm(() => 0.9)).toBeNull();
+    expect(loadShowName()).toBe(DEFAULT_SHOW_NAME);
+  });
+
+  it("leaves an unchosen player, or one already drawn, as they are at startup", () => {
+    excludeShareNameIfChosen();
+    expect(isExcludedFromShareNameTest()).toBe(false);
+    assignShareNameArm(() => 0.9);
+    saveShowName(true);
+    excludeShareNameIfChosen();
+    expect(isExcludedFromShareNameTest()).toBe(false);
+    expect(assignShareNameArm()).toEqual({ variant: "hidden", fresh: false });
   });
 });

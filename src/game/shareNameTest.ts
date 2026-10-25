@@ -23,15 +23,43 @@ export const SHARE_NAME_SHOW_SHARE = 0.5;
 
 const ASSIGNMENT_KEY = "ick:share-name-test";
 
+/**
+ * Stored in place of an arm for a player kept out of the test for good: one
+ * who had already set the toggle when this version first loaded, before the
+ * test could reach them (see `excludeShareNameIfChosen` in shareName.ts).
+ */
+const EXCLUDED = "excluded";
+
 function isVariant(value: unknown): value is ShareNameVariant {
   return value === "shown" || value === "hidden";
 }
 
 /**
+ * Keep the player out of the test for good, unless they already hold an arm,
+ * which they keep. Never reported: an excluded player was never in the split.
+ */
+export function excludeFromShareNameTest(): void {
+  try {
+    if (localStorage.getItem(ASSIGNMENT_KEY) === null) localStorage.setItem(ASSIGNMENT_KEY, EXCLUDED);
+  } catch {
+    // Storage that cannot be written cannot keep a draw either (see below).
+  }
+}
+
+/** Whether the player was kept out of the test for good. */
+export function isExcludedFromShareNameTest(): boolean {
+  try {
+    return localStorage.getItem(ASSIGNMENT_KEY) === EXCLUDED;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * The player's arm, drawing one if they have none. `fresh` is true only on the
- * draw itself, so the caller reports it once. Null when storage cannot keep
- * the draw: a player re-drawn on every open is not in the test, so that
- * browser keeps the old default and is left out.
+ * draw itself, so the caller reports it once. Null for an excluded player, and
+ * when storage cannot keep the draw: a player re-drawn on every open is not in
+ * the test, so that browser keeps the old default and is left out.
  */
 export function assignShareNameArm(
   random: () => number = Math.random
@@ -39,6 +67,7 @@ export function assignShareNameArm(
   try {
     const stored = localStorage.getItem(ASSIGNMENT_KEY);
     if (isVariant(stored)) return { variant: stored, fresh: false };
+    if (stored === EXCLUDED) return null;
     const variant: ShareNameVariant = random() < SHARE_NAME_SHOW_SHARE ? "shown" : "hidden";
     localStorage.setItem(ASSIGNMENT_KEY, variant);
     return { variant, fresh: true };
