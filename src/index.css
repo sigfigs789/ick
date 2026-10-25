@@ -2706,6 +2706,15 @@ button.app__menu-item + button.app__menu-item {
 .improvement--streak .improvement__gain {
   color: hsl(24 90% 44%);
 }
+/* Yesterday's best word (see components/BestWordNewsCard.tsx): the same card,
+   in gold. */
+.improvement--best .improvement__card {
+  border-color: hsl(45 92% 50%);
+  box-shadow: var(--card-shadow), 0 0 0 6px hsl(45 92% 50% / 0.2);
+}
+.improvement--best .improvement__gain {
+  color: hsl(38 92% 40%);
+}
 @keyframes improvement-in {
   from {
     transform: translateY(1.5rem) scale(0.85);

@@ -17,10 +17,12 @@ import { StreakClimbCelebration } from "./components/StreakClimbCelebration";
 import { QuickShareButton } from "./components/QuickShareButton";
 import { YesterdaysBest } from "./components/YesterdaysBest";
 import { ComeBackCard } from "./components/ComeBackCard";
+import { BestWordNewsCard } from "./components/BestWordNewsCard";
 import { WelcomeBackCard } from "./components/WelcomeBackCard";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { useWordOfDay } from "./hooks/useWordOfDay";
+import { useYesterdaysBest, type ResolvedBest } from "./hooks/useYesterdaysBest";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { isWinningRarity } from "./game/rank";
 import { celebrationFor } from "./game/celebration";
@@ -36,6 +38,15 @@ import {
 } from "./game/improvement";
 import { checkStreakClimb, type StreakClimb } from "./game/streakClimb";
 import { totalRarityScore } from "./game/dictionary";
+import { addDays } from "./game/date";
+import { loadPlayerId } from "./game/player";
+import {
+  bestWordNewsFor,
+  bestWordNewsShown,
+  daysPlayed,
+  markBestWordNewsShown,
+  type BestWordNewsKind,
+} from "./game/bestWordNews";
 import {
   campaignSourceFromSearch,
   trackRedditArrival,
@@ -275,6 +286,31 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [climbShown]);
 
+  // Yesterday's best word, announced as the site opens (see
+  // game/bestWordNews.ts): its finder is celebrated, and a player with a few
+  // days behind them is told who found it -- but only when nothing else is
+  // up, since it is somebody else's news. Decided once per mount, on the
+  // answer's arrival, and once a day for good.
+  const yesterdaysBest = useYesterdaysBest(isToday ? addDays(date, -1) : undefined);
+  const [bestNews, setBestNews] = useState<{
+    kind: BestWordNewsKind;
+    resolved: ResolvedBest;
+  } | null>(null);
+  const endBestNews = useCallback(() => setBestNews(null), []);
+  const bestNewsDecided = useRef(false);
+  useEffect(() => {
+    if (!yesterdaysBest || bestNewsDecided.current) return;
+    bestNewsDecided.current = true;
+    if (bestWordNewsShown(yesterdaysBest.day)) return;
+    const kind = bestWordNewsFor(yesterdaysBest.finderIds, loadPlayerId(), daysPlayed());
+    if (!kind) return;
+    const busy = showPerfectMonth || improvement || climb || burst || welcome;
+    if (kind === "other" && busy) return;
+    markBestWordNewsShown(yesterdaysBest.day);
+    setBestNews({ kind, resolved: yesterdaysBest });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- decided on arrival only
+  }, [yesterdaysBest]);
+
   const guessEntry = (
     <>
       {!progress.completed && (
@@ -315,6 +351,12 @@ export default function App() {
         <ImprovementCelebration improvement={improvement} onDone={endImprovement} />
       ) : climb ? (
         <StreakClimbCelebration climb={climb} onDone={endClimb} />
+      ) : bestNews ? (
+        <BestWordNewsCard
+          kind={bestNews.kind}
+          resolved={bestNews.resolved}
+          onDone={endBestNews}
+        />
       ) : (
         burst && (
           <Fragment key={burst.key}>
