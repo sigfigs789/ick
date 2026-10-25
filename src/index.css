@@ -4228,6 +4228,15 @@ button.app__menu-item + button.app__menu-item {
   gap: 0.4rem;
   margin-top: 0.5rem;
 }
+/* The day's drop, centred between the arrows. */
+.leaderboard__board-drop {
+  min-width: 0;
+  color: var(--fg-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
 /*
  * A row holding the board's height while another window is fetched.
  *

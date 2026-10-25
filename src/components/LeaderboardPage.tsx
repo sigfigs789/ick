@@ -11,6 +11,7 @@ import {
 } from "../game/leaderboard";
 import { loadPlayerId, selfName } from "../game/player";
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
+import { dropForDate } from "../game/drop";
 import { currentMode, type GameMode } from "../game/mode";
 import { pageCache } from "../game/pageCache";
 import { rememberStreakRank, streakRankIn } from "../game/streakClimb";
@@ -637,6 +638,11 @@ export function LeaderboardPage() {
                   unit="day"
                   columns={SCORE_COLUMNS}
                   renderRow={scoreRow}
+                  // The drop, between the arrows, because a date alone does not
+                  // say which puzzle the board is about: "Aug 27" means nothing
+                  // until you know the day asked for ERE. Today's too, so the
+                  // nav keeps one shape as the reader steps through it.
+                  navLabel={<BoardDrop date={day} />}
                   canGoBack={day > dayFloor()}
                   canGoForward={!dayIsLive}
                   onBack={() => setDay(addDays(day, -1))}
@@ -768,11 +774,28 @@ interface BoardProps<Entry extends { playerId: string }> {
   onRetry: () => void;
   /** What this board's window is called in its own controls: "week", "month". */
   unit: string;
+  /** What sits between the two arrows, naming the window more closely. */
+  navLabel?: ReactNode;
   /** Stepping the window. A board with no window (the streaks) leaves these out. */
   canGoBack?: boolean;
   canGoForward?: boolean;
   onBack?: () => void;
   onForward?: () => void;
+}
+
+/**
+ * A day's drop, quoted the way the finds page's title quotes it. Named to a
+ * screen reader, which would otherwise hear three letters with no context.
+ */
+function BoardDrop({ date }: { date: string }) {
+  return (
+    <span className="leaderboard__board-drop">
+      <span className="sr-only">Drop </span>
+      {"“"}
+      {dropForDate(date)}
+      {"”"}
+    </span>
+  );
 }
 
 /** The figures on a scored board: the window's total, and its best find. */
@@ -815,6 +838,7 @@ function Board<Entry extends { playerId: string }>({
   state,
   onRetry,
   unit,
+  navLabel,
   canGoBack,
   canGoForward,
   onBack,
@@ -849,6 +873,7 @@ function Board<Entry extends { playerId: string }>({
           <span aria-hidden="true">‹</span>
           <span>Previous {unit}</span>
         </button>
+        {navLabel}
         <button
           type="button"
           className="leaderboard__board-arrow"
