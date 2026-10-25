@@ -129,8 +129,6 @@ export default function App() {
     foldNotices,
     dismissFoldNotices,
   } = useDailyPuzzle();
-  // Words the player suggested that have since been accepted, thanked for once.
-  const acceptedSuggestions = useAcceptedSuggestions();
   // Which of the two games this is, when the switch decides it at all. Carried
   // as a class on the column, so the cards and the input wear the mode as the
   // header's switch does (see index.css).
@@ -171,6 +169,16 @@ export default function App() {
     dismissWelcomeBack(date);
     setWelcomeDismissedOn(date);
   };
+  // Words the player suggested that have since been accepted, thanked for once
+  // and only on a day nothing else has shown: the header celebration cards keep
+  // it away themselves, and so do the welcome back, a fold notice and the
+  // burst of a Rare word.
+  const acceptedSuggestions = useAcceptedSuggestions(
+    welcome !== null ||
+      (isToday && welcomeDismissedOn === date) ||
+      foldNotices.length > 0 ||
+      burst !== null,
+  );
 
   // The compact share-link code identifies its origin without exposing a
   // long UTM parameter in the result text.

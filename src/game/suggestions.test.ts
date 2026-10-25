@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   SUGGESTION_CHECK_MS,
   checkSuggestions,
+  claimSuggestionNotice,
   isFirstAcceptance,
   markThanked,
   mergePlayerSuggestions,
@@ -105,5 +106,13 @@ describe("suggestions", () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response("boom", { status: 502 })));
     await expect(checkSuggestions(PLAYER)).resolves.toBeUndefined();
     expect(suggestionCheckDue()).toBe(true);
+  });
+
+  it("shows the thank-you only on a day nothing else has, and keeps that day", () => {
+    expect(claimSuggestionNotice("2026-10-25", true)).toBe(false);
+    expect(claimSuggestionNotice("2026-10-26", false)).toBe(true);
+    // A card that comes along after it does not take the day back.
+    expect(claimSuggestionNotice("2026-10-26", true)).toBe(true);
+    expect(claimSuggestionNotice("2026-10-27", true)).toBe(false);
   });
 });

@@ -948,6 +948,16 @@ The draw is a `header_celebrations_assigned` event, and the arms are scored on
 `=shown`. A forced arm, a tester or a host that reports nothing always sees
 the cards and is never drawn.
 
+**The accepted-word thank-you gives way to them**
+(`SuggestionAcceptedNotice`, `src/hooks/useAcceptedSuggestions.ts`). The
+bubble thanking a player for suggested words that got in lists every such word
+at once, and shows only on a day nothing else has: no header celebration has
+claimed either group, and there is no welcome back, fold notice or Rare burst.
+Otherwise the words wait, unthanked, for a quieter day. Once it has shown on a
+day it keeps that day (`ick:suggestionsNoticeOn`), so a reload before it is
+closed brings it back. It doesn't claim a group itself, so a card can still
+come after it.
+
 ## Design decisions worth knowing about
 
 - **Plurals/conjugations are accepted** as distinct words, but two forms

@@ -146,6 +146,31 @@ export function markThanked(words: readonly string[]): void {
   write(stored);
 }
 
+const NOTICE_DAY_KEY = "ick:suggestionsNoticeOn";
+
+/**
+ * Whether the accepted-word thank-you may show on `today`. It is a quiet
+ * extra, so it gives way to anything else the day has already brought -- a
+ * header celebration card, the welcome back, a fold notice (`othersToday`) --
+ * and the words wait for a quieter day. Once it has shown on a day it keeps
+ * that day, so a reload before it is closed brings it back even after a card
+ * has come along since.
+ */
+export function claimSuggestionNotice(today: string, othersToday: boolean): boolean {
+  try {
+    if (localStorage.getItem(NOTICE_DAY_KEY) === today) return true;
+  } catch {
+    // Unreadable storage: decide afresh, below.
+  }
+  if (othersToday) return false;
+  try {
+    localStorage.setItem(NOTICE_DAY_KEY, today);
+  } catch {
+    // At worst the notice gives way to a card after a reload.
+  }
+  return true;
+}
+
 /**
  * Whether it is time to ask the server again: once on a browser that has never
  * asked (to find the suggestions made before this list existed), and after that
