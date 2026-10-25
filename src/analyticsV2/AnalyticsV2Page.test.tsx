@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { AnalyticsV2Page } from "./AnalyticsV2Page";
 
 vi.mock("../game/date", async (importOriginal) => ({
@@ -124,6 +124,42 @@ describe("AnalyticsV2Page", () => {
 
     await screen.findByRole("heading", { name: "Scorecard" });
     expect(screen.queryByLabelText(/since yesterday/)).toBeNull();
+  });
+
+  it("counts the window over the past 30 days, then today or two picked dates", async () => {
+    const ranged = (url: string) => {
+      const q = new URL(url, "http://x").searchParams;
+      const from = q.get("from");
+      const to = q.get("to");
+      const firstVisits = from === "2026-10-22" ? 40 : 978;
+      return {
+        ...REPORT,
+        range: from && to ? { from, to, window: { ...REPORT.window, firstVisits }, sources: [], scores: REPORT.scores } : null,
+      };
+    };
+    const fetchMock = vi.fn(async (url: string) => new Response(JSON.stringify({ report: ranged(url) }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<AnalyticsV2Page />);
+
+    await screen.findByRole("heading", { name: "Scorecard" });
+    expect(String(fetchMock.mock.calls[0][0])).toContain("&from=2026-09-22&to=2026-10-21");
+    expect(screen.getByRole("button", { name: "Past 30 days" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getAllByText("Past 30 days.").length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole("button", { name: "Today" }));
+    expect(await screen.findAllByText("Today so far.")).not.toHaveLength(0);
+    expect(fetchMock.mock.calls.some(([u]) => String(u).includes("&from=2026-10-22&to=2026-10-22"))).toBe(true);
+    const visitors = screen.getByText("First-time visitors", { selector: "dt" }).closest("div")!;
+    expect(visitors.textContent).toContain("40");
+    // The scorecard stays on the last 28 closed days: 253 of 978, not of 40.
+    const activation = screen.getByRole("rowheader", { name: "Activation" }).closest("tr")!;
+    expect(activation.textContent).toContain("26%");
+
+    fireEvent.change(screen.getByLabelText("From"), { target: { value: "2026-10-01" } });
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([u]) => String(u).includes("&from=2026-10-01&to=2026-10-22"))).toBe(true),
+    );
+    expect(await screen.findAllByText("2026-10-01 to 2026-10-22 (today so far).")).not.toHaveLength(0);
   });
 
   it("no longer asks for the experiments, which have their own page", async () => {

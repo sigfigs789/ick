@@ -14,10 +14,12 @@
 //   (every date optional: no `from` is all time, no `to` the latest day)
 //   -> { report: { today, firstDay, from, to, groups, modes, chat, chatSince,
 //                  idleHint, idleHintSince, botsFiltered, daily } }
-// GET /api/review?list=analytics-v2&today=YYYY-MM-DD
+// GET /api/review?list=analytics-v2&today=YYYY-MM-DD[&from=YYYY-MM-DD&to=YYYY-MM-DD]
 //   -> { report: { today, trackedSince, daily, retention, cohorts, weekly,
-//                  sources, window, scores } }, for /analyticsV2: its own
-//   report, from its own function (see the 2026-10-30 migration).
+//                  sources, window, scores, range } }, for /analyticsV2: its
+//   own report, from its own function (see the 2026-10-30 migration). `from`
+//   and `to` come together and pick the window `range` is counted over (see
+//   the 2026-11-09 analytics_v2_windows migration).
 // GET /api/review?list=experiments-v2&today=YYYY-MM-DD
 //   -> { wordOfDay, comeBack }, for /experimentsV2: each experiment's arms
 //   (see the 2026-11-01 analytics_v2_experiment migration).
@@ -379,7 +381,16 @@ async function handleGet(request: Request): Promise<Response> {
       // Given longer than the game's 2 seconds: these are whole-history reads,
       // and a dashboard that waits a few seconds beats one that fails.
       if (list === "analytics-v2") {
-        const report = await rpc<Record<string, unknown> | null>("analytics_v2", { p_today: today }, ANALYTICS_TIMEOUT_MS);
+        // The reader's window, both ends or neither, in order and no later
+        // than their puzzle. Without one the report has no `range`.
+        const from = params.get("from");
+        const to = params.get("to");
+        if ((from === null) !== (to === null)) return reply(400, { ok: false, reason: "bad-date" });
+        if (from !== null && to !== null && (!isCalendarDate(from) || !isCalendarDate(to) || from > to || to > today)) {
+          return reply(400, { ok: false, reason: "bad-date" });
+        }
+        const args = from !== null && to !== null ? { p_today: today, p_from: from, p_to: to } : { p_today: today };
+        const report = await rpc<Record<string, unknown> | null>("analytics_v2", args, ANALYTICS_TIMEOUT_MS);
         return reply(200, { report: report ?? {} }, ANALYTICS_V2_CACHE);
       }
       const experiment = (event: string) =>
