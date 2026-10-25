@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState, type CSSProperties, type ReactNode } from "react";
-import { moveRange, type DateRange } from "../components/analyticsFormat";
 import { ReviewPage } from "../components/ReviewPage";
 import { useReviewList } from "../components/reviewList";
 import { todayDateString } from "../game/date";
@@ -15,6 +14,8 @@ import {
   STANDING_NAMES,
   type Row,
 } from "./scorecard";
+import { daysIn, describe, lower, PAST_30, PAST_7, sameSpan, spanOf, TODAY, type Choice } from "./window";
+import { WindowPicker } from "./WindowPicker";
 
 /**
  * The daily dashboard, at /analyticsV2.
@@ -43,8 +44,14 @@ import {
 export function AnalyticsV2Page() {
   const today = todayDateString();
   const [choice, setChoice] = useState<Choice>(DEFAULT_CHOICE);
-  const { from, to } = spanOf(choice, today);
-  const load = useCallback(async () => [await fetchReport(today, { from, to })], [today, from, to]);
+  // Never null here: this page has no "since it started".
+  const span = spanOf(choice, today);
+  const from = span?.from;
+  const to = span?.to;
+  const load = useCallback(
+    async () => [await fetchReport(today, from && to ? { from, to } : undefined)],
+    [today, from, to],
+  );
   const { rows, state, refreshing, refresh, retry } = useReviewList(load);
   const report = rows[0];
   // Yesterday's report is only for the scorecard's day-on-day change, so it is
@@ -77,7 +84,13 @@ export function AnalyticsV2Page() {
     >
       {report && (
         <>
-          <WindowPicker choice={choice} today={today} onChoose={setChoice} report={report} />
+          <WindowPicker
+            choice={choice}
+            presets={PRESETS}
+            today={today}
+            counting={report.range !== null && !sameSpan(windowOf(report), span)}
+            onChoose={setChoice}
+          />
           <Dashboard report={report} before={before} />
         </>
       )}
@@ -281,26 +294,8 @@ function Dashboard({ report, before }: { report: Report; before: Report | null }
   );
 }
 
-/** The window the reader picked: today so far, the past N closed days, or two dates. */
-type Choice = { kind: "today" } | { kind: "past"; days: number } | ({ kind: "range" } & DateRange);
-
-const DEFAULT_CHOICE: Choice = { kind: "past", days: 30 };
-const PRESETS: ReadonlyArray<{ label: string; choice: Choice }> = [
-  { label: "Today", choice: { kind: "today" } },
-  { label: "Past 7 days", choice: { kind: "past", days: 7 } },
-  { label: "Past 30 days", choice: { kind: "past", days: 30 } },
-];
-
-/** The days a choice covers, both ends counted. The past N days are closed ones: today is still filling up. */
-function spanOf(choice: Choice, today: string): DateRange {
-  if (choice.kind === "today") return { from: today, to: today };
-  if (choice.kind === "past") return { from: addDays(today, -choice.days), to: addDays(today, -1) };
-  return { from: choice.from, to: choice.to };
-}
-
-function samePreset(a: Choice, b: Choice): boolean {
-  return a.kind === b.kind && (a.kind !== "past" || (b.kind === "past" && a.days === b.days));
-}
+const DEFAULT_CHOICE: Choice = PAST_30.choice;
+const PRESETS = [TODAY, PAST_7, PAST_30];
 
 /** The numbers the window moves, as the report counted them. */
 function windowOf(report: Report): Range {
@@ -312,77 +307,6 @@ function windowOf(report: Report): Range {
       sources: report.sources,
       scores: report.scores,
     }
-  );
-}
-
-function daysIn(span: DateRange): number {
-  return Math.round((Date.parse(span.to) - Date.parse(span.from)) / 86_400_000) + 1;
-}
-
-/** A window in words, for the section notes. */
-function describe(span: DateRange, today: string): string {
-  if (span.from === today && span.to === today) return "Today so far";
-  if (span.from === span.to) return `On ${span.from}`;
-  if (span.to === addDays(today, -1)) return `Past ${daysIn(span)} days`;
-  return `${span.from} to ${span.to}${span.to === today ? " (today so far)" : ""}`;
-}
-
-function lower(label: string): string {
-  return /^(Today|Past|On) /.test(label) ? label[0].toLowerCase() + label.slice(1) : `from ${label}`;
-}
-
-function WindowPicker({
-  choice,
-  today,
-  report,
-  onChoose,
-}: {
-  choice: Choice;
-  today: string;
-  report: Report;
-  onChoose: (next: Choice) => void;
-}) {
-  const shown = spanOf(choice, today);
-  const counted = windowOf(report);
-  const updating = report.range !== null && (counted.from !== shown.from || counted.to !== shown.to);
-  return (
-    <div className="analytics__window" role="group" aria-label="Time window">
-      <span className="analytics__window-row">
-        <span className="analytics__window-label">Window</span>
-        {PRESETS.map((p) => (
-          <button
-            key={p.label}
-            type="button"
-            className="analytics__window-button"
-            aria-pressed={samePreset(choice, p.choice)}
-            onClick={() => onChoose(p.choice)}
-          >
-            {p.label}
-          </button>
-        ))}
-      </span>
-      <span className="analytics__window-row analytics__window-dates">
-        {(["from", "to"] as const).map((end) => (
-          <label key={end}>
-            <span className="analytics__window-label">{end === "from" ? "From" : "to"}</span>
-            <input
-              type="date"
-              className="analytics__window-date"
-              value={shown[end]}
-              max={today}
-              data-active={choice.kind === "range"}
-              onChange={(e) => {
-                const value = e.target.value > today ? today : e.target.value;
-                if (value) onChoose({ kind: "range", ...moveRange(shown, end, value) });
-              }}
-            />
-          </label>
-        ))}
-        <span className="review__meta" role="status">
-          {updating ? "Counting…" : ""}
-        </span>
-      </span>
-    </div>
   );
 }
 

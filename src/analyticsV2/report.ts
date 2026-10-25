@@ -125,6 +125,8 @@ export interface Report {
 export interface Experiments {
   wordOfDay: Experiment | null;
   comeBack: Experiment | null;
+  /** The draw days counted, both ends, or null for everyone drawn. */
+  span: { from: string; to: string } | null;
 }
 
 type Json = Record<string, unknown>;
@@ -280,8 +282,9 @@ export async function fetchReport(today: string, span?: { from: string; to: stri
   return parseReport(body.report);
 }
 
-/** The experiments, counted up to the puzzle the reader is on. */
-export async function fetchExperiments(today: string): Promise<Experiments> {
-  const body = await readReport(`/api/review?list=experiments-v2&today=${today}`);
-  return { wordOfDay: parseExperiment(body.wordOfDay), comeBack: parseExperiment(body.comeBack) };
+/** The experiments, counted up to the puzzle the reader is on, over the players drawn in `span` when one is given. */
+export async function fetchExperiments(today: string, span?: { from: string; to: string }): Promise<Experiments> {
+  const query = span ? `&from=${span.from}&to=${span.to}` : "";
+  const body = await readReport(`/api/review?list=experiments-v2&today=${today}${query}`);
+  return { wordOfDay: parseExperiment(body.wordOfDay), comeBack: parseExperiment(body.comeBack), span: span ?? null };
 }

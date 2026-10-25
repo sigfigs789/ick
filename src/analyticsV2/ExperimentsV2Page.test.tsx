@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { ExperimentsV2Page } from "./ExperimentsV2Page";
 
 vi.mock("../game/date", async (importOriginal) => ({
@@ -70,6 +70,44 @@ describe("ExperimentsV2Page", () => {
     expect(screen.getByRole("heading", { name: "Word of the day" })).toBeTruthy();
     expect(screen.getByText("Remove the come-back tip")).toBeTruthy();
     expect(screen.getByRole("table", { name: "Everyone drawn: with the come-back tip against without." })).toBeTruthy();
+  });
+
+  it("counts everyone drawn since it started, then the players drawn in a picked window", async () => {
+    const drawn = (assigned: number) => ({
+      since: "2026-10-01",
+      arms: [
+        { variant: "shown", segment: "all", assigned, d1: { cohort: 0, returned: 0 } },
+        { variant: "hidden", segment: "all", assigned, d1: { cohort: 0, returned: 0 } },
+      ],
+    });
+    const fetchMock = vi.fn(async (url: string) => {
+      const from = new URL(url, "http://x").searchParams.get("from");
+      const body = { wordOfDay: drawn(from === "2026-10-15" ? 7 : from === "2026-10-22" ? 3 : 50), comeBack: null };
+      return new Response(JSON.stringify(body), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<ExperimentsV2Page />);
+    const playersDrawn = () => rowOf("Everyone drawn: with the word of the day against without.", "Players drawn").textContent;
+
+    await screen.findByRole("heading", { name: "Word of the day" });
+    expect(String(fetchMock.mock.calls[0][0])).not.toContain("from=");
+    expect(screen.getByRole("button", { name: "Since it started" }).getAttribute("aria-pressed")).toBe("true");
+    expect(playersDrawn()).toBe("Players drawn5050");
+
+    fireEvent.click(screen.getByRole("button", { name: "Past 7 days" }));
+    await waitFor(() => expect(playersDrawn()).toBe("Players drawn77"));
+    expect(fetchMock.mock.calls.some(([u]) => String(u).includes("&from=2026-10-15&to=2026-10-21"))).toBe(true);
+    expect(screen.getByText(/Players drawn: Past 7 days\./)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Today" }));
+    await waitFor(() => expect(playersDrawn()).toBe("Players drawn33"));
+    expect(fetchMock.mock.calls.some(([u]) => String(u).includes("&from=2026-10-22&to=2026-10-22"))).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "Since it started" }));
+    fireEvent.change(screen.getByLabelText("From"), { target: { value: "2026-10-10" } });
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([u]) => String(u).includes("&from=2026-10-10&to=2026-10-22"))).toBe(true),
+    );
   });
 
   it("says so when the database sent no experiment", async () => {

@@ -20,9 +20,10 @@
 //   own report, from its own function (see the 2026-10-30 migration). `from`
 //   and `to` come together and pick the window `range` is counted over (see
 //   the 2026-11-09 analytics_v2_windows migration).
-// GET /api/review?list=experiments-v2&today=YYYY-MM-DD
+// GET /api/review?list=experiments-v2&today=YYYY-MM-DD[&from=YYYY-MM-DD&to=YYYY-MM-DD]
 //   -> { wordOfDay, comeBack }, for /experimentsV2: each experiment's arms
-//   (see the 2026-11-01 analytics_v2_experiment migration).
+//   (see the 2026-11-01 analytics_v2_experiment migration), over the players
+//   drawn from `from` to `to` when both are given (2026-11-09).
 //   400 bad-list / bad-limit / bad-date, 401 unauthorised, 405 wrong method,
 //   503 no credentials, 502 upstream unavailable.
 //
@@ -378,25 +379,27 @@ async function handleGet(request: Request): Promise<Response> {
       // One date: the puzzle the reader is on, which every window ends at.
       const today = params.get("today");
       if (today === null || !isCalendarDate(today)) return reply(400, { ok: false, reason: "bad-date" });
+      // The reader's window, both ends or neither, in order and no later than
+      // their puzzle. Without one the report has no `range`, and the
+      // experiments count everyone drawn.
+      const from = params.get("from");
+      const to = params.get("to");
+      if ((from === null) !== (to === null)) return reply(400, { ok: false, reason: "bad-date" });
+      if (from !== null && to !== null && (!isCalendarDate(from) || !isCalendarDate(to) || from > to || to > today)) {
+        return reply(400, { ok: false, reason: "bad-date" });
+      }
+      const span = from !== null && to !== null ? { p_from: from, p_to: to } : {};
       // Given longer than the game's 2 seconds: these are whole-history reads,
       // and a dashboard that waits a few seconds beats one that fails.
       if (list === "analytics-v2") {
-        // The reader's window, both ends or neither, in order and no later
-        // than their puzzle. Without one the report has no `range`.
-        const from = params.get("from");
-        const to = params.get("to");
-        if ((from === null) !== (to === null)) return reply(400, { ok: false, reason: "bad-date" });
-        if (from !== null && to !== null && (!isCalendarDate(from) || !isCalendarDate(to) || from > to || to > today)) {
-          return reply(400, { ok: false, reason: "bad-date" });
-        }
-        const args = from !== null && to !== null ? { p_today: today, p_from: from, p_to: to } : { p_today: today };
+        const args = { p_today: today, ...span };
         const report = await rpc<Record<string, unknown> | null>("analytics_v2", args, ANALYTICS_TIMEOUT_MS);
         return reply(200, { report: report ?? {} }, ANALYTICS_V2_CACHE);
       }
       const experiment = (event: string) =>
         rpc<Record<string, unknown> | null>(
           "analytics_v2_experiment",
-          { p_today: today, p_event: event },
+          { p_today: today, p_event: event, ...span },
           ANALYTICS_TIMEOUT_MS,
         );
       const [wordOfDay, comeBack] = await Promise.all([
