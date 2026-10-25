@@ -331,14 +331,18 @@ h2 {
   color: var(--fg);
   background: var(--bg-inset);
 }
+/* The current page's fill is drawn inside the button rather than to its edge:
+   a disc just big enough for the icon marks the page without being the
+   heaviest thing on the bar, and the button keeps its full-size target. */
 .app__icon-button.app__nav-item--current {
   color: var(--bg);
   background: var(--fg);
-  border-color: var(--fg);
+  background-clip: content-box;
+  padding: 0.2rem;
 }
 .app__icon-button.app__nav-item--current:hover {
   color: var(--bg);
-  background: var(--fg);
+  background-color: var(--fg);
 }
 /* The wordmark is a link home, dressed as the wordmark. */
 .app__wordmark-link {
@@ -498,9 +502,14 @@ button.app__menu-item + button.app__menu-item {
   .app__header-actions {
     gap: 0.15rem;
   }
+  /* Four page icons and the "?" beside the wordmark: 1.9rem each is what keeps
+     the bar on one line at 320px. */
   .app__header-actions .app__icon-button {
-    width: 2rem;
-    height: 2rem;
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+  .app__header-actions .app__icon-button.app__nav-item--current {
+    padding: 0.05rem;
   }
 }
 /* The announcement button and the badge floating under it. The wrapper is what

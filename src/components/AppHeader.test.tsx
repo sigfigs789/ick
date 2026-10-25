@@ -45,18 +45,24 @@ describe("the header", () => {
       "aria-current",
       "page",
     );
-    // The puzzle has no icon: the wordmark is the way back to it.
+    // The wordmark is a way back to the puzzle, and so is the Play icon.
     await userEvent.click(screen.getByRole("link", { name: /^Word ?Ink$/ }));
+    expect(window.location.pathname).toBe("/");
+    expect(screen.getByRole("button", { name: "Play" })).toHaveAttribute("aria-current", "page");
+
+    await userEvent.click(screen.getByRole("button", { name: "Stats" }));
+    expect(window.location.pathname).toBe("/stats");
+    await userEvent.click(screen.getByRole("button", { name: "Play" }));
     expect(window.location.pathname).toBe("/");
   });
 
-  it("puts the finds before the boards", () => {
+  it("puts the puzzle first, and the finds before the boards", () => {
     render(<Harness />);
 
     const labels = within(screen.getByRole("navigation", { name: "Pages" }))
       .getAllByRole("button")
       .map((tab) => tab.getAttribute("aria-label"));
-    expect(labels).toEqual(["Words found", "Stats", "Leaderboards"]);
+    expect(labels).toEqual(["Play", "Words found", "Stats", "Leaderboards"]);
   });
 
   it("goes to each page, and moves the current marker with it", async () => {
@@ -83,7 +89,7 @@ describe("the header", () => {
     const labels = within(screen.getByRole("navigation", { name: "Pages" }))
       .getAllByRole("button")
       .map((tab) => tab.getAttribute("aria-label"));
-    expect(labels).toEqual(["Words found", "Stats", "Leaderboards"]);
+    expect(labels).toEqual(["Play", "Words found", "Stats", "Leaderboards"]);
 
     await userEvent.click(screen.getByRole("button", { name: "Stats" }));
     expect(window.location.pathname).toBe("/stats");
