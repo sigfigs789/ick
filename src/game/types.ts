@@ -147,4 +147,10 @@ export interface StreakState {
    * `loadStreak` fills once from the stored puzzles.
    */
   playedDates?: string[];
+  /**
+   * The longest streak there was when this one started, which it is out to
+   * beat: 0 for a first ever streak. Passing it is celebrated once, on the day
+   * it happens (see game/newBest.ts). Absent on saves from before it was kept.
+   */
+  bestToBeat?: number;
 }
