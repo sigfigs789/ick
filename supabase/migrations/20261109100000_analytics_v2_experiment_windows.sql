@@ -9,6 +9,10 @@
 -- everyone else drawn in it; no D1 is over for a player drawn today, so they
 -- are in "Players drawn" and the guardrails but not the call.
 --
+-- Each arm gains `month`: of the players whose day 30 is over, the share who
+-- banked a word on any of the 30 days after their draw. It is the arm tables'
+-- "Back within a month" row.
+--
 -- Every other number, exclusion and segment is unchanged. The old
 -- analytics_v2_experiment(date, text) is dropped so a two-argument call cannot
 -- be ambiguous between it and the defaulted overload, and the grants are given
@@ -119,10 +123,13 @@ as $$
       (select min(d.day) from days d where d.player_id = a.player_id and d.active) = a.day as is_new,
       a.day + 1 < p_today as d1_over,
       a.day + 7 < p_today as d7_over,
+      a.day + 30 < p_today as d30_over,
       exists (select 1 from days d where d.player_id = a.player_id and d.active and d.day = a.day + 1) as d1,
       exists (select 1 from days d where d.player_id = a.player_id and d.active and d.day = a.day + 7) as d7,
       (select count(*) from days d
         where d.player_id = a.player_id and d.active and d.day between a.day + 1 and a.day + 7) as week_days,
+      exists (select 1 from days d
+        where d.player_id = a.player_id and d.active and d.day between a.day + 1 and a.day + 30) as month,
       (select count(*) from days d where d.player_id = a.player_id and d.active and d.day >= a.day) as player_days,
       (select count(*) from days d
         where d.player_id = a.player_id and d.active and d.shared and d.day >= a.day) as shared_days,
@@ -146,6 +153,8 @@ as $$
         'week', jsonb_build_object('cohort', count(*) filter (where p.d7_over),
           'returned', count(*) filter (where p.d7_over and p.week_days > 0),
           'days', coalesce(sum(p.week_days) filter (where p.d7_over), 0)),
+        'month', jsonb_build_object('cohort', count(*) filter (where p.d30_over),
+          'returned', count(*) filter (where p.d30_over and p.month)),
         'playerDays', coalesce(sum(p.player_days), 0),
         'sharedDays', coalesce(sum(p.shared_days), 0),
         'laterDays', coalesce(sum(p.later_days), 0),

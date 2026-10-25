@@ -12,6 +12,9 @@
 -- `window` also gains `newPlayers`: players whose first-ever word was in it.
 -- The page counted that from `daily`, which only reaches back 84 days.
 --
+-- `retention` gains `month`: of the same cohorts as D30, the share back on any
+-- of the 30 days after. It is the scorecard's "Back within a month" row.
+--
 -- The function is otherwise 20261108000000_analytics_v2_back_within_a_week.sql,
 -- whose notes stand. The signature grows two defaulted arguments, so the old
 -- one is dropped rather than left to make `analytics_v2(date)` ambiguous, and
@@ -210,6 +213,27 @@ as $$
     from visitors v
   ),
 
+  -- Back within a month, the same two ways: of the same cohorts as D30, the
+  -- share who banked a word (players) or were seen (visitors) on any of days 1
+  -- to 30.
+  month_retention as (
+    select jsonb_build_object('month', jsonb_build_object(
+      'players', jsonb_build_object(
+        'cohort', count(*) filter (where v.first_active between p_today - 58 and p_today - 31),
+        'returned', count(*) filter (where v.first_active between p_today - 58 and p_today - 31 and exists (
+          select 1 from days w
+          where w.player_id = v.player_id and w.active and w.day between v.first_active + 1 and v.first_active + 30))
+      ),
+      'visitors', jsonb_build_object(
+        'cohort', count(*) filter (where v.first_seen between p_today - 58 and p_today - 31),
+        'returned', count(*) filter (where v.first_seen between p_today - 58 and p_today - 31 and exists (
+          select 1 from days w
+          where w.player_id = v.player_id and w.day between v.first_seen + 1 and v.first_seen + 30))
+      )
+    )) as v
+    from visitors v
+  ),
+
   -- Weeks, Monday to Sunday: the current one (still counting) and the eleven
   -- before it.
   weeks as (
@@ -392,7 +416,7 @@ as $$
     'today', p_today,
     'trackedSince', (select min(day) from ev where name = 'site_visit'),
     'daily', (select v from daily),
-    'retention', (select v from retention) || (select v from week_retention),
+    'retention', (select v from retention) || (select v from week_retention) || (select v from month_retention),
     'cohorts', (select v from cohorts),
     'weekly', (select v from weekly),
     'sources', (select v from sources where span = 'standard'),

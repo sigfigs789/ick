@@ -49,6 +49,8 @@ export const D1_MARKS: Marks = { nowhere: 0.15, promising: 0.25, great: 0.4 };
 export const D7_MARKS: Marks = { nowhere: 0.05, promising: 0.1, great: 0.2 };
 /** Coming back within a week is not in the table, so these marks are the page's. */
 export const WEEK_MARKS: Marks = { nowhere: 0.25, promising: 0.35, great: 0.5 };
+/** Nor is coming back within a month, so these marks are the page's too. */
+export const MONTH_MARKS: Marks = { nowhere: 0.3, promising: 0.4, great: 0.55 };
 /** Activation is not in the table, so these marks are the page's. */
 export const ACTIVATION_MARKS: Marks = { nowhere: 0.3, promising: 0.4, great: 0.6 };
 /** Sharing has no great mark of its own: great is consistent sharing that also brings players. */
@@ -178,6 +180,12 @@ export function scorecard(report: Report): Row[] {
       promising: 0.05,
       great: 0.1,
     }),
+    {
+      ...retentionRow("Back within a month", 30, r.month.players, { nowhere: "Under 30%", promising: "40–54%", great: "55%+" }, MONTH_MARKS),
+      how:
+        "Players whose first word was in a 28-day span, and who banked a word again on any of the 30 days after. The " +
+        "table has no row for it, so these marks are the page's: under 30% is going nowhere, 40% promising, 55% great.",
+    },
     {
       metric: "DAU trend over 8 weeks",
       bands: { nowhere: "Flat or falling", promising: "Growing 5–10%/mo", great: "Growing 20%+/mo" },

@@ -109,8 +109,8 @@ export interface Report {
   /** The first day a visit was recorded against a player; visitor numbers before it are not numbers. */
   trackedSince: string | null;
   daily: Day[];
-  /** Back on exactly day N, and `week`: back on any of the 7 days after. */
-  retention: Record<"d1" | "d7" | "d30" | "week", { players: Rate; visitors: Rate }>;
+  /** Back on exactly day N; `week` and `month`: back on any of the 7, or 30, days after. */
+  retention: Record<"d1" | "d7" | "d30" | "week" | "month", { players: Rate; visitors: Rate }>;
   cohorts: Cohort[];
   weekly: Week[];
   sources: Source[];
@@ -229,7 +229,7 @@ export function parseReport(raw: unknown): Report {
         players: num(d.players),
         newPlayers: num(d.newPlayers),
       })),
-    retention: { d1: retention("d1"), d7: retention("d7"), d30: retention("d30"), week: retention("week") },
+    retention: { d1: retention("d1"), d7: retention("d7"), d30: retention("d30"), week: retention("week"), month: retention("month") },
     cohorts: arr(r.cohorts)
       .filter((c) => str(c.start))
       .map((c) => ({

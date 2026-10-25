@@ -16,13 +16,14 @@ describe("word of the day experiment", () => {
     const parsed = parseExperiment({
       since: "2026-11-01",
       arms: [
-        { variant: "shown", segment: "all", assigned: 5, d1: { cohort: 4, returned: 1 }, week: { cohort: 2, returned: 1, days: 3 } },
+        { variant: "shown", segment: "all", assigned: 5, d1: { cohort: 4, returned: 1 }, week: { cohort: 2, returned: 1, days: 3 }, month: { cohort: 2, returned: 2 } },
         { variant: "other", segment: "all" },
       ],
     })!;
     // The one it knows, and the returning arm worked out from it.
     expect(parsed.arms.map((a) => a.segment)).toEqual(["all", "returning"]);
     expect(parsed.arms[0].week).toEqual({ cohort: 2, returned: 1, days: 3 });
+    expect(parsed.arms[0].month).toEqual({ cohort: 2, returned: 2 });
     expect(parsed.arms[0].d7).toEqual({ cohort: 0, returned: 0 });
     expect(parseExperiment(undefined)).toBeNull();
   });
@@ -84,6 +85,6 @@ describe("word of the day experiment", () => {
 
   it("places each arm against the scorecard's bands", () => {
     const a = { ...emptyArm("shown", "all"), d1: { returned: 30, cohort: 100 }, d7: { returned: 1, cohort: 10 } };
-    expect(standings(a)).toEqual({ d1: "promising", d7: null, week: null, share: null });
+    expect(standings(a)).toEqual({ d1: "promising", d7: null, week: null, month: null, share: null });
   });
 });
