@@ -24,9 +24,11 @@ describe("BestWordNewsCard", () => {
     expect(screen.getByRole("status").textContent).not.toContain("shared");
   });
 
-  it("tells the finder who they shared it with", () => {
-    render(<BestWordNewsCard kind="self" resolved={resolved([A, B])} onDone={() => {}} />);
-    expect(screen.getByRole("status").textContent).toContain("You shared it with 1 other player.");
+  it("doesn't tell the finder who else found it", () => {
+    render(<BestWordNewsCard kind="self" resolved={resolved([A, B], 4)} onDone={() => {}} />);
+    expect(screen.getByText("You had yesterday's best word!")).toBeTruthy();
+    expect(screen.getByRole("status").textContent).not.toContain("shared");
+    expect(screen.getByRole("status").textContent).not.toContain("other player");
   });
 
   it("names who found it for everybody else", () => {

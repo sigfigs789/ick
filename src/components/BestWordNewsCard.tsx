@@ -62,7 +62,6 @@ export function BestWordNewsCard({
             {kind === "self" ? (
               <>
                 {word} scored {tally} on “{drop}”, the rarest find of the day.
-                {total > 1 ? ` You shared it with ${otherPlayers(total - 1)}.` : ""}
               </>
             ) : (
               <>
