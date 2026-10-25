@@ -37,6 +37,9 @@ export function PerfectMonthCelebration({
       <ConfettiBurst grand />
       <div className="perfect-month" role="status">
         <button type="button" className="perfect-month__card" onClick={onDone} title="Dismiss">
+          <span className="perfect-month__close" aria-hidden="true">
+            ×
+          </span>
           <span className="perfect-month__trophy" aria-hidden="true">
             🏆
           </span>

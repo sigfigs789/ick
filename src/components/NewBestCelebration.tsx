@@ -30,6 +30,9 @@ export function NewBestCelebration({
       <ConfettiBurst rising />
       <div className="improvement improvement--streak" role="status">
         <button type="button" className="improvement__card" onClick={onDone} title="Dismiss">
+          <span className="improvement__close" aria-hidden="true">
+            ×
+          </span>
           <span className="improvement__icon" aria-hidden="true">
             🔥
           </span>

@@ -2656,6 +2656,7 @@ button.app__menu-item + button.app__menu-item {
   width: min(22rem, calc(100vw - 2rem));
 }
 .improvement__card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2715,6 +2716,22 @@ button.app__menu-item + button.app__menu-item {
 .improvement--best .improvement__gain {
   color: hsl(38 92% 40%);
 }
+/* The ×: the whole card is the dismiss button already (a tap anywhere sends it
+   away, as it always has), so this is only the sign that it can be closed, not
+   a second button nested in the first. */
+.improvement__close,
+.perfect-month__close {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.6rem;
+  color: var(--fg-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+}
+.improvement__card:hover .improvement__close,
+.perfect-month__card:hover .perfect-month__close {
+  color: var(--fg);
+}
 @keyframes improvement-in {
   from {
     transform: translateY(1.5rem) scale(0.85);
@@ -2735,6 +2752,7 @@ button.app__menu-item + button.app__menu-item {
   width: min(22rem, calc(100vw - 2rem));
 }
 .perfect-month__card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;

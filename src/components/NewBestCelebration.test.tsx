@@ -21,4 +21,14 @@ describe("NewBestCelebration", () => {
     expect(onDone).toHaveBeenCalledTimes(2);
     vi.useRealTimers();
   });
+
+  it("shows a close mark in the corner that dismisses it like the rest of the card", () => {
+    const onDone = vi.fn();
+    render(<NewBestCelebration days={3} best={2} onDone={onDone} />);
+    const close = document.querySelector(".improvement__close")!;
+    expect(close).toHaveTextContent("×");
+    expect(close).toHaveAttribute("aria-hidden", "true");
+    fireEvent.click(close);
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
 });
