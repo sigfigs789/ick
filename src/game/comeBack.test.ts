@@ -205,7 +205,10 @@ describe("streakGoal", () => {
         streak({ currentStreak: 8, longestStreak: 20, bankedFreezes: 2, playedDates });
       expect(comeBackGoal(run(["2026-10-27", "2026-10-28"]), "2026-10-28")).toEqual({
         line: "Play tomorrow and unlock a lazy weekend 😴",
-        explainer: { title: "Lazy weekend", text: expect.stringMatching(/3 days by Friday/) },
+        explainer: {
+          title: "Lazy weekend",
+          text: "Play any 3 days this week and your streak is paused through the weekend.",
+        },
       });
       expect(comeBackGoal(run(["2026-10-27", "2026-10-30"]), "2026-10-30")?.explainer?.title).toBe("Lazy Sunday");
     });
