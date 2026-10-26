@@ -437,16 +437,17 @@ async function handleGet(request: Request): Promise<Response> {
           { p_today: today, p_event: event, ...span },
           ANALYTICS_TIMEOUT_MS,
         );
-      const [wordOfDay, comeBack, headerCelebrations, shareName, inputPlacement] = await Promise.all([
+      const [wordOfDay, comeBack, headerCelebrations, shareName, inputPlacement, playTab] = await Promise.all([
         experiment("word_of_day_assigned"),
         experiment("come_back_assigned"),
         experiment("header_celebrations_assigned"),
         experiment("share_name_assigned"),
         experiment("input_placement_assigned"),
+        experiment("play_tab_assigned"),
       ]);
       return reply(
         200,
-        { wordOfDay, comeBack, headerCelebrations, shareName, inputPlacement },
+        { wordOfDay, comeBack, headerCelebrations, shareName, inputPlacement, playTab },
         ANALYTICS_V2_CACHE,
       );
     }

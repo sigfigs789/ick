@@ -98,6 +98,14 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
   returning players apart. Force either arm with `?input-placement=below` or
   `=above`. Testers are forced to `above`. A forced arm, or a host that
   reports nothing (which keeps the input above), is never drawn.
+- **Play tab** (`src/game/playTabTest.ts`, `src/hooks/usePlayTab.ts`): 20%
+  of players (`shown`) get a Play icon, the way back to the puzzle, first
+  among the header's page icons; the other 80% (`hidden`) have the wordmark
+  alone. A player is drawn on their first load and keeps that arm. The draw
+  is a `play_tab_assigned` event (with `returning`), scored on
+  `/experimentsV2`. Force either arm with `?play-tab=shown` or `=hidden`.
+  Testers are forced to `shown`. A forced arm, or a host that reports
+  nothing (which keeps the icon off), is never drawn.
 - **Persistence** (`src/game/storage.ts`): today's progress and the
   streak counter live in `localStorage`, keyed by calendar date. Once the
   puzzle is marked complete it can't be re-completed, but players can

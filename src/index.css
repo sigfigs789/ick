@@ -502,9 +502,13 @@ button.app__menu-item + button.app__menu-item {
   .app__header-actions {
     gap: 0.15rem;
   }
-  /* Four page icons and the "?" beside the wordmark: 1.9rem each is what keeps
-     the bar on one line at 320px. */
   .app__header-actions .app__icon-button {
+    width: 2rem;
+    height: 2rem;
+  }
+  /* With the Play icon, four page icons and the "?" beside the wordmark:
+     1.9rem each is what keeps the bar on one line at 320px. */
+  .app__header-actions--play .app__icon-button {
     width: 1.9rem;
     height: 1.9rem;
   }

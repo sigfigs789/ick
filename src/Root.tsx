@@ -13,6 +13,7 @@ import { todayDateString } from "./game/date";
 import { usesFreeformRules } from "./game/dictionary";
 import { modeIsChosen } from "./game/mode";
 import { useGameMode } from "./hooks/useGameMode";
+import { usePlayTab } from "./hooks/usePlayTab";
 import { takeFreshAssignment } from "./game/onboarding";
 import { syncHistoryWhenReady } from "./game/leaderboard";
 import { hasJoined, joinBoard } from "./game/player";
@@ -171,6 +172,10 @@ export function Root() {
    */
   const [mode, chooseMode] = useGameMode();
   const chooseable = modeIsChosen(today.current);
+
+  // The Play icon in the header, for the play tab test's shown arm (see
+  // game/playTabTest.ts), drawn on the first load.
+  const playTab = usePlayTab();
 
   /**
    * The Freeform week notice, opened once for the player and left reachable
@@ -411,6 +416,7 @@ export function Root() {
         badge={freeformBadge}
         badgeLabel={badge?.label}
         onBadgeDone={retireBadge}
+        playTab={playTab}
       />
       {/* Under the header, so the header stays put while a page's chunk is
           on its way -- only the page's own area waits, and only the first

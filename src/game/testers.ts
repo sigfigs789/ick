@@ -7,7 +7,8 @@ import { accountName, loadPlayerId } from "./player";
  * day shown (see game/comeBackTest.ts and game/wordOfDay.ts), and the username
  * left out of shares by default (see game/shareNameTest.ts). The one
  * exception is the input placement test (see game/inputPlacementTest.ts),
- * where testers are kept in the old arm: the guess input above the guess log.
+ * where testers are kept in the old arm: the guess input above the guess log. They also get the Play icon in the
+header (see game/playTabTest.ts).
  *
  * Listed by handle, the name the board shows, since that is the name anyone
  * asking to be let in knows themselves by. Like an `?idle-hint=` force, a

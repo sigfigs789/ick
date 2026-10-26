@@ -61,7 +61,8 @@ export function ExperimentsV2Page() {
           !experiments.comeBack &&
           !experiments.headerCelebrations &&
           !experiments.shareName &&
-          !experiments.inputPlacement)
+          !experiments.inputPlacement &&
+          !experiments.playTab)
       }
     >
       {picker}
@@ -174,6 +175,26 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
                 before their first word: a player drawn who never banks one is counted as returning. Try either arm
                 with <code>?input-placement=below</code> or <code>=above</code>; a forced arm, or a tester (forced to
                 above), is not counted.
+              </>
+            }
+          />
+        </Section>
+      )}
+
+      {experiments.playTab && (
+        <Section
+          title="Play icon in the header"
+          note={`Whether a Play icon, first in the header, moves the scorecard. Over players, new and returning apart.${drawn}`}
+        >
+          <ExperimentView
+            experiment={experiments.playTab}
+            subject="the Play icon in the header"
+            about={
+              <>
+                One player in five gets a Play icon, the way back to the puzzle, first among the header&rsquo;s page
+                icons; the rest have the wordmark alone, as before. Each is drawn once, on their first load. Try either
+                arm with <code>?play-tab=shown</code> or <code>=hidden</code>; a forced arm, or a tester (forced to
+                shown), is not counted.
               </>
             }
           />

@@ -40,6 +40,9 @@ vi.mock("./components/FeedbackPage", () => ({
 }));
 vi.mock("./game/leaderboard", () => ({ syncHistoryWhenReady: vi.fn() }));
 vi.mock("./analytics", () => ({
+  // Reporting off keeps the play tab test from drawing: the header has no Play icon.
+  isReporting: () => false,
+  trackPlayTabAssigned: vi.fn(),
   trackLeaderboardJoined: vi.fn(),
   trackLeaderboardOpened: vi.fn(),
   trackFoundWordsOpened: vi.fn(),

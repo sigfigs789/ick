@@ -80,6 +80,7 @@ const TABS: readonly Tab[] = [
   // A play button: the puzzle, first because it is where every visit starts.
   // The wordmark goes there too, but a link dressed as a name does not look
   // like a way back, and the icon is what shows the puzzle as the current page.
+  // Only for players in the play tab test's shown arm (see `playTab` below).
   {
     route: "game",
     label: "Play",
@@ -156,6 +157,7 @@ export function AppHeader({
   badge = true,
   badgeLabel,
   onBadgeDone,
+  playTab = false,
 }: {
   route: Route;
   onHowToPlay: () => void;
@@ -210,6 +212,12 @@ export function AppHeader({
    * announcement's state.
    */
   onBadgeDone?: () => void;
+  /**
+   * Whether the bar starts with the Play icon, by the play tab test (see
+   * game/playTabTest.ts), which src/Root.tsx draws. Off by default, so the
+   * puzzle is the wordmark's alone, as it has always been.
+   */
+  playTab?: boolean;
 }) {
   // Whether this header has the trial's button, the only thing a badge sits
   // under. The mode switch that replaced it wears none.
@@ -361,7 +369,7 @@ export function AppHeader({
         ) : (
           <p className="app__wordmark">{wordmark}</p>
         )}
-        <div className="app__header-actions">
+        <div className={`app__header-actions${playTab ? " app__header-actions--play" : ""}`}>
         {/* The trial's button, on old puzzles from before the mode switch. */}
         {onFreeform && (
           <div className="app__freeform-nav">
@@ -392,7 +400,7 @@ export function AppHeader({
           </div>
         )}
         <nav className="app__nav" aria-label="Pages">
-          {TABS.map((tab) => {
+          {(playTab ? TABS : TABS.filter((tab) => tab.route !== "game")).map((tab) => {
             const current = tab.route === route;
             return (
               <button
