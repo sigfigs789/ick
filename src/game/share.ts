@@ -10,10 +10,10 @@ import dropData from "../data/drops.json";
 import type { AcceptedWord, Rarity } from "./types";
 
 // Mirrors the in-app "loot tier" rarity palette (grey -> green ->
-// blue -> purple -> gold -> red -> black, see index.css) so the shared result
-// matches what showed up in-game. Elusive shares as the orange square rather
-// than the yellow one: 🟨 reads pale beside the other squares, and 🟧 is the
-// deeper gold it wore before the badge turned gold. Legend, the top rank, is black -- the one
+// blue -> purple -> orange -> red -> black, see index.css) so the shared result
+// matches what showed up in-game. Elusive shares as the orange square, the
+// colour its badge wears; 🟨 read pale beside the other squares. Legend, the
+// top rank, is black -- the one
 // square that reads as absence rather than a hue, which is what makes it land.
 // Quotidian is reachable only on puzzles predating the retuned tiers; its egg
 // is an intentional Easter egg.

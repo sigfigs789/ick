@@ -65,14 +65,15 @@
   --rarity-extremely-rare-fg: #7222c2;
   --rarity-extremely-rare-dot: #9b4fe0;
 
-  /* Elusive sits between Extremely Rare and Mythic, and wears gold: the one
-     rank no other tier shares, as far from Common's grey as a warm hue
-     gets, and the colour games use for "you found treasure". The text is a dark
-     amber because yellow on cream is unreadable; the dot carries the gold.
-     Backed by the orange square in shared results. */
-  --rarity-elusive-bg: #fdf3c4;
-  --rarity-elusive-fg: #854d0e;
-  --rarity-elusive-dot: #eab308;
+  /* Elusive sits between Extremely Rare and Mythic, and wears orange, to match
+     the orange square it shares under. A clear orange rather than the burnt
+     amber it once wore, which read as brown, and kept off gold so the crowned
+     best word's yellow halo never matches the badge inside it. The text is a
+     dark rust because orange on cream is hard to read; the dot carries the
+     orange. */
+  --rarity-elusive-bg: #ffedd5;
+  --rarity-elusive-fg: #9a3412;
+  --rarity-elusive-dot: #f97316;
 
   /* Frozen copy of the bright orange Legend wore before the tiers were retuned.
      Archived puzzles render from these, so retinting Elusive above cannot reach
@@ -163,9 +164,9 @@
     --rarity-extremely-rare-fg: #cd9bf7;
     --rarity-extremely-rare-dot: #ab5ff0;
 
-    --rarity-elusive-bg: #2b2205;
-    --rarity-elusive-fg: #fcd34d;
-    --rarity-elusive-dot: #facc15;
+    --rarity-elusive-bg: #2e1606;
+    --rarity-elusive-fg: #fdba74;
+    --rarity-elusive-dot: #fb923c;
 
     --rarity-legend-legacy-bg: #2e1a08;
     --rarity-legend-legacy-fg: #fdba74;
@@ -1328,8 +1329,8 @@ button.app__menu-item + button.app__menu-item {
 }
 .guess-log__entry--best {
   border-color: var(--best-word-accent);
-  /* A gold halo rather than a gold fill: a tinted card washed out the pale gold
-     Elusive badge sitting on it, and the glow marks the best word just as well. */
+  /* A gold halo rather than a gold fill: a tinted card washed out the pale
+     badge sitting on it, and the glow marks the best word just as well. */
   box-shadow: var(--best-word-glow), var(--card-shadow);
 }
 @keyframes slot-fill {

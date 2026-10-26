@@ -383,8 +383,9 @@ describe("ranking colors", () => {
     }
   });
 
-  it("gives Elusive gold, distinct from Common's brown and Mythic's red", () => {
-    expect(css).toContain("--rarity-elusive-dot: #eab308;");
+  it("gives Elusive orange, to match its 🟧 share square", () => {
+    expect(css).toContain("--rarity-elusive-dot: #f97316;"); // light theme
+    expect(css).toContain("--rarity-elusive-dot: #fb923c;"); // dark theme
   });
 
   it("keeps the pre-retune Legend orange on its own frozen tokens", () => {
