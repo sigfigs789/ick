@@ -4,10 +4,10 @@ import { assignInputPlacementArm, drawnInputPlacementArm, forcedInputPlacementVa
 afterEach(() => localStorage.clear());
 
 describe("assignInputPlacementArm", () => {
-  it("puts half below the guess log and keeps the other half above", () => {
-    expect(assignInputPlacementArm(() => 0.49)).toEqual({ variant: "below", fresh: true });
+  it("puts a fifth below the guess log and keeps the rest above", () => {
+    expect(assignInputPlacementArm(() => 0.19)).toEqual({ variant: "below", fresh: true });
     localStorage.clear();
-    expect(assignInputPlacementArm(() => 0.5)).toEqual({ variant: "above", fresh: true });
+    expect(assignInputPlacementArm(() => 0.2)).toEqual({ variant: "above", fresh: true });
   });
 
   it("keeps the first draw for good", () => {
@@ -28,11 +28,11 @@ describe("forcedInputPlacementVariant", () => {
     expect(forcedInputPlacementVariant("?input-placement=middle")).toBeNull();
   });
 
-  it("forces NorthernBear87 below unless the query string says otherwise", () => {
+  it("forces NorthernBear87 above unless the query string says otherwise", () => {
     // An id whose handle is NorthernBear87 (see game/handle.ts).
     localStorage.setItem("ick:player", JSON.stringify({ id: "tester-3185178" }));
-    expect(forcedInputPlacementVariant("")).toBe("below");
-    expect(forcedInputPlacementVariant("?input-placement=above")).toBe("above");
+    expect(forcedInputPlacementVariant("")).toBe("above");
+    expect(forcedInputPlacementVariant("?input-placement=below")).toBe("below");
     localStorage.setItem("ick:player", JSON.stringify({ id: "someone-else" }));
     expect(forcedInputPlacementVariant("")).toBeNull();
   });

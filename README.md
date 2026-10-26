@@ -87,15 +87,16 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
   `lockInResult`) once they've got at least one word.
 - **Input placement** (`src/game/inputPlacementTest.ts`,
   `src/hooks/useInputPlacement.ts`): the guess input, and the feedback line
-  under it, sits straight under the drop for half of players (`above`) and
-  below the guess log for the other half (`below`). A player is drawn the
+  under it, sits straight under the drop for 80% of players (`above`) and
+  below the guess log for the other 20% (`below`); players drawn while the
+  split was 50/50 keep their arm. A player is drawn the
   first time the input shows on an unfinished puzzle and keeps that arm. The
   draw is an `input_placement_assigned` event (with `placement` and
   `returning`). `analytics_v2_experiment` knows two arms by the names
   `shown` and `hidden`, so `below` is sent as `shown` and `above` as
   `hidden`. The arms are scored on `/experimentsV2`, new players and
   returning players apart. Force either arm with `?input-placement=below` or
-  `=above`. Testers are forced to `below`. A forced arm, or a host that
+  `=above`. Testers are forced to `above`. A forced arm, or a host that
   reports nothing (which keeps the input above), is never drawn.
 - **Persistence** (`src/game/storage.ts`): today's progress and the
   streak counter live in `localStorage`, keyed by calendar date. Once the

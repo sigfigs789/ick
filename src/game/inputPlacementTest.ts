@@ -5,8 +5,10 @@ import { isTester } from "./testers";
  * straight under the drop as it always has, or below it, after the words
  * already played.
  *
- * Split 50/50: `above` keeps the input where it is, `below` moves it (and the
- * feedback line under it) beneath the guess log. A player is drawn the first
+ * Split 80/20: `above`, for 80% of players, keeps the input where it is;
+ * `below`, for the other 20%, moves it (and the feedback line under it)
+ * beneath the guess log. The split was 50/50 until 2026-10-26; players drawn
+ * before then keep the arm they had. A player is drawn the first
  * time the input appears -- an unfinished puzzle -- which is the moment the
  * two arms start to differ, and keeps the arm for good. The draw is reported
  * once, as `input_placement_assigned`, and /experimentsV2 reads the arms from
@@ -18,7 +20,7 @@ import { isTester } from "./testers";
 export type InputPlacementVariant = "above" | "below";
 
 /** The share of players whose input sits below the guess log. */
-export const INPUT_PLACEMENT_BELOW_SHARE = 0.5;
+export const INPUT_PLACEMENT_BELOW_SHARE = 0.2;
 
 const ASSIGNMENT_KEY = "ick:input-placement-test";
 
@@ -62,7 +64,7 @@ export function drawnInputPlacementArm(): InputPlacementVariant | null {
 /**
  * An arm forced with `?input-placement=below` (or `=above`), for seeing either
  * without waiting on a draw; a hand-picked tester (see testers.ts) is forced
- * to below. A forced arm is never stored or reported, so it cannot leak into
+ * to above. A forced arm is never stored or reported, so it cannot leak into
  * the split.
  */
 export function forcedInputPlacementVariant(
@@ -70,5 +72,5 @@ export function forcedInputPlacementVariant(
 ): InputPlacementVariant | null {
   const value = new URLSearchParams(search).get("input-placement");
   if (isVariant(value)) return value;
-  return isTester() ? "below" : null;
+  return isTester() ? "above" : null;
 }
