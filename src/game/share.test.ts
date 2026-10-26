@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { buildShareText, puzzleNumber } from "./share";
 import dropData from "../data/drops.json";
-import { rarityScore } from "./dictionary";
+import { formatRarityScore, rarityForZipf, rarityScore } from "./dictionary";
 import { MODE_CHOICE_START, resetModeCache, setMode } from "./mode";
 import type { AcceptedWord } from "./types";
 
@@ -135,6 +135,17 @@ describe("buildShareText", () => {
     );
     expect(resultLines).toContain("⬜ the (0.0)");
     expect(resultLines).toHaveLength(words.length);
+  });
+
+  it("shares an Elusive word under the gold square, in both reveal modes", () => {
+    const date = "2026-10-26";
+    const elusive: AcceptedWord = { word: "kilojoules", rarity: "Elusive", zipf: 1.6 };
+    const score = formatRarityScore(elusive.zipf, date);
+    expect(rarityForZipf(elusive.zipf, date)).toBe("Elusive");
+    expect(buildShareText(date, "str", [elusive]).split("\n")[2]).toBe(`🟨 ${score}`);
+    expect(buildShareText(date, "str", [elusive], { reveal: "all" }).split("\n")[2]).toBe(
+      `🟨 kilojoules (${score})`,
+    );
   });
 
   it("omits the best-word summary when spoilers are shown", () => {
