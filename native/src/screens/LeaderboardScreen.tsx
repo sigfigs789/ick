@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { addDays, formatDateLabel, todayDateString } from '../../../src/game/date';
 import { formatScore, formatTotal } from '../../../src/game/dictionary';
+import { dropForDate } from '../../../src/game/drop';
 import {
   dayFloor,
   fetchBoards,
@@ -403,6 +404,10 @@ export function LeaderboardScreen({ onPlay }: { onPlay?: () => void } = {}) {
                 unit="day"
                 columns={SCORE_COLUMNS}
                 renderRow={scoreRow}
+                // The drop, between the arrows, because a date alone does not
+                // say which puzzle the board is about. Today's too, so the nav
+                // keeps one shape as the reader steps through it.
+                navLabel={<BoardDrop date={day} />}
                 canGoBack={day > dayFloor()}
                 canGoForward={!dayIsLive}
                 onBack={() => setDay(addDays(day, -1))}
@@ -506,6 +511,8 @@ interface BoardProps<Entry extends { playerId: string }> {
   onRetry: () => void;
   /** What this board's window is called in its own controls: "week", "month". */
   unit: string;
+  /** What sits between the two arrows, naming the window more closely. */
+  navLabel?: ReactNode;
   /** Stepping the window. The streak board, which has none, leaves these out. */
   canGoBack?: boolean;
   canGoForward?: boolean;
@@ -526,6 +533,7 @@ function Board<Entry extends { playerId: string }>({
   state,
   onRetry,
   unit,
+  navLabel,
   canGoBack,
   canGoForward,
   onBack,
@@ -552,6 +560,13 @@ function Board<Entry extends { playerId: string }>({
             onBack={onBack}
             onForward={onForward}
           />
+          {/* Centred over the gap the arrows leave, as the website's flex
+              row centres it; untouchable, so the arrows keep their taps. */}
+          {navLabel && (
+            <View style={styles.boardNavLabel} pointerEvents="none">
+              {navLabel}
+            </View>
+          )}
         </View>
       )}
       {state === 'error' ? (
@@ -596,6 +611,20 @@ function Board<Entry extends { playerId: string }>({
         </>
       )}
     </View>
+  );
+}
+
+/**
+ * A day's drop, quoted the way the finds screen's title quotes it. Named to a
+ * screen reader, which would otherwise hear three letters with no context.
+ */
+function BoardDrop({ date }: { date: string }) {
+  const theme = useTheme();
+  const drop = dropForDate(date);
+  return (
+    <Text style={[styles.boardDrop, { color: theme.fgMuted }]} numberOfLines={1} accessibilityLabel={`Drop ${drop}`}>
+      {`“${drop}”`}
+    </Text>
   );
 }
 
@@ -870,6 +899,21 @@ const styles = StyleSheet.create({
   },
   boardNav: {
     marginTop: 8,
+  },
+  boardNavLabel: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  /* `.leaderboard__board-drop`: the day's drop, centred between the arrows. */
+  boardDrop: {
+    fontSize: 13.6,
+    fontWeight: '700',
+    letterSpacing: 1.1,
   },
   placeholders: {
     marginTop: 5.6,

@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { usesFreeformRules } from '../../../src/game/dictionary';
 import { modeIsChosen, type GameMode } from '../../../src/game/mode';
 import { takesPlayerMessages } from '../../../src/game/playerMessages';
+import { recordSuggestion } from '../../../src/game/suggestions';
 import { useGameMode } from '../../../src/hooks/useGameMode';
 import { sendWordSuggestion } from '../host/submissions';
 import { radius, space } from '../theme/tokens';
@@ -23,6 +24,9 @@ interface Props {
  * mode: the website's WordRulesModal copy, word for word. The archive still
  * plays the trial week's rules and the ones before it, so they are still said.
  */
+/** What the review queue accepts as a word (see the suggested_words migration). */
+const SUGGESTION_RE = /^[a-z]{2,30}$/;
+
 function rulesCopy(date: string | undefined, mode: GameMode): string {
   if (date !== undefined && modeIsChosen(date)) {
     return mode === 'freeform'
@@ -48,11 +52,16 @@ export function WordRulesSheet({ open, date, mode, onClose }: Props) {
   const takesSuggestions = takesPlayerMessages();
   const [suggestion, setSuggestion] = useState('');
   const [sent, setSent] = useState(false);
+  const [firstSuggestion, setFirstSuggestion] = useState(false);
 
   function submit() {
     const word = suggestion.trim().toLowerCase();
     if (!word) return;
     sendWordSuggestion(word);
+    // Kept on the device for the suggesting achievement (see
+    // game/suggestions.ts). Only a word the queue would take: anything else
+    // never comes back with a verdict.
+    setFirstSuggestion(SUGGESTION_RE.test(word) && recordSuggestion(word));
     setSuggestion('');
     setSent(true);
   }
@@ -108,7 +117,8 @@ export function WordRulesSheet({ open, date, mode, onClose }: Props) {
               style={[styles.thanks, { color: theme.successFg }]}
               accessibilityLiveRegion="polite"
             >
-              Thanks for the suggestion!
+              Thanks for the suggestion! We'll let you know if it gets in.
+              {firstSuggestion && ' Achievement unlocked: 💡 Word scout.'}
             </Text>
           )}
         </View>

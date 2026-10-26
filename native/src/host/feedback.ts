@@ -109,3 +109,21 @@ export function signalRising(): void {
     [220, Heavy],
   ]);
 }
+
+/**
+ * An achievement unlocking (the website's `sound.achievement()`, a fanfare of
+ * two quick pickups into a held chord): two light taps, then the success
+ * notification as the badge lands -- distinct from the rising run and the
+ * jackpot's drum roll.
+ */
+export function signalAchievement(): void {
+  const { Light } = Haptics.ImpactFeedbackStyle;
+  pattern([
+    [0, Light],
+    [110, Light],
+  ]);
+  setTimeout(
+    () => safely(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)),
+    220,
+  );
+}
