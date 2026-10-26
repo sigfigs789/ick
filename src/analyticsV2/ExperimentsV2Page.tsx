@@ -168,12 +168,12 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
             subject="the input below the guess log"
             about={
               <>
-                Half of players get the guess input, and the feedback under it, below the guess log instead of straight
-                under the drop. In the tables, Shown is the input below and Hidden is the input above, where it has
+                One in five new draws gets the guess input, and the feedback under it, below the guess log instead of
+                straight under the drop (players drawn while the split was 50/50 keep their arm). In the tables, Shown is the input below and Hidden is the input above, where it has
                 always been. Each is drawn once, the first time the input appears on an unfinished puzzle, which can be
                 before their first word: a player drawn who never banks one is counted as returning. Try either arm
                 with <code>?input-placement=below</code> or <code>=above</code>; a forced arm, or a tester (forced to
-                below), is not counted.
+                above), is not counted.
               </>
             }
           />
