@@ -11,6 +11,7 @@ import {
 import {
   type CongratsSpot,
   congratsMessage,
+  congratsMinPlayers,
   markCongratsPopped,
   pendingCongratsSpots,
   selfCongratsMessage,
@@ -163,14 +164,17 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
     let live = true;
     // The same endpoint the board comes from, asked for the window that closed
     // rather than the one being played, and for this win's mode rather than
-    // the reader's. One row, because the winner is all it reads and the boards
-    // are now whole.
+    // the reader's. Only as many rows as it takes to know the board is big
+    // enough to name a winner on (see `congratsMinPlayers`).
     void (async () => {
       try {
         const closed = spot.window === 'week' ? { week: spot.start } : { month: spot.start };
-        const boards = await fetchBoards(today, { ...closed, mode: spot.mode, limit: 1 });
+        const minPlayers = congratsMinPlayers(spot);
+        const boards = await fetchBoards(today, { ...closed, mode: spot.mode, limit: minPlayers });
         if (!live) return;
         const board = spot.window === 'week' ? boards.weekly : boards.monthly;
+        // Too few players to make the win a result: no bubble at all.
+        if (board.length < minPlayers) return;
         // A window nobody scored in has no winner to name.
         const champion = board.find((entry) => entry.rank === 1) ?? board[0];
         // Matched on the id, the way the board finds the reader's own row: a

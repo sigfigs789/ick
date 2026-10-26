@@ -3,6 +3,7 @@ import { fetchBoards } from "../game/leaderboard";
 import {
   type CongratsSpot,
   congratsMessage,
+  congratsMinPlayers,
   markCongratsPopped,
   pendingCongratsSpots,
   selfCongratsMessage,
@@ -136,13 +137,17 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
     // instead of the live one, and for this win's mode rather than the reader's:
     // both winners are named whichever switch the reader is on. It answers with
     // all three boards and only one of them is read, which is the price of not
-    // adding an endpoint for a sentence that appears a few times a month. One
-    // row, because the winner is all it reads and the boards are now whole.
+    // adding an endpoint for a sentence that appears a few times a month. Only
+    // as many rows as it takes to know the board is big enough to name a winner
+    // on (see `congratsMinPlayers`) -- one, unless the board needs more.
     const closed = spot.window === "week" ? { week: spot.start } : { month: spot.start };
-    fetchBoards(today, { ...closed, mode: spot.mode, limit: 1 })
+    const minPlayers = congratsMinPlayers(spot);
+    fetchBoards(today, { ...closed, mode: spot.mode, limit: minPlayers })
       .then((boards) => {
         if (!live) return;
         const board = spot.window === "week" ? boards.weekly : boards.monthly;
+        // Too few players to make the win a result: no bubble at all.
+        if (board.length < minPlayers) return;
         // A window nobody scored in has no winner to name, and a bubble reading
         // "Congrats undefined" is worse than no bubble.
         const champion = board.find((entry) => entry.rank === 1) ?? board[0];

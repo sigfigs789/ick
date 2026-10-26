@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   congratsMessage,
+  congratsMinPlayers,
   congratsPopped,
   congratsSpots,
   markCongratsPopped,
@@ -248,5 +249,13 @@ describe("popping a bubble", () => {
     expect(
       congratsPopped({ window: "week", start: "2026-09-27", mode: "standard" }),
     ).toBe(true);
+  });
+});
+
+describe("how big a board has to be to name its winner", () => {
+  it("needs five on a Freeform week and only somebody everywhere else", () => {
+    expect(congratsMinPlayers({ window: "week", start: "2026-10-19", mode: "freeform" })).toBe(5);
+    expect(congratsMinPlayers({ window: "week", start: "2026-10-19", mode: "standard" })).toBe(1);
+    expect(congratsMinPlayers({ window: "month", start: "2026-10-01", mode: "freeform" })).toBe(1);
   });
 });

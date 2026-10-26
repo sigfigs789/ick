@@ -24,6 +24,22 @@ const WINNER = {
   puzzles: 5,
 };
 
+/**
+ * A Freeform week big enough to name a winner on: the winner and four behind
+ * them (see `congratsMinPlayers`).
+ */
+function field(winner: typeof WINNER, size = 5) {
+  return [
+    winner,
+    ...Array.from({ length: size - 1 }, (_, index) => ({
+      ...WINNER,
+      rank: index + 2,
+      playerId: `4444444${index}-4444-4444-8444-444444444444`,
+      score: 30 - index,
+    })),
+  ];
+}
+
 type Body = { weekly?: unknown[]; allTime?: unknown[] };
 
 /**
@@ -87,7 +103,7 @@ describe("the congratulation bubble", () => {
     localStorage.setItem("ick:mode", "standard");
     const BOB = "22222222-2222-4222-8222-222222222222";
     const { asked } = stubFetch((mode) => ({
-      weekly: [{ ...WINNER, playerId: mode === "freeform" ? BOB : ALICE }],
+      weekly: mode === "freeform" ? field({ ...WINNER, playerId: BOB }) : [WINNER],
     }));
     const { container } = render(<CongratsBubble today={SPLIT_MONDAY} />);
 
@@ -123,7 +139,7 @@ describe("the congratulation bubble", () => {
   });
 
   it("skips straight to the Freeform winner when nobody played Standard", async () => {
-    stubFetch((mode) => ({ weekly: mode === "freeform" ? [WINNER] : [] }));
+    stubFetch((mode) => ({ weekly: mode === "freeform" ? field(WINNER) : [] }));
     render(<CongratsBubble today={SPLIT_MONDAY} />);
 
     expect(
@@ -131,6 +147,25 @@ describe("the congratulation bubble", () => {
         name: `Congrats ${handleFor(ALICE)} for last week's Freeform win`,
       }),
     ).toBeInTheDocument();
+  });
+
+  it("names no Freeform week's winner on a board of fewer than five", async () => {
+    const { asked } = stubFetch((mode) => ({
+      weekly: mode === "freeform" ? field(WINNER, 4) : [WINNER],
+    }));
+    render(<CongratsBubble today={SPLIT_MONDAY} />);
+
+    // Standard's still floats: the floor is Freeform's week alone.
+    expect(
+      await screen.findByRole("button", {
+        name: `Congrats ${handleFor(ALICE)} for last week's Standard win`,
+      }),
+    ).toBeInTheDocument();
+    await waitFor(() => expect(asked).toHaveLength(2));
+    expect(screen.getAllByRole("button")).toHaveLength(1);
+    // Asked for just enough rows to tell.
+    const freeform = asked.find((url) => params(url).get("mode") === "freeform")!;
+    expect(params(freeform).get("limit")).toBe("5");
   });
 
   it("names last month's winner on the second, by the month's own name", async () => {
