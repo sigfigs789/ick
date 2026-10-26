@@ -92,21 +92,6 @@ const TABS: readonly Tab[] = [
       </Icon>
     ),
   },
-  // The player's own numbers, beside the words they found. Offered from the
-  // first visit: before a word is banked the page says so and points at the
-  // puzzle (see StatsPage).
-  {
-    route: "stats",
-    label: "Stats",
-    icon: (
-      <Icon>
-        <path d="M4 20V10" />
-        <path d="M10 20V4" />
-        <path d="M16 20v-7" />
-        <path d="M2 20h20" />
-      </Icon>
-    ),
-  },
   {
     route: "leaderboard",
     label: "Leaderboards",
@@ -117,6 +102,21 @@ const TABS: readonly Tab[] = [
         <path d="M17 6h3a3 3 0 0 1-3 4" />
         <path d="M12 14v4" />
         <path d="M8 21h8l-1-3H9z" />
+      </Icon>
+    ),
+  },
+  // The player's own numbers, last of the tabs and right beside the "?" menu.
+  // Offered from the first visit: before a word is banked the page says so and
+  // points at the puzzle (see StatsPage).
+  {
+    route: "stats",
+    label: "Stats",
+    icon: (
+      <Icon>
+        <path d="M4 20V10" />
+        <path d="M10 20V4" />
+        <path d="M16 20v-7" />
+        <path d="M2 20h20" />
       </Icon>
     ),
   },
