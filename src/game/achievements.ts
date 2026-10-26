@@ -629,3 +629,59 @@ export function newlyEarned(
     earnedOn && !before.has(achievement.id) && !achievement.viaSuggestions ? [achievement] : []
   );
 }
+
+/**
+ * The badges a card has announced, per browser. The card only ever announced
+ * what a submission earned, so a player with history from before achievements
+ * existed -- or from before the card did -- holds badges nobody ever
+ * mentioned. Those are welcomed once as the page opens (see
+ * `achievementsToCatchUp`) and written here, as is every badge the card names
+ * after that, so none is announced twice.
+ */
+const ANNOUNCED_KEY = "ick:achievements-announced";
+
+export function announcedAchievements(): Set<string> {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(ANNOUNCED_KEY) ?? "[]");
+    return new Set(Array.isArray(parsed) ? parsed.filter((id) => typeof id === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+export function markAchievementsAnnounced(ids: Iterable<string>): void {
+  const announced = announcedAchievements();
+  const before = announced.size;
+  for (const id of ids) announced.add(id);
+  if (announced.size === before) return;
+  try {
+    localStorage.setItem(ANNOUNCED_KEY, JSON.stringify([...announced]));
+  } catch {
+    // Unwritable storage only means the welcome may come round again.
+  }
+}
+
+/** Which group leads when there are more badges to welcome than fit on a card. */
+const CATCH_UP_ORDER: readonly AchievementGroup[] = [
+  "Rarity",
+  "Streaks",
+  "Collections",
+  "Style",
+  "Getting started",
+];
+
+/**
+ * The badges held but never announced, the most impressive first: rarity
+ * ahead of streaks ahead of counts, and within a group the later (harder) one
+ * first -- a Legend before a Mythic, a 100-day streak before a 7. The
+ * suggestion box's badges are left out, as `newlyEarned` leaves them out.
+ */
+export function achievementsToCatchUp(
+  announced: ReadonlySet<string>,
+  statuses: readonly AchievementStatus[]
+): Achievement[] {
+  const rank = (achievement: Achievement) =>
+    CATCH_UP_ORDER.indexOf(achievement.group) * ACHIEVEMENTS.length -
+    ACHIEVEMENTS.indexOf(achievement);
+  return newlyEarned(announced, statuses).sort((a, b) => rank(a) - rank(b));
+}

@@ -31,7 +31,15 @@ import { useForceUpdate } from "./hooks/useForceUpdate";
 import { useInputPlacement } from "./hooks/useInputPlacement";
 import { isWinningRarity } from "./game/rank";
 import { celebrationFor } from "./game/celebration";
-import { earnedIds, newlyEarned, syncAchievements, type Achievement } from "./game/achievements";
+import {
+  achievementsToCatchUp,
+  announcedAchievements,
+  earnedIds,
+  markAchievementsAnnounced,
+  newlyEarned,
+  syncAchievements,
+  type Achievement,
+} from "./game/achievements";
 import type { Rarity } from "./game/types";
 import { completedWholeMonth } from "./game/perfectMonth";
 import { welcomeBack } from "./game/streakFreeze";
@@ -103,6 +111,11 @@ function showHeaderCelebration(group: HeaderCelebrationGroup, date: string): boo
   return drawn.variant === "shown";
 }
 
+/** The most badges the welcome for a returning player names (see App). */
+const CATCH_UP_SHOWN = 3;
+/** The welcome's card key: no verdict's, as no verdict brought it. */
+const CATCH_UP_KEY = -1;
+
 export default function App() {
   useForceUpdate();
   const {
@@ -154,9 +167,12 @@ export default function App() {
   const endImprovement = useCallback(() => setImprovement(null), []);
   const [climb, setClimb] = useState<StreakClimb | null>(null);
   const endClimb = useCallback(() => setClimb(null), []);
-  const [unlocked, setUnlocked] = useState<{ key: number; achievements: Achievement[] } | null>(
-    null,
-  );
+  const [unlocked, setUnlocked] = useState<{
+    key: number;
+    achievements: Achievement[];
+    /** How many there are in all, when the card names only a few. */
+    total?: number;
+  } | null>(null);
   const endUnlocked = useCallback(() => setUnlocked(null), []);
   const sound = useSound();
   // Half of players never see the word of the day; the draw is the first
@@ -257,14 +273,34 @@ export default function App() {
 
   // An achievement earned by a submission (see game/achievements.ts), announced
   // with its own card rather than left for the Stats page to turn up. The
-  // badges held as the page opened are the baseline, so a player's earlier
-  // badges -- earned before this card existed, or kept by the Stats page --
-  // are never announced. Every verdict is a chance, a rejection included, as
-  // the day's first submission banks the streak either way. A second badge
-  // while the card is up joins it rather than waiting its turn.
+  // badges held as the page opened are the baseline for that. Every verdict is
+  // a chance, a rejection included, as the day's first submission banks the
+  // streak either way. A second badge while the card is up joins it rather
+  // than waiting its turn.
+  //
+  // Badges held as the page opened that no card has ever named -- earned
+  // before achievements existed, or before this card did -- are welcomed once,
+  // on the same card: the best few by name, and the rest left to the Stats
+  // page.
+  //
+  // Both are kept from the players the header celebrations test hides the
+  // cards from, but are never the thing that draws a player into it: every
+  // player earns a badge on their first word, which would enrol them all on
+  // day one. A badge kept from them is not marked announced, so it is welcomed
+  // if the cards ever come back.
   const earnedAchievements = useRef<Set<string> | null>(null);
   useEffect(() => {
-    earnedAchievements.current = earnedIds(syncAchievements(streak));
+    const statuses = syncAchievements(streak);
+    earnedAchievements.current = earnedIds(statuses);
+    const backlog = achievementsToCatchUp(announcedAchievements(), statuses);
+    const arm = forcedHeaderCelebrationsVariant() ?? drawnHeaderCelebrationsArm();
+    if (backlog.length === 0 || arm === "hidden") return;
+    markAchievementsAnnounced(backlog.map((achievement) => achievement.id));
+    setUnlocked({
+      key: CATCH_UP_KEY,
+      achievements: backlog.slice(0, CATCH_UP_SHOWN),
+      total: backlog.length,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the baseline, once
   }, []);
   useEffect(() => {
@@ -273,14 +309,13 @@ export default function App() {
     const statuses = syncAchievements(streak);
     earnedAchievements.current = earnedIds(statuses);
     const fresh = newlyEarned(before, statuses);
-    // Kept from the players the header celebrations test hides the cards from,
-    // but never the thing that draws a player into it: every player earns a
-    // badge on their first word, which would enrol them all on day one.
     const arm = forcedHeaderCelebrationsVariant() ?? drawnHeaderCelebrationsArm();
     if (fresh.length === 0 || arm === "hidden") return;
+    markAchievementsAnnounced(fresh.map((achievement) => achievement.id));
+    // A welcome still up gives way: today's badge is the news.
     setUnlocked((current) => ({
       key: feedback.key,
-      achievements: [...(current?.achievements ?? []), ...fresh],
+      achievements: [...(current && !current.total ? current.achievements : []), ...fresh],
     }));
     // Read alongside the verdict that earned it: the word, the streak and the
     // record are all written before the verdict is shown.
@@ -509,6 +544,7 @@ export default function App() {
           <AchievementCelebration
             key={unlocked.key}
             achievements={unlocked.achievements}
+            total={unlocked.total}
             onDone={endUnlocked}
           />
         )

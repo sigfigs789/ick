@@ -13,12 +13,19 @@ const CELEBRATION_MS = 7000;
  * centrepiece and gold confetti falling around it. It floats over the puzzle
  * and goes by itself or on a tap. A word that earns several at once (a first
  * word that is also a Legend) lists them all on the one card.
+ *
+ * The same card welcomes a returning player's badges that were never announced
+ * (see `achievementsToCatchUp`): `total` is how many there are, of which
+ * `achievements` is the few worth naming, and the rest are left to the Stats
+ * page.
  */
 export function AchievementCelebration({
   achievements,
+  total = achievements.length,
   onDone,
 }: {
   achievements: readonly Achievement[];
+  total?: number;
   onDone: () => void;
 }) {
   useEffect(() => {
@@ -29,6 +36,7 @@ export function AchievementCelebration({
   if (achievements.length === 0) return null;
   const [only] = achievements;
   const several = achievements.length > 1;
+  const more = total - achievements.length;
   return (
     <>
       <ConfettiBurst grand />
@@ -38,7 +46,7 @@ export function AchievementCelebration({
             ×
           </span>
           <span className="achievement-unlocked__eyebrow">
-            {several ? `${achievements.length} achievements unlocked` : "Achievement unlocked"}
+            {total > 1 ? `${total} achievements unlocked` : "Achievement unlocked"}
           </span>
           {several ? (
             <span className="achievement-unlocked__list">
@@ -62,7 +70,11 @@ export function AchievementCelebration({
             </>
           )}
           <span className="achievement-unlocked__footnote">
-            {several ? "They're on your Stats page." : "It's on your Stats page."}
+            {more > 0
+              ? `And ${more} more. See them all on your Stats page.`
+              : several
+                ? "They're on your Stats page."
+                : "It's on your Stats page."}
           </span>
         </button>
       </div>

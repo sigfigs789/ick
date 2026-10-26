@@ -23,7 +23,10 @@ import { checkStreakClimb, type StreakClimb } from '../../../src/game/streakClim
 import { beatBestToday } from '../../../src/game/newBest';
 import { claimHeaderCelebration } from '../../../src/game/headerCelebrations';
 import {
+  achievementsToCatchUp,
+  announcedAchievements,
   earnedIds,
+  markAchievementsAnnounced,
   newlyEarned,
   syncAchievements,
   type Achievement,
@@ -86,6 +89,10 @@ interface Props {
  * that word's write to land. The website's figure (src/App.tsx).
  */
 const STREAK_CHECK_DELAY_MS = 1500;
+/** The most badges the welcome for a returning player names. */
+const CATCH_UP_SHOWN = 3;
+/** The welcome's card key: no verdict's, as no verdict brought it. */
+const CATCH_UP_KEY = -1;
 
 /**
  * Whether a header celebration due now may show: its group has not had its
@@ -147,9 +154,12 @@ export function PlayScreen({ covered = false }: Props) {
   const endClimb = useCallback(() => setClimb(null), []);
   const [newBest, setNewBest] = useState<{ days: number; best: number } | null>(null);
   const endNewBest = useCallback(() => setNewBest(null), []);
-  const [unlocked, setUnlocked] = useState<{ key: number; achievements: Achievement[] } | null>(
-    null,
-  );
+  const [unlocked, setUnlocked] = useState<{
+    key: number;
+    achievements: Achievement[];
+    /** How many there are in all, when the card names only a few. */
+    total?: number;
+  } | null>(null);
   const endUnlocked = useCallback(() => setUnlocked(null), []);
 
   // The share panel stays out of the way until the Share beside the guess
@@ -224,9 +234,22 @@ export function PlayScreen({ covered = false }: Props) {
   // way. A second badge while the card is up joins it. The website keeps this
   // from the hidden arm of its header celebrations test; this build always
   // takes the shown arm.
+  //
+  // Badges held as the screen opened that no card has ever named -- earned
+  // before achievements existed, or before this card did -- are welcomed once,
+  // on the same card: the best few by name, and the rest left to Stats.
   const earnedAchievements = useRef<Set<string> | null>(null);
   useEffect(() => {
-    earnedAchievements.current = earnedIds(syncAchievements(streak));
+    const statuses = syncAchievements(streak);
+    earnedAchievements.current = earnedIds(statuses);
+    const backlog = achievementsToCatchUp(announcedAchievements(), statuses);
+    if (backlog.length === 0) return;
+    markAchievementsAnnounced(backlog.map((achievement) => achievement.id));
+    setUnlocked({
+      key: CATCH_UP_KEY,
+      achievements: backlog.slice(0, CATCH_UP_SHOWN),
+      total: backlog.length,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the baseline, once
   }, []);
   useEffect(() => {
@@ -236,9 +259,11 @@ export function PlayScreen({ covered = false }: Props) {
     earnedAchievements.current = earnedIds(statuses);
     const fresh = newlyEarned(before, statuses);
     if (fresh.length === 0) return;
+    markAchievementsAnnounced(fresh.map((achievement) => achievement.id));
+    // A welcome still up gives way: today's badge is the news.
     setUnlocked((current) => ({
       key: feedback.key,
-      achievements: [...(current?.achievements ?? []), ...fresh],
+      achievements: [...(current && !current.total ? current.achievements : []), ...fresh],
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedback]);
@@ -550,6 +575,7 @@ export function PlayScreen({ covered = false }: Props) {
             <AchievementCelebration
               key={unlocked.key}
               achievements={unlocked.achievements}
+              total={unlocked.total}
               onDone={endUnlocked}
             />
           )
