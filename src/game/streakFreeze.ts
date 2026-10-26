@@ -62,6 +62,9 @@ export const REST_DAY_START = "2026-10-31";
 /** Puzzles played on their own day in a week, before a weekend day, that earn it off. */
 export const REST_DAY_PLAYS = 3;
 
+/** What a lazy weekend is, said the same wherever it's explained (the 😴 pie, the come-back line). */
+export const LAZY_WEEKEND_RULE = "Play any 3 days this week and your streak is paused through the weekend.";
+
 const SUNDAY = 0;
 const SATURDAY = 6;
 

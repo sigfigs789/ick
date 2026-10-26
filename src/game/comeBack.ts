@@ -11,17 +11,13 @@
 
 import type { AchievementStatus } from "./achievements";
 import { daysSinceEpoch } from "./date";
-import { freezeCap, freezeRules, restDayProgress } from "./streakFreeze";
+import { freezeCap, freezeRules, LAZY_WEEKEND_RULE, restDayProgress } from "./streakFreeze";
 import type { StreakState } from "./types";
 
 /** Whether a streak reaching `days` played days earns a saved freeze (see streakFreeze.earnFreeze). */
 function earnsFreezeOn(days: number): boolean {
   return days === 3 || (days > 0 && days % 7 === 0);
 }
-
-/** What a lazy weekend is, for the line promising one. */
-const LAZY_WEEKEND_RULE =
-  "Play any 3 days by Friday and your streak is paused through the weekend: skipping Saturday and Sunday can't break it.";
 
 /** What a lazy Sunday is, for the line promising one once Friday is too late. */
 const LAZY_SUNDAY_RULE =

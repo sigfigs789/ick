@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { REST_DAY_PLAYS } from "../game/streakFreeze";
+import { LAZY_WEEKEND_RULE, REST_DAY_PLAYS } from "../game/streakFreeze";
 
 /** What the 😴 means on a day of the weekend itself, for its hover text and popup. */
 const REST_DAY_RULE = "3 days played, so the weekend's all yours: skipping today can't break the streak.";
@@ -19,7 +19,7 @@ function weekdayRule(played: number, reachable: boolean, sundayOnly: boolean): s
   }
   return sundayOnly
     ? `Play 3 days by Saturday and snooze through Sunday: skipping it can't break your streak. ${played} of 3 so far.`
-    : `Play any 3 days this week and your streak is paused through the weekend. ${played} of 3 days played so far.`;
+    : `${LAZY_WEEKEND_RULE} ${played} of 3 days played so far.`;
 }
 
 /** A pie a third full for each day played, drawn in the text colour. */
