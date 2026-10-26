@@ -557,13 +557,57 @@ describe("celebrating an achievement", () => {
     expect(screen.queryByText("Achievement unlocked")).toBeNull();
   });
 
-  it("never announces a badge already held as the page opened", () => {
+  it("never announces a badge already announced, as the page opened or after", () => {
     bank("2026-08-12", "strong");
+    localStorage.setItem("ick:achievements-announced", JSON.stringify(["first-word"]));
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
     const { rerender } = render(<App />);
+    expect(screen.queryByText("Achievement unlocked")).toBeNull();
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ feedback: accepted(1) }) as ReturnType<typeof useDailyPuzzle>);
     rerender(<App />);
     expect(screen.queryByText("Achievement unlocked")).toBeNull();
+  });
+
+  it("welcomes a returning player's unannounced badges once, naming the best three", () => {
+    const words = ["strong", "strange", "street", "strap", "strict", "string", "strive", "stroke", "struck", "strum"];
+    words.forEach((word, i) => bank(`2026-08-${String(i + 1).padStart(2, "0")}`, word));
+    localStorage.setItem(
+      "ick:progress:2026-08-11",
+      JSON.stringify({
+        date: "2026-08-11",
+        drop: "str",
+        acceptedWords: [{ word: "strobilation", rarity: "Legend", zipf: 1 }],
+        rejectedAttempts: [],
+        completed: false,
+        firstWordAt: "2026-08-11T12:00:00",
+      })
+    );
+    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
+    const { unmount } = render(<App />);
+    const earned = JSON.parse(localStorage.getItem("ick:achievements-announced")!) as string[];
+    expect(earned.length).toBeGreaterThan(3);
+    expect(screen.getByText(`${earned.length} achievements unlocked`)).toBeInTheDocument();
+    // The rarest first, and only three by name.
+    expect(screen.getByText("Living legend")).toBeInTheDocument();
+    expect(document.querySelectorAll(".achievement-unlocked__item")).toHaveLength(3);
+    expect(
+      screen.getByText(`And ${earned.length - 3} more. See them all on your Stats page.`)
+    ).toBeInTheDocument();
+    expect(achievement).toHaveBeenCalledTimes(1);
+
+    // Once: the next open has nothing to welcome.
+    unmount();
+    render(<App />);
+    expect(screen.queryByText(/achievements? unlocked/i)).toBeNull();
+  });
+
+  it("keeps the welcome from the players the header celebrations test hides the cards from", () => {
+    localStorage.setItem("ick:header-celebrations-test", "hidden");
+    bank("2026-08-12", "strong");
+    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
+    render(<App />);
+    expect(screen.queryByText("Achievement unlocked")).toBeNull();
+    expect(localStorage.getItem("ick:achievements-announced")).toBeNull();
   });
 
   it("stays away from the players the header celebrations test hides the cards from", () => {

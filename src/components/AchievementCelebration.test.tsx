@@ -28,6 +28,18 @@ describe("AchievementCelebration", () => {
     expect(screen.getByText("Living legend")).toBeInTheDocument();
   });
 
+  it("counts the badges it does not name, and points to the Stats page for them", () => {
+    render(
+      <AchievementCelebration
+        achievements={[byId("first-legend"), byId("streak-7"), byId("mythic-10")]}
+        total={8}
+        onDone={() => {}}
+      />
+    );
+    expect(screen.getByText("8 achievements unlocked")).toBeInTheDocument();
+    expect(screen.getByText("And 5 more. See them all on your Stats page.")).toBeInTheDocument();
+  });
+
   it("goes by itself after a while", () => {
     vi.useFakeTimers();
     const onDone = vi.fn();

@@ -23,24 +23,31 @@ const POP = Easing.bezier(0.2, 1.6, 0.4, 1);
  * and goes by itself or on a tap. A word that earns several at once (a first
  * word that is also a Legend) lists them all on the one card.
  *
+ * The same card welcomes a returning player's badges that were never announced
+ * (see `achievementsToCatchUp`): `total` is how many there are, of which
+ * `achievements` is the few worth naming, and the rest are left to Stats.
+ *
  * The website's turning rays and the sheen across the card are CSS gradients
  * React Native does not draw; the badge's pop is kept, which is the part that
  * says something was handed over.
  */
 export function AchievementCelebration({
   achievements,
+  total = achievements.length,
   onDone,
 }: {
   achievements: readonly Achievement[];
+  total?: number;
   onDone: () => void;
 }) {
   const theme = useTheme();
   if (achievements.length === 0) return null;
   const [only] = achievements;
   const several = achievements.length > 1;
+  const more = total - achievements.length;
   const eyebrow = (
     <Text style={[styles.eyebrow, { color: theme.dark ? 'hsl(265, 90%, 78%)' : 'hsl(265, 72%, 52%)' }]}>
-      {several ? `${achievements.length} achievements unlocked` : 'Achievement unlocked'}
+      {total > 1 ? `${total} achievements unlocked` : 'Achievement unlocked'}
     </Text>
   );
   return (
@@ -72,7 +79,13 @@ export function AchievementCelebration({
         from="below"
         enterMs={520}
         title={several ? undefined : only.title}
-        footnote={several ? "They're on your Stats page." : "It's on your Stats page."}
+        footnote={
+          more > 0
+            ? `And ${more} more. See them all on your Stats page.`
+            : several
+              ? "They're on your Stats page."
+              : "It's on your Stats page."
+        }
         onDone={onDone}
       >
         {several ? undefined : only.description}

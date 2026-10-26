@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ACHIEVEMENTS,
   achievementStatuses,
+  achievementsToCatchUp,
+  announcedAchievements,
   earnedIds,
+  markAchievementsAnnounced,
   newlyEarned,
   syncAchievements,
   type AchievementRecord,
@@ -251,5 +254,44 @@ describe("newlyEarned", () => {
   it("lists nothing when nothing changed", () => {
     const statuses = achievementStatuses(record, {}, TODAY);
     expect(newlyEarned(earnedIds(statuses), statuses)).toEqual([]);
+  });
+});
+
+describe("achievementsToCatchUp", () => {
+  const record: AchievementRecord = {
+    history: [
+      day("2026-10-01", [word("Common")]),
+      day("2026-10-02", [word("Rare")]),
+      day("2026-10-03", [word("Mythic"), word("Legend")]),
+    ],
+    onItsDay: [],
+    streak: { currentStreak: 3, longestStreak: 7, lastCompletedDate: "2026-10-03" },
+    suggestions: [{ word: "inkle", suggestedOn: "2026-10-02" }],
+  };
+
+  beforeEach(() => {
+    localStorage.clear();
+    setPlayerMessages(true);
+  });
+
+  it("puts the most impressive first, and leaves out the suggestion box's", () => {
+    const ids = achievementsToCatchUp(new Set(), achievementStatuses(record, {}, TODAY)).map((a) => a.id);
+    expect(ids.slice(0, 3)).toEqual(["double-mythic", "first-legend", "first-mythic"]);
+    expect(ids.indexOf("streak-7")).toBeLessThan(ids.indexOf("streak-3"));
+    expect(ids.indexOf("streak-3")).toBeLessThan(ids.indexOf("straight-in"));
+    expect(ids[ids.length - 1]).toBe("first-word");
+    expect(ids).not.toContain("word-suggested");
+  });
+
+  it("leaves out what has been announced", () => {
+    markAchievementsAnnounced(["first-legend", "first-word"]);
+    markAchievementsAnnounced(["first-word"]);
+    expect([...announcedAchievements()].sort()).toEqual(["first-legend", "first-word"]);
+    const ids = achievementsToCatchUp(announcedAchievements(), achievementStatuses(record, {}, TODAY)).map(
+      (a) => a.id
+    );
+    expect(ids).not.toContain("first-legend");
+    expect(ids).not.toContain("first-word");
+    expect(ids).toContain("first-mythic");
   });
 });
