@@ -60,11 +60,11 @@ export function drawnPlayTabArm(): PlayTabVariant | null {
 /**
  * An arm forced with `?play-tab=shown` (or `=hidden`), for seeing either
  * without waiting on a draw; a hand-picked tester (see testers.ts) is forced
- * to shown. A forced arm is never stored or reported, so it cannot leak into
+ * to hidden. A forced arm is never stored or reported, so it cannot leak into
  * the split.
  */
 export function forcedPlayTabVariant(search: string = window.location.search): PlayTabVariant | null {
   const value = new URLSearchParams(search).get("play-tab");
   if (isVariant(value)) return value;
-  return isTester() ? "shown" : null;
+  return isTester() ? "hidden" : null;
 }

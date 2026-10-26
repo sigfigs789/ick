@@ -194,7 +194,7 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
                 One player in five gets a Play icon, the way back to the puzzle, first among the header&rsquo;s page
                 icons; the rest have the wordmark alone, as before. Each is drawn once, on their first load. Try either
                 arm with <code>?play-tab=shown</code> or <code>=hidden</code>; a forced arm, or a tester (forced to
-                shown), is not counted.
+                hidden), is not counted.
               </>
             }
           />
