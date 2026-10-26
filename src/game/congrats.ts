@@ -130,6 +130,20 @@ export function pendingCongratsSpots(date: string = todayDateString()): Congrats
   );
 }
 
+/**
+ * How many players a closed board needs before its winner is named.
+ *
+ * Freeform's week is the thin one: a board of two or three is not a field
+ * anybody beat, and "Congrats" over it congratulates turning up. So a Freeform
+ * week names nobody under five. Every other board needs only somebody on it,
+ * since a window nobody scored in has no winner either way.
+ */
+export const FREEFORM_WEEK_MIN_PLAYERS = 5;
+
+export function congratsMinPlayers(spot: CongratsSpot): number {
+  return spot.mode === "freeform" && spot.window === "week" ? FREEFORM_WEEK_MIN_PLAYERS : 1;
+}
+
 /** One stop on a bubble's wander, as shares of the room it has. */
 export interface WanderStop {
   /** -1 is the far left the bubble fits at, 1 the far right, 0 the middle. */
