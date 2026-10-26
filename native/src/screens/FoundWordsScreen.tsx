@@ -176,7 +176,7 @@ export function FoundWordsScreen({ onPlay }: { onPlay?: () => void } = {}) {
         onRefresh={() => void refreshWords({ fresh: true })}
       >
         <PageNote>
-          Every word anybody turned up for this drop that the mode you’re in allows, scored by that mode.
+          Every word anybody turned up for this drop
         </PageNote>
       </PageHead>
 

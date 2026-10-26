@@ -19,30 +19,49 @@ export function cardShadow(dark: boolean): string {
 interface Props {
   /** The ring's colour, as an `hsl(h, s%, l%)` triple: "140, 58%, 42%". */
   accent: string;
-  icon: string;
+  /** The emoji over the title; `centerpiece` replaces it (the achievement's medal). */
+  icon?: string;
+  centerpiece?: ReactNode;
+  /** A small line above everything else ("Achievement unlocked"). */
+  eyebrow?: ReactNode;
   /** The icon hops twice once the card has landed (the improving average and the climb). */
   hop?: boolean;
   /** Which way the card arrives from: up from below, or down from above. */
   from: 'below' | 'above';
   /** How long the entrance takes, in ms. */
   enterMs: number;
-  title: string;
+  title?: string;
   /** The body line, already styled; see `Highlight` and `Tally`. */
-  children: ReactNode;
+  children?: ReactNode;
+  /** A muted line under the body ("It's on your Stats page."). */
+  footnote?: string;
   onDone: () => void;
 }
 
 /**
- * The card the website floats over a finished puzzle for a perfect month, an
- * improving average and a climb up the streak board (`.perfect-month` and
- * `.improvement` in index.css): a ringed card near the top of the screen, which
- * goes by itself after seven seconds or on a tap.
+ * The card the website floats over the puzzle for its header celebrations --
+ * a perfect month, a longest streak yet, an improving average, a climb up the
+ * streak board, yesterday's best word and an achievement unlocked
+ * (`.perfect-month` and `.improvement` in index.css): a ringed card near the
+ * top of the screen, which goes by itself after seven seconds or on a tap.
  *
  * Floats over the puzzle rather than taking it over: the player may be
  * mid-guess, and a modal they had to close before their next word would be a
  * celebration in the way.
  */
-export function CelebrationCard({ accent, icon, hop = false, from, enterMs, title, children, onDone }: Props) {
+export function CelebrationCard({
+  accent,
+  icon,
+  centerpiece,
+  eyebrow,
+  hop = false,
+  from,
+  enterMs,
+  title,
+  children,
+  footnote,
+  onDone,
+}: Props) {
   const theme = useTheme();
   const reduced = useReduceMotion();
   const { width } = useWindowDimensions();
@@ -94,6 +113,27 @@ export function CelebrationCard({ accent, icon, hop = false, from, enterMs, titl
         ],
       };
 
+  const iconNode =
+    icon === undefined ? null : (
+      <Animated.Text
+        style={[
+          styles.icon,
+          hop &&
+            !reduced && {
+              transform: [
+                { translateY: bounce.interpolate({ inputRange: [0, 1], outputRange: [0, -6.4] }) },
+                { rotate: bounce.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-8deg'] }) },
+                { scale: bounce.interpolate({ inputRange: [0, 1], outputRange: [1, 1.15] }) },
+              ],
+            },
+        ]}
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+      >
+        {icon}
+      </Animated.Text>
+    );
+
   return (
     <View style={styles.layer} pointerEvents="box-none">
       <Animated.View style={[{ width: Math.min(352, width - 32) }, motion]}>
@@ -119,25 +159,15 @@ export function CelebrationCard({ accent, icon, hop = false, from, enterMs, titl
           >
             ×
           </Text>
-          <Animated.Text
-            style={[
-              styles.icon,
-              hop &&
-                !reduced && {
-                  transform: [
-                    { translateY: bounce.interpolate({ inputRange: [0, 1], outputRange: [0, -6.4] }) },
-                    { rotate: bounce.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-8deg'] }) },
-                    { scale: bounce.interpolate({ inputRange: [0, 1], outputRange: [1, 1.15] }) },
-                  ],
-                },
-            ]}
-            accessibilityElementsHidden
-            importantForAccessibility="no"
-          >
-            {icon}
-          </Animated.Text>
-          <Text style={[styles.title, { color: theme.fg }]}>{title}</Text>
-          <Text style={[styles.body, { color: theme.fgMuted }]}>{children}</Text>
+          {eyebrow}
+          {centerpiece ?? iconNode}
+          {title !== undefined && <Text style={[styles.title, { color: theme.fg }]}>{title}</Text>}
+          {children !== undefined && (
+            <Text style={[styles.body, { color: theme.fgMuted }]}>{children}</Text>
+          )}
+          {footnote !== undefined && (
+            <Text style={[styles.footnote, { color: theme.fgMuted }]}>{footnote}</Text>
+          )}
         </Pressable>
       </Animated.View>
     </View>
@@ -194,6 +224,11 @@ const styles = StyleSheet.create({
   body: {
     fontSize: 15.2,
     lineHeight: 21,
+    textAlign: 'center',
+  },
+  footnote: {
+    marginTop: 3.2,
+    fontSize: 12.8,
     textAlign: 'center',
   },
   highlight: {

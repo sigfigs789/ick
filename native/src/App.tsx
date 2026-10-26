@@ -1,12 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ComponentType } from 'react';
 import { Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { syncHistoryWhenReady } from '../../src/game/leaderboard';
 import { hasJoined, joinBoard } from '../../src/game/player';
-import { playedPuzzleCount, PROGRESS_SAVED_EVENT } from '../../src/game/storage';
+import { takesPlayerMessages } from '../../src/game/playerMessages';
 import { hasSeen, markSeen } from '../../src/game/whatsNew';
 import { ChatButton, ChatSheet, useChatUnread } from './components/ChatSheet';
+import { BookIcon, PlayIcon, StatsIcon, TrophyIcon } from './components/HeaderIcons';
+import { HeaderMenu, type MenuItem } from './components/HeaderMenu';
 import { InstructionsSheet } from './components/InstructionsSheet';
+import { MenuSheet, type MenuSheetKind } from './components/MenuSheet';
 import { UpdateBanner } from './components/UpdateBanner';
 import { signalTap } from './host/feedback';
 import { useAppState } from './hooks/useAppState';
@@ -21,25 +24,31 @@ import { useTheme } from './theme/useTheme';
 type Route = 'game' | 'leaderboard' | 'found-words' | 'stats';
 
 /**
- * The pages, in the order a player meets them: the puzzle, then the two
- * things you go and look at once you have played it.
+ * The pages, as icons on the one bar beside the wordmark, in the website's
+ * order (src/components/AppHeader.tsx): the puzzle, a book for the words
+ * players found, a trophy for the boards, and bars for the player's own
+ * numbers, right beside the "?".
  *
- * Labels, no glyphs -- the website's reasoning holds here and then some. A
- * trophy is guessable and a scroll is not, and neither says which of the two
- * lists of words you are about to get: the boards rank players and the feed
- * collects words, which is exactly the distinction an icon cannot draw.
+ * Icons rather than the row of labelled tabs this header used to carry under
+ * the wordmark: one bar is the shape every daily word game's header has
+ * settled on, and it gives the puzzle back a row. Each keeps its page's name as
+ * its accessible name, so a screen reader still gets the word the glyph stands
+ * for.
+ *
+ * The website draws Play for a share of its players only, as a test; this build
+ * has always had a Play tab and keeps it -- with no wordmark link to fall back
+ * on, it is the way back to the puzzle.
  */
-const TABS: { route: Route; label: string }[] = [
-  { route: 'game', label: 'Play' },
+const TABS: { route: Route; label: string; Icon: ComponentType<{ color: string }> }[] = [
+  { route: 'game', label: 'Play', Icon: PlayIcon },
   // "Words found" rather than "Today's finds": it opens on today but stepping
   // back a day is a thing it offers, and a tab that promises today then shows
   // Tuesday has misnamed itself.
-  { route: 'found-words', label: 'Words found' },
-  // The player's own numbers, beside the words they found -- only once there
-  // are any, as on the website: a tab that opens on zeros is one more thing on
-  // a first run's header to read past.
-  { route: 'stats', label: 'Stats' },
-  { route: 'leaderboard', label: 'Leaderboards' },
+  { route: 'found-words', label: 'Words found', Icon: BookIcon },
+  { route: 'leaderboard', label: 'Leaderboards', Icon: TrophyIcon },
+  // Offered from the first visit, as on the website: before a word is banked
+  // the page says so and points at the puzzle.
+  { route: 'stats', label: 'Stats', Icon: StatsIcon },
 ];
 
 /**
@@ -65,7 +74,17 @@ const SYNC_STALE_MS = 5 * 60_000;
  * reached by typing a URL with a key in it, and there is no URL to type.
  */
 export function App() {
+  return (
+    <SafeAreaProvider>
+      <Shell />
+    </SafeAreaProvider>
+  );
+}
+
+/** Everything inside the provider, so the "?" menu can read the safe area. */
+function Shell() {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const [route, setRoute] = useState<Route>('game');
   // Whether this build has fallen below the leaderboard's floor with no
   // over-the-air update to close the gap -- see useUpdateCheck and UpdateBanner.
@@ -80,17 +99,24 @@ export function App() {
   const [showChat, setShowChat] = useState(false);
   const chatUnread = useChatUnread(showChat);
 
-  // Whether the Stats tab is up: from the first saved word, which the game
-  // announces on `window` (see src/host/events.ts).
-  const [hasPlayed, setHasPlayed] = useState(() => playedPuzzleCount() > 0);
-  useEffect(() => {
-    if (hasPlayed) return;
-    const check = () => {
-      if (playedPuzzleCount() > 0) setHasPlayed(true);
-    };
-    window.addEventListener(PROGRESS_SAVED_EVENT, check);
-    return () => window.removeEventListener(PROGRESS_SAVED_EVENT, check);
-  }, [hasPlayed]);
+  // The "?" menu, and the Feedback or Suggest a word sheet it opened, if any.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuSheet, setMenuSheet] = useState<MenuSheetKind | null>(null);
+  // Where the header ends, which the menu hangs from.
+  const [headerHeight, setHeaderHeight] = useState(0);
+
+  const menuItems: MenuItem[] = [
+    { label: 'How to play', onPress: () => setShowInstructions(true) },
+    // Only where the build takes messages, as on the website: a box that
+    // answers "Thanks!" to a note that goes nowhere is the app lying.
+    ...(takesPlayerMessages()
+      ? [
+          { label: 'Suggest a word', onPress: () => setMenuSheet('suggest-word') },
+          { label: 'Feedback', onPress: () => setMenuSheet('feedback') },
+        ]
+      : []),
+  ];
+
   const backToPlay = () => setRoute('game');
 
   /*
@@ -141,68 +167,50 @@ export function App() {
   });
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={[styles.fill, { backgroundColor: theme.bg }]} edges={['top', 'left', 'right']}>
-        <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} />
+    <SafeAreaView style={[styles.fill, { backgroundColor: theme.bg }]} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} />
 
-        <View style={[styles.header, { borderBottomColor: theme.border }]}>
-          <View style={styles.bar}>
-            {/* The wordmark alone. The website and the Reddit build both wear a
-                "beta" chip beside it, which is honest -- the game really is
-                changing under players week to week, and saying so once in the
-                chrome is cheaper than a banner.
+      <View
+        style={[styles.header, { borderBottomColor: theme.border }]}
+        onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
+      >
+        {/* The wordmark alone. The website and the Reddit build both wear a
+            "beta" chip -- beside the wordmark once, on the Feedback sheet's
+            title now -- which is honest: the game really is changing under
+            players week to week, and saying so once is cheaper than a banner.
 
-                This build cannot. App Store Review Guideline 2.2 rules out
-                demos, betas and trial versions, and a label in the app's own
-                header saying "beta" is the first thing a reviewer reads. The
-                word is the risk, not the fact behind it: nothing about how
-                often the game changes is different here, and the rules sheet
-                still opens itself on a first run.
+            This build cannot, anywhere. App Store Review Guideline 2.2 rules
+            out demos, betas and trial versions, and a label in the app saying
+            "beta" is the first thing a reviewer reads. The word is the risk,
+            not the fact behind it: nothing about how often the game changes
+            is different here, and the rules sheet still opens itself on a
+            first run.
 
-                Dropping it in the shared header instead would have taken the
-                chip off the website too, where it is doing its job. */}
-            {/* Two words, and only one of them is the name of anything. "Word"
-                is what every game in this category is called; "Ink" is the half
-                that makes it this one, so it wears the Mythic red -- the tier
-                colour that is the same value in both themes, which is why it
-                can be set here without a light and a dark spelling.
+            Dropping it from the shared code instead would have taken the chip
+            off the website too, where it is doing its job. */}
+        {/* Two words, and only one of them is the name of anything. "Word" is
+            what every game in this category is called; "Ink" is the half that
+            makes it this one, so it wears the Mythic red -- the tier colour
+            that is the same value in both themes, which is why it can be set
+            here without a light and a dark spelling.
 
-                One Text with a nested one rather than a row of two: a wordmark
-                that wraps or spaces oddly is a broken name, and nesting keeps
-                the pair kerned and wrapped as the single word it is. */}
-            <Text style={[styles.wordmark, { color: theme.fg }]} accessibilityRole="header">
-              Word
-              <Text style={{ color: theme.rarity.Mythic.dot }}>Ink</Text>
-            </Text>
+            One Text with a nested one rather than a row of two: a wordmark
+            that wraps or spaces oddly is a broken name, and nesting keeps the
+            pair kerned as the single word it is. Shrinks rather than wraps
+            when the bar is short of room. */}
+        <Text
+          style={[styles.wordmark, { color: theme.fg }]}
+          accessibilityRole="header"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >
+          Word
+          <Text style={{ color: theme.rarity.Mythic.dot }}>Ink</Text>
+        </Text>
 
-            <View style={styles.actions}>
-              <ChatButton
-                unread={chatUnread}
-                onPress={() => {
-                  signalTap();
-                  setShowChat(true);
-                }}
-              />
-              <Pressable
-                onPress={() => {
-                  signalTap();
-                  setShowInstructions(true);
-                }}
-                accessibilityRole="button"
-                accessibilityLabel="How to play"
-                hitSlop={space.md}
-                style={({ pressed }) => [
-                  styles.help,
-                  { backgroundColor: theme.bgInset, opacity: pressed ? 0.6 : 1 },
-                ]}
-              >
-                <Text style={[styles.helpGlyph, { color: theme.fg }]}>?</Text>
-              </Pressable>
-            </View>
-          </View>
-
+        <View style={styles.actions}>
           <View style={styles.nav} accessibilityRole="tablist">
-            {TABS.filter((tab) => tab.route !== 'stats' || hasPlayed || route === 'stats').map((tab) => {
+            {TABS.map((tab) => {
               const current = tab.route === route;
               return (
                 <Pressable
@@ -213,52 +221,86 @@ export function App() {
                     setRoute(tab.route);
                   }}
                   accessibilityRole="tab"
+                  accessibilityLabel={tab.label}
                   accessibilityState={{ selected: current }}
-                  style={[
-                    styles.navItem,
-                    current && { borderBottomColor: theme.accent, borderBottomWidth: 2 },
-                  ]}
+                  hitSlop={2}
+                  style={({ pressed }) => [styles.iconButton, { opacity: pressed ? 0.6 : 1 }]}
                 >
-                  <Text
-                    style={[
-                      styles.navLabel,
-                      { color: current ? theme.fg : theme.fgMuted, fontWeight: current ? '800' : '600' },
-                    ]}
-                  >
-                    {tab.label}
-                  </Text>
+                  {/* The current page's disc is drawn inside the button
+                      rather than to its edge, as on the website: it marks
+                      the page without being the heaviest thing on the bar,
+                      and the button keeps its full-size target. */}
+                  <View style={[styles.iconDisc, current && { backgroundColor: theme.fg }]}>
+                    <tab.Icon color={current ? theme.bg : theme.fgMuted} />
+                  </View>
                 </Pressable>
               );
             })}
           </View>
+
+          <ChatButton
+            unread={chatUnread}
+            onPress={() => {
+              signalTap();
+              setShowChat(true);
+            }}
+          />
+          <Pressable
+            onPress={() => {
+              signalTap();
+              setMenuOpen(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Help and settings"
+            accessibilityState={{ expanded: menuOpen }}
+            hitSlop={2}
+            style={({ pressed }) => [
+              styles.iconButton,
+              {
+                backgroundColor: menuOpen ? theme.bgInset : 'transparent',
+                opacity: pressed ? 0.6 : 1,
+              },
+            ]}
+          >
+            <Text style={[styles.helpGlyph, { color: menuOpen ? theme.fg : theme.fgMuted }]}>?</Text>
+          </Pressable>
         </View>
+      </View>
 
-        <View style={styles.fill}>
-          {behind && route !== 'found-words' && <UpdateBanner />}
-          {route === 'leaderboard' ? (
-            <LeaderboardScreen onPlay={backToPlay} />
-          ) : route === 'found-words' ? (
-            <FoundWordsScreen onPlay={backToPlay} />
-          ) : route === 'stats' ? (
-            <StatsScreen onPlay={backToPlay} />
-          ) : (
-            <PlayScreen covered={showInstructions || showChat} />
-          )}
-        </View>
+      <View style={styles.fill}>
+        {behind && route !== 'found-words' && <UpdateBanner />}
+        {route === 'leaderboard' ? (
+          <LeaderboardScreen onPlay={backToPlay} />
+        ) : route === 'found-words' ? (
+          <FoundWordsScreen onPlay={backToPlay} />
+        ) : route === 'stats' ? (
+          <StatsScreen onPlay={backToPlay} />
+        ) : (
+          <PlayScreen covered={showInstructions || showChat || menuOpen || menuSheet !== null} />
+        )}
+      </View>
 
-        <ChatSheet open={showChat} onClose={() => setShowChat(false)} />
+      <ChatSheet open={showChat} onClose={() => setShowChat(false)} />
 
-        <InstructionsSheet
-          open={showInstructions}
-          onClose={() => {
-            // Opened by hand or opened for them, either way they have now met
-            // the rules: retire the auto-open for good.
-            markSeen('instructions');
-            setShowInstructions(false);
-          }}
-        />
-      </SafeAreaView>
-    </SafeAreaProvider>
+      <HeaderMenu
+        open={menuOpen}
+        top={insets.top + headerHeight}
+        items={menuItems}
+        onClose={() => setMenuOpen(false)}
+      />
+
+      <MenuSheet sheet={menuSheet} onClose={() => setMenuSheet(null)} />
+
+      <InstructionsSheet
+        open={showInstructions}
+        onClose={() => {
+          // Opened by hand or opened for them, either way they have now met
+          // the rules: retire the auto-open for good.
+          markSeen('instructions');
+          setShowInstructions(false);
+        }}
+      />
+    </SafeAreaView>
   );
 }
 
@@ -266,18 +308,19 @@ const styles = StyleSheet.create({
   fill: {
     flex: 1,
   },
+  /* One bar: the wordmark, then the page icons, the chat and the "?". */
   header: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  bar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: space.sm,
     paddingHorizontal: space.lg,
     paddingTop: space.sm,
-    paddingBottom: space.md,
+    paddingBottom: space.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   wordmark: {
+    flexShrink: 1,
     fontSize: 22,
     fontWeight: '800',
     letterSpacing: -0.4,
@@ -285,33 +328,30 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space.md,
+    gap: space.xs,
   },
-  help: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+  nav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.xs,
+  },
+  /* The website's 2.35rem circle, near enough. */
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconDisc: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   helpGlyph: {
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  nav: {
-    flexDirection: 'row',
-    paddingHorizontal: space.sm,
-  },
-  navItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: space.sm,
-    // A transparent underline on every tab, so selecting one does not change
-    // the row's height.
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  navLabel: {
-    fontSize: 13,
+    fontSize: 18,
+    fontWeight: '700',
   },
 });

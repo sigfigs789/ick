@@ -1,8 +1,5 @@
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { takesPlayerMessages } from '../../../src/game/playerMessages';
-import { sendFeedback } from '../host/submissions';
-import { radius, space } from '../theme/tokens';
+import { StyleSheet, Text } from 'react-native';
+import { space } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 import { Sheet } from './Sheet';
 
@@ -11,19 +8,9 @@ interface Props {
   onClose: () => void;
 }
 
-/** How to play, and a box to write back through. */
+/** How to play. */
 export function InstructionsSheet({ open, onClose }: Props) {
   const theme = useTheme();
-  const [note, setNote] = useState('');
-  const [sent, setSent] = useState(false);
-
-  function submit() {
-    const trimmed = note.trim();
-    if (!trimmed) return;
-    sendFeedback(trimmed);
-    setNote('');
-    setSent(true);
-  }
 
   return (
     <Sheet
@@ -38,51 +25,10 @@ export function InstructionsSheet({ open, onClose }: Props) {
       </Text>
 
       {/* No rarity-scores blurb any more, as on the website: How to play says
-          what the game is, and the scores explain themselves on the board. */}
-      {takesPlayerMessages() && (
-        <View style={styles.form}>
-          <View style={styles.row}>
-            <TextInput
-              value={note}
-              onChangeText={(text) => {
-                setNote(text);
-                setSent(false);
-              }}
-              placeholder="Share feedback"
-              placeholderTextColor={theme.fgFaint}
-              multiline
-              numberOfLines={2}
-              style={[
-                styles.input,
-                { color: theme.fg, borderColor: theme.border, backgroundColor: theme.cardBg },
-              ]}
-              accessibilityLabel="Share feedback or leave a suggestion"
-            />
-            <Pressable
-              onPress={submit}
-              disabled={!note.trim()}
-              accessibilityRole="button"
-              style={({ pressed }) => [
-                styles.send,
-                { backgroundColor: theme.accent, opacity: !note.trim() ? 0.4 : pressed ? 0.7 : 1 },
-              ]}
-            >
-              <Text style={[styles.sendText, { color: theme.accentFg }]}>Send</Text>
-            </Pressable>
-          </View>
-          {/* Announced as well as seen: the box empties either way, and an empty
-              box is not an answer. */}
-          {sent && (
-            <Text
-              style={[styles.thanks, { color: theme.successFg }]}
-              accessibilityLiveRegion="polite"
-            >
-              Thanks for the feedback!
-            </Text>
-          )}
-        </View>
-      )}
+          what the game is, and the scores explain themselves on the board.
 
+          No feedback box either: it has a sheet of its own now, behind the
+          header's "?" menu (see MenuSheet.tsx). */}
       <Text style={[styles.signoff, { color: theme.fgFaint }]}>
         Made by one person, for fun. Thanks for playing. 🙂
       </Text>
@@ -97,37 +43,6 @@ const styles = StyleSheet.create({
   },
   strong: {
     fontWeight: '800',
-  },
-  form: {
-    gap: space.sm,
-  },
-  /* The box and Send on one row, as the website's feedback form sets them. */
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.sm,
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    padding: space.md,
-    minHeight: 56,
-    fontSize: 15,
-    textAlignVertical: 'top',
-  },
-  send: {
-    paddingHorizontal: space.lg,
-    paddingVertical: space.sm,
-    borderRadius: radius.md,
-  },
-  sendText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  thanks: {
-    fontSize: 13,
-    fontWeight: '600',
   },
   signoff: {
     fontSize: 13,

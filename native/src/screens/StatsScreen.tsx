@@ -283,20 +283,25 @@ function Achievements({ statuses }: { statuses: AchievementStatus[] }) {
   return (
     <View style={styles.section}>
       <Heading note={`${earned} of ${statuses.length}`}>Achievements</Heading>
-      {ACHIEVEMENT_GROUPS.map((group, index) => (
-        <View key={group} style={index > 0 && styles.groupGap}>
-          <Text style={[styles.groupHeading, { color: theme.fgMuted }]} accessibilityRole="header">
-            {group}
-          </Text>
-          <View style={styles.achievements}>
-            {statuses
-              .filter((status) => status.achievement.group === group)
-              .map((status) => (
+      {ACHIEVEMENT_GROUPS.map((group) => ({
+        group,
+        inGroup: statuses.filter((status) => status.achievement.group === group),
+      }))
+        // A group can be empty on a host that leaves its badges off (see
+        // `viaSuggestions` in game/achievements.ts).
+        .filter(({ inGroup }) => inGroup.length > 0)
+        .map(({ group, inGroup }, index) => (
+          <View key={group} style={index > 0 && styles.groupGap}>
+            <Text style={[styles.groupHeading, { color: theme.fgMuted }]} accessibilityRole="header">
+              {group}
+            </Text>
+            <View style={styles.achievements}>
+              {inGroup.map((status) => (
                 <AchievementCard status={status} key={status.achievement.id} />
               ))}
+            </View>
           </View>
-        </View>
-      ))}
+        ))}
     </View>
   );
 }
