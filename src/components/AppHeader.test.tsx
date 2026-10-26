@@ -62,7 +62,7 @@ describe("the header", () => {
     const labels = within(screen.getByRole("navigation", { name: "Pages" }))
       .getAllByRole("button")
       .map((tab) => tab.getAttribute("aria-label"));
-    expect(labels).toEqual(["Play", "Words found", "Stats", "Leaderboards"]);
+    expect(labels).toEqual(["Play", "Words found", "Leaderboards", "Stats"]);
   });
 
   it("goes to each page, and moves the current marker with it", async () => {
@@ -83,13 +83,13 @@ describe("the header", () => {
     expect(trackFoundWordsOpened).toHaveBeenCalledWith("header");
   });
 
-  it("offers Stats from the first visit, right after the finds", async () => {
+  it("offers Stats from the first visit, last of the tabs", async () => {
     // No record needed: the page has an empty state of its own.
     render(<AppHeader route="game" onHowToPlay={howToPlay} />);
     const labels = within(screen.getByRole("navigation", { name: "Pages" }))
       .getAllByRole("button")
       .map((tab) => tab.getAttribute("aria-label"));
-    expect(labels).toEqual(["Play", "Words found", "Stats", "Leaderboards"]);
+    expect(labels).toEqual(["Play", "Words found", "Leaderboards", "Stats"]);
 
     await userEvent.click(screen.getByRole("button", { name: "Stats" }));
     expect(window.location.pathname).toBe("/stats");

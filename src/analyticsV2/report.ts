@@ -57,9 +57,11 @@ export interface Returns extends Rate {
   weekReturned: number;
 }
 
-/** The last 28 closed days. */
+/** A span of days: the last 28 closed ones, or the reader's range. */
 export interface Window {
   visitors: number;
+  /** Players whose first-ever word was in it. */
+  newPlayers: number;
   firstVisits: number;
   firstVisitStarted: number;
   firstVisitPlayed: number;
@@ -87,24 +89,59 @@ export interface Tier extends Rate {
   shared: number;
 }
 
+/** Back on exactly day N; `week` and `month`: back on any of the 7, or 30, days after. */
+export type Retention = Record<"d1" | "d7" | "d30" | "week" | "month", { players: Rate; visitors: Rate }>;
+
+/** The window the reader picked, counted the way the last 28 closed days are. */
+export interface Range {
+  from: string;
+  to: string;
+  window: Window;
+  /** Against the same number of days just before. */
+  sources: Source[];
+  scores: Scores;
+  /**
+   * Over the players (or visitors) whose first word (or visit) was in the
+   * window and whose day N is over; null from a database that does not count
+   * it yet (before the 2026-11-11 migration).
+   */
+  retention: Retention | null;
+  /** The same number of days just before the window; null as for `retention`. */
+  prior: { playerDays: number; visitorDays: number } | null;
+}
+
+export interface Scores {
+  tiers: Tier[];
+  buckets: Record<number, number>;
+}
+
 export interface Report {
   today: string;
   /** The first day a visit was recorded against a player; visitor numbers before it are not numbers. */
   trackedSince: string | null;
   daily: Day[];
-  /** Back on exactly day N, and `week`: back on any of the 7 days after. */
-  retention: Record<"d1" | "d7" | "d30" | "week", { players: Rate; visitors: Rate }>;
+  /** Over the 28 days up to the last one with day N over. */
+  retention: Retention;
   cohorts: Cohort[];
   weekly: Week[];
   sources: Source[];
+  /** The last 28 closed days, which the scorecard is set against. */
   window: Window;
-  scores: { tiers: Tier[]; buckets: Record<number, number> };
+  scores: Scores;
+  /** The reader's window, when one was asked for. */
+  range: Range | null;
 }
 
 /** The experiments on /experimentsV2 (see experiment.ts); null for one the database sent nothing for. */
 export interface Experiments {
   wordOfDay: Experiment | null;
   comeBack: Experiment | null;
+  headerCelebrations: Experiment | null;
+  shareName: Experiment | null;
+  /** Its `shown` arm is the input below the guess log, `hidden` above (see game/inputPlacementTest.ts). */
+  inputPlacement: Experiment | null;
+  /** The draw days counted, both ends, or null for everyone drawn. */
+  span: { from: string; to: string } | null;
 }
 
 type Json = Record<string, unknown>;
@@ -132,13 +169,81 @@ function counts(raw: unknown): Record<number, number> {
   return out;
 }
 
+function parseSources(raw: unknown): Source[] {
+  return arr(raw)
+    .filter((s) => str(s.source))
+    .map((s) => ({
+      source: s.source as string,
+      recent: num(s.recent),
+      prior: num(s.prior),
+      recentPlayers: num(s.recentPlayers),
+      priorPlayers: num(s.priorPlayers),
+    }));
+}
+
+function parseWindow(raw: unknown): Window {
+  const w = obj(raw);
+  return {
+    visitors: num(w.visitors),
+    newPlayers: num(w.newPlayers),
+    firstVisits: num(w.firstVisits),
+    firstVisitStarted: num(w.firstVisitStarted),
+    firstVisitPlayed: num(w.firstVisitPlayed),
+    players: num(w.players),
+    visitorDays: num(w.visitorDays),
+    startedDays: num(w.startedDays),
+    playerDays: num(w.playerDays),
+    completedDays: num(w.completedDays),
+    sharedDays: num(w.sharedDays),
+    completedSharedDays: num(w.completedSharedDays),
+    sharers: num(w.sharers),
+    boardViewers: num(w.boardViewers),
+    boardViewDays: num(w.boardViewDays),
+    boardOpens: num(w.boardOpens),
+    referralVisits: num(w.referralVisits),
+    referralNewVisitors: num(w.referralNewVisitors),
+    referralNewPlayers: num(w.referralNewPlayers),
+    afterBoard: { viewed: rate(obj(w.afterBoard).viewed), notViewed: rate(obj(w.afterBoard).notViewed) },
+    afterShare: { shared: returns(obj(w.afterShare).shared), notShared: returns(obj(w.afterShare).notShared) },
+  };
+}
+
+function parseScores(raw: unknown): Scores {
+  const s = obj(raw);
+  return {
+    tiers: arr(s.tiers)
+      .filter((t) => str(t.tier))
+      .map((t) => ({ tier: t.tier as string, finished: num(t.finished), shared: num(t.shared), ...rate(t) })),
+    buckets: counts(s.buckets),
+  };
+}
+
+function parseRetention(raw: unknown): Retention {
+  const r = obj(raw);
+  const one = (key: string) => ({ players: rate(obj(r[key]).players), visitors: rate(obj(r[key]).visitors) });
+  return { d1: one("d1"), d7: one("d7"), d30: one("d30"), week: one("week"), month: one("month") };
+}
+
+function parseRange(raw: unknown): Range | null {
+  const r = obj(raw);
+  const from = str(r.from);
+  const to = str(r.to);
+  if (from === null || to === null) return null;
+  const prior = r.prior === undefined || r.prior === null ? null : obj(r.prior);
+  return {
+    from,
+    to,
+    window: parseWindow(r.window),
+    sources: parseSources(r.sources),
+    scores: parseScores(r.scores),
+    retention: r.retention === undefined || r.retention === null ? null : parseRetention(r.retention),
+    prior: prior && { playerDays: num(prior.playerDays), visitorDays: num(prior.visitorDays) },
+  };
+}
+
 /** The report as typed values; anything the database left out reads as zero rather than taking the page down. */
 export function parseReport(raw: unknown): Report {
   const r = obj(raw);
-  const ret = obj(r.retention);
-  const w = obj(r.window);
-  const scores = obj(r.scores);
-  const retention = (key: string) => ({ players: rate(obj(ret[key]).players), visitors: rate(obj(ret[key]).visitors) });
   return {
     today: str(r.today) ?? "",
     trackedSince: str(r.trackedSince),
@@ -151,7 +256,7 @@ export function parseReport(raw: unknown): Report {
         players: num(d.players),
         newPlayers: num(d.newPlayers),
       })),
-    retention: { d1: retention("d1"), d7: retention("d7"), d30: retention("d30"), week: retention("week") },
+    retention: parseRetention(r.retention),
     cohorts: arr(r.cohorts)
       .filter((c) => str(c.start))
       .map((c) => ({
@@ -168,43 +273,10 @@ export function parseReport(raw: unknown): Report {
         newPlayers: num(x.newPlayers),
         daysPlayed: counts(x.daysPlayed),
       })),
-    sources: arr(r.sources)
-      .filter((s) => str(s.source))
-      .map((s) => ({
-        source: s.source as string,
-        recent: num(s.recent),
-        prior: num(s.prior),
-        recentPlayers: num(s.recentPlayers),
-        priorPlayers: num(s.priorPlayers),
-      })),
-    window: {
-      visitors: num(w.visitors),
-      firstVisits: num(w.firstVisits),
-      firstVisitStarted: num(w.firstVisitStarted),
-      firstVisitPlayed: num(w.firstVisitPlayed),
-      players: num(w.players),
-      visitorDays: num(w.visitorDays),
-      startedDays: num(w.startedDays),
-      playerDays: num(w.playerDays),
-      completedDays: num(w.completedDays),
-      sharedDays: num(w.sharedDays),
-      completedSharedDays: num(w.completedSharedDays),
-      sharers: num(w.sharers),
-      boardViewers: num(w.boardViewers),
-      boardViewDays: num(w.boardViewDays),
-      boardOpens: num(w.boardOpens),
-      referralVisits: num(w.referralVisits),
-      referralNewVisitors: num(w.referralNewVisitors),
-      referralNewPlayers: num(w.referralNewPlayers),
-      afterBoard: { viewed: rate(obj(w.afterBoard).viewed), notViewed: rate(obj(w.afterBoard).notViewed) },
-      afterShare: { shared: returns(obj(w.afterShare).shared), notShared: returns(obj(w.afterShare).notShared) },
-    },
-    scores: {
-      tiers: arr(scores.tiers)
-        .filter((t) => str(t.tier))
-        .map((t) => ({ tier: t.tier as string, finished: num(t.finished), shared: num(t.shared), ...rate(t) })),
-      buckets: counts(scores.buckets),
-    },
+    sources: parseSources(r.sources),
+    window: parseWindow(r.window),
+    scores: parseScores(r.scores),
+    range: parseRange(r.range),
   };
 }
 
@@ -231,14 +303,23 @@ async function readReport(url: string): Promise<Json> {
   }
 }
 
-/** The report for the puzzle the reader is on. */
-export async function fetchReport(today: string): Promise<Report> {
-  const body = await readReport(`/api/review?list=analytics-v2&today=${today}`);
+/** The report for the puzzle the reader is on, with `range` counted over their window when one is given. */
+export async function fetchReport(today: string, span?: { from: string; to: string }): Promise<Report> {
+  const query = span ? `&from=${span.from}&to=${span.to}` : "";
+  const body = await readReport(`/api/review?list=analytics-v2&today=${today}${query}`);
   return parseReport(body.report);
 }
 
-/** The experiments, counted up to the puzzle the reader is on. */
-export async function fetchExperiments(today: string): Promise<Experiments> {
-  const body = await readReport(`/api/review?list=experiments-v2&today=${today}`);
-  return { wordOfDay: parseExperiment(body.wordOfDay), comeBack: parseExperiment(body.comeBack) };
+/** The experiments, counted up to the puzzle the reader is on, over the players drawn in `span` when one is given. */
+export async function fetchExperiments(today: string, span?: { from: string; to: string }): Promise<Experiments> {
+  const query = span ? `&from=${span.from}&to=${span.to}` : "";
+  const body = await readReport(`/api/review?list=experiments-v2&today=${today}${query}`);
+  return {
+    wordOfDay: parseExperiment(body.wordOfDay),
+    comeBack: parseExperiment(body.comeBack),
+    headerCelebrations: parseExperiment(body.headerCelebrations),
+    shareName: parseExperiment(body.shareName),
+    inputPlacement: parseExperiment(body.inputPlacement),
+    span: span ?? null,
+  };
 }

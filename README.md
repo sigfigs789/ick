@@ -85,6 +85,19 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
   unlimited. The puzzle auto-completes at the limit, or the player can
   call it early via "Lock in my result" (`src/game/storage.ts`'s
   `lockInResult`) once they've got at least one word.
+- **Input placement** (`src/game/inputPlacementTest.ts`,
+  `src/hooks/useInputPlacement.ts`): the guess input, and the feedback line
+  under it, sits straight under the drop for 80% of players (`above`) and
+  below the guess log for the other 20% (`below`); players drawn while the
+  split was 50/50 keep their arm. A player is drawn the
+  first time the input shows on an unfinished puzzle and keeps that arm. The
+  draw is an `input_placement_assigned` event (with `placement` and
+  `returning`). `analytics_v2_experiment` knows two arms by the names
+  `shown` and `hidden`, so `below` is sent as `shown` and `above` as
+  `hidden`. The arms are scored on `/experimentsV2`, new players and
+  returning players apart. Force either arm with `?input-placement=below` or
+  `=above`. Testers are forced to `above`. A forced arm, or a host that
+  reports nothing (which keeps the input above), is never drawn.
 - **Persistence** (`src/game/storage.ts`): today's progress and the
   streak counter live in `localStorage`, keyed by calendar date. Once the
   puzzle is marked complete it can't be re-completed, but players can
@@ -92,6 +105,21 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
 - **Sharing** (`src/game/share.ts`, `src/components/ShareImageButton.tsx`):
   two ways to share a result, both spoiler-free by default via the same
   toggle in `ResultsPanel`.
+  - **Username** (`src/game/shareName.ts`): a shared result says "Playing
+    as <handle>" unless the player switches "Show username" off. For a
+    player who has never set that toggle, the default is a 50/50 test
+    (`src/game/shareNameTest.ts`): `shown` keeps the name on and `hidden`
+    starts with it off. A player is drawn the first time a share is built and
+    keeps that arm, even after setting the toggle (intent-to-treat); the
+    switch is reported as `share_name_toggled` against the arm, so each arm's
+    override rate can be read. A player who had already set the toggle when
+    the test arrived is marked out of it for good at startup and never drawn.
+    The draw
+    is a `share_name_assigned` event (with `returning`: a word banked on an
+    earlier puzzle). The arms are scored on `/experimentsV2` for everyone,
+    new players and returning players. Force either arm with
+    `?share-name=hidden` or `=shown`. Testers are forced to `hidden`. A
+    forced arm or a host that reports nothing is never drawn.
   - **Text**: `buildShareText`'s `spoilerFree` option (default `true`)
     swaps between rarity squares and the actual words.
   - **Image**: `ShareImageButton` rasterizes the results card (via
@@ -473,6 +501,11 @@ lives in `supabase/migrations/`.
   which drops them out of the queue; a suggestion that was never played gets a
   row of its own with outcome `suggested`, so it can be settled too, and a real
   lookup later overwrites that placeholder while leaving the triage alone.
+  `list_player_suggestions(player)` (the 2026-11-10 migration, read through
+  `/api/review?list=my-suggestions`) is one player's own suggestions with
+  their `status`. The game uses it to thank a player when a word they suggested
+  is marked `accepted`, and to award the Word scout and In the dictionary
+  achievements (`src/game/suggestions.ts`).
 
 - **`fold_reviews`** — the fold ledger, written from the page at `/fold`. One
   row per word: the form its score folded onto, both frequencies as the reviewer
@@ -911,6 +944,60 @@ no rarer than the total it belongs to. One bad day fails the whole batch rather
 than being quietly dropped. That is enough for ordinary noise and is not a
 defence against a determined forgery. Worth knowing before this board is used for
 anything that matters.
+
+## Header celebrations
+
+The cards that float over the top of today's puzzle to celebrate something or
+bring the player news are known collectively as **HeaderCelebrations**. Each
+is its own component, sharing the `.improvement` card styles (the perfect
+month has its own). They tap away or go by themselves.
+
+| Group | Card | When it comes due |
+|---|---|---|
+| Streak | `NewBestCelebration` — "Your longest streak yet!" | today's first word, when it takes the streak past the player's best |
+| Streak | `StreakClimbCelebration` — "Up the streak board!" | a moment after today's first word takes the streak up, if it passed somebody else's run |
+| News | `BestWordNewsCard` — yesterday's best word | as the site opens; every time the player found it, but only once ever when somebody else did (from their 4th day played) |
+| News | `PerfectMonthCelebration` — "Perfect {month}!" | the first word that completes a month without a missed day |
+| News | `ImprovementCelebration` — "You're on the rise!" | the finish, at most once a week |
+
+**One card per group per day** (`src/game/headerCelebrations.ts`). Each
+group's cards are listed in priority order, which is also the order they
+come due through the day, so the first card to claim its group's day wins and
+the rest of that group stay away until tomorrow. The claim is kept in
+`localStorage`, so a reload between the first word and the finish doesn't let
+a second card in. The two groups are independent: a player can see one streak
+card and one news card on the same day, one after the other.
+
+**Achievements unlocked** (`AchievementCelebration`) sit outside the groups:
+a badge is earned when it is earned, so its card claims no group's day and
+can show on any puzzle, archived ones too. After every verdict the app works
+out the achievements again (`syncAchievements`) and celebrates any that were
+not held when the page opened. A word that earns several lists them on one
+card. It waits behind every other card and behind the word's own confetti
+burst or jackpot stamp, then plays its own fanfare (`playAchievement`). The
+suggestion box's two badges are left out, because the box and the accepted-word
+thank-you already announce them. The 75/25 test below hides the card from its
+`hidden` arm, but the card never draws a player into the test: every player
+earns a badge on their first word, so drawing there would enrol all of them on
+day one.
+
+**A 75/25 test** (`src/game/headerCelebrationsTest.ts`): 75% of players see
+the header celebrations and 25% see none of them (no card, confetti or
+chime). A player is drawn the first time a card would show and keeps that arm.
+The draw is a `header_celebrations_assigned` event, and the arms are scored on
+`/experimentsV2` over everyone drawn, not split into new and returning players. Force either arm with `?header-celebrations=hidden` or
+`=shown`. A forced arm, a tester or a host that reports nothing always sees
+the cards and is never drawn.
+
+**The accepted-word thank-you gives way to them**
+(`SuggestionAcceptedNotice`, `src/hooks/useAcceptedSuggestions.ts`). The
+bubble thanking a player for suggested words that got in lists every such word
+at once, and shows only on a day nothing else has: no header celebration has
+claimed either group, and there is no welcome back, fold notice or Rare burst.
+Otherwise the words wait, unthanked, for a quieter day. Once it has shown on a
+day it keeps that day (`ick:suggestionsNoticeOn`), so a reload before it is
+closed brings it back. It doesn't claim a group itself, so a card can still
+come after it.
 
 ## Design decisions worth knowing about
 

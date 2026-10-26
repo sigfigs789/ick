@@ -6,6 +6,7 @@ import { setReporting } from './analytics'
 import { installChunkRecovery } from './chunkRecovery'
 import { assignStartingMode } from './game/onboarding'
 import { adoptPlayerFromUrl } from './game/player'
+import { excludeShareNameIfChosen } from './game/shareName'
 import { setPlayerMessages } from './game/playerMessages'
 import { visitorTag } from './game/visitor'
 import { isVercelHost } from './game/vercelHost'
@@ -40,6 +41,10 @@ adoptPlayerFromUrl(window.location.search)
 // Before the first render: a brand-new player's starting mode decides which
 // progress and scoring the puzzle loads with (see game/onboarding.ts).
 assignStartingMode(window.location.search)
+
+// Before the first render: a player who set "Show username" before the share
+// name test arrived stays out of it for good (see game/shareName.ts).
+excludeShareNameIfChosen()
 
 // Muse AI's `?visitor=` tag, kept before anything can navigate the query away
 // (see game/visitor.ts).

@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WordRulesModal } from "./WordRulesModal";
 import { MODE_CHOICE_START, resetModeCache, setMode } from "../game/mode";
+import { suggestedWords } from "../game/suggestions";
 
 const analytics = vi.hoisted(() => ({ trackWordSuggestion: vi.fn() }));
 vi.mock("../analytics", () => ({ trackWordSuggestion: analytics.trackWordSuggestion }));
@@ -39,6 +40,27 @@ describe("WordRulesModal", () => {
     expect(analytics.trackWordSuggestion).toHaveBeenCalledWith("splashy");
     expect(input).toHaveValue("");
     expect(screen.getByText(/thanks for the suggestion/i)).toBeInTheDocument();
+  });
+
+  it("keeps the suggestion on the device, and unlocks Word scout on the first one", async () => {
+    localStorage.clear();
+    render(<WordRulesModal open onClose={vi.fn()} />);
+    const input = screen.getByLabelText(/suggest a word/i);
+
+    await userEvent.type(input, "Zibeline");
+    await userEvent.click(screen.getByRole("button", { name: /suggest word/i }));
+    expect(suggestedWords().map((w) => w.word)).toEqual(["zibeline"]);
+    expect(screen.getByRole("status")).toHaveTextContent("Achievement unlocked: 💡 Word scout.");
+
+    await userEvent.type(input, "snollygoster");
+    await userEvent.click(screen.getByRole("button", { name: /suggest word/i }));
+    expect(suggestedWords().map((w) => w.word)).toEqual(["zibeline", "snollygoster"]);
+    expect(screen.getByRole("status")).not.toHaveTextContent("Achievement unlocked");
+
+    // Not a word the queue would take, so not one to wait on a verdict for.
+    await userEvent.type(input, "two words");
+    await userEvent.click(screen.getByRole("button", { name: /suggest word/i }));
+    expect(suggestedWords()).toHaveLength(2);
   });
 
   it("offers the queue once a word is suggested, and closes on the way there", async () => {

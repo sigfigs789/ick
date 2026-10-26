@@ -22,6 +22,9 @@ import { todayDateString } from "./game/date";
 import { parseSourceCode, type ModeAssignment } from "./game/onboarding";
 import { IDLE_HINT_DELAY_MS, currentIdleHintArm, type IdleHintArm } from "./game/idleHint";
 import type { ComeBackVariant } from "./game/comeBackTest";
+import type { HeaderCelebrationsVariant } from "./game/headerCelebrationsTest";
+import type { InputPlacementVariant } from "./game/inputPlacementTest";
+import type { ShareNameVariant } from "./game/shareNameTest";
 import type { WordOfDayVariant } from "./game/wordOfDay";
 import { APP_VERSION } from "./version";
 import { isBotUserAgent } from "./game/botUa";
@@ -868,6 +871,77 @@ export function trackWordOfDayAssigned(variant: WordOfDayVariant, date: string) 
 export function trackComeBackAssigned(variant: ComeBackVariant, date: string) {
   send("come_back_assigned", {
     variant,
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
+    live_date: todayDateString(),
+    mode: modeOf(date),
+  });
+}
+
+/**
+ * The header celebrations test's draw (see game/headerCelebrationsTest.ts),
+ * once per player, on the first live puzzle a card would have shown on. Shaped
+ * like the come-back test's, for `analytics_v2_experiment`.
+ */
+export function trackHeaderCelebrationsAssigned(variant: HeaderCelebrationsVariant, date: string) {
+  send("header_celebrations_assigned", {
+    variant,
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
+    live_date: todayDateString(),
+    mode: modeOf(date),
+  });
+}
+
+/**
+ * The share name test's draw (see game/shareNameTest.ts), once per player, on
+ * the first share built with no "Show username" choice saved. Shaped like the
+ * come-back test's, for `analytics_v2_experiment`, which splits new players
+ * from returning ones by their first word; `returning` is the browser's own
+ * view of the same thing (a word banked on an earlier puzzle), kept so the two
+ * can be checked against each other.
+ */
+export function trackShareNameAssigned(variant: ShareNameVariant, date: string, returning: boolean) {
+  send("share_name_assigned", {
+    variant,
+    returning,
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
+    live_date: todayDateString(),
+    mode: modeOf(date),
+  });
+}
+
+/**
+ * The input placement test's draw (see game/inputPlacementTest.ts), once per
+ * player, on the first unfinished puzzle they see the input on. Shaped like
+ * the share name test's, for `analytics_v2_experiment`, which reads two arms
+ * named `shown` and `hidden`: `variant` is `shown` for the input below the
+ * guess log, the arm under test, and `hidden` for it above, where it has
+ * always been. `placement` says the same in the test's own words.
+ */
+export function trackInputPlacementAssigned(placement: InputPlacementVariant, date: string, returning: boolean) {
+  send("input_placement_assigned", {
+    variant: placement === "below" ? "shown" : "hidden",
+    placement,
+    returning,
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
+    live_date: todayDateString(),
+    mode: modeOf(date),
+  });
+}
+
+/**
+ * A player in the share name test setting "Show username" themselves. They keep
+ * their arm (the test is scored intent-to-treat), so this is how often each
+ * arm's default gets overridden: hidden players switching their name back on
+ * is the clearest sign the new default is unwanted. `show` is the new setting.
+ */
+export function trackShareNameToggled(variant: ShareNameVariant, show: boolean, date: string) {
+  send("share_name_toggled", {
+    variant,
+    show,
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),
     live_date: todayDateString(),

@@ -146,6 +146,27 @@ export function playRising(): void {
 }
 
 /**
+ * An achievement unlocking (see components/AchievementCelebration.tsx): a
+ * fanfare call -- two quick pickups into a held major chord -- with a bell
+ * shimmering on top, so it reads as a badge being handed over rather than the
+ * puzzle-complete arpeggio or the rising run again.
+ */
+export function playAchievement(): void {
+  const c = getContext();
+  if (!c) return;
+  const now = c.currentTime;
+  tone(c, 783.99, now, 0.09, { type: "triangle", peakGain: 0.12 }); // G5
+  tone(c, 783.99, now + 0.11, 0.09, { type: "triangle", peakGain: 0.12 }); // G5
+  const chord = now + 0.22;
+  [1046.5, 1318.51, 1567.98].forEach((freq) => // C6 E6 G6
+    tone(c, freq, chord, 0.75, { type: "triangle", peakGain: 0.09 }),
+  );
+  [2093, 2637.02, 3135.96].forEach((freq, i) => // C7 E7 G7
+    tone(c, freq, chord + 0.12 + i * 0.07, 0.35, { peakGain: 0.04 }),
+  );
+}
+
+/**
  * The context for a sound nobody pressed anything to hear -- a chat message
  * arriving -- or null before the player has touched the page. A context made
  * or resumed without a gesture stays suspended, and whatever was scheduled on

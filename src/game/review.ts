@@ -138,7 +138,7 @@ export function keyQuery(): string {
 }
 
 async function read<T>(
-  list: "suggested-words" | "feedback" | "freeform" | "analytics",
+  list: "suggested-words" | "my-suggestions" | "feedback" | "freeform" | "analytics",
   pick: (body: Record<string, unknown>) => T,
   extra = "",
 ): Promise<T> {
@@ -153,6 +153,36 @@ async function read<T>(
 /** Every word waiting to be triaged into the dictionary, oldest arrival first. */
 export function fetchSuggestedWords(): Promise<SuggestedWord[]> {
   return read("suggested-words", (body) => parseWords(body.words));
+}
+
+/** One of a player's own suggestions, and the mark it wears on the queue. */
+export interface PlayerSuggestion {
+  word: string;
+  /** When it was first suggested, as an ISO timestamp. */
+  at: string;
+  mark: Mark;
+}
+
+/** The words `player` has suggested, newest first. */
+export function fetchPlayerSuggestions(player: string): Promise<PlayerSuggestion[]> {
+  return read(
+    "my-suggestions",
+    (body) => parsePlayerSuggestions(body.suggestions),
+    `&player=${encodeURIComponent(player)}`,
+  );
+}
+
+function parsePlayerSuggestions(raw: unknown): PlayerSuggestion[] {
+  if (!Array.isArray(raw)) return [];
+  const rows: PlayerSuggestion[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object") continue;
+    const row = entry as Record<string, unknown>;
+    if (typeof row.word !== "string" || row.word === "" || typeof row.at !== "string") continue;
+    const mark = row.mark === "accepted" || row.mark === "rejected" ? row.mark : null;
+    rows.push({ word: row.word, at: row.at, mark });
+  }
+  return rows;
 }
 
 /** Every note players have left, newest first. */

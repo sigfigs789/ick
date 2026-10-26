@@ -132,6 +132,35 @@ describe("api/review", () => {
     expect((await handler(get("?list=feedback&limit=lots"))).status).toBe(400);
   });
 
+  it("reads one player's own suggestions, without a key", async () => {
+    withEnv({ ...CONFIGURED, REVIEW_TOKEN: "secret" });
+    const fetchMock = stubFetch([
+      { word: "zibeline", suggested_at: "2026-10-20T09:00:00Z", status: "accepted" },
+      { word: "snollygoster", suggested_at: "2026-10-18T09:00:00Z", status: "new" },
+    ]);
+    const player = "3f2b8c4e-1a2b-4c3d-8e9f-0a1b2c3d4e5f";
+    const response = await handler(get(`?list=my-suggestions&player=${player}`));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      suggestions: [
+        { word: "zibeline", at: "2026-10-20T09:00:00Z", mark: "accepted" },
+        { word: "snollygoster", at: "2026-10-18T09:00:00Z", mark: null },
+      ],
+    });
+    const call = rpcCall(fetchMock);
+    expect(call?.url).toContain("/rpc/list_player_suggestions");
+    expect(call?.args).toEqual({ p_player: player });
+  });
+
+  it("refuses a player that is not a board identity", async () => {
+    withEnv();
+    const fetchMock = stubFetch([]);
+    expect((await handler(get("?list=my-suggestions"))).status).toBe(400);
+    expect((await handler(get("?list=my-suggestions&player=bob"))).status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("answers reads and marks, and nothing else", async () => {
     withEnv();
     stubFetch([]);
@@ -470,6 +499,30 @@ describe("api/review", () => {
     expect((await handler(get("?list=analytics-v2&today=2026-13-40"))).status).toBe(400);
   });
 
+  it("passes the reader's window to the v2 report, both ends or neither", async () => {
+    withEnv(CONFIGURED);
+    const fetchMock = stubFetch({ today: "2026-10-22" });
+
+    const response = await handler(get("?list=analytics-v2&today=2026-10-22&from=2026-10-15&to=2026-10-21"));
+
+    expect(response.status).toBe(200);
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+    expect(JSON.parse(String(calls[0][1].body))).toEqual({
+      p_today: "2026-10-22",
+      p_from: "2026-10-15",
+      p_to: "2026-10-21",
+    });
+    for (const bad of [
+      "&from=2026-10-15",
+      "&to=2026-10-21",
+      "&from=2026-10-21&to=2026-10-15",
+      "&from=2026-10-15&to=2026-10-23",
+      "&from=2026-02-30&to=2026-10-21",
+    ]) {
+      expect((await handler(get(`?list=analytics-v2&today=2026-10-22${bad}`))).status).toBe(400);
+    }
+  });
+
   it("serves the experiments on their own, without the v2 report", async () => {
     withEnv(CONFIGURED);
     const body = { arms: [] };
@@ -478,15 +531,54 @@ describe("api/review", () => {
     const response = await handler(get("?list=experiments-v2&today=2026-10-22"));
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ wordOfDay: body, comeBack: body });
+    expect(await response.json()).toEqual({
+      wordOfDay: body,
+      comeBack: body,
+      headerCelebrations: body,
+      shareName: body,
+      inputPlacement: body,
+    });
     const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
     expect(calls.map((c) => String(c[0]).split("/").pop())).toEqual([
+      "analytics_v2_experiment",
+      "analytics_v2_experiment",
+      "analytics_v2_experiment",
       "analytics_v2_experiment",
       "analytics_v2_experiment",
     ]);
     expect(JSON.parse(String(calls[0][1].body))).toEqual({ p_today: "2026-10-22", p_event: "word_of_day_assigned" });
     expect(JSON.parse(String(calls[1][1].body))).toEqual({ p_today: "2026-10-22", p_event: "come_back_assigned" });
+    expect(JSON.parse(String(calls[2][1].body))).toEqual({
+      p_today: "2026-10-22",
+      p_event: "header_celebrations_assigned",
+    });
+    expect(JSON.parse(String(calls[3][1].body))).toEqual({ p_today: "2026-10-22", p_event: "share_name_assigned" });
+    expect(JSON.parse(String(calls[4][1].body))).toEqual({
+      p_today: "2026-10-22",
+      p_event: "input_placement_assigned",
+    });
     expect((await handler(get("?list=experiments-v2"))).status).toBe(400);
+  });
+
+  it("passes the reader's window to both experiments, both ends or neither", async () => {
+    withEnv(CONFIGURED);
+    const fetchMock = stubFetch({ arms: [] });
+
+    const response = await handler(get("?list=experiments-v2&today=2026-10-22&from=2026-10-15&to=2026-10-22"));
+
+    expect(response.status).toBe(200);
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+    for (const [i, event] of ["word_of_day_assigned", "come_back_assigned"].entries()) {
+      expect(JSON.parse(String(calls[i][1].body))).toEqual({
+        p_today: "2026-10-22",
+        p_event: event,
+        p_from: "2026-10-15",
+        p_to: "2026-10-22",
+      });
+    }
+    for (const bad of ["&from=2026-10-15", "&from=2026-10-21&to=2026-10-15", "&from=2026-10-15&to=2026-10-23"]) {
+      expect((await handler(get(`?list=experiments-v2&today=2026-10-22${bad}`))).status).toBe(400);
+    }
   });
 
   it("no longer serves the idle hint report on its own", async () => {

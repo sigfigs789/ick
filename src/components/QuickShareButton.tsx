@@ -3,6 +3,7 @@ import { copyText } from "../clipboard";
 import { buildShareText } from "../game/share";
 import { loadReveal } from "../game/reveal";
 import { loadShowName } from "../game/shareName";
+import { drawShareName } from "./shareNameDraw";
 import { loadPlayerId, selfName } from "../game/player";
 import { modeForDate, type GameMode } from "../game/mode";
 import { trackResultCopied } from "../analytics";
@@ -32,6 +33,7 @@ export function QuickShareButton({ date, drop, words, streak, isToday, mode, onS
 
   async function share() {
     const playerId = loadPlayerId();
+    drawShareName(date);
     const playerName = playerId && loadShowName() ? selfName(playerId) : null;
     const text = buildShareText(date, drop, words, {
       reveal: loadReveal(),

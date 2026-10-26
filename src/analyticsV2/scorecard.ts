@@ -1,4 +1,4 @@
-import type { Day, Rate, Report, Week } from "./report";
+import type { Day, Range, Rate, Report, Week } from "./report";
 
 /**
  * The scorecard: seven categories, each with the three bands a small daily
@@ -13,6 +13,9 @@ import type { Day, Rate, Report, Week } from "./report";
  *
  * Every row but activation is over players, the visitors who banked a word.
  * Activation is the step before: of first-time visitors, how many became one.
+ *
+ * The rows are over the window picked at the top of the page, but for the two
+ * that name their own weeks: the DAU trend and weekly regulars.
  */
 
 export type Standing = "nowhere" | "between" | "promising" | "great";
@@ -49,6 +52,8 @@ export const D1_MARKS: Marks = { nowhere: 0.15, promising: 0.25, great: 0.4 };
 export const D7_MARKS: Marks = { nowhere: 0.05, promising: 0.1, great: 0.2 };
 /** Coming back within a week is not in the table, so these marks are the page's. */
 export const WEEK_MARKS: Marks = { nowhere: 0.25, promising: 0.35, great: 0.5 };
+/** Nor is coming back within a month, so these marks are the page's too. */
+export const MONTH_MARKS: Marks = { nowhere: 0.3, promising: 0.4, great: 0.55 };
 /** Activation is not in the table, so these marks are the page's. */
 export const ACTIVATION_MARKS: Marks = { nowhere: 0.3, promising: 0.4, great: 0.6 };
 /** Sharing has no great mark of its own: great is consistent sharing that also brings players. */
@@ -92,6 +97,24 @@ export function average(daily: Day[], end: string, n: number, field: "players" |
   return span.length === n ? span.reduce((sum, d) => sum + d[field], 0) / n : null;
 }
 
+/**
+ * The numbers the window moves, as the report counted them: the reader's
+ * range, or the last 28 closed days from a database that does not count one.
+ */
+export function windowOf(report: Report): Range {
+  return (
+    report.range ?? {
+      from: addDays(report.today, -28),
+      to: addDays(report.today, -1),
+      window: report.window,
+      sources: report.sources,
+      scores: report.scores,
+      retention: report.retention,
+      prior: null,
+    }
+  );
+}
+
 /** The least cohort a rate is judged over; under it the row says it is too early. */
 export const LEAST = 30;
 
@@ -105,8 +128,8 @@ function retentionRow(metric: string, n: number, rate: Rate, bands: Row["bands"]
     standing: ok ? stand(rate.returned / rate.cohort, marks) : null,
     detail: ok
       ? `${count(rate.returned)} of ${count(rate.cohort)} new players`
-      : `needs ${LEAST} new players whose day ${n} is over`,
-    how: `Players whose first word was in a 28-day span, and who banked a word again exactly ${n} ${n === 1 ? "day" : "days"} later.`,
+      : `needs ${LEAST} new players in the window whose day ${n} is over`,
+    how: `Players whose first word was in the window, with day ${n} over, and who banked a word again exactly ${n} ${n === 1 ? "day" : "days"} later.`,
   };
 }
 
@@ -131,20 +154,20 @@ export function regulars(week: Week): { regulars: number; players: number } {
   return { regulars: regular, players: week.players };
 }
 
-/** New players whose first visit came through a share link, and all new players, over the last 28 closed days. */
-export function sharePlayers(report: Report): { fromShares: number; all: number } {
-  const recent = report.sources;
+/** New players whose first visit came through a share link, and all new players, over the window. */
+export function sharePlayers(span: Range): { fromShares: number; all: number } {
+  const recent = span.sources;
   return {
     fromShares: recent.filter((s) => s.source === "share" || s.source === "t").reduce((sum, s) => sum + s.recentPlayers, 0),
     all: recent.reduce((sum, s) => sum + s.recentPlayers, 0),
   };
 }
 
-export function scorecard(report: Report): Row[] {
-  const r = report.retention;
+export function scorecard(report: Report, span: Range = windowOf(report)): Row[] {
+  const r = span.retention ?? report.retention;
   const trend = dauTrend(report);
-  const w = report.window;
-  const shares = sharePlayers(report);
+  const w = span.window;
+  const shares = sharePlayers(span);
   const shareRate = w.playerDays > 0 ? w.sharedDays / w.playerDays : 0;
   const driven = shares.all > 0 ? shares.fromShares / shares.all : 0;
   const lastWeek = report.weekly[1];
@@ -162,7 +185,7 @@ export function scorecard(report: Report): Row[] {
           ? `${count(w.firstVisitPlayed)} of ${count(w.firstVisits)} first-time visitors banked a word`
           : `needs ${LEAST} first-time visitors`,
       how:
-        "Of first-time visitors in the last 28 days, the share who banked a word. The table has no activation row, so " +
+        "Of first-time visitors in the window, the share who banked a word. The table has no activation row, so " +
         "these marks are the page's: under 30% is going nowhere, 40% promising, 60% great.",
     },
     retentionRow("D1 retention", 1, r.d1.players, { nowhere: "Under 15%", promising: "25–35%", great: "40%+" }, D1_MARKS),
@@ -170,7 +193,7 @@ export function scorecard(report: Report): Row[] {
     {
       ...retentionRow("Back within a week", 7, r.week.players, { nowhere: "Under 25%", promising: "35–49%", great: "50%+" }, WEEK_MARKS),
       how:
-        "Players whose first word was in a 28-day span, and who banked a word again on any of the 7 days after. The " +
+        "Players whose first word was in the window, with day 7 over, and who banked a word again on any of the 7 days after. The " +
         "table has no row for it, so these marks are the page's: under 25% is going nowhere, 35% promising, 50% great.",
     },
     retentionRow("D30 retention", 30, r.d30.players, { nowhere: "Under 2%", promising: "5–8%", great: "10%+" }, {
@@ -178,6 +201,12 @@ export function scorecard(report: Report): Row[] {
       promising: 0.05,
       great: 0.1,
     }),
+    {
+      ...retentionRow("Back within a month", 30, r.month.players, { nowhere: "Under 30%", promising: "40–54%", great: "55%+" }, MONTH_MARKS),
+      how:
+        "Players whose first word was in the window, with day 30 over, and who banked a word again on any of the 30 days after. The " +
+        "table has no row for it, so these marks are the page's: under 30% is going nowhere, 40% promising, 55% great.",
+    },
     {
       metric: "DAU trend over 8 weeks",
       bands: { nowhere: "Flat or falling", promising: "Growing 5–10%/mo", great: "Growing 20%+/mo" },
@@ -205,7 +234,7 @@ export function scorecard(report: Report): Row[] {
         `${count(shares.all)} new players (${percent(driven)})`,
       how:
         "The table gives words, so these marks are the page's: rarely is under 5% of player-days shared, consistent " +
-        "is 10% or more, and great is consistent sharing with share links bringing 10% or more of new players. Last 28 days.",
+        "is 10% or more, and great is consistent sharing with share links bringing 10% or more of new players. Over the window.",
     },
     {
       metric: "Weekly regulars*",
@@ -225,7 +254,8 @@ export function scorecard(report: Report): Row[] {
  * compare. Null when either day had too little to judge.
  *
  * The rows over the last full week (DAU trend, weekly regulars) only move on a
- * Monday; the rest move every day as their windows slide.
+ * Monday; the rest move every day as the window slides, or not at all over two
+ * fixed dates that are both past.
  */
 export function moved(now: Row, before: Row | undefined): number | null {
   if (now.points === null || before?.points == null) return null;

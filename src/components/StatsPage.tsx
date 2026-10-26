@@ -270,18 +270,22 @@ function Achievements({ statuses }: { statuses: AchievementStatus[] }) {
           {earned} of {statuses.length}
         </span>
       </h2>
-      {ACHIEVEMENT_GROUPS.map((group) => (
-        <div className="stats__group" key={group}>
-          <h3 className="stats__group-heading">{group}</h3>
-          <ul className="stats__achievements">
-            {statuses
-              .filter((status) => status.achievement.group === group)
-              .map((status) => (
+      {ACHIEVEMENT_GROUPS.map((group) => {
+        const inGroup = statuses.filter((status) => status.achievement.group === group);
+        // A group can be empty on a host that leaves its badges off (see
+        // `viaSuggestions` in game/achievements.ts).
+        if (inGroup.length === 0) return null;
+        return (
+          <div className="stats__group" key={group}>
+            <h3 className="stats__group-heading">{group}</h3>
+            <ul className="stats__achievements">
+              {inGroup.map((status) => (
                 <AchievementCard status={status} key={status.achievement.id} />
               ))}
-          </ul>
-        </div>
-      ))}
+            </ul>
+          </div>
+        );
+      })}
     </section>
   );
 }

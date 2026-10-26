@@ -4,6 +4,7 @@ import {
   D1_MARKS,
   D7_MARKS,
   LEAST,
+  MONTH_MARKS,
   percent,
   SHARE_MARKS,
   stand,
@@ -25,7 +26,11 @@ import {
  */
 
 export type Variant = "shown" | "hidden";
-/** Everyone drawn; those drawn on the day of their first word; and everyone else. */
+/**
+ * Everyone drawn; those drawn on the day of their first word; and everyone
+ * else. A player's segment is fixed by the day they were drawn, never by the
+ * day of a later visit: a new player's every return counts under `new`.
+ */
 export type Segment = "all" | "new" | "returning";
 
 export interface Arm {
@@ -36,6 +41,8 @@ export interface Arm {
   d7: Rate;
   /** Banked a word on any of the 7 days after; `days` is how many of those days in all. */
   week: Rate & { days: number };
+  /** Banked a word on any of the 30 days after. */
+  month: Rate;
   playerDays: number;
   sharedDays: number;
   laterDays: number;
@@ -77,6 +84,7 @@ export function parseExperiment(raw: unknown): Experiment | null {
       d1: rate(a.d1),
       d7: rate(a.d7),
       week: { ...rate(a.week), days: num(obj(a.week).days) },
+      month: rate(a.month),
       playerDays: num(a.playerDays),
       sharedDays: num(a.sharedDays),
       laterDays: num(a.laterDays),
@@ -101,6 +109,7 @@ function less(all: Arm, part: Arm): Arm {
     d1: minus(all.d1, part.d1),
     d7: minus(all.d7, part.d7),
     week: { ...minus(all.week, part.week), days: all.week.days - part.week.days },
+    month: minus(all.month, part.month),
     playerDays: all.playerDays - part.playerDays,
     sharedDays: all.sharedDays - part.sharedDays,
     laterDays: all.laterDays - part.laterDays,
@@ -118,6 +127,7 @@ export function emptyArm(variant: Variant, segment: Segment): Arm {
     d1: none,
     d7: none,
     week: { ...none, days: 0 },
+    month: none,
     playerDays: 0,
     sharedDays: 0,
     laterDays: 0,
@@ -247,12 +257,13 @@ export function verdict(experiment: Experiment, subject = "the word of the day")
 }
 
 /** Where an arm's rates land against the scorecard's bands. */
-export function standings(a: Arm): Record<"d1" | "d7" | "week" | "share", Standing | null> {
+export function standings(a: Arm): Record<"d1" | "d7" | "week" | "month" | "share", Standing | null> {
   const judge = (part: number, whole: number, marks: Marks) => (whole >= LEAST ? stand(part / whole, marks) : null);
   return {
     d1: judge(a.d1.returned, a.d1.cohort, D1_MARKS),
     d7: judge(a.d7.returned, a.d7.cohort, D7_MARKS),
     week: judge(a.week.returned, a.week.cohort, WEEK_MARKS),
+    month: judge(a.month.returned, a.month.cohort, MONTH_MARKS),
     share: judge(a.sharedDays, a.playerDays, SHARE_MARKS),
   };
 }

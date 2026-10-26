@@ -1,25 +1,11 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import {
-  fetchBestWordWins,
-  fetchFoundWords,
-  fetchWordFinders,
-  repriceFoundWords,
-  type FoundWord,
-} from "../game/leaderboard";
-import { pageCache } from "../game/pageCache";
+import { useState, type ReactNode } from "react";
 import { addDays, formatDateLabel } from "../game/date";
 import { dropForDate } from "../game/drop";
 import { formatRarityScore } from "../game/dictionary";
 import { handleFor } from "../game/handle";
 import { loadPlayerId, selfName } from "../game/player";
-import {
-  bestCandidates,
-  finderTotal,
-  orderedFinders,
-  otherPlayers,
-  pickBest,
-} from "../game/yesterdaysBest";
-import { useGameMode } from "../hooks/useGameMode";
+import { finderTotal, orderedFinders, otherPlayers } from "../game/yesterdaysBest";
+import { useYesterdaysBest } from "../hooks/useYesterdaysBest";
 import { rarityClassName } from "./rarityStyles";
 
 interface Props {
@@ -33,37 +19,16 @@ interface Props {
 }
 
 /**
- * Yesterday's finds, read once a visit: the line comes back with the puzzle
- * after a trip to another page without asking again. Shares the found-words
- * feed's request, so the CDN answers it from the copy it already holds.
- */
-const yesterdayCache = pageCache<readonly FoundWord[]>();
-
-/** The best word's finders, keyed by day and word, kept the same way. */
-const findersCache = pageCache<readonly string[]>();
-
-/** A settled tie's winning word, keyed by day and the tied words. */
-const tieCache = pageCache<string>();
-
-/**
  * The rarest word anybody found on the previous day's drop, under the puzzle
  * being played -- today's or an archived one.
  *
  * The previous day's drop is not this one, so naming its best word spoils nothing here
  * -- it shows the ceiling players actually reached, which is the thing to beat.
- * Priced by the reader's own mode like the finds page, so the score here and
- * the badge on /found-words agree.
+ * Which word that is, ties and all, is worked out by `useYesterdaysBest`.
  *
- * Two words showing the same top score are a tie, settled by `pickBest`: the
- * word of the player the line has named least often, then the longer word,
- * then a coin toss. That needs each tied word's first finder and the tally of
- * past best words, so the line waits for both; if either can't be read the
- * tie falls through to length and the toss rather than holding the line back.
- *
- * Names the finders once they arrive -- the reader first, when they were one:
- * one or two by name, and for three or more the first and "N other players",
- * which opens the rest as a list. Falls back to a bare count if they can't be
- * read.
+ * Names the finders -- the reader first, when they were one: one or two by
+ * name, and for three or more the first and "N other players", which opens the
+ * rest as a list. Falls back to a bare count if they can't be read.
  *
  * Says nothing at all while loading, on a failed read, or for a day nobody
  * found anything: it is a footnote to the puzzle, and a spinner or an error
@@ -73,127 +38,18 @@ const tieCache = pageCache<string>();
  */
 export function YesterdaysBest({ date, isToday }: Props) {
   const yesterday = addDays(date, -1);
-  const [words, setWords] = useState<readonly FoundWord[] | undefined>(() =>
-    yesterdayCache.get(yesterday),
-  );
-  const [mode] = useGameMode();
-
-  useEffect(() => {
-    let current = true;
-    setWords(yesterdayCache.get(yesterday));
-    fetchFoundWords(yesterday)
-      .then((found) => {
-        yesterdayCache.set(yesterday, found);
-        if (current) setWords(found);
-      })
-      .catch(() => {
-        // Nothing to say; the cached copy, if any, stays on screen.
-      });
-    return () => {
-      current = false;
-    };
-  }, [yesterday]);
-
-  const candidates = useMemo(
-    () => (words ? bestCandidates(repriceFoundWords(words)) : []),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `mode` is the trigger
-    [words, mode],
-  );
-  const tieKey =
-    candidates.length > 1
-      ? `${yesterday}:${candidates
-          .map((found) => found.word)
-          .sort()
-          .join(",")}`
-      : undefined;
-  // The settled tie, tagged with its key like the finders below.
-  const [tie, setTie] = useState<{ key: string; word: string } | undefined>(() => {
-    const word = tieKey ? tieCache.get(tieKey) : undefined;
-    return tieKey && word ? { key: tieKey, word } : undefined;
-  });
-
-  useEffect(() => {
-    if (!tieKey) return;
-    let current = true;
-    const cached = tieCache.get(tieKey);
-    if (cached) {
-      setTie({ key: tieKey, word: cached });
-      return;
-    }
-    const tied = candidates;
-    Promise.all([
-      Promise.all(
-        tied.map((found) =>
-          fetchWordFinders(found.word, yesterday)
-            .then((ids) => {
-              findersCache.set(`${yesterday}:${found.word}`, ids);
-              return ids;
-            })
-            .catch(() => findersCache.get(`${yesterday}:${found.word}`) ?? []),
-        ),
-      ),
-      fetchBestWordWins(yesterday).catch(() => ({}) as Record<string, number>),
-    ]).then(([finderLists, wins]) => {
-      const holders = new Map<string, string>();
-      tied.forEach((found, i) => {
-        const first = finderLists[i][0];
-        if (first) holders.set(found.word, first.toLowerCase());
-      });
-      const word = pickBest(tied, yesterday, holders, wins)?.word;
-      if (!word) return;
-      tieCache.set(tieKey, word);
-      if (current) setTie({ key: tieKey, word });
-    });
-    return () => {
-      current = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- the key names the tied words
-  }, [tieKey]);
-
-  const best = tieKey
-    ? tie?.key === tieKey
-      ? candidates.find((found) => found.word === tie.word)
-      : undefined
-    : candidates[0];
-  const findersKey = best ? `${yesterday}:${best.word}` : undefined;
-  // The finders for the word they were read for: ids null when they couldn't
-  // be read. Tagged with their key, so a new word's line never borrows the last
-  // word's names while its own are on their way.
-  const [finders, setFinders] = useState<
-    { key: string; ids: readonly string[] | null } | undefined
-  >(() => {
-    const ids = findersKey ? findersCache.get(findersKey) : undefined;
-    return findersKey && ids ? { key: findersKey, ids } : undefined;
-  });
-
-  useEffect(() => {
-    if (!best || !findersKey) return;
-    let current = true;
-    const cached = findersCache.get(findersKey);
-    if (cached) setFinders({ key: findersKey, ids: cached });
-    fetchWordFinders(best.word, yesterday)
-      .then((ids) => {
-        findersCache.set(findersKey, ids);
-        if (current) setFinders({ key: findersKey, ids });
-      })
-      .catch(() => {
-        if (current)
-          setFinders((prev) => (prev?.key === findersKey ? prev : { key: findersKey, ids: null }));
-      });
-    return () => {
-      current = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- the key names the word
-  }, [findersKey]);
+  const resolved = useYesterdaysBest(yesterday);
 
   // Which word's list of other finders is open, so another day's starts shut.
   const [openFor, setOpenFor] = useState<string | undefined>();
 
-  if (!best || !finders || finders.key !== findersKey) return null;
+  if (!resolved) return null;
 
+  const { best, finderIds } = resolved;
+  const findersKey = `${yesterday}:${best.word}`;
   const selfId = loadPlayerId()?.toLowerCase() ?? null;
-  const ids = finders.ids ? orderedFinders(finders.ids, selfId) : [];
-  const total = finders.ids ? finderTotal(finders.ids, best.finders) : best.finders;
+  const ids = finderIds ? orderedFinders(finderIds, selfId) : [];
+  const total = finderIds ? finderTotal(finderIds, best.finders) : best.finders;
   const nameOf = (id: string) => (id === selfId ? selfName(id) : handleFor(id));
   const open = openFor === findersKey;
   // Ids past the server's cap, or not yet read when the count was taken.

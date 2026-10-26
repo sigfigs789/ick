@@ -2,10 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ACHIEVEMENTS,
   achievementStatuses,
+  earnedIds,
+  newlyEarned,
   syncAchievements,
   type AchievementRecord,
 } from "./achievements";
 import { addDays } from "./date";
+import { setPlayerMessages } from "./playerMessages";
 import type { AcceptedWord, DailyProgress, Rarity, StreakState } from "./types";
 
 function word(rarity: Rarity, w = rarity.toLowerCase().replace(" ", "")): AcceptedWord {
@@ -93,6 +96,104 @@ describe("achievements", () => {
     expect(done.earnedOn).toBe("2026-10-02");
   });
 
+  it("dates the suggestion badges to the first suggestion and the first acceptance", () => {
+    const suggestions = [
+      { word: "zibeline", suggestedOn: "2026-10-04" },
+      { word: "quockerwodger", suggestedOn: "2026-10-02", acceptedOn: "2026-10-09" },
+    ];
+    expect(statusOf("word-suggested", { suggestions }).earnedOn).toBe("2026-10-02");
+    expect(statusOf("suggestion-accepted", { suggestions }).earnedOn).toBe("2026-10-09");
+    expect(statusOf("suggestion-accepted", { suggestions: suggestions.slice(0, 1) }).earnedOn).toBeNull();
+    expect(statusOf("word-suggested", {}).earnedOn).toBeNull();
+  });
+
+  it("leaves the suggestion badges off a host with no suggestion box", () => {
+    setPlayerMessages(false);
+    try {
+      const ids = achievementStatuses({ history: [], onItsDay: [], streak: noStreak }, {}, TODAY).map(
+        (s) => s.achievement.id
+      );
+      expect(ids).not.toContain("word-suggested");
+      expect(ids).not.toContain("suggestion-accepted");
+      expect(ids).toContain("first-word");
+    } finally {
+      setPlayerMessages(true);
+    }
+  });
+
+  it("needs two Mythic or better words in one puzzle for Double myth", () => {
+    const split = [day("2026-10-01", [word("Mythic")]), day("2026-10-02", [word("Legend")])];
+    expect(statusOf("double-mythic", { history: split }).earnedOn).toBeNull();
+    const together = [...split, day("2026-10-03", [word("Mythic"), word("Common"), word("Legend")])];
+    expect(statusOf("double-mythic", { history: together }).earnedOn).toBe("2026-10-03");
+  });
+
+  it("needs every guess spent and Mythic or better for Pantheon", () => {
+    const short = day("2026-10-10", [word("Mythic"), word("Legend")]);
+    const slip = day("2026-10-11", [word("Mythic"), word("Mythic"), word("Elusive"), word("Legend")]);
+    const all = day("2026-10-12", [word("Mythic"), word("Legend"), word("Mythic"), word("Mythic")]);
+    expect(statusOf("pantheon", { history: [short, slip] }).earnedOn).toBeNull();
+    expect(statusOf("pantheon", { history: [short, slip, all] }).earnedOn).toBe("2026-10-12");
+  });
+
+  it("counts Legends for Legendarium and words for the bigger word counts", () => {
+    const legends = statusOf("legend-10", {
+      history: [day("2026-10-01", [word("Legend"), word("Legend"), word("Mythic")])],
+    });
+    expect(legends.progress).toEqual({ current: 2, target: 10 });
+    const words = statusOf("words-500", {
+      history: [day("2026-10-01", [word("Common"), word("Rare")])],
+    });
+    expect(words.progress).toEqual({ current: 2, target: 500 });
+  });
+
+  it("dates a Straight in to the first puzzle opened with a win", () => {
+    const history = [
+      day("2026-10-01", [word("Common"), word("Rare")]),
+      day("2026-10-02", [word("Elusive"), word("Common")]),
+    ];
+    expect(statusOf("straight-in", { history }).earnedOn).toBe("2026-10-02");
+  });
+
+  it("needs a win with nothing turned away for Clean copy", () => {
+    const history = [
+      day("2026-10-01", [word("Rare")], { rejectedAttempts: ["inkk"] }),
+      day("2026-10-02", [word("Common")]),
+      day("2026-10-03", [word("Rare")], { completed: false }),
+      day("2026-10-04", [word("Rare")]),
+    ];
+    expect(statusOf("clean-copy", { history }).earnedOn).toBe("2026-10-04");
+  });
+
+  it("needs the retry spent and a win for Second chance", () => {
+    const history = [
+      day("2026-10-01", [word("Common")], { retryUsed: true }),
+      day("2026-10-02", [word("Rare")]),
+      day("2026-10-03", [word("Rare")], { retryUsed: true }),
+    ];
+    expect(statusOf("second-chance", { history }).earnedOn).toBe("2026-10-03");
+  });
+
+  it("needs a word of 14 letters or more for Sesquipedalian", () => {
+    const history = [
+      day("2026-10-01", [word("Rare", "inkhornisms")]),
+      day("2026-10-02", [word("Common", "thinkingnesses")]),
+    ];
+    expect(statusOf("sesquipedalian", { history }).earnedOn).toBe("2026-10-02");
+  });
+
+  it("finds an archive play only on a puzzle that says when it was played", () => {
+    const history = [
+      day("2026-09-01", [word("Common")]),
+      day("2026-09-02", [word("Common")], { firstWordAt: "2026-09-02T09:00:00" }),
+      day("2026-09-03", [word("Common")], { firstWordAt: "2026-10-20T09:00:00" }),
+    ];
+    expect(statusOf("archive-play", { history, onItsDay: ["2026-09-02"] }).earnedOn).toBe("2026-09-03");
+    expect(
+      statusOf("archive-play", { history: history.slice(0, 2), onItsDay: ["2026-09-02"] }).earnedOn
+    ).toBeNull();
+  });
+
   it("keeps a badge already earned even when the record no longer shows it", () => {
     expect(statusOf("first-legend", {}, { "first-legend": "2026-10-05" }).earnedOn).toBe("2026-10-05");
   });
@@ -124,5 +225,31 @@ describe("syncAchievements", () => {
     const later = syncAchievements(streak);
     expect(later.find((s) => s.achievement.id === "first-legend")?.earnedOn).toBe("2026-10-20");
     vi.useRealTimers();
+  });
+});
+
+describe("newlyEarned", () => {
+  const record: AchievementRecord = {
+    history: [day("2026-10-01", [word("Common")]), day("2026-10-03", [word("Mythic")])],
+    onItsDay: [],
+    streak: noStreak,
+    suggestions: [{ word: "inkle", suggestedOn: "2026-10-02" }],
+  };
+
+  beforeEach(() => setPlayerMessages(true));
+
+  it("lists only what was earned since the snapshot, leaving out the suggestion box's", () => {
+    const before = earnedIds(achievementStatuses({ ...record, history: record.history.slice(0, 1) }, {}, TODAY));
+    expect(before.has("first-word")).toBe(true);
+    const ids = newlyEarned(before, achievementStatuses(record, {}, TODAY)).map((a) => a.id);
+    expect(ids).toContain("first-mythic");
+    expect(ids).toContain("first-win");
+    expect(ids).not.toContain("first-word");
+    expect(ids).not.toContain("word-suggested");
+  });
+
+  it("lists nothing when nothing changed", () => {
+    const statuses = achievementStatuses(record, {}, TODAY);
+    expect(newlyEarned(earnedIds(statuses), statuses)).toEqual([]);
   });
 });

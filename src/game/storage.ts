@@ -4,6 +4,7 @@ import { maxGuessesFor } from "./constants";
 import { rarityFor, rarityScore, scoringLoaded, usesRetunedTiers } from "./dictionary";
 import { isEliteRarity, isWinningRarity } from "./rank";
 import type { AcceptedWord, DailyProgress, StreakState } from "./types";
+import { bestToBeat } from "./newBest";
 import {
   applyFreezes,
   backdateFreezes,
@@ -518,6 +519,7 @@ function updateStreakOnSubmission(date: string): void {
     ...streak,
     currentStreak,
     longestStreak: Math.max(streak.longestStreak, currentStreak),
+    bestToBeat: bestToBeat(streak, continuesStreak),
     lastCompletedDate: date,
     crushedIt: streak.crushedIt,
     elite: streak.elite,
