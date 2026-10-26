@@ -11,14 +11,14 @@ describe("NewBestCelebration", () => {
     expect(document.querySelectorAll(".confetti--rising .confetti__piece")).toHaveLength(48);
   });
 
-  it("goes on a tap, or by itself", () => {
+  it("stays until it is tapped away", () => {
     vi.useFakeTimers();
     const onDone = vi.fn();
     render(<NewBestCelebration days={3} best={2} onDone={onDone} />);
+    vi.advanceTimersByTime(60_000);
+    expect(onDone).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button"));
     expect(onDone).toHaveBeenCalledTimes(1);
-    vi.advanceTimersByTime(7000);
-    expect(onDone).toHaveBeenCalledTimes(2);
     vi.useRealTimers();
   });
 

@@ -1,9 +1,5 @@
-import { useEffect } from "react";
 import { ConfettiBurst } from "./ConfettiBurst";
 import type { Achievement } from "../game/achievements";
-
-/** How long the card stays up if nobody taps it, as the other cards do. */
-const CELEBRATION_MS = 7000;
 
 /**
  * The moment a word earns an achievement (see game/achievements.ts) -- until
@@ -11,8 +7,8 @@ const CELEBRATION_MS = 7000;
  *
  * The improving average's card, in ink violet, with the badge itself as the
  * centrepiece and gold confetti falling around it. It floats over the puzzle
- * and goes by itself or on a tap. A word that earns several at once (a first
- * word that is also a Legend) lists them all on the one card.
+ * and stays until the player taps it away. A word that earns several at once
+ * (a first word that is also a Legend) lists them all on the one card.
  *
  * The same card welcomes a returning player's badges that were never announced
  * (see `achievementsToCatchUp`): `total` is how many there are, of which
@@ -28,11 +24,6 @@ export function AchievementCelebration({
   total?: number;
   onDone: () => void;
 }) {
-  useEffect(() => {
-    const timeout = window.setTimeout(onDone, CELEBRATION_MS);
-    return () => window.clearTimeout(timeout);
-  }, [onDone]);
-
   if (achievements.length === 0) return null;
   const [only] = achievements;
   const several = achievements.length > 1;

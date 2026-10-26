@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { ConfettiBurst } from "./ConfettiBurst";
 import { formatRarityScore } from "../game/dictionary";
 import { dropForDate } from "../game/drop";
@@ -6,9 +5,6 @@ import { handleFor } from "../game/handle";
 import type { BestWordNewsKind } from "../game/bestWordNews";
 import { finderTotal, otherPlayers } from "../game/yesterdaysBest";
 import type { ResolvedBest } from "../hooks/useYesterdaysBest";
-
-/** How long the card stays up if nobody taps it, as the improving average's does. */
-const CELEBRATION_MS = 7000;
 
 /** "Ana", "Ana and Bo", "Ana and 3 other players". */
 function finderNames(ids: readonly string[], total: number): string {
@@ -22,8 +18,8 @@ function finderNames(ids: readonly string[], total: number): string {
  * game/bestWordNews.ts): a celebration for a player who found it, and the news
  * of who did for everybody else.
  *
- * The improving average's card, in gold: it floats over the puzzle and goes by
- * itself or on a tap.
+ * The improving average's card, in gold: it floats over the puzzle and stays
+ * until it is tapped away.
  */
 export function BestWordNewsCard({
   kind,
@@ -34,11 +30,6 @@ export function BestWordNewsCard({
   resolved: ResolvedBest;
   onDone: () => void;
 }) {
-  useEffect(() => {
-    const timeout = window.setTimeout(onDone, CELEBRATION_MS);
-    return () => window.clearTimeout(timeout);
-  }, [onDone]);
-
   const { day, best, finderIds } = resolved;
   const ids = finderIds ?? [];
   const total = finderTotal(ids, best.finders);

@@ -1,15 +1,11 @@
-import { useEffect } from "react";
 import { ConfettiBurst } from "./ConfettiBurst";
-
-/** How long the card stays up if nobody taps it, as the streak climb's does. */
-const CELEBRATION_MS = 7000;
 
 /**
  * The day the streak first goes past the player's longest before it (see
  * game/newBest.ts), on the submission that takes it there.
  *
- * The streak climb's card, flame and all: it floats over the puzzle and goes
- * by itself or on a tap.
+ * The streak climb's card, flame and all: it floats over the puzzle and stays
+ * until it is tapped away.
  */
 export function NewBestCelebration({
   days,
@@ -20,11 +16,6 @@ export function NewBestCelebration({
   best: number;
   onDone: () => void;
 }) {
-  useEffect(() => {
-    const timeout = window.setTimeout(onDone, CELEBRATION_MS);
-    return () => window.clearTimeout(timeout);
-  }, [onDone]);
-
   return (
     <>
       <ConfettiBurst rising />

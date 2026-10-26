@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AchievementCelebration } from "./AchievementCelebration";
 import { ACHIEVEMENTS } from "../game/achievements";
@@ -40,11 +40,13 @@ describe("AchievementCelebration", () => {
     expect(screen.getByText("And 5 more. See them all on your Stats page.")).toBeInTheDocument();
   });
 
-  it("goes by itself after a while", () => {
+  it("stays until it is tapped away", () => {
     vi.useFakeTimers();
     const onDone = vi.fn();
     render(<AchievementCelebration achievements={[byId("first-word")]} onDone={onDone} />);
-    act(() => vi.advanceTimersByTime(7000));
-    expect(onDone).toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(onDone).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button"));
+    expect(onDone).toHaveBeenCalledTimes(1);
   });
 });

@@ -19,14 +19,14 @@ describe("StreakClimbCelebration", () => {
     expect(status).toHaveTextContent("climbed 1 place —");
   });
 
-  it("goes on a tap, or by itself", () => {
+  it("stays until it is tapped away", () => {
     vi.useFakeTimers();
     const onDone = vi.fn();
     render(<StreakClimbCelebration climb={{ from: 5, to: 4 }} onDone={onDone} />);
+    vi.advanceTimersByTime(60_000);
+    expect(onDone).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button"));
     expect(onDone).toHaveBeenCalledTimes(1);
-    vi.advanceTimersByTime(7000);
-    expect(onDone).toHaveBeenCalledTimes(2);
     vi.useRealTimers();
   });
 });

@@ -1,10 +1,6 @@
-import { useEffect } from "react";
 import { ConfettiBurst } from "./ConfettiBurst";
 import { formatTotal } from "../game/dictionary";
 import { improvementPercent, type Improvement } from "../game/improvement";
-
-/** How long the card stays up if nobody taps it, as the perfect month's does. */
-const CELEBRATION_MS = 7000;
 
 /**
  * The moment a finished puzzle shows the player's average climbing (see
@@ -12,7 +8,7 @@ const CELEBRATION_MS = 7000;
  *
  * The perfect month's card, in green and with an arrow rather than a trophy:
  * it lands when the day is done, so it floats over a finished puzzle rather
- * than in the way of a guess, and goes by itself or on a tap.
+ * than in the way of a guess, and stays until it is tapped away.
  */
 export function ImprovementCelebration({
   improvement,
@@ -21,11 +17,6 @@ export function ImprovementCelebration({
   improvement: Improvement;
   onDone: () => void;
 }) {
-  useEffect(() => {
-    const timeout = window.setTimeout(onDone, CELEBRATION_MS);
-    return () => window.clearTimeout(timeout);
-  }, [onDone]);
-
   const { recent, earlier, days } = improvement;
   return (
     <>

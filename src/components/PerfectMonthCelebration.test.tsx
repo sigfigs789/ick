@@ -13,14 +13,14 @@ describe("PerfectMonthCelebration", () => {
     expect(document.querySelectorAll(".confetti--grand .confetti__piece")).toHaveLength(48);
   });
 
-  it("goes on a tap, or by itself", () => {
+  it("stays until it is tapped away", () => {
     vi.useFakeTimers();
     const onDone = vi.fn();
     render(<PerfectMonthCelebration date="2026-09-30" days={30} onDone={onDone} />);
+    vi.advanceTimersByTime(60_000);
+    expect(onDone).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button"));
     expect(onDone).toHaveBeenCalledTimes(1);
-    vi.advanceTimersByTime(7000);
-    expect(onDone).toHaveBeenCalledTimes(2);
     vi.useRealTimers();
   });
 });
