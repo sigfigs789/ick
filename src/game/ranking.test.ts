@@ -351,8 +351,8 @@ describe("display precision by score", () => {
 
 describe("ranking colors", () => {
   // Share squares double as the per-ranking color key, so lock each one -- most
-  // notably Elusive's gold square, the one no other rank uses, and Legend's
-  // black one above it.
+  // notably Elusive's orange square, the deeper gold, and Legend's black one
+  // above it.
   it("maps every ranking to its color square", () => {
     expect(RARITY_SYMBOL).toEqual({
       Quotidian: "🥚",
@@ -360,7 +360,7 @@ describe("ranking colors", () => {
       Uncommon: "🟩",
       Rare: "🟦",
       "Extremely Rare": "🟪",
-      Elusive: "🟨",
+      Elusive: "🟧",
       Mythic: "🟥",
       Legend: "⬛",
     });

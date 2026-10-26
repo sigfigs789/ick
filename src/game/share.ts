@@ -11,7 +11,9 @@ import type { AcceptedWord, Rarity } from "./types";
 
 // Mirrors the in-app "loot tier" rarity palette (grey -> green ->
 // blue -> purple -> gold -> red -> black, see index.css) so the shared result
-// matches what showed up in-game. Legend, the top rank, is black -- the one
+// matches what showed up in-game. Elusive shares as the orange square rather
+// than the yellow one: 🟨 reads pale beside the other squares, and 🟧 is the
+// deeper gold it wore before the badge turned gold. Legend, the top rank, is black -- the one
 // square that reads as absence rather than a hue, which is what makes it land.
 // Quotidian is reachable only on puzzles predating the retuned tiers; its egg
 // is an intentional Easter egg.
@@ -25,12 +27,12 @@ export const RARITY_SYMBOL: Record<Rarity, string> = {
   Uncommon: "🟩",
   Rare: "🟦",
   "Extremely Rare": "🟪",
-  Elusive: "🟨",
+  Elusive: "🟧",
   Mythic: "🟥",
   Legend: "⬛",
 };
 
-// Before the tiers were retuned, Legend wore orange.
+// Before the tiers were retuned, Legend wore orange too.
 // An archived result has to share the square it was played with, so the top
 // rank is looked up through the puzzle's own date.
 const PRE_RETUNE_SYMBOL: Partial<Record<Rarity, string>> = { Legend: "🟧" };

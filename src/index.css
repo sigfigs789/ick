@@ -66,10 +66,10 @@
   --rarity-extremely-rare-dot: #9b4fe0;
 
   /* Elusive sits between Extremely Rare and Mythic, and wears gold: the one
-     share square no other rank uses, as far from Common's grey as a warm hue
+     rank no other tier shares, as far from Common's grey as a warm hue
      gets, and the colour games use for "you found treasure". The text is a dark
      amber because yellow on cream is unreadable; the dot carries the gold.
-     Backed by the yellow square in shared results. */
+     Backed by the orange square in shared results. */
   --rarity-elusive-bg: #fdf3c4;
   --rarity-elusive-fg: #854d0e;
   --rarity-elusive-dot: #eab308;

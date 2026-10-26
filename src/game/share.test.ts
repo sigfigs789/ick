@@ -137,14 +137,14 @@ describe("buildShareText", () => {
     expect(resultLines).toHaveLength(words.length);
   });
 
-  it("shares an Elusive word under the gold square, in both reveal modes", () => {
+  it("shares an Elusive word under the orange square, in both reveal modes", () => {
     const date = "2026-10-26";
     const elusive: AcceptedWord = { word: "kilojoules", rarity: "Elusive", zipf: 1.6 };
     const score = formatRarityScore(elusive.zipf, date);
     expect(rarityForZipf(elusive.zipf, date)).toBe("Elusive");
-    expect(buildShareText(date, "str", [elusive]).split("\n")[2]).toBe(`🟨 ${score}`);
+    expect(buildShareText(date, "str", [elusive]).split("\n")[2]).toBe(`🟧 ${score}`);
     expect(buildShareText(date, "str", [elusive], { reveal: "all" }).split("\n")[2]).toBe(
-      `🟨 kilojoules (${score})`,
+      `🟧 kilojoules (${score})`,
     );
   });
 
