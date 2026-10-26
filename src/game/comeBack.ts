@@ -11,13 +11,21 @@
 
 import type { AchievementStatus } from "./achievements";
 import { daysSinceEpoch } from "./date";
-import { freezeCap, restDayProgress } from "./streakFreeze";
+import { freezeCap, freezeRules, restDayProgress } from "./streakFreeze";
 import type { StreakState } from "./types";
 
 /** Whether a streak reaching `days` played days earns a saved freeze (see streakFreeze.earnFreeze). */
 function earnsFreezeOn(days: number): boolean {
   return days === 3 || (days > 0 && days % 7 === 0);
 }
+
+/** What a lazy weekend is, for the line promising one. */
+const LAZY_WEEKEND_RULE =
+  "Play any 3 days by Friday and your streak is paused through the weekend: skipping Saturday and Sunday can't break it.";
+
+/** What a lazy Sunday is, for the line promising one once Friday is too late. */
+const LAZY_SUNDAY_RULE =
+  "Play any 3 days by Saturday and snooze through Sunday: skipping it can't break your streak.";
 
 /**
  * The one reason to come back tomorrow, for a streak that has already been
@@ -49,6 +57,25 @@ export function streakGoal(
   today: string,
   locked: readonly AchievementStatus[] = []
 ): string | null {
+  return comeBackGoal(streak, today, locked)?.line ?? null;
+}
+
+/** What a reward is, for a player who selects the line naming it. */
+export interface GoalExplainer {
+  title: string;
+  text: string;
+}
+
+/**
+ * `streakGoal`'s line, with what the reward it names is where that is not
+ * plain from the line itself: a 🧊 freeze, or a lazy weekend. Beating the best
+ * streak needs no explaining, and an achievement's line carries its own.
+ */
+export function comeBackGoal(
+  streak: StreakState,
+  today: string,
+  locked: readonly AchievementStatus[] = []
+): { line: string; explainer?: GoalExplainer } | null {
   const days = streak.currentStreak;
   const next = days + 1;
   const best = Math.max(streak.longestStreak, days);
@@ -61,7 +88,7 @@ export function streakGoal(
   const capFull = banked > 0 && banked >= freezeCap(best);
 
   // Each reward with the days played until it lands, and its rank in a tie.
-  const goals: { away: number; rank: number; line: string }[] = [];
+  const goals: { away: number; rank: number; line: string; explainer?: GoalExplainer }[] = [];
 
   // A full cap only rises at 14 days, and a kept freeze is never more than
   // four weeks out.
@@ -78,7 +105,8 @@ export function streakGoal(
     } else {
       line = `${away} days to ${nth ? `a ${nth}` : "your next"} 🧊 streak freeze.`;
     }
-    goals.push({ away, rank: 0, line });
+    const explainer = { title: "Streak freezes", text: freezeRules(days, freezeCap(best)) };
+    goals.push({ away, rank: 0, line, explainer });
     break;
   }
 
@@ -90,9 +118,12 @@ export function streakGoal(
         ? "Play tomorrow for a lazy Sunday 😴"
         : `${rest.needed} more days by Saturday unlocks a lazy Sunday 😴`
       : rest.needed === 1
-        ? "Play tomorrow for a lazy weekend 😴"
+        ? "Play tomorrow and unlock a lazy weekend 😴"
         : `Play ${rest.needed} more days this week and unlock a lazy weekend 😴`;
-    goals.push({ away: rest.needed, rank: 1, line });
+    const explainer = rest.sundayOnly
+      ? { title: "Lazy Sunday", text: LAZY_SUNDAY_RULE }
+      : { title: "Lazy weekend", text: LAZY_WEEKEND_RULE };
+    goals.push({ away: rest.needed, rank: 1, line, explainer });
   }
 
   if (best > days) {
@@ -100,8 +131,11 @@ export function streakGoal(
   }
 
   goals.sort((x, y) => x.away - y.away || x.rank - y.rank);
-  if (goals.length > 0) return goals[0].line;
-  if (locked.length > 0) return achievementGoal(locked[pickFor(today, locked.length)]);
+  if (goals.length > 0) {
+    const { line, explainer } = goals[0];
+    return { line, explainer };
+  }
+  if (locked.length > 0) return { line: achievementGoal(locked[pickFor(today, locked.length)]) };
   return null;
 }
 

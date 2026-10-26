@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ACHIEVEMENTS } from "./achievements";
-import { streakGoal } from "./comeBack";
+import { comeBackGoal, streakGoal } from "./comeBack";
 import type { StreakState } from "./types";
 
 const streak = (over: Partial<StreakState>): StreakState => ({
@@ -108,7 +108,7 @@ describe("streakGoal", () => {
     it("counts down the days still needed while the week has room", () => {
       expect(streakGoal(run(["2026-10-26"]), "2026-10-26")).toBe("Play 2 more days this week and unlock a lazy weekend 😴");
       expect(streakGoal(run(["2026-10-27", "2026-10-28"]), "2026-10-28")).toBe(
-        "Play tomorrow for a lazy weekend 😴"
+        "Play tomorrow and unlock a lazy weekend 😴"
       );
       // Too late for the whole weekend: Saturday played as the third still rests Sunday.
       expect(streakGoal(run(["2026-10-27", "2026-10-30"]), "2026-10-30")).toBe("Play tomorrow for a lazy Sunday 😴");
@@ -192,6 +192,28 @@ describe("streakGoal", () => {
 
     it("says nothing with every achievement earned", () => {
       expect(streakGoal(maxed, FRIDAY, [])).toBeNull();
+    });
+  });
+
+  describe("comeBackGoal", () => {
+    it("explains a freeze", () => {
+      expect(comeBackGoal(streak({}), FRIDAY)?.explainer?.title).toBe("Streak freezes");
+    });
+
+    it("explains a lazy weekend, or a lazy Sunday", () => {
+      const run = (playedDates: string[]) =>
+        streak({ currentStreak: 8, longestStreak: 20, bankedFreezes: 2, playedDates });
+      expect(comeBackGoal(run(["2026-10-27", "2026-10-28"]), "2026-10-28")).toEqual({
+        line: "Play tomorrow and unlock a lazy weekend 😴",
+        explainer: { title: "Lazy weekend", text: expect.stringMatching(/3 days by Friday/) },
+      });
+      expect(comeBackGoal(run(["2026-10-27", "2026-10-30"]), "2026-10-30")?.explainer?.title).toBe("Lazy Sunday");
+    });
+
+    it("leaves beating the best streak unexplained", () => {
+      const goal = comeBackGoal(streak({ currentStreak: 30, longestStreak: 40, bankedFreezes: 3 }), FRIDAY);
+      expect(goal?.line).toMatch(/beat your best/);
+      expect(goal?.explainer).toBeUndefined();
     });
   });
 });
