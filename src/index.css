@@ -6829,6 +6829,45 @@ button.app__menu-item + button.app__menu-item {
   margin: 0;
   font-weight: 600;
 }
+/* A line naming a freeze or a lazy weekend: tap for what that is. */
+.come-back__wrap {
+  position: relative;
+  display: inline-block;
+}
+.come-back__button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline dotted;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+.come-back__popup {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: grid;
+  gap: 0.35rem;
+  width: max-content;
+  max-width: min(17rem, calc(100vw - 2rem));
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--bg);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.15);
+  color: var(--fg-muted);
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+}
+.come-back__popup strong {
+  color: var(--fg);
+}
 
 /*
  * The player's Stats page at /stats: headline tiles, the rarity bars, best
