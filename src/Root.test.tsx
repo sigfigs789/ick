@@ -27,6 +27,9 @@ vi.mock("./components/FeedbackPage", () => ({
 // The chat bubble checks for new posts on its own fetch, which is not the board's.
 vi.mock("./components/ChatBubble", () => ({ ChatBubble: () => null }));
 vi.mock("./analytics", () => ({
+  // Reporting off keeps the play tab test from drawing: the header has no Play icon.
+  isReporting: () => false,
+  trackPlayTabAssigned: vi.fn(),
   trackLeaderboardJoined: vi.fn(),
   trackLeaderboardOpened: vi.fn(),
   trackFoundWordsOpened: vi.fn(),

@@ -18,9 +18,9 @@ const howToPlay = vi.fn();
  * The header wired to the real router, which is the only way to see the thing
  * it is for: a tab is a tab because pressing it changes the page under it.
  */
-function Harness() {
+function Harness({ playTab = false }: { playTab?: boolean }) {
   const route = useRoute();
-  return <AppHeader route={route} onHowToPlay={howToPlay} />;
+  return <AppHeader route={route} onHowToPlay={howToPlay} playTab={playTab} />;
 }
 
 /** Open the "?" menu, where the rules and the mode switch live. */
@@ -37,7 +37,7 @@ beforeEach(() => {
 describe("the header", () => {
   it("names each page by its icon, and the wordmark goes home", async () => {
     window.history.pushState(null, "", "/leaderboard");
-    render(<Harness />);
+    render(<Harness playTab />);
 
     // Icons on the bar, each named and titled with its page.
     expect(screen.getByRole("button", { name: "Words found" })).toHaveAttribute("title", "Words found");
@@ -45,18 +45,33 @@ describe("the header", () => {
       "aria-current",
       "page",
     );
-    // The puzzle has no icon: the wordmark is the way back to it.
+    // The wordmark is a way back to the puzzle, and so is the Play icon.
     await userEvent.click(screen.getByRole("link", { name: /^Word ?Ink$/ }));
+    expect(window.location.pathname).toBe("/");
+    expect(screen.getByRole("button", { name: "Play" })).toHaveAttribute("aria-current", "page");
+
+    await userEvent.click(screen.getByRole("button", { name: "Stats" }));
+    expect(window.location.pathname).toBe("/stats");
+    await userEvent.click(screen.getByRole("button", { name: "Play" }));
     expect(window.location.pathname).toBe("/");
   });
 
-  it("puts the finds before the boards", () => {
+  it("puts the finds before the boards, and leaves the puzzle to the wordmark", () => {
     render(<Harness />);
 
     const labels = within(screen.getByRole("navigation", { name: "Pages" }))
       .getAllByRole("button")
       .map((tab) => tab.getAttribute("aria-label"));
     expect(labels).toEqual(["Words found", "Leaderboards", "Stats"]);
+  });
+
+  it("puts the puzzle first for the play tab test's shown arm", () => {
+    render(<Harness playTab />);
+
+    const labels = within(screen.getByRole("navigation", { name: "Pages" }))
+      .getAllByRole("button")
+      .map((tab) => tab.getAttribute("aria-label"));
+    expect(labels).toEqual(["Play", "Words found", "Leaderboards", "Stats"]);
   });
 
   it("goes to each page, and moves the current marker with it", async () => {

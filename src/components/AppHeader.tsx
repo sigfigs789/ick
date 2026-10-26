@@ -69,14 +69,27 @@ function MenuChevron() {
 }
 
 /**
- * The pages beside the puzzle, as icons on the one bar -- the shape every daily
- * word game's header has settled on, and the only one that holds a wordmark and
- * four destinations on a 320px phone. The puzzle itself is the wordmark.
+ * The puzzle and the pages beside it, as icons on the one bar -- the shape every
+ * daily word game's header has settled on, and the only one that holds a
+ * wordmark and four destinations on a 320px phone.
  *
  * Each icon keeps its page's name as its accessible name and its tooltip, so a
  * screen reader and a mouse both get the word the glyph stands for.
  */
 const TABS: readonly Tab[] = [
+  // A play button: the puzzle, first because it is where every visit starts.
+  // The wordmark goes there too, but a link dressed as a name does not look
+  // like a way back, and the icon is what shows the puzzle as the current page.
+  // Only for players in the play tab test's shown arm (see `playTab` below).
+  {
+    route: "game",
+    label: "Play",
+    icon: (
+      <Icon>
+        <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z" />
+      </Icon>
+    ),
+  },
   // A book: the record of the words players found.
   // "Words found" rather than "Today's finds": the page does not only hold
   // today's -- it opens there, but stepping back a day is a thing it offers,
@@ -123,8 +136,9 @@ const TABS: readonly Tab[] = [
 ];
 
 /**
- * The header every page wears: one bar with the wordmark, which is the way back
- * to the puzzle, an icon for each page beside it, and the "?" menu.
+ * The header every page wears: one bar with the wordmark, which is also a way
+ * back to the puzzle, an icon for the puzzle and each page beside it, and the
+ * "?" menu.
  *
  * Rendered once above the router (see src/Root.tsx) rather than by each page, so
  * it is literally the same element across a navigation -- nothing to keep in
@@ -143,6 +157,7 @@ export function AppHeader({
   badge = true,
   badgeLabel,
   onBadgeDone,
+  playTab = false,
 }: {
   route: Route;
   onHowToPlay: () => void;
@@ -197,6 +212,12 @@ export function AppHeader({
    * announcement's state.
    */
   onBadgeDone?: () => void;
+  /**
+   * Whether the bar starts with the Play icon, by the play tab test (see
+   * game/playTabTest.ts), which src/Root.tsx draws. Off by default, so the
+   * puzzle is the wordmark's alone, as it has always been.
+   */
+  playTab?: boolean;
 }) {
   // Whether this header has the trial's button, the only thing a badge sits
   // under. The mode switch that replaced it wears none.
@@ -348,7 +369,7 @@ export function AppHeader({
         ) : (
           <p className="app__wordmark">{wordmark}</p>
         )}
-        <div className="app__header-actions">
+        <div className={`app__header-actions${playTab ? " app__header-actions--play" : ""}`}>
         {/* The trial's button, on old puzzles from before the mode switch. */}
         {onFreeform && (
           <div className="app__freeform-nav">
@@ -379,7 +400,7 @@ export function AppHeader({
           </div>
         )}
         <nav className="app__nav" aria-label="Pages">
-          {TABS.map((tab) => {
+          {(playTab ? TABS : TABS.filter((tab) => tab.route !== "game")).map((tab) => {
             const current = tab.route === route;
             return (
               <button
