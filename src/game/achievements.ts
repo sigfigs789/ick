@@ -1460,12 +1460,12 @@ function formatShare(share: number): string {
 /**
  * How many of the players who have ever guessed hold `id`, as the Stats page
  * shows under each badge: "46% of players", or for a badge only one player
- * holds, their name -- "Only earned by StormyFox47" -- or "Only earned by you!" to that player. Null for a badge nobody has
- * counted yet.
+ * holds, their name -- "Only earned by StormyFox47!" -- or "Only earned by
+ * you!" to that player. Null for a badge nobody has counted yet.
  */
 export function earnedShareLabel(id: string, rates: AchievementRates = ratesNow()): string | null {
   const holder = soleHolder(id, rates);
-  if (holder) return holder.self ? "Only earned by you!" : `Only earned by ${holder.name}`;
+  if (holder) return holder.self ? "Only earned by you!" : `Only earned by ${holder.name}!`;
   const share = shareOf(id, rates);
   if (share === null) return null;
   if (share === 0) return "No player yet";

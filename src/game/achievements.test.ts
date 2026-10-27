@@ -315,7 +315,7 @@ describe("earnedShareLabel", () => {
 
   it("names the one player holding a badge", () => {
     const sole = { ...rates, sole: { one: "StormyFox47" } };
-    expect(earnedShareLabel("one", sole)).toBe("Only earned by StormyFox47");
+    expect(earnedShareLabel("one", sole)).toBe("Only earned by StormyFox47!");
     localStorage.setItem(PLAYER_KEY, JSON.stringify({ id: "me" }));
     expect(earnedShareLabel("one", { ...rates, sole: { one: handleFor("me") } })).toBe("Only earned by you!");
     localStorage.removeItem(PLAYER_KEY);
