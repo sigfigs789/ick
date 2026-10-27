@@ -132,6 +132,12 @@ const suggestions = new Map(
     group by 1`).map((r) => [r.pid, r])
 );
 
+const bestWordWins = new Map(
+  query(
+    `select player_id::text pid, wins from public.leaderboard_best_word_wins(current_date)`
+  ).map((r) => [r.pid, Number(r.wins)])
+);
+
 await scoringReady("2026-08-10");
 await scoringReady();
 
@@ -198,6 +204,7 @@ function recordFor(pid: string): AchievementRecord {
       longestStreak: streak?.best_streak ?? 0,
       lastCompletedDate: null,
     },
+    bestWordWins: bestWordWins.get(pid) ?? 0,
     suggestions: suggestion
       ? [
           {

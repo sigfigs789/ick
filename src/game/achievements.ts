@@ -20,6 +20,7 @@ import { isUnattestedZipf, rarityForZipf, rarityScore } from "./dictionary";
 import { dropForDate } from "./drop";
 import { modeIsChosen } from "./mode";
 import { nextMonthStart } from "./month";
+import { loadPlayerId } from "./player";
 import { isWinningRarity } from "./rank";
 import { CURRENT_TIERS } from "./stats";
 import { loadStreak, playedHistory, playedOnItsDay } from "./storage";
@@ -53,6 +54,12 @@ export interface AchievementRecord {
   streak: Pick<StreakState, "currentStreak" | "longestStreak" | "lastCompletedDate">;
   /** The words this player has suggested (see game/suggestions.ts). */
   suggestions?: readonly SuggestedWordRecord[];
+  /**
+   * How many days this player's word was the day's best -- the word the line
+   * under the next puzzle names, unattested words included (see
+   * `fetchWordOfTheDayWins`). Absent until the server has said.
+   */
+  bestWordWins?: number;
 }
 
 /**
@@ -87,6 +94,9 @@ export interface AchievementStatus {
 }
 
 const MYTHIC_OR_BETTER: readonly Rarity[] = ["Mythic", "Legend"];
+
+/** The four top tiers, one word each, for Royal flush. */
+const ROYAL_FLUSH: readonly Rarity[] = ["Legend", "Mythic", "Elusive", "Extremely Rare"];
 
 /**
  * `record` as the share of players holding each badge counts it: with every
@@ -458,15 +468,50 @@ function bookends(progress: DailyProgress): boolean {
   );
 }
 
-/** A Legend in the puzzle of every day of the week. */
-function grandTour({ history }: AchievementRecord): Check {
-  const days = new Set<number>();
-  for (const progress of history) {
-    if (!hasTier("Legend")(progress)) continue;
-    days.add(dayOfWeek(progress.date));
-    if (days.size === 7) return { earnedOn: progress.date };
-  }
-  return { earnedOn: null, progress: { current: days.size, target: 7 } };
+/** A `tier` or better word in the puzzles of `target` different days of the week. */
+function tourOf(target: number, tier: Rarity = "Legend"): Achievement["check"] {
+  return ({ history }) => {
+    const days = new Set<number>();
+    for (const progress of history) {
+      if (!hasTier(tier)(progress)) continue;
+      days.add(dayOfWeek(progress.date));
+      if (days.size >= target) return { earnedOn: progress.date };
+    }
+    return { earnedOn: null, progress: { current: days.size, target } };
+  };
+}
+
+/** Two puzzles `passes` is true of, on different days less than `days` apart. */
+function twiceWithin(
+  days: number,
+  passes: (progress: DailyProgress) => boolean
+): Achievement["check"] {
+  return ({ history }) => {
+    let last: string | null = null;
+    for (const progress of history) {
+      if (!passes(progress)) continue;
+      if (last && last !== progress.date && addDays(last, days) > progress.date) {
+        return { earnedOn: progress.date };
+      }
+      last = progress.date;
+    }
+    return { earnedOn: null };
+  };
+}
+
+/** A word starting with the drop, Mythic or better. */
+function headStart(progress: DailyProgress): boolean {
+  const drop = (progress.drop || dropForDate(progress.date)).toLowerCase();
+  return progress.acceptedWords.some(
+    (word) => word.word.toLowerCase().startsWith(drop) && atLeast("Mythic")(word.rarity)
+  );
+}
+
+/** Three words sharing one tier, Elusive or better. */
+function threeOfAKind(progress: DailyProgress): boolean {
+  return (["Elusive", "Mythic", "Legend"] as const).some(
+    (tier) => progress.acceptedWords.filter((word) => word.rarity === tier).length >= 3
+  );
 }
 
 export const ACHIEVEMENTS: readonly Achievement[] = [
@@ -604,12 +649,39 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     ),
   },
   {
+    id: "three-of-a-kind",
+    group: "Rarity",
+    icon: "🎲",
+    title: "Three of a kind",
+    description: "Find three words of the same tier in one puzzle, Elusive or better.",
+    check: firstPuzzle(threeOfAKind),
+  },
+  {
+    // Shipped as Royal flush; the id stays so a badge already kept keeps its name.
     id: "royal-flush",
     group: "Rarity",
     icon: "🃏",
-    title: "Royal flush",
+    title: "Four of a kind",
     description: "Finish a puzzle with every guess a Legend.",
     check: firstPuzzle(everyGuess((rarity) => rarity === "Legend")),
+  },
+  {
+    id: "top-four",
+    group: "Rarity",
+    icon: "♠️",
+    title: "Royal flush",
+    description: "Find a Legend, a Mythic, an Elusive and an Extremely Rare word in one puzzle.",
+    check: firstPuzzle((progress) =>
+      ROYAL_FLUSH.every((tier) => progress.acceptedWords.some((word) => word.rarity === tier))
+    ),
+  },
+  {
+    id: "halfway-tour",
+    group: "Rarity",
+    icon: "🧭",
+    title: "Halfway tour",
+    description: "Find a Mythic or better word on 4 different days of the week.",
+    check: tourOf(4, "Mythic"),
   },
   {
     id: "grand-tour",
@@ -617,7 +689,16 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     icon: "🗺️",
     title: "Grand tour",
     description: "Find a Legend in a Monday's puzzle, a Tuesday's, and every day's through Sunday.",
-    check: grandTour,
+    check: tourOf(7),
+  },
+  {
+    id: "word-of-the-day",
+    group: "Rarity",
+    icon: "🏅",
+    title: "Word of the day",
+    description: "Find the day's best word.",
+    // The tally says how many days, not which, so the day it is first seen.
+    check: ({ bestWordWins = 0 }, today) => ({ earnedOn: bestWordWins > 0 ? today : null }),
   },
   {
     id: "streak-3",
@@ -676,12 +757,28 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     check: runOf(7, hasTier("Extremely Rare")),
   },
   {
+    id: "elusive-trio",
+    group: "Streaks",
+    icon: "🥉",
+    title: "Golden trio",
+    description: "Find an Elusive or better word 3 days in a row.",
+    check: runOf(3, hasTier("Elusive")),
+  },
+  {
     id: "elusive-week",
     group: "Streaks",
     icon: "🥇",
     title: "Golden week",
     description: "Find an Elusive or better word 7 days in a row.",
     check: runOf(7, hasTier("Elusive")),
+  },
+  {
+    id: "mythic-pair",
+    group: "Streaks",
+    icon: "🪄",
+    title: "Mythic pair",
+    description: "Find a Mythic or better word 2 days in a row.",
+    check: runOf(2, hasTier("Mythic")),
   },
   {
     id: "mythic-week",
@@ -692,12 +789,28 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     check: runOf(7, hasTier("Mythic")),
   },
   {
+    id: "legend-week",
+    group: "Streaks",
+    icon: "✌️",
+    title: "Twice in a week",
+    description: "Find a Legend on 2 days within a week.",
+    check: twiceWithin(7, hasTier("Legend")),
+  },
+  {
     id: "legend-streak",
     group: "Streaks",
     icon: "🌠",
     title: "Legend streak",
     description: "Find a Legend 5 days in a row.",
     check: runOf(5, hasTier("Legend")),
+  },
+  {
+    id: "double-sweep",
+    group: "Streaks",
+    icon: "🧺",
+    title: "Double sweep",
+    description: "Finish with every guess Rare or better 2 days in a row.",
+    check: runOf(2, everyGuess(isWinningRarity)),
   },
   {
     id: "sweep-week",
@@ -708,12 +821,28 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     check: runOf(7, everyGuess(isWinningRarity)),
   },
   {
+    id: "steady-hand",
+    group: "Streaks",
+    icon: "✋",
+    title: "Steady hand",
+    description: "Finish 2 days in a row without a guess turned away.",
+    check: runOf(2, flawless),
+  },
+  {
     id: "ironclad",
     group: "Streaks",
     icon: "🛡️",
     title: "Ironclad",
     description: "Finish 7 days in a row without a guess turned away.",
     check: runOf(7, flawless),
+  },
+  {
+    id: "honor-roll",
+    group: "Streaks",
+    icon: "🎖️",
+    title: "Honor roll",
+    description: "Average an Extremely Rare score or better with your best word over 5 days in a row.",
+    check: averageOf(5, "Extremely Rare"),
   },
   {
     id: "elusive-average",
@@ -839,6 +968,14 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     check: bothWays,
   },
   {
+    id: "no-misses",
+    group: "Style",
+    icon: "✅",
+    title: "No misses",
+    description: "Finish a puzzle with every guess Extremely Rare or better.",
+    check: firstPuzzle(everyGuess(atLeast("Extremely Rare"))),
+  },
+  {
     id: "gauntlet",
     group: "Style",
     icon: "⚔️",
@@ -893,6 +1030,14 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
         (word) => word.word.length <= 6 && atLeast("Mythic")(word.rarity)
       )
     ),
+  },
+  {
+    id: "head-start",
+    group: "Style",
+    icon: "🏁",
+    title: "Head start",
+    description: "Find a Mythic or better word that starts with the drop.",
+    check: firstPuzzle(headStart),
   },
   {
     id: "bookends",
@@ -1111,7 +1256,52 @@ function deviceRecord(streak: StreakState): AchievementRecord {
     onItsDay: playedOnItsDay().map((progress) => progress.date),
     streak,
     suggestions: suggestedWords(),
+    bestWordWins: readBestWordWins(),
   };
+}
+
+const BEST_WORD_KEY = "ick:best-word-wins";
+
+function readBestWordWins(): number {
+  try {
+    return Number(localStorage.getItem(BEST_WORD_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+let bestWordRequest: Promise<number> | null = null;
+
+/**
+ * Ask the server how many days this player had the best word, once a session,
+ * and keep the count for `syncAchievements`. The same tally the line under the
+ * puzzle settles its ties with (see `fetchBestWordWins` in game/leaderboard.ts),
+ * shared by every reader through the CDN. Never needed: a failed ask leaves the
+ * last count, and the badge, where they were.
+ */
+export function fetchWordOfTheDayWins(): Promise<number> {
+  const playerId = loadPlayerId()?.toLowerCase();
+  if (!playerId) return Promise.resolve(readBestWordWins());
+  bestWordRequest ??= fetch(
+    `/api/leaderboard?bestWins=1&today=${encodeURIComponent(todayDateString())}`
+  )
+    .then((response) => (response.ok ? response.json() : null))
+    .then((body: unknown) => {
+      const wins = (body as { wins?: Record<string, unknown> } | null)?.wins;
+      if (!wins || typeof wins !== "object") throw new Error("no wins");
+      const count = Number(wins[playerId]) || 0;
+      try {
+        localStorage.setItem(BEST_WORD_KEY, String(count));
+      } catch {
+        // Unwritable storage only means asking again next session.
+      }
+      return count;
+    })
+    .catch(() => {
+      bestWordRequest = null;
+      return readBestWordWins();
+    });
+  return bestWordRequest;
 }
 
 /** This browser's achievements, keeping any newly earned for good. */

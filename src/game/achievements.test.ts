@@ -413,6 +413,49 @@ describe("the harder badges", () => {
   });
 });
 
+describe("the easier rungs", () => {
+  it("needs two Legends less than a week apart for Twice in a week", () => {
+    const legendOn = (d: string) => day(d, [word("Legend")]);
+    const near = [legendOn("2026-10-01"), legendOn("2026-10-07")];
+    expect(statusOf("legend-week", { history: near }).earnedOn).toBe("2026-10-07");
+    const far = [legendOn("2026-10-01"), legendOn("2026-10-08")];
+    expect(statusOf("legend-week", { history: far }).earnedOn).toBeNull();
+  });
+
+  it("needs three words of one Elusive or better tier for Three of a kind", () => {
+    const three = day("2026-10-10", [word("Elusive"), word("Elusive"), word("Elusive"), word("Rare")]);
+    expect(statusOf("three-of-a-kind", { history: [three] }).earnedOn).toBe("2026-10-10");
+    const mixed = day("2026-10-10", [word("Elusive"), word("Elusive"), word("Mythic"), word("Mythic")]);
+    expect(statusOf("three-of-a-kind", { history: [mixed] }).earnedOn).toBeNull();
+  });
+
+  it("needs a Mythic word starting with the drop for Head start", () => {
+    const start = day("2026-10-10", [{ word: "inkhorn", rarity: "Mythic", zipf: 1.2 }]);
+    expect(statusOf("head-start", { history: [start] }).earnedOn).toBe("2026-10-10");
+    const end = day("2026-10-10", [{ word: "bethink", rarity: "Mythic", zipf: 1.2 }]);
+    expect(statusOf("head-start", { history: [end] }).earnedOn).toBeNull();
+  });
+});
+
+describe("Royal flush", () => {
+  it("needs one word from each of the four top tiers in one puzzle", () => {
+    const top = ["Legend", "Mythic", "Elusive", "Extremely Rare"] as const;
+    const flush = day("2026-10-10", top.map((r) => word(r)));
+    expect(statusOf("top-four", { history: [flush] }).earnedOn).toBe("2026-10-10");
+    const short = day("2026-10-10", [word("Legend"), word("Legend"), word("Mythic"), word("Elusive")]);
+    expect(statusOf("top-four", { history: [short] }).earnedOn).toBeNull();
+  });
+});
+
+describe("Word of the day", () => {
+  it("is earned once the tally has a day for the player, unattested words and all", () => {
+    expect(statusOf("word-of-the-day", { bestWordWins: 1 }).earnedOn).toBe(TODAY);
+    expect(statusOf("word-of-the-day", {}).earnedOn).toBeNull();
+    const counted = countedRecord({ history: [], onItsDay: [], streak: noStreak, bestWordWins: 2 });
+    expect(statusOf("word-of-the-day", counted).earnedOn).toBe(TODAY);
+  });
+});
+
 describe("countedRecord", () => {
   it("earns a badge from an unattested Legend but leaves it out of the count", () => {
     const unattested: AcceptedWord = { word: "zzyzx", rarity: "Legend", zipf: -1.57 };

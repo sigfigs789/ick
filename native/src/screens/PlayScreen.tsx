@@ -29,6 +29,7 @@ import {
   markAchievementsAnnounced,
   newlyEarned,
   fetchAchievementRates,
+  fetchWordOfTheDayWins,
   syncAchievements,
   type Achievement,
 } from '../../../src/game/achievements';
@@ -243,6 +244,7 @@ export function PlayScreen({ covered = false }: Props) {
   useEffect(() => {
     // The counts a lone badge's card reads, asked for before any word earns one.
     void fetchAchievementRates();
+    void fetchWordOfTheDayWins();
     const statuses = syncAchievements(streak);
     earnedAchievements.current = earnedIds(statuses);
     const backlog = achievementsToCatchUp(announcedAchievements(), statuses);
