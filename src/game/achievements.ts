@@ -755,8 +755,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     check: firstPuzzle(ofAKind(3, "Extremely Rare")),
   },
   {
-    // Shipped as Royal flush; the id stays so a badge already kept keeps its name.
-    id: "royal-flush",
+    id: "four-of-a-kind",
     group: "Rarity",
     icon: "🃏",
     title: "Four of a kind",
