@@ -38,10 +38,9 @@ const LAZY_SUNDAY_RULE =
  * its week. A lazy weekend is only promised while the week has days enough
  * left to earn it, and once unlocked is not mentioned again.
  *
- * Once no freeze and no lazy weekend is left to earn, it points at an
- * achievement still locked instead (see `achievementGoal`), ahead of beating
- * the best streak. With nothing at all left to earn, it is null and nothing is
- * said.
+ * When none of those lands within `SOON_DAYS` days played, it points at an
+ * achievement still locked instead (see `achievementGoal`). With nothing at
+ * all left to earn, it is null and nothing is said.
  *
  * A freeze past the cap is not kept, so it is not promised. A player already
  * holding one hears which it would be -- a 2nd, a 3rd -- since "your next
@@ -123,21 +122,21 @@ export function comeBackGoal(
     goals.push({ away: rest.needed, rank: 1, line, explainer });
   }
 
-  if (goals.length === 0 && locked.length > 0) return achievementGoal(locked, streak, today);
-
   if (best > days) {
     goals.push({ away: best - days + 1, rank: 2, line: `${best - days + 1} days to beat your best streak of ${best}.` });
   }
 
   goals.sort((x, y) => x.away - y.away || x.rank - y.rank);
-  if (goals.length > 0) {
-    const { line, explainer } = goals[0];
-    return { line, explainer };
-  }
-  return null;
+  const soonest = goals[0];
+  if (soonest && soonest.away <= SOON_DAYS) return { line: soonest.line, explainer: soonest.explainer };
+  if (locked.length > 0) return achievementGoal(locked, streak, today);
+  return soonest ? { line: soonest.line, explainer: soonest.explainer } : null;
 }
 
-/** How far ahead an achievement is worth naming as nearly there. */
+/** How many days played ahead a freeze, lazy weekend or best streak still leads the line. */
+const SOON_DAYS = 5;
+
+/** How many days played ahead an achievement is worth naming as nearly there. */
 const NEAR_DAYS = 3;
 
 /**
@@ -178,7 +177,7 @@ function achievementGoal(
   const { achievement, progress } = (near ?? ranked[0]).status;
   const along = progress && progress.current > 0 ? ` (${progress.current}/${progress.target} so far)` : "";
   return {
-    line: `Shoot for ${achievement.icon} ${achievement.title} Achievement!`,
+    line: `Shoot for ${achievement.icon} "${achievement.title}" Achievement!`,
     explainer: { title: achievement.title, text: `${achievement.description}${along}` },
   };
 }

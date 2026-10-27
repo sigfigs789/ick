@@ -158,7 +158,7 @@ describe("streakGoal", () => {
     });
   });
 
-  describe("once no freeze or lazy weekend is left", () => {
+  describe("with nothing else within 5 days", () => {
     // Cap full, and a Friday with no lazy weekend left to earn.
     const maxed = streak({ currentStreak: 30, longestStreak: 30, bankedFreezes: 2 });
     const byId = (id: string) => ACHIEVEMENTS.find((a) => a.id === id)!;
@@ -171,7 +171,7 @@ describe("streakGoal", () => {
     it("names the easiest locked achievement, by how many players hold it", () => {
       // straight-in is held by far more players than pantheon or both-ways.
       const locked = [lockedOne("pantheon"), lockedOne("straight-in"), lockedOne("both-ways")];
-      expect(streakGoal(maxed, FRIDAY, locked)).toBe("Shoot for 🏹 Straight in Achievement!");
+      expect(streakGoal(maxed, FRIDAY, locked)).toBe('Shoot for 🏹 "Straight in" Achievement!');
     });
 
     it("names the one coming back earns soonest, within 3 days", () => {
@@ -182,36 +182,48 @@ describe("streakGoal", () => {
         lockedOne("words-100", { current: 96, target: 100 }),
       ];
       // 4 words is one day of guesses; 3 more days played is three.
-      expect(streakGoal(maxed, FRIDAY, locked)).toBe("Shoot for 📚 Hundred words Achievement!");
-      expect(streakGoal(maxed, FRIDAY, locked.slice(0, 3))).toBe("Shoot for 🗓️ Devotee Achievement!");
+      expect(streakGoal(maxed, FRIDAY, locked)).toBe('Shoot for 📚 "Hundred words" Achievement!');
+      expect(streakGoal(maxed, FRIDAY, locked.slice(0, 3))).toBe('Shoot for 🗓️ "Devotee" Achievement!');
     });
 
     it("counts a streak achievement from the current streak", () => {
       const run = streak({ currentStreak: 28, longestStreak: 28, bankedFreezes: 2 });
       const locked = [lockedOne("straight-in"), lockedOne("streak-30", { current: 28, target: 30 })];
-      expect(streakGoal(run, FRIDAY, locked)).toBe("Shoot for 🌕 One month Achievement!");
+      expect(streakGoal(run, FRIDAY, locked)).toBe('Shoot for 🌕 "One month" Achievement!');
     });
 
     it("falls back to the easiest past 3 days", () => {
       const locked = [lockedOne("days-50", { current: 46, target: 50 }), lockedOne("straight-in")];
-      expect(streakGoal(maxed, FRIDAY, locked)).toBe("Shoot for 🏹 Straight in Achievement!");
+      expect(streakGoal(maxed, FRIDAY, locked)).toBe('Shoot for 🏹 "Straight in" Achievement!');
     });
 
     it("explains the achievement, with how far along a count is", () => {
       expect(comeBackGoal(maxed, FRIDAY, [lockedOne("words-100", { current: 64, target: 100 })])).toEqual({
-        line: "Shoot for 📚 Hundred words Achievement!",
+        line: 'Shoot for 📚 "Hundred words" Achievement!',
         explainer: { title: "Hundred words", text: "Bank 100 words. (64/100 so far)" },
       });
     });
 
     it("comes ahead of beating the best streak", () => {
       const behind = streak({ currentStreak: 30, longestStreak: 40, bankedFreezes: 2 });
-      expect(streakGoal(behind, FRIDAY, [lockedOne("straight-in")])).toBe("Shoot for 🏹 Straight in Achievement!");
+      expect(streakGoal(behind, FRIDAY, [lockedOne("straight-in")])).toBe('Shoot for 🏹 "Straight in" Achievement!');
       expect(streakGoal(behind, FRIDAY, [])).toMatch(/beat your best/);
     });
 
-    it("is not used while a freeze is ahead", () => {
+    it("is not used while a freeze is within 5 days", () => {
       expect(streakGoal(streak({}), FRIDAY, [lockedOne("straight-in")])).toBe("2 days to your next 🧊 streak freeze.");
+      // A full cap of 1 rises at 14 days: 5 away from 9, 6 away from 8.
+      expect(streakGoal(streak({ currentStreak: 9, longestStreak: 9, bankedFreezes: 1 }), FRIDAY, [lockedOne("straight-in")])).toBe(
+        "5 days until your 🧊 freeze limit goes up to 2."
+      );
+      expect(streakGoal(streak({ currentStreak: 8, longestStreak: 8, bankedFreezes: 1 }), FRIDAY, [lockedOne("straight-in")])).toBe(
+        'Shoot for 🏹 "Straight in" Achievement!'
+      );
+    });
+
+    it("is not used while beating the best streak is within 5 days", () => {
+      const close = streak({ currentStreak: 36, longestStreak: 40, bankedFreezes: 2 });
+      expect(streakGoal(close, FRIDAY, [lockedOne("straight-in")])).toBe("5 days to beat your best streak of 40.");
     });
 
     it("says nothing with every achievement earned", () => {
