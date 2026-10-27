@@ -129,7 +129,7 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
     `?share-name=hidden` or `=shown`. Testers are forced to `hidden`. A
     forced arm or a host that reports nothing is never drawn.
   - **Flames** (`src/game/shareFlamesTest.ts`, `src/hooks/useShareFlames.ts`,
-    `src/components/ShareFlames.tsx`): a 50/50 test. For `shown`, both Share
+    `src/components/ShareFlames.tsx`): an 80/20 test. For `shown`, both Share
     buttons (beside the guess log and in the share panel) are engulfed in
     fire in the colour of the tier that the average score of the puzzle's
     words earns, once that average reaches Elusive: the whole button

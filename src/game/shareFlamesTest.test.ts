@@ -56,10 +56,10 @@ describe("flameLevel", () => {
 });
 
 describe("assignShareFlamesArm", () => {
-  it("splits players 50/50", () => {
-    expect(assignShareFlamesArm(() => 0.49)).toEqual({ variant: "shown", fresh: true });
+  it("splits players 80/20", () => {
+    expect(assignShareFlamesArm(() => 0.79)).toEqual({ variant: "shown", fresh: true });
     localStorage.clear();
-    expect(assignShareFlamesArm(() => 0.5)).toEqual({ variant: "hidden", fresh: true });
+    expect(assignShareFlamesArm(() => 0.8)).toEqual({ variant: "hidden", fresh: true });
   });
 
   it("keeps the first draw for good", () => {
