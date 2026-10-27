@@ -66,8 +66,8 @@ const OWN_HAPTICS = [30, 40, 30, 40, 30, 40, 60, 60, 160];
  * furniture, and furniture is read once and then looked past. Something
  * wandering over the board is asking to be hit -- and this game is called
  * WordInk, so what a hit leaves behind is ink. Pressing it is the whole of the
- * interaction; there is no close button hiding in a corner, because the bubble
- * *is* the button.
+ * interaction. The × on its corner does the same thing -- it is there for the
+ * reader who would not guess a floating notice can be dismissed at all.
  *
  * Popping it is final: the window it named is remembered in this browser, so
  * one splat ends that congratulation for good, whatever is left of its four
@@ -225,29 +225,42 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
               ))}
             </span>
           ) : (
-            <button
-              type="button"
-              className={`congrats-bubble__pop${own ? " congrats-bubble__pop--you" : ""}`}
-              onClick={splat}
-              // What hitting it does, for a reader who cannot see that it is a
-              // bubble. The message itself is the label, so this is the only
-              // part that needs saying separately.
-              title="Pop"
-            >
-              <span className="congrats-bubble__emoji" aria-hidden="true">
-                {yours ? "👑" : "🎉"}
-              </span>
-              {yours ? (
-                <span className="congrats-bubble__text">
-                  <span className="congrats-bubble__headline">{yours.headline}</span>{" "}
-                  <span className="congrats-bubble__detail">{yours.detail}</span>
+            <>
+              <button
+                type="button"
+                className={`congrats-bubble__pop${own ? " congrats-bubble__pop--you" : ""}`}
+                onClick={splat}
+                // What hitting it does, for a reader who cannot see that it is a
+                // bubble. The message itself is the label, so this is the only
+                // part that needs saying separately.
+                title="Pop"
+              >
+                <span className="congrats-bubble__emoji" aria-hidden="true">
+                  {yours ? "👑" : "🎉"}
                 </span>
-              ) : (
-                <span className="congrats-bubble__text">
-                  {congratsMessage(winner.name, spot)}
-                </span>
-              )}
-            </button>
+                {yours ? (
+                  <span className="congrats-bubble__text">
+                    <span className="congrats-bubble__headline">{yours.headline}</span>{" "}
+                    <span className="congrats-bubble__detail">{yours.detail}</span>
+                  </span>
+                ) : (
+                  <span className="congrats-bubble__text">
+                    {congratsMessage(winner.name, spot)}
+                  </span>
+                )}
+              </button>
+              {/* A sibling rather than inside the bubble: a button cannot hold a
+                  button, and the reader's own bubble clips anything hanging off
+                  its edge. It pops the bubble like any other press. */}
+              <button
+                type="button"
+                className="congrats-bubble__close"
+                onClick={splat}
+                aria-label="Close"
+              >
+                <span aria-hidden="true">×</span>
+              </button>
+            </>
           )}
         </div>
       )}

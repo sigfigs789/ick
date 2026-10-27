@@ -162,7 +162,7 @@ describe("the congratulation bubble", () => {
       }),
     ).toBeInTheDocument();
     await waitFor(() => expect(asked).toHaveLength(2));
-    expect(screen.getAllByRole("button")).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Close" })).toHaveLength(1);
     // Asked for just enough rows to tell.
     const freeform = asked.find((url) => params(url).get("mode") === "freeform")!;
     expect(params(freeform).get("limit")).toBe("5");
@@ -217,7 +217,9 @@ describe("the congratulation bubble", () => {
     stubFetch({ weekly: [WINNER] });
     const { container, unmount } = render(<CongratsBubble today={MONDAY} />);
 
-    await userEvent.click(await screen.findByRole("button"));
+    await userEvent.click(
+      await screen.findByRole("button", { name: /^Congrats / }),
+    );
     // The bubble is gone the moment it is hit, and what is left is the blot --
     // decorative, so it is asserted by class rather than by role.
     expect(screen.queryByRole("button")).toBeNull();
@@ -235,6 +237,15 @@ describe("the congratulation bubble", () => {
     unmount();
     render(<CongratsBubble today="2026-09-17" />);
     await waitFor(() => expect(screen.queryByRole("button")).toBeNull());
+  });
+
+  it("pops from the × on its corner too", async () => {
+    stubFetch({ weekly: [WINNER] });
+    const { container } = render(<CongratsBubble today={MONDAY} />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(container.querySelector(".congrats-bubble__splat")).not.toBeNull();
   });
 
   it("tells the reader it was them, and makes a fuss of it", async () => {
