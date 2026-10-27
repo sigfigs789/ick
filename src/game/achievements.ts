@@ -519,6 +519,94 @@ function threeOfAKind(progress: DailyProgress): boolean {
   );
 }
 
+/**
+ * The words of one puzzle, lowercased. A word with no spelling -- the rates
+ * script's stand-in for one the board did not keep -- is left out.
+ */
+function wordsOf(progress: DailyProgress): string[] {
+  return progress.acceptedWords.flatMap((word) => word.word.toLowerCase() || []);
+}
+
+/** The first puzzle with a word that passes `test`. */
+function anyWord(test: (word: string, progress: DailyProgress) => boolean): Achievement["check"] {
+  return firstPuzzle((progress) => wordsOf(progress).some((word) => test(word, progress)));
+}
+
+/** Every guess spent, the words taken together passing `test`. */
+function finishedWith(test: (words: string[]) => boolean): Achievement["check"] {
+  return firstPuzzle(
+    (progress) =>
+      progress.completed &&
+      wordsOf(progress).length >= maxGuessesFor(progress.date) &&
+      test(wordsOf(progress))
+  );
+}
+
+/** Each word after the first passing `test` against the one before it. */
+function eachAfter(test: (before: string, word: string) => boolean) {
+  return (words: string[]) => words.every((word, i) => i === 0 || test(words[i - 1], word));
+}
+
+/** `target` different letters seen, over every word banked, `lettersOf` each. */
+function lettersSeen(target: number, lettersOf: (word: string) => string): Achievement["check"] {
+  return ({ history }) => {
+    const seen = new Set<string>();
+    for (const progress of history) {
+      for (const word of wordsOf(progress)) {
+        for (const letter of lettersOf(word)) if (/[a-z]/.test(letter)) seen.add(letter);
+      }
+      if (seen.size >= target) return { earnedOn: progress.date };
+    }
+    return { earnedOn: null, progress: { current: seen.size, target } };
+  };
+}
+
+/** Played on its own day on a day of the week in `days`, every one of them. */
+function onItsDayOfWeek(days: readonly number[]): Achievement["check"] {
+  return ({ onItsDay }) => {
+    const seen = new Set<number>();
+    for (const date of [...onItsDay].sort()) {
+      if (days.includes(dayOfWeek(date))) seen.add(dayOfWeek(date));
+      if (seen.size === days.length) return { earnedOn: date };
+    }
+    return { earnedOn: null, progress: { current: seen.size, target: days.length } };
+  };
+}
+
+/** A Saturday and the Sunday after it, both played on their own day. */
+function wholeWeekend({ onItsDay }: AchievementRecord): Check {
+  const played = new Set(onItsDay);
+  const sunday = [...played]
+    .sort()
+    .find((date) => dayOfWeek(date) === 0 && played.has(addDays(date, -1)));
+  return { earnedOn: sunday ?? null };
+}
+
+/** The same word banked on two different days. */
+function sameWordTwice({ history }: AchievementRecord): Check {
+  const firstOn = new Map<string, string>();
+  for (const progress of history) {
+    for (const word of wordsOf(progress)) {
+      const first = firstOn.get(word);
+      if (first && first !== progress.date) return { earnedOn: progress.date };
+      if (!first) firstOn.set(word, progress.date);
+    }
+  }
+  return { earnedOn: null };
+}
+
+/** Two words in one puzzle made of the same letters (a puzzle never banks one word twice). */
+function hasAnagrams(progress: DailyProgress): boolean {
+  const keys = wordsOf(progress).map((word) => [...word].sort().join(""));
+  return new Set(keys).size < keys.length;
+}
+
+/** The drop found twice in one word. */
+function dropTwice(word: string, progress: DailyProgress): boolean {
+  const drop = (progress.drop || dropForDate(progress.date)).toLowerCase();
+  return word.indexOf(drop) !== word.lastIndexOf(drop);
+}
+
 export const ACHIEVEMENTS: readonly Achievement[] = [
   {
     id: "first-word",
@@ -1063,6 +1151,190 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Bookends",
     description: "Find a Mythic or better word that starts with the drop and one that ends with it, in one puzzle.",
     check: firstPuzzle(bookends),
+  },
+  {
+    id: "alphabet-10",
+    group: "Collections",
+    icon: "🥣",
+    title: "Alphabet soup",
+    description: "Bank words starting with 10 different letters.",
+    check: lettersSeen(10, (word) => word.slice(0, 1)),
+  },
+  {
+    id: "alphabet-13",
+    group: "Collections",
+    icon: "🐦",
+    title: "Sesame Street",
+    description: "Bank words starting with 13 different letters, half the alphabet.",
+    check: lettersSeen(13, (word) => word.slice(0, 1)),
+  },
+  {
+    id: "alphabet-26",
+    group: "Collections",
+    icon: "🔠",
+    title: "A to Z",
+    description: "Bank words starting with every letter of the alphabet.",
+    check: lettersSeen(26, (word) => word.slice(0, 1)),
+  },
+  {
+    id: "pangram",
+    group: "Collections",
+    icon: "🦊",
+    title: "The quick brown fox",
+    description: "Use every letter of the alphabet across the words you bank.",
+    check: lettersSeen(26, (word) => word),
+  },
+  {
+    id: "triple-letter",
+    group: "Style",
+    icon: "📺",
+    title: "Three's Company",
+    description: "Bank a word with one letter in it three times.",
+    check: anyWord((word) => /(.).*\1.*\1/.test(word)),
+  },
+  {
+    id: "short-king",
+    group: "Style",
+    icon: "🤴",
+    title: "Short King",
+    description: "Bank a word of 4 letters or fewer.",
+    check: anyWord((word) => word.length <= 4),
+  },
+  {
+    id: "x-word",
+    group: "Style",
+    icon: "❌",
+    title: "X marks the spot",
+    description: "Bank a word with an X.",
+    check: anyWord((word) => word.includes("x")),
+  },
+  {
+    id: "old-macdonald",
+    group: "Style",
+    icon: "🐄",
+    title: "Old MacDonald",
+    description: "Bank a word with E, I and O in that order. E-I-E-I-O!",
+    check: anyWord((word) => /e.*i.*o/.test(word)),
+  },
+  {
+    id: "double-dip",
+    group: "Style",
+    icon: "🥔",
+    title: "Double dip",
+    description: "Bank a word with the drop in it twice.",
+    check: anyWord(dropTwice),
+  },
+  {
+    id: "the-ick",
+    group: "Style",
+    icon: "🤢",
+    title: "The Ick",
+    description: "Bank a word with ICK in it.",
+    check: anyWord((word) => word.includes("ick")),
+  },
+  {
+    id: "cats-and-dogs",
+    group: "Style",
+    icon: "🐈",
+    title: "Cats & Dogs",
+    description: "Bank a word with CAT or DOG in it.",
+    check: anyWord((word) => /cat|dog/.test(word)),
+  },
+  {
+    id: "tenet",
+    group: "Style",
+    icon: "⏪",
+    title: "Tenet",
+    description: "Bank a palindrome, a word that reads the same backwards.",
+    check: anyWord((word) => word.length >= 3 && word === [...word].reverse().join("")),
+  },
+  {
+    id: "rhythm-nation",
+    group: "Style",
+    icon: "🥁",
+    title: "Rhythm Nation",
+    description: "Bank a word with no A, E, I, O or U.",
+    check: anyWord((word) => !/[aeiou]/.test(word)),
+  },
+  {
+    id: "q-without-u",
+    group: "Style",
+    icon: "🦆",
+    title: "Q without U",
+    description: "Bank a word with a Q that isn't followed by a U.",
+    check: anyWord((word) => /q(?!u)/.test(word)),
+  },
+  {
+    id: "peter-piper",
+    group: "Style",
+    icon: "🌶️",
+    title: "Peter Piper",
+    description: "Finish a puzzle with every word starting with the same letter.",
+    check: finishedWith((words) => new Set(words.map((word) => word.slice(0, 1))).size === 1),
+  },
+  {
+    id: "abcs",
+    group: "Style",
+    icon: "🔤",
+    title: "Now I know my ABCs",
+    description: "Finish a puzzle with your words in alphabetical order.",
+    check: finishedWith(eachAfter((before, word) => before < word)),
+  },
+  {
+    id: "chain-gang",
+    group: "Style",
+    icon: "⛓️",
+    title: "Chain Gang",
+    description: "Finish a puzzle with each word starting on the last letter of the one before.",
+    check: finishedWith(eachAfter((before, word) => before.slice(-1) === word.slice(0, 1))),
+  },
+  {
+    id: "honey-i-blew-up-the-kid",
+    group: "Style",
+    icon: "🎈",
+    title: "Honey, I Blew Up the Kid",
+    description: "Finish a puzzle with each word longer than the one before.",
+    check: finishedWith(eachAfter((before, word) => word.length > before.length)),
+  },
+  {
+    id: "voldemort",
+    group: "Style",
+    icon: "🧙",
+    title: "I am Lord Voldemort",
+    description: "Bank two words made of the same letters in one puzzle.",
+    check: firstPuzzle(hasAnagrams),
+  },
+  {
+    id: "basic",
+    group: "Style",
+    icon: "🍔",
+    title: "Basic",
+    description: "Finish a puzzle with every guess Common.",
+    check: firstPuzzle(everyGuess((rarity) => rarity === "Common")),
+  },
+  {
+    id: "groundhog-day",
+    group: "Collections",
+    icon: "🦫",
+    title: "Groundhog Day",
+    description: "Bank the same word on two different days.",
+    check: sameWordTwice,
+  },
+  {
+    id: "weekend-at-bernies",
+    group: "Streaks",
+    icon: "🕶️",
+    title: "Weekend at Bernie's",
+    description: "Play a Saturday and the Sunday after it, each on its own day.",
+    check: wholeWeekend,
+  },
+  {
+    id: "eight-days-a-week",
+    group: "Getting started",
+    icon: "🎸",
+    title: "Eight Days a Week",
+    description: "Play on every day of the week, each puzzle on its own day.",
+    check: onItsDayOfWeek([0, 1, 2, 3, 4, 5, 6]),
   },
   {
     id: "word-suggested",
