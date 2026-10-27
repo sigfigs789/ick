@@ -8,7 +8,7 @@ import { loadPlayerId, selfName } from "../game/player";
 import { modeForDate, type GameMode } from "../game/mode";
 import { trackResultCopied } from "../analytics";
 import type { AcceptedWord, StreakState } from "../game/types";
-import { shareFlamesClass, type FlameTier } from "../game/shareFlamesTest";
+import { shareFlamesClass, type FlameTier } from "../game/shareFlames";
 import { ShareFlames } from "./ShareFlames";
 
 interface Props {
@@ -20,7 +20,7 @@ interface Props {
   mode?: GameMode;
   /** After the copy: the page opens the share panel and scrolls to it. */
   onShared?: () => void;
-  /** The tier the button burns in, or none (see game/shareFlamesTest.ts). */
+  /** The tier the button burns in, or none (see game/shareFlames.ts). */
   flames?: FlameTier | null;
 }
 

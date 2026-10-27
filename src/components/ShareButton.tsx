@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { copyText } from "../clipboard";
-import { shareFlamesClass, type FlameTier } from "../game/shareFlamesTest";
+import { shareFlamesClass, type FlameTier } from "../game/shareFlames";
 import { ShareFlames } from "./ShareFlames";
 
 interface Props {
   text: string;
   /** Called after the result has been copied to the player's clipboard. */
   onShared?: () => void;
-  /** The tier the button burns in, or none (see game/shareFlamesTest.ts). */
+  /** The tier the button burns in, or none (see game/shareFlames.ts). */
   flames?: FlameTier | null;
 }
 
