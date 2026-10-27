@@ -38,7 +38,8 @@ const LAZY_SUNDAY_RULE =
  * its week. A lazy weekend is only promised while the week has days enough
  * left to earn it, and once unlocked is not mentioned again.
  *
- * When none of those lands within `SOON_DAYS` days played, it points at an
+ * When none of those lands within its window (`SOON_DAYS`: two days played for
+ * a freeze or the best streak, one for a lazy weekend), it points at an
  * achievement still locked instead (see `achievementGoal`). With nothing at
  * all left to earn, it is null and nothing is said.
  *
@@ -84,7 +85,7 @@ export function comeBackGoal(
   const capFull = banked > 0 && banked >= freezeCap(best);
 
   // Each reward with the days played until it lands, and its rank in a tie.
-  const goals: { away: number; rank: number; line: string; explainer?: GoalExplainer }[] = [];
+  const goals: { away: number; rank: number; soon: number; line: string; explainer?: GoalExplainer }[] = [];
 
   // A full cap only rises at 14 days, and a kept freeze is never more than
   // four weeks out.
@@ -102,7 +103,7 @@ export function comeBackGoal(
       line = `${away} days to ${nth ? `a ${nth}` : "your next"} 🧊 streak freeze.`;
     }
     const explainer = { title: "Streak freezes", text: freezeRules(days, freezeCap(best)) };
-    goals.push({ away, rank: 0, line, explainer });
+    goals.push({ away, rank: 0, soon: SOON_DAYS.freeze, line, explainer });
     break;
   }
 
@@ -119,22 +120,28 @@ export function comeBackGoal(
     const explainer = rest.sundayOnly
       ? { title: "Lazy Sunday", text: LAZY_SUNDAY_RULE }
       : { title: "Lazy weekend", text: LAZY_WEEKEND_RULE };
-    goals.push({ away: rest.needed, rank: 1, line, explainer });
+    goals.push({ away: rest.needed, rank: 1, soon: SOON_DAYS.lazyWeekend, line, explainer });
   }
 
   if (best > days) {
-    goals.push({ away: best - days + 1, rank: 2, line: `${best - days + 1} days to beat your best streak of ${best}.` });
+    goals.push({
+      away: best - days + 1,
+      rank: 2,
+      soon: SOON_DAYS.best,
+      line: `${best - days + 1} days to beat your best streak of ${best}.`,
+    });
   }
 
   goals.sort((x, y) => x.away - y.away || x.rank - y.rank);
+  const soon = goals.find((goal) => goal.away <= goal.soon);
+  if (soon) return { line: soon.line, explainer: soon.explainer };
   const soonest = goals[0];
-  if (soonest && soonest.away <= SOON_DAYS) return { line: soonest.line, explainer: soonest.explainer };
   if (locked.length > 0) return achievementGoal(locked, streak, today);
   return soonest ? { line: soonest.line, explainer: soonest.explainer } : null;
 }
 
-/** How many days played ahead a freeze, lazy weekend or best streak still leads the line. */
-const SOON_DAYS = 5;
+/** How many days played ahead each reward still leads the line over an achievement. */
+const SOON_DAYS = { freeze: 2, lazyWeekend: 1, best: 2 } as const;
 
 /** How many days played ahead an achievement is worth naming as nearly there. */
 const NEAR_DAYS = 3;
