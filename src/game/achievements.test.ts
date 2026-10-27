@@ -16,6 +16,8 @@ import {
   type AchievementRecord,
 } from "./achievements";
 import { addDays } from "./date";
+import { handleFor } from "./handle";
+import { PLAYER_KEY } from "./player";
 import { setPlayerMessages } from "./playerMessages";
 import type { AcceptedWord, DailyProgress, Rarity, StreakState } from "./types";
 
@@ -309,6 +311,19 @@ describe("earnedShareLabel", () => {
     expect(earnedShareLabel("some", rates)).toBe("46% of players");
     expect(earnedShareLabel("one", rates)).toBe("Under 1% of players");
     expect(earnedShareLabel("none", rates)).toBe("No player yet");
+  });
+
+  it("names the one player holding a badge", () => {
+    const sole = { ...rates, sole: { one: "StormyFox47" } };
+    expect(earnedShareLabel("one", sole)).toBe("StormyFox47");
+    localStorage.setItem(PLAYER_KEY, JSON.stringify({ id: "me" }));
+    expect(earnedShareLabel("one", { ...rates, sole: { one: handleFor("me") } })).toBe("You!");
+    localStorage.removeItem(PLAYER_KEY);
+  });
+
+  it("names nobody once a second player holds it", () => {
+    const stale = { ...rates, earned: { ...rates.earned, one: 2 }, sole: { one: "StormyFox47" } };
+    expect(earnedShareLabel("one", stale)).toBe("1% of players");
   });
 
   it("says nothing for a badge the snapshot predates", () => {

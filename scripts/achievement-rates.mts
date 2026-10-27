@@ -40,6 +40,7 @@ const { ACHIEVEMENTS, countedRecord } = await import("../src/game/achievements.t
 const { rarityFor, rarityForZipf, scoringReady } = await import("../src/game/dictionary.ts");
 const { maxGuessesFor } = await import("../src/game/constants.ts");
 const { dropForDate } = await import("../src/game/drop.ts");
+const { handleFor } = await import("../src/game/handle.ts");
 type AchievementRecord = import("../src/game/achievements.ts").AchievementRecord;
 type DailyProgress = import("../src/game/types.ts").DailyProgress;
 type Rarity = import("../src/game/types.ts").Rarity;
@@ -223,15 +224,22 @@ const guessers = [...new Set([...puzzles.keys(), ...guessersFromEvents])].filter
 const today = new Date().toISOString().slice(0, 10);
 const earned: Record<string, number> = Object.fromEntries(ACHIEVEMENTS.map((a) => [a.id, 0]));
 const rows: string[] = [];
+const holders: Record<string, string[]> = {};
 for (const pid of guessers) {
   const record = countedRecord(recordFor(pid));
   for (const a of ACHIEVEMENTS) {
     const { earnedOn } = a.check(record, today);
     if (!earnedOn) continue;
     earned[a.id]++;
+    (holders[a.id] ??= []).push(pid);
     if (UUID_RE.test(pid)) rows.push(`('${pid}', '${a.id}', '${earnedOn}')`);
   }
 }
+
+/** The one player's handle, for each badge only one holds (see `earnedShareLabel`). */
+const sole = Object.fromEntries(
+  Object.entries(holders).flatMap(([id, pids]) => (pids.length === 1 ? [[id, handleFor(pids[0])]] : []))
+);
 
 const backfill = process.argv.indexOf("--backfill");
 if (backfill >= 0) {
@@ -246,7 +254,7 @@ if (backfill >= 0) {
 
 writeFileSync(
   out,
-  JSON.stringify({ asOf: today, players: guessers.length, earned }, null, 2) + "\n"
+  JSON.stringify({ asOf: today, players: guessers.length, earned, sole }, null, 2) + "\n"
 );
 console.log(`${guessers.length} players who have guessed, as of ${today}`);
 for (const a of ACHIEVEMENTS) {

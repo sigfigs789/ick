@@ -2,7 +2,7 @@
 // Stats page ("24% of players").
 //
 // GET /api/achievements
-//   -> 200 { players, earned: { [id]: count } }, 503 no credentials or a failed read
+//   -> 200 { players, earned: { [id]: count }, sole: { [id]: handle } }, 503 no credentials or a failed read
 //
 // The badges reach the server with every score the game posts (see
 // api/leaderboard.ts); `achievement_rates` counts them against every player who
@@ -19,6 +19,7 @@ const CACHE_SECONDS = 300;
 interface Rates {
   players: number;
   earned: Record<string, number>;
+  sole?: Record<string, string>;
 }
 
 function reply(status: number, body: unknown, cache = false): Response {
@@ -40,7 +41,11 @@ export default async function handler(request: Request): Promise<Response> {
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
   try {
     const rates = await rpc<Rates>("achievement_rates", {});
-    return reply(200, { players: Number(rates.players) || 0, earned: rates.earned ?? {} }, true);
+    return reply(
+      200,
+      { players: Number(rates.players) || 0, earned: rates.earned ?? {}, sole: rates.sole ?? {} },
+      true
+    );
   } catch (error) {
     console.error("[achievements] read failed:", error instanceof Error ? error.message : error);
     return reply(503, { ok: false, reason: "read-failed" });

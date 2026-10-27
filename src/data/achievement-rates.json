@@ -53,8 +53,8 @@
     "clean-sweep": 124,
     "straight-in": 431,
     "clean-copy": 87,
-    "down-to-the-wire": 30,
-    "second-chance": 131,
+    "down-to-the-wire": 29,
+    "second-chance": 132,
     "sesquipedalian": 110,
     "both-ways": 37,
     "no-misses": 47,
@@ -81,7 +81,7 @@
     "rhythm-nation": 9,
     "q-without-u": 0,
     "peter-piper": 78,
-    "abcs": 39,
+    "abcs": 38,
     "chain-gang": 0,
     "honey-i-blew-up-the-kid": 19,
     "voldemort": 1,
@@ -91,5 +91,16 @@
     "eight-days-a-week": 25,
     "word-suggested": 5,
     "suggestion-accepted": 1
+  },
+  "sole": {
+    "perfect-month": "SpryKestrel50",
+    "ironclad": "SpryKestrel50",
+    "mythic-50": "SpryKestrel50",
+    "words-500": "SpryKestrel50",
+    "alphabet-26": "CrispBison81",
+    "voldemort": "PatientStarling48",
+    "grand-tour": "OliveIvy0",
+    "legend-streak": "OliveIvy0",
+    "suggestion-accepted": "MildLark48"
   }
 }

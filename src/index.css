@@ -7146,6 +7146,11 @@ button.app__menu-item + button.app__menu-item {
   font-size: 0.68rem;
   font-variant-numeric: tabular-nums;
 }
+/* The badge only this player holds. */
+.stats__achievement-share--you {
+  color: var(--success-fg);
+  font-weight: 700;
+}
 .stats__achievement--earned .stats__achievement-meta {
   color: var(--success-fg);
   font-weight: 700;

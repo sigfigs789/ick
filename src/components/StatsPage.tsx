@@ -3,6 +3,7 @@ import {
   ACHIEVEMENT_GROUPS,
   earnedShareLabel,
   fetchAchievementRates,
+  soleHolder,
   syncAchievements,
   type AchievementStatus,
 } from "../game/achievements";
@@ -308,6 +309,7 @@ function Achievements({ statuses }: { statuses: AchievementStatus[] }) {
 function AchievementCard({ status }: { status: AchievementStatus }) {
   const { achievement, earnedOn, progress } = status;
   const share = earnedShareLabel(achievement.id);
+  const onlyYou = soleHolder(achievement.id)?.self ?? false;
   return (
     <li className={`stats__achievement${earnedOn ? " stats__achievement--earned" : ""}`}>
       <span className="stats__achievement-icon" aria-hidden="true">
@@ -331,7 +333,11 @@ function AchievementCard({ status }: { status: AchievementStatus }) {
         ) : (
           <span className="stats__achievement-meta">Locked</span>
         )}
-        {share && <span className="stats__achievement-share">{share}</span>}
+        {share && (
+          <span className={`stats__achievement-share${onlyYou ? " stats__achievement-share--you" : ""}`}>
+            {share}
+          </span>
+        )}
       </span>
     </li>
   );

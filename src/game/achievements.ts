@@ -16,6 +16,7 @@
 import achievementRates from "../data/achievement-rates.json";
 import { addDays, dayOfWeek, todayDateString } from "./date";
 import { maxGuessesFor } from "./constants";
+import { handleFor } from "./handle";
 import { isUnattestedZipf, rarityForZipf, rarityScore } from "./dictionary";
 import { dropForDate } from "./drop";
 import { modeIsChosen } from "./mode";
@@ -1360,6 +1361,8 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
 export interface AchievementRates {
   players: number;
   earned: Record<string, number>;
+  /** The handle of the one player holding a badge, for each badge only one holds. */
+  sole?: Record<string, string>;
 }
 
 /** The bundled counts, from scripts/achievement-rates.mts. */
@@ -1416,12 +1419,30 @@ function ratesNow(): AchievementRates {
   for (const [id, count] of Object.entries(live.earned)) {
     earned[id] = Math.max(earned[id] ?? 0, Number(count) || 0);
   }
-  return { players: Math.max(live.players, snapshot.players), earned };
+  return { players: Math.max(live.players, snapshot.players), earned, sole: { ...snapshot.sole, ...live.sole } };
 }
 
 /** How many players hold `id`, by the counts shown: 0 for one never counted. */
 export function holdersOf(id: string): number {
   return ratesNow().earned[id] ?? 0;
+}
+
+/**
+ * The one player holding `id`, when only one does and the counts name them:
+ * `self` when that is this browser.
+ */
+export function soleHolder(
+  id: string,
+  rates: AchievementRates = ratesNow()
+): { name: string; self: boolean } | null {
+  const name = rates.earned[id] === 1 ? rates.sole?.[id] : undefined;
+  return name ? { name, self: name === ownHandle() } : null;
+}
+
+/** This browser's handle on the board, if it has joined. */
+function ownHandle(): string | null {
+  const playerId = loadPlayerId();
+  return playerId ? handleFor(playerId) : null;
 }
 
 /** The percentage of players who have ever guessed that hold `id`, if counted. */
@@ -1438,10 +1459,13 @@ function formatShare(share: number): string {
 
 /**
  * How many of the players who have ever guessed hold `id`, as the Stats page
- * shows under each badge: "46% of players". Null for a badge nobody has
+ * shows under each badge: "46% of players", or for a badge only one player
+ * holds, their name -- "StormyFox47" -- or "You!" when it is this player. Null for a badge nobody has
  * counted yet.
  */
 export function earnedShareLabel(id: string, rates: AchievementRates = ratesNow()): string | null {
+  const holder = soleHolder(id, rates);
+  if (holder) return holder.self ? "You!" : holder.name;
   const share = shareOf(id, rates);
   if (share === null) return null;
   if (share === 0) return "No player yet";
