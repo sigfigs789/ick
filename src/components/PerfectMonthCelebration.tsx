@@ -1,5 +1,12 @@
+import { useEffect } from "react";
 import { ConfettiBurst } from "./ConfettiBurst";
 import { perfectMonthName } from "../game/perfectMonth";
+
+/**
+ * How long the card stays up if nobody closes it. Long enough to read twice and
+ * screenshot; the confetti under it is long gone by then.
+ */
+const CELEBRATION_MS = 7000;
 
 /**
  * The moment a player finishes a month without missing a day.
@@ -8,8 +15,7 @@ import { perfectMonthName } from "../game/perfectMonth";
  * this one at most twelve times a year -- so it brings its own gold confetti
  * and a card naming the month. The card floats over the puzzle rather than
  * taking it over: the player is mid-guess on the last day, and a modal they had
- * to close before their next word would be a celebration in the way. It stays
- * up until it is closed with its ×.
+ * to close before their next word would be a celebration in the way.
  */
 export function PerfectMonthCelebration({
   date,
@@ -20,6 +26,11 @@ export function PerfectMonthCelebration({
   days: number;
   onDone: () => void;
 }) {
+  useEffect(() => {
+    const timeout = window.setTimeout(onDone, CELEBRATION_MS);
+    return () => window.clearTimeout(timeout);
+  }, [onDone]);
+
   const month = perfectMonthName(date);
   return (
     <>

@@ -40,12 +40,17 @@ describe("AchievementCelebration", () => {
     expect(screen.getByText("And 5 more. See them all on your Stats page.")).toBeInTheDocument();
   });
 
-  it("stays until its × is tapped, however long it has been up or wherever else is tapped", () => {
+  it("goes by itself after a while", () => {
     vi.useFakeTimers();
     const onDone = vi.fn();
     render(<AchievementCelebration achievements={[byId("first-word")]} onDone={onDone} />);
-    act(() => vi.advanceTimersByTime(60_000));
-    expect(onDone).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(7000));
+    expect(onDone).toHaveBeenCalled();
+  });
+
+  it("goes on a tap of its ×, but not on a tap elsewhere on it", () => {
+    const onDone = vi.fn();
+    render(<AchievementCelebration achievements={[byId("first-word")]} onDone={onDone} />);
     fireEvent.click(document.querySelector(".improvement__card")!);
     expect(onDone).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));

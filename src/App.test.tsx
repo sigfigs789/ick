@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
@@ -306,8 +306,7 @@ describe("App", () => {
       expect(screen.getByText("Your longest streak yet!")).toBeInTheDocument();
       await act(() => vi.advanceTimersByTimeAsync(1500));
       expect(checkStreakClimb).toHaveBeenCalledWith(today);
-      fireEvent.click(screen.getByRole("button", { name: "Dismiss" })); // the new best's card goes
-      await act(() => vi.advanceTimersByTimeAsync(0));
+      await act(() => vi.advanceTimersByTimeAsync(7000)); // the new best's card goes
       expect(screen.queryByText("Up the streak board!")).not.toBeInTheDocument();
     });
 

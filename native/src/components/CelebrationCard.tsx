@@ -3,6 +3,9 @@ import { Animated, Easing, Pressable, StyleSheet, Text, useWindowDimensions, Vie
 import { useTheme } from '../theme/useTheme';
 import { useReduceMotion } from './ConfettiBurst';
 
+/** How long a card stays up if nobody closes it: long enough to read twice and screenshot. */
+const CELEBRATION_MS = 7000;
+
 /** The website's springy entrance, cubic-bezier(0.2, 1.4, 0.4, 1). */
 const SPRING_IN = Easing.bezier(0.2, 1.4, 0.4, 1);
 
@@ -40,7 +43,8 @@ interface Props {
  * a perfect month, a longest streak yet, an improving average, a climb up the
  * streak board, yesterday's best word and an achievement unlocked
  * (`.perfect-month` and `.improvement` in index.css): a ringed card near the
- * top of the screen, which stays until its × is tapped.
+ * top of the screen, which goes by itself after seven seconds or on a tap
+ * of its ×.
  *
  * Floats over the puzzle rather than taking it over: the player may be
  * mid-guess, and a modal they had to close before their next word would be a
@@ -64,6 +68,11 @@ export function CelebrationCard({
   const { width } = useWindowDimensions();
   const [enter] = useState(() => new Animated.Value(0));
   const [bounce] = useState(() => new Animated.Value(0));
+
+  useEffect(() => {
+    const timeout = setTimeout(onDone, CELEBRATION_MS);
+    return () => clearTimeout(timeout);
+  }, [onDone]);
 
   useEffect(() => {
     // The icon's hop: 900ms, twice, starting 420ms in, as the card lands.
@@ -140,7 +149,7 @@ export function CelebrationCard({
             },
           ]}
         >
-          {/* The only way the card goes: a tap elsewhere on it does nothing. */}
+          {/* The only tap that closes the card: a tap elsewhere on it does nothing. */}
           <Pressable
             onPress={onDone}
             accessibilityRole="button"
