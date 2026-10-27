@@ -1,5 +1,5 @@
 -- Name the player behind a badge only one player holds: the Stats page says
--- "StormyFox47" (or "You!" to that player) rather than "Under 1% of players".
+-- "Only earned by StormyFox47" (or "Only earned by you!" to that player) rather than "Under 1% of players".
 --
 -- `achievement_rates` gains `sole`, { achievement_id: handle } for every badge
 -- with exactly one holder. The handle is the one the board already shows for
