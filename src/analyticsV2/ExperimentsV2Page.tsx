@@ -62,7 +62,8 @@ export function ExperimentsV2Page() {
           !experiments.shareName &&
           !experiments.inputPlacement &&
           !experiments.playTab &&
-          !experiments.shareFlames)
+          !experiments.shareFlames &&
+          !experiments.shareNudge)
       }
     >
       {picker}
@@ -216,6 +217,29 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
                 Elusive. Watch the sharing guardrail here as closely as D1. Try either arm with{" "}
                 <code>?share-flames=shown</code> or <code>=hidden</code>; a forced arm, or a tester (forced to shown),
                 is not counted.
+              </>
+            }
+          />
+        </Section>
+      )}
+
+      {experiments.shareNudge && (
+        <Section
+          title="Share nudge after a great finish"
+          note={`Whether a wiggling Share, after a finish averaging Extremely Rare, moves the scorecard. Over players, new and returning apart.${drawn}`}
+        >
+          <ExperimentView
+            experiment={experiments.shareNudge}
+            subject="the Share nudge"
+            about={
+              <>
+                Half of players who finish today&rsquo;s puzzle with words averaging Extremely Rare (8.0 to 8.9)
+                see the Share beside the guess count hop and wiggle three times; the other half see it sit still, as
+                before. An Elusive-or-better average sets the Share on fire instead (the flames test). Only that
+                finish draws a player, so nobody is in this test who has not earned the nudge, and each keeps the arm
+                after. Watch the sharing guardrail here as closely as D1. Try either arm with{" "}
+                <code>?share-nudge=shown</code> or <code>=hidden</code> (it still needs a finish that earns it); a
+                forced arm, or a tester (forced to shown), is not counted.
               </>
             }
           />

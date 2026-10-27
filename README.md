@@ -142,6 +142,18 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
     arm with `?share-flames=shown` or `=hidden`. Testers are forced to
     `shown`. A forced arm, or a host that reports nothing (which keeps the
     buttons plain), is never drawn.
+  - **Share nudge** (`src/game/shareNudgeTest.ts`,
+    `src/hooks/useShareNudge.ts`): when today's puzzle is finished and its
+    words average Extremely Rare (8.0 to 8.9, as the average displays; from
+    Elusive up the flames above take over), the Share beside the guess count hops and wiggles three times for half of
+    players (`shown`); the other half (`hidden`) see it sit still. Only that
+    finish draws a player, so nobody who never earns the nudge is in the test,
+    and a player keeps the arm for good. The wiggle stops once the button has
+    copied. The draw is a `share_nudge_assigned` event (with `returning`),
+    scored on `/experimentsV2`. Force either arm with `?share-nudge=shown` or
+    `=hidden` (it still needs a finish that earns it). Testers are forced to
+    `shown`. A forced arm, or a host that reports nothing (which keeps the
+    button still), is never drawn.
   - **Text**: `buildShareText`'s `spoilerFree` option (default `true`)
     swaps between rarity squares and the actual words.
   - **Image**: `ShareImageButton` rasterizes the results card (via
@@ -989,6 +1001,13 @@ the rest of that group stay away until tomorrow. The claim is kept in
 `localStorage`, so a reload between the first word and the finish doesn't let
 a second card in. The two groups are independent: a player can see one streak
 card and one news card on the same day, one after the other.
+
+**None until a new player's third word** (`headerCelebrationsHeld`). A player
+who has banked fewer than three words in all — every day and mode counted —
+sees no header celebration, achievement cards included. A card held back
+claims no group's day and draws no arm of the test below. The badges earned
+meanwhile (First ink, at least) are not lost: the third word's achievement
+card names them, along with any that word earned, even across a reload.
 
 **Achievements unlocked** (`AchievementCelebration`) sit outside the groups:
 a badge is earned when it is earned, so its card claims no group's day and

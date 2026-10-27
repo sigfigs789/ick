@@ -30,6 +30,7 @@ import { useAcceptedSuggestions } from "./hooks/useAcceptedSuggestions";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { useInputPlacement } from "./hooks/useInputPlacement";
 import { useShareFlames } from "./hooks/useShareFlames";
+import { useShareNudge } from "./hooks/useShareNudge";
 import { isWinningRarity } from "./game/rank";
 import { celebrationFor } from "./game/celebration";
 import {
@@ -47,7 +48,11 @@ import type { Rarity } from "./game/types";
 import { completedWholeMonth } from "./game/perfectMonth";
 import { welcomeBack } from "./game/streakFreeze";
 import { beatBestToday } from "./game/newBest";
-import { claimHeaderCelebration, type HeaderCelebrationGroup } from "./game/headerCelebrations";
+import {
+  claimHeaderCelebration,
+  headerCelebrationsHeld,
+  type HeaderCelebrationGroup,
+} from "./game/headerCelebrations";
 import {
   assignHeaderCelebrationsArm,
   drawnHeaderCelebrationsArm,
@@ -98,13 +103,16 @@ import {
 const STREAK_CHECK_DELAY_MS = 1500;
 
 /**
- * Whether a header celebration due now may show: its group has not had its
- * card today (see game/headerCelebrations.ts), and the player is in the arm of
- * the test that sees them (see game/headerCelebrationsTest.ts). The arm is
- * drawn here, the first time a card is due. A host that reports nothing has
- * nobody to measure a draw, so it always shows the cards and never draws.
+ * Whether a header celebration due now may show: the player is past their
+ * first few words, its group has not had its card today (see
+ * game/headerCelebrations.ts), and the player is in the arm of the test that
+ * sees them (see game/headerCelebrationsTest.ts). A card held back from a new
+ * player claims no day and draws no arm. The arm is drawn here, the first time
+ * a card is due. A host that reports nothing has nobody to measure a draw, so
+ * it always shows the cards and never draws.
  */
 function showHeaderCelebration(group: HeaderCelebrationGroup, date: string): boolean {
+  if (headerCelebrationsHeld()) return false;
   if (!claimHeaderCelebration(group, date)) return false;
   const forced = forcedHeaderCelebrationsVariant();
   if (forced || !isReporting()) return forced !== "hidden";
@@ -291,7 +299,12 @@ export default function App() {
   // player earns a badge on their first word, which would enrol them all on
   // day one. A badge kept from them is not marked announced, so it is welcomed
   // if the cards ever come back.
+  //
+  // A new player hears of none of it until their third banked word (see
+  // headerCelebrationsHeld): that word's card names every badge held back
+  // until then -- First ink, at least -- along with any it earned itself.
   const earnedAchievements = useRef<Set<string> | null>(null);
+  const achievementsHeld = useRef(headerCelebrationsHeld());
   useEffect(() => {
     // The counts a lone badge's card reads, asked for before any word earns one.
     void fetchAchievementRates();
@@ -300,7 +313,7 @@ export default function App() {
     earnedAchievements.current = earnedIds(statuses);
     const backlog = achievementsToCatchUp(announcedAchievements(), statuses);
     const arm = forcedHeaderCelebrationsVariant() ?? drawnHeaderCelebrationsArm();
-    if (backlog.length === 0 || arm === "hidden") return;
+    if (backlog.length === 0 || arm === "hidden" || achievementsHeld.current) return;
     markAchievementsAnnounced(backlog.map((achievement) => achievement.id));
     setUnlocked({
       key: CATCH_UP_KEY,
@@ -314,7 +327,12 @@ export default function App() {
     if (!feedback || !before) return;
     const statuses = syncAchievements(streak);
     earnedAchievements.current = earnedIds(statuses);
-    const fresh = newlyEarned(before, statuses);
+    let fresh = newlyEarned(before, statuses);
+    if (achievementsHeld.current) {
+      if (headerCelebrationsHeld()) return;
+      achievementsHeld.current = false;
+      fresh = achievementsToCatchUp(announcedAchievements(), statuses);
+    }
     const arm = forcedHeaderCelebrationsVariant() ?? drawnHeaderCelebrationsArm();
     if (fresh.length === 0 || arm === "hidden") return;
     markAchievementsAnnounced(fresh.map((achievement) => achievement.id));
@@ -490,8 +508,12 @@ export default function App() {
   const inputPlacement = useInputPlacement(date, !progress.completed);
   // The tier both Share buttons burn in, by the share flames test (see
   // game/shareFlamesTest.ts), drawn the first time the words average
-  // Extremely Rare or better -- always with the Share beside the log showing.
+  // Elusive or better -- always with the Share beside the log showing.
   const shareFlames = useShareFlames(progress.acceptedWords, date);
+  // A finish averaging Extremely Rare wiggles the Share, for half the players
+  // it reaches (see game/shareNudgeTest.ts); from Elusive up the flames above
+  // take over.
+  const shareNudge = useShareNudge(date, isToday, progress.completed, progress.acceptedWords);
   const guessEntry = (
     <>
       {!progress.completed && (
@@ -634,6 +656,7 @@ export default function App() {
                 mode={progress.mode}
                 onShared={() => setShareRequests((n) => n + 1)}
                 flames={shareFlames}
+                nudge={shareNudge}
               />
             ) : undefined
           }

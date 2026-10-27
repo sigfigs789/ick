@@ -22,6 +22,11 @@ interface Props {
   onShared?: () => void;
   /** The tier the button burns in, or none (see game/shareFlamesTest.ts). */
   flames?: FlameTier | null;
+  /**
+   * Wiggle to ask for a share, after a great finish (see
+   * game/shareNudgeTest.ts). Stops for good once this button has copied.
+   */
+  nudge?: boolean;
 }
 
 /**
@@ -32,8 +37,19 @@ interface Props {
  * the moment of the tap from the same saved choices the panel reads and writes
  * (answers shown, username on or off), so the two can never disagree.
  */
-export function QuickShareButton({ date, drop, words, streak, isToday, mode, onShared, flames = null }: Props) {
+export function QuickShareButton({
+  date,
+  drop,
+  words,
+  streak,
+  isToday,
+  mode,
+  onShared,
+  flames = null,
+  nudge = false,
+}: Props) {
   const [copied, setCopied] = useState(false);
+  const [shared, setShared] = useState(false);
 
   async function share() {
     const playerId = loadPlayerId();
@@ -49,6 +65,7 @@ export function QuickShareButton({ date, drop, words, streak, isToday, mode, onS
     });
     await copyText(text);
     setCopied(true);
+    setShared(true);
     trackResultCopied(mode ?? modeForDate(date));
     onShared?.();
     window.setTimeout(() => setCopied(false), 2000);
@@ -57,7 +74,7 @@ export function QuickShareButton({ date, drop, words, streak, isToday, mode, onS
   return (
     <button
       type="button"
-      className={`quick-share${shareFlamesClass(flames)}`}
+      className={`quick-share${shareFlamesClass(flames)}${nudge && !shared ? " quick-share--nudge" : ""}`}
       onClick={() => void share()}
       aria-live="polite"
     >
