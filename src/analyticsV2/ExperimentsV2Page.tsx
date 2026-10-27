@@ -210,7 +210,7 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
             subject="the burning Share buttons"
             about={
               <>
-                Half of players see both Share buttons burst into flames, in the colour of the tier their words
+                Four players in five see both Share buttons burst into flames, in the colour of the tier their words
                 average, once that average reaches Elusive; each tier up, through Mythic to Legend,
                 burns larger. The rest see the plain buttons. Each is drawn once, the first time their average reaches
                 Elusive. Watch the sharing guardrail here as closely as D1. Try either arm with{" "}

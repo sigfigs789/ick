@@ -6,7 +6,7 @@ import type { AcceptedWord, Rarity } from "./types";
  * The share flames test: whether setting the Share buttons alight, in the
  * colour of the tier the player's words average, gets more results shared.
  *
- * Split 50/50: `shown` sees the flames, `hidden` the plain buttons as before.
+ * Split 80/20: `shown` sees the flames, `hidden` the plain buttons as before.
  * Only an average of Elusive or better burns, and each tier up burns
  * larger (see `shareFlameTier`). A player is drawn the first time their
  * average reaches Elusive with a Share button on the page -- the moment
@@ -23,7 +23,7 @@ export const FLAME_TIERS = ["Elusive", "Mythic", "Legend"] as const;
 export type FlameTier = (typeof FLAME_TIERS)[number];
 
 /** The share of players who see the flames. */
-export const SHARE_FLAMES_SHOW_SHARE = 0.5;
+export const SHARE_FLAMES_SHOW_SHARE = 0.8;
 
 const ASSIGNMENT_KEY = "ick:share-flames-test";
 
