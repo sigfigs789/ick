@@ -8,7 +8,7 @@ import { drawShareName, reportShareNameToggle } from "./shareNameDraw";
 import { loadPlayerId, selfName } from "../game/player";
 import { ShareButton } from "./ShareButton";
 import type { AcceptedWord, StreakState } from "../game/types";
-import type { FlameTier } from "../game/shareFlamesTest";
+import type { FlameTier } from "../game/shareFlames";
 import type { GameMode } from "../game/mode";
 import { trackResultCopied } from "../analytics";
 
@@ -44,7 +44,7 @@ interface Props {
    * a panel that is simply on the page when it loads stays where it is.
    */
   scrollSignal?: number;
-  /** The tier the Share button burns in, or none (see game/shareFlamesTest.ts). */
+  /** The tier the Share button burns in, or none (see game/shareFlames.ts). */
   flames?: FlameTier | null;
 }
 

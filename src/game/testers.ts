@@ -4,9 +4,8 @@ import { accountName, loadPlayerId } from "./player";
 /**
  * Players put in the new arm of every experiment by hand: the idle hint's
  * treatment (see game/idleHint.ts), and the come-back line and the word of the
- * day shown (see game/comeBackTest.ts and game/wordOfDay.ts), the username
- * left out of shares by default (see game/shareNameTest.ts), and the Share
- * buttons on fire (see game/shareFlamesTest.ts). The
+ * day shown (see game/comeBackTest.ts and game/wordOfDay.ts), and the username
+ * left out of shares by default (see game/shareNameTest.ts). The
  * exceptions are the input placement test (see game/inputPlacementTest.ts),
  * where testers are kept in the old arm: the guess input above the guess log;
  * and the play tab test (see game/playTabTest.ts), where they are kept in the
