@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { ConfettiBurst } from "./ConfettiBurst";
 import type { Achievement } from "../game/achievements";
 
-/** How long the card stays up if nobody taps it, as the other cards do. */
+/** How long the card stays up if nobody closes it, as the other cards do. */
 const CELEBRATION_MS = 7000;
 
 /**
@@ -11,8 +11,8 @@ const CELEBRATION_MS = 7000;
  *
  * The improving average's card, in ink violet, with the badge itself as the
  * centrepiece and gold confetti falling around it. It floats over the puzzle
- * and goes by itself or on a tap. A word that earns several at once (a first
- * word that is also a Legend) lists them all on the one card.
+ * and goes by itself or on a tap of its ×. A word that earns several at once
+ * (a first word that is also a Legend) lists them all on the one card.
  *
  * The same card welcomes a returning player's badges that were never announced
  * (see `achievementsToCatchUp`): `total` is how many there are, of which
@@ -41,10 +41,10 @@ export function AchievementCelebration({
     <>
       <ConfettiBurst grand />
       <div className="improvement improvement--achievement" role="status">
-        <button type="button" className="improvement__card" onClick={onDone} title="Dismiss">
-          <span className="improvement__close" aria-hidden="true">
+        <div className="improvement__card">
+          <button type="button" className="improvement__close" onClick={onDone} title="Dismiss" aria-label="Dismiss">
             ×
-          </span>
+          </button>
           <span className="achievement-unlocked__eyebrow">
             {total > 1 ? `${total} achievements unlocked` : "Achievement unlocked"}
           </span>
@@ -76,7 +76,7 @@ export function AchievementCelebration({
                 ? "They're on your Stats page."
                 : "It's on your Stats page."}
           </span>
-        </button>
+        </div>
       </div>
     </>
   );

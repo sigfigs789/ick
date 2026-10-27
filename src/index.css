@@ -2707,7 +2707,6 @@ button.app__menu-item + button.app__menu-item {
   box-shadow: var(--card-shadow), 0 0 0 6px hsl(140 58% 42% / 0.18);
   font: inherit;
   text-align: center;
-  cursor: pointer;
   animation: improvement-in 520ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
 }
 .improvement__icon {
@@ -2880,20 +2879,24 @@ button.app__menu-item + button.app__menu-item {
     animation: none;
   }
 }
-/* The ×: the whole card is the dismiss button already (a tap anywhere sends it
-   away, as it always has), so this is only the sign that it can be closed, not
-   a second button nested in the first. */
+/* The ×: the only way the card goes, so a tap elsewhere on it does nothing. The
+   padding is the tap target; the glyph sits where it always has, in the corner. */
 .improvement__close,
 .perfect-month__close {
   position: absolute;
-  top: 0.35rem;
-  right: 0.6rem;
+  top: 0;
+  right: 0;
+  padding: 0.35rem 0.6rem 0.6rem;
+  border: 0;
+  background: none;
   color: var(--fg-muted);
+  font: inherit;
   font-size: 1.25rem;
   line-height: 1;
+  cursor: pointer;
 }
-.improvement__card:hover .improvement__close,
-.perfect-month__card:hover .perfect-month__close {
+.improvement__close:hover,
+.perfect-month__close:hover {
   color: var(--fg);
 }
 @keyframes improvement-in {
@@ -2930,7 +2933,6 @@ button.app__menu-item + button.app__menu-item {
   box-shadow: var(--card-shadow), 0 0 0 6px hsl(42 88% 52% / 0.18);
   font: inherit;
   text-align: center;
-  cursor: pointer;
   animation: perfect-month-in 420ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
 }
 .perfect-month__trophy {

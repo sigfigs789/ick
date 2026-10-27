@@ -7,7 +7,7 @@ import type { BestWordNewsKind } from "../game/bestWordNews";
 import { finderTotal, otherPlayers } from "../game/yesterdaysBest";
 import type { ResolvedBest } from "../hooks/useYesterdaysBest";
 
-/** How long the card stays up if nobody taps it, as the improving average's does. */
+/** How long the card stays up if nobody closes it, as the improving average's does. */
 const CELEBRATION_MS = 7000;
 
 /** "Ana", "Ana and Bo", "Ana and 3 other players". */
@@ -23,7 +23,7 @@ function finderNames(ids: readonly string[], total: number): string {
  * of who did for everybody else.
  *
  * The improving average's card, in gold: it floats over the puzzle and goes by
- * itself or on a tap.
+ * itself or on a tap of its ×.
  */
 export function BestWordNewsCard({
   kind,
@@ -51,10 +51,10 @@ export function BestWordNewsCard({
     <>
       {kind === "self" && <ConfettiBurst rising />}
       <div className="improvement improvement--best" role="status">
-        <button type="button" className="improvement__card" onClick={onDone} title="Dismiss">
-          <span className="improvement__close" aria-hidden="true">
+        <div className="improvement__card">
+          <button type="button" className="improvement__close" onClick={onDone} title="Dismiss" aria-label="Dismiss">
             ×
-          </span>
+          </button>
           <span className="improvement__icon" aria-hidden="true">
             {kind === "self" ? "🏆" : "👑"}
           </span>
@@ -72,7 +72,7 @@ export function BestWordNewsCard({
               </>
             )}
           </span>
-        </button>
+        </div>
       </div>
     </>
   );

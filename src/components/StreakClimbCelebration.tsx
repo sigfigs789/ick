@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { ConfettiBurst } from "./ConfettiBurst";
 import type { StreakClimb } from "../game/streakClimb";
 
-/** How long the card stays up if nobody taps it, as the improving average's does. */
+/** How long the card stays up if nobody closes it, as the improving average's does. */
 const CELEBRATION_MS = 7000;
 
 /**
@@ -11,7 +11,7 @@ const CELEBRATION_MS = 7000;
  *
  * The improving average's card, in the streak's orange and with its flame: it
  * lands when the day is done, floats over the finished puzzle, and goes by
- * itself or on a tap.
+ * itself or on a tap of its ×.
  */
 export function StreakClimbCelebration({
   climb,
@@ -31,10 +31,10 @@ export function StreakClimbCelebration({
     <>
       <ConfettiBurst rising />
       <div className="improvement improvement--streak" role="status">
-        <button type="button" className="improvement__card" onClick={onDone} title="Dismiss">
-          <span className="improvement__close" aria-hidden="true">
+        <div className="improvement__card">
+          <button type="button" className="improvement__close" onClick={onDone} title="Dismiss" aria-label="Dismiss">
             ×
-          </span>
+          </button>
           <span className="improvement__icon" aria-hidden="true">
             🔥
           </span>
@@ -52,7 +52,7 @@ export function StreakClimbCelebration({
             </span>
             .
           </span>
-        </button>
+        </div>
       </div>
     </>
   );

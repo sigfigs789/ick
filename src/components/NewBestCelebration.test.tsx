@@ -11,23 +11,25 @@ describe("NewBestCelebration", () => {
     expect(document.querySelectorAll(".confetti--rising .confetti__piece")).toHaveLength(48);
   });
 
-  it("goes on a tap, or by itself", () => {
+  it("goes on a tap of its ×, or by itself, but not on a tap elsewhere on it", () => {
     vi.useFakeTimers();
     const onDone = vi.fn();
     render(<NewBestCelebration days={3} best={2} onDone={onDone} />);
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(document.querySelector(".improvement__card")!);
+    expect(onDone).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
     expect(onDone).toHaveBeenCalledTimes(1);
     vi.advanceTimersByTime(7000);
     expect(onDone).toHaveBeenCalledTimes(2);
     vi.useRealTimers();
   });
 
-  it("shows a close mark in the corner that dismisses it like the rest of the card", () => {
+  it("shows a close button in the corner that dismisses it", () => {
     const onDone = vi.fn();
     render(<NewBestCelebration days={3} best={2} onDone={onDone} />);
     const close = document.querySelector(".improvement__close")!;
     expect(close).toHaveTextContent("×");
-    expect(close).toHaveAttribute("aria-hidden", "true");
+    expect(close).toBe(screen.getByRole("button", { name: "Dismiss" }));
     fireEvent.click(close);
     expect(onDone).toHaveBeenCalledTimes(1);
   });

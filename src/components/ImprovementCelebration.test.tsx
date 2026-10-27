@@ -14,11 +14,13 @@ describe("ImprovementCelebration", () => {
     expect(document.querySelectorAll(".confetti--rising .confetti__piece")).toHaveLength(48);
   });
 
-  it("goes on a tap, or by itself", () => {
+  it("goes on a tap of its ×, or by itself, but not on a tap elsewhere on it", () => {
     vi.useFakeTimers();
     const onDone = vi.fn();
     render(<ImprovementCelebration improvement={rise} onDone={onDone} />);
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(document.querySelector(".improvement__card")!);
+    expect(onDone).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
     expect(onDone).toHaveBeenCalledTimes(1);
     vi.advanceTimersByTime(7000);
     expect(onDone).toHaveBeenCalledTimes(2);

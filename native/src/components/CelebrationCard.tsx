@@ -3,7 +3,7 @@ import { Animated, Easing, Pressable, StyleSheet, Text, useWindowDimensions, Vie
 import { useTheme } from '../theme/useTheme';
 import { useReduceMotion } from './ConfettiBurst';
 
-/** How long a card stays up if nobody taps it: long enough to read twice and screenshot. */
+/** How long a card stays up if nobody closes it: long enough to read twice and screenshot. */
 const CELEBRATION_MS = 7000;
 
 /** The website's springy entrance, cubic-bezier(0.2, 1.4, 0.4, 1). */
@@ -43,7 +43,8 @@ interface Props {
  * a perfect month, a longest streak yet, an improving average, a climb up the
  * streak board, yesterday's best word and an achievement unlocked
  * (`.perfect-month` and `.improvement` in index.css): a ringed card near the
- * top of the screen, which goes by itself after seven seconds or on a tap.
+ * top of the screen, which goes by itself after seven seconds or on a tap
+ * of its ×.
  *
  * Floats over the puzzle rather than taking it over: the player may be
  * mid-guess, and a modal they had to close before their next word would be a
@@ -137,11 +138,8 @@ export function CelebrationCard({
   return (
     <View style={styles.layer} pointerEvents="box-none">
       <Animated.View style={[{ width: Math.min(352, width - 32) }, motion]}>
-        <Pressable
-          onPress={onDone}
-          accessibilityRole="button"
+        <View
           accessibilityLiveRegion="polite"
-          accessibilityHint="Dismisses this card"
           style={[
             styles.card,
             {
@@ -151,14 +149,16 @@ export function CelebrationCard({
             },
           ]}
         >
-          {/* Only the sign that the card closes: the whole card is the button. */}
-          <Text
-            style={[styles.close, { color: theme.fgMuted }]}
-            accessibilityElementsHidden
-            importantForAccessibility="no"
+          {/* The only tap that closes the card: a tap elsewhere on it does nothing. */}
+          <Pressable
+            onPress={onDone}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss"
+            hitSlop={12}
+            style={styles.close}
           >
-            ×
-          </Text>
+            <Text style={[styles.closeGlyph, { color: theme.fgMuted }]}>×</Text>
+          </Pressable>
           {eyebrow}
           {centerpiece ?? iconNode}
           {title !== undefined && <Text style={[styles.title, { color: theme.fg }]}>{title}</Text>}
@@ -168,7 +168,7 @@ export function CelebrationCard({
           {footnote !== undefined && (
             <Text style={[styles.footnote, { color: theme.fgMuted }]}>{footnote}</Text>
           )}
-        </Pressable>
+        </View>
       </Animated.View>
     </View>
   );
@@ -209,6 +209,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 6,
     right: 10,
+    zIndex: 1,
+  },
+  closeGlyph: {
     fontSize: 20,
     lineHeight: 20,
   },

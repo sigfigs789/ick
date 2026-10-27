@@ -3,7 +3,7 @@ import { ConfettiBurst } from "./ConfettiBurst";
 import { formatTotal } from "../game/dictionary";
 import { improvementPercent, type Improvement } from "../game/improvement";
 
-/** How long the card stays up if nobody taps it, as the perfect month's does. */
+/** How long the card stays up if nobody closes it, as the perfect month's does. */
 const CELEBRATION_MS = 7000;
 
 /**
@@ -12,7 +12,7 @@ const CELEBRATION_MS = 7000;
  *
  * The perfect month's card, in green and with an arrow rather than a trophy:
  * it lands when the day is done, so it floats over a finished puzzle rather
- * than in the way of a guess, and goes by itself or on a tap.
+ * than in the way of a guess, and goes by itself or on a tap of its ×.
  */
 export function ImprovementCelebration({
   improvement,
@@ -31,10 +31,10 @@ export function ImprovementCelebration({
     <>
       <ConfettiBurst rising />
       <div className="improvement" role="status">
-        <button type="button" className="improvement__card" onClick={onDone} title="Dismiss">
-          <span className="improvement__close" aria-hidden="true">
+        <div className="improvement__card">
+          <button type="button" className="improvement__close" onClick={onDone} title="Dismiss" aria-label="Dismiss">
             ×
-          </span>
+          </button>
           <span className="improvement__icon" aria-hidden="true">
             📈
           </span>
@@ -47,7 +47,7 @@ export function ImprovementCelebration({
             </span>
             .
           </span>
-        </button>
+        </div>
       </div>
     </>
   );

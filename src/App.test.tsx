@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
@@ -229,7 +229,7 @@ describe("App", () => {
 
       vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ streak: after }) as ReturnType<typeof useDailyPuzzle>);
       rerender(<App />);
-      expect(screen.getByRole("button", { name: /longest streak yet/i })).toHaveTextContent(
+      expect(screen.getByText("Your longest streak yet!").closest(".improvement__card")).toHaveTextContent(
         "10 days — past your best of 9."
       );
       expect(vi.mocked(useSound).mock.results[0].value.rising).toHaveBeenCalledTimes(1);
@@ -419,7 +419,8 @@ describe("the welcome-back card", () => {
     expect(screen.getByText("12 days")).toBeInTheDocument();
     expect(screen.getByText(/streak freeze to cover a missed day/i)).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+    const welcome = screen.getByText(/welcome back/i).closest<HTMLElement>(".welcome-back-card")!;
+    await userEvent.click(within(welcome).getByRole("button", { name: "Dismiss" }));
     expect(screen.queryByText(/welcome back/i)).not.toBeInTheDocument();
 
     // Closed for the day: a reload does not bring it back, but another day does.
@@ -549,8 +550,9 @@ describe("celebrating an achievement", () => {
     expect(screen.getByText("First ink")).toBeInTheDocument();
     expect(achievement).toHaveBeenCalledTimes(1);
 
-    // Gone on a tap, and not announced again by the next word.
-    act(() => screen.getByRole("button", { name: /first ink/i }).click());
+    // Gone on a tap of its ×, and not announced again by the next word.
+    const card = screen.getByText("First ink").closest<HTMLElement>(".improvement__card")!;
+    act(() => within(card).getByRole("button", { name: "Dismiss" }).click());
     expect(screen.queryByText("First ink")).toBeNull();
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ feedback: accepted(2) }) as ReturnType<typeof useDailyPuzzle>);
     rerender(<App />);

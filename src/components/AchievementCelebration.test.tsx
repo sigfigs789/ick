@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AchievementCelebration } from "./AchievementCelebration";
 import { ACHIEVEMENTS } from "../game/achievements";
@@ -46,5 +46,14 @@ describe("AchievementCelebration", () => {
     render(<AchievementCelebration achievements={[byId("first-word")]} onDone={onDone} />);
     act(() => vi.advanceTimersByTime(7000));
     expect(onDone).toHaveBeenCalled();
+  });
+
+  it("goes on a tap of its ×, but not on a tap elsewhere on it", () => {
+    const onDone = vi.fn();
+    render(<AchievementCelebration achievements={[byId("first-word")]} onDone={onDone} />);
+    fireEvent.click(document.querySelector(".improvement__card")!);
+    expect(onDone).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+    expect(onDone).toHaveBeenCalledTimes(1);
   });
 });

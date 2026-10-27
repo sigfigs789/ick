@@ -3,7 +3,7 @@ import { ConfettiBurst } from "./ConfettiBurst";
 import { perfectMonthName } from "../game/perfectMonth";
 
 /**
- * How long the card stays up if nobody taps it. Long enough to read twice and
+ * How long the card stays up if nobody closes it. Long enough to read twice and
  * screenshot; the confetti under it is long gone by then.
  */
 const CELEBRATION_MS = 7000;
@@ -36,10 +36,10 @@ export function PerfectMonthCelebration({
     <>
       <ConfettiBurst grand />
       <div className="perfect-month" role="status">
-        <button type="button" className="perfect-month__card" onClick={onDone} title="Dismiss">
-          <span className="perfect-month__close" aria-hidden="true">
+        <div className="perfect-month__card">
+          <button type="button" className="perfect-month__close" onClick={onDone} title="Dismiss" aria-label="Dismiss">
             ×
-          </span>
+          </button>
           <span className="perfect-month__trophy" aria-hidden="true">
             🏆
           </span>
@@ -51,7 +51,7 @@ export function PerfectMonthCelebration({
             </span>
             .
           </span>
-        </button>
+        </div>
       </div>
     </>
   );
