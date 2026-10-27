@@ -274,12 +274,13 @@ function ByMode({ stats }: { stats: PlayerStats }) {
 
 function Achievements({ statuses }: { statuses: AchievementStatus[] }) {
   const earned = statuses.filter((status) => status.earnedOn).length;
+  const completed = Math.round((100 * earned) / statuses.length);
   return (
     <section className="stats__section" aria-labelledby="stats-achievements">
       <h2 className="stats__heading" id="stats-achievements">
         Achievements
         <span className="stats__heading-note">
-          {earned} of {statuses.length}
+          {earned} of {statuses.length} · {completed}% completed
         </span>
       </h2>
       {ACHIEVEMENT_GROUPS.map((group) => {

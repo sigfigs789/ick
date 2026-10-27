@@ -288,9 +288,10 @@ function ByMode({ stats }: { stats: PlayerStats }) {
 function Achievements({ statuses }: { statuses: AchievementStatus[] }) {
   const theme = useTheme();
   const earned = statuses.filter((status) => status.earnedOn).length;
+  const completed = Math.round((100 * earned) / statuses.length);
   return (
     <View style={styles.section}>
-      <Heading note={`${earned} of ${statuses.length}`}>Achievements</Heading>
+      <Heading note={`${earned} of ${statuses.length} · ${completed}% completed`}>Achievements</Heading>
       {ACHIEVEMENT_GROUPS.map((group) => ({
         group,
         inGroup: statuses.filter((status) => status.achievement.group === group),
