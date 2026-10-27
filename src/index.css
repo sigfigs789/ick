@@ -6594,6 +6594,8 @@ button.app__menu-item + button.app__menu-item {
   }
   50% {
     box-shadow: 0 0 1rem color-mix(in srgb, var(--flame-halo) 80%, transparent);
+  }
+}
 /* After a great finish the Share asks to be pressed (see
    game/shareNudgeTest.ts): a short hop and wiggle with a ring spreading out,
    then a rest, three times over, and still from then on. Reduced motion runs
