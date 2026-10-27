@@ -74,6 +74,7 @@ const DEV_API_ROUTES: Record<string, string> = {
   '/api/validate': '/api/validate.ts',
   '/api/events': '/api/events.ts',
   '/api/leaderboard': '/api/leaderboard.ts',
+  '/api/achievements': '/api/achievements.ts',
   '/api/chat': '/api/chat.ts',
 }
 

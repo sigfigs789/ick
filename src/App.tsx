@@ -37,6 +37,7 @@ import {
   earnedIds,
   markAchievementsAnnounced,
   newlyEarned,
+  fetchAchievementRates,
   syncAchievements,
   type Achievement,
 } from "./game/achievements";
@@ -290,6 +291,8 @@ export default function App() {
   // if the cards ever come back.
   const earnedAchievements = useRef<Set<string> | null>(null);
   useEffect(() => {
+    // The counts a lone badge's card reads, asked for before any word earns one.
+    void fetchAchievementRates();
     const statuses = syncAchievements(streak);
     earnedAchievements.current = earnedIds(statuses);
     const backlog = achievementsToCatchUp(announcedAchievements(), statuses);

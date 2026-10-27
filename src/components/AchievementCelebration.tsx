@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ConfettiBurst } from "./ConfettiBurst";
-import type { Achievement } from "../game/achievements";
+import { celebrationShareLine, type Achievement } from "../game/achievements";
 
 /** How long the card stays up if nobody closes it, as the other cards do. */
 const CELEBRATION_MS = 7000;
@@ -18,6 +18,10 @@ const CELEBRATION_MS = 7000;
  * (see `achievementsToCatchUp`): `total` is how many there are, of which
  * `achievements` is the few worth naming, and the rest are left to the Stats
  * page.
+ *
+ * A lone badge also says how many players hold it, or that this player is the
+ * first -- read as the card opens, so this player's own report, landing a
+ * moment later, never changes it.
  */
 export function AchievementCelebration({
   achievements,
@@ -28,6 +32,9 @@ export function AchievementCelebration({
   total?: number;
   onDone: () => void;
 }) {
+  const [share] = useState(() =>
+    achievements.length === 1 && total === 1 ? celebrationShareLine(achievements[0].id) : null
+  );
   useEffect(() => {
     const timeout = window.setTimeout(onDone, CELEBRATION_MS);
     return () => window.clearTimeout(timeout);
@@ -67,6 +74,7 @@ export function AchievementCelebration({
               </span>
               <span className="improvement__title">{only.title}</span>
               <span className="improvement__body">{only.description}</span>
+              {share && <span className="achievement-unlocked__share">{share}</span>}
             </>
           )}
           <span className="achievement-unlocked__footnote">

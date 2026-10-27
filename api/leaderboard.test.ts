@@ -142,6 +142,19 @@ describe("api/leaderboard submissions", () => {
     });
   });
 
+  it("records the badges the device holds, dropping malformed ones", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[], []]);
+    const achievements = { "first-word": SUNDAY, "Bad Id": SUNDAY, "streak-7": "soon" };
+    const response = await handler(post({ ...score(), achievements }));
+
+    expect(response.status).toBe(202);
+    expect(rpcCall(fetchMock, 1)).toEqual({
+      url: "https://project.supabase.co/rest/v1/rpc/submit_player_achievements",
+      args: { p_player_id: PLAYER, p_achievements: [{ id: "first-word", earnedOn: SUNDAY }] },
+    });
+  });
+
   it("records the Saturday off only when it is in the last played day's week", async () => {
     withEnv();
     // The Monday after SUNDAY, whose week's Saturday is 2026-08-29.

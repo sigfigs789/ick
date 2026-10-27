@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ACHIEVEMENT_GROUPS, syncAchievements, type AchievementStatus } from "../game/achievements";
+import {
+  ACHIEVEMENT_GROUPS,
+  earnedShareLabel,
+  fetchAchievementRates,
+  syncAchievements,
+  type AchievementStatus,
+} from "../game/achievements";
 import { formatDateLabel } from "../game/date";
 import { formatTotal } from "../game/dictionary";
 import { MODE_LABELS } from "../game/mode";
@@ -23,6 +29,12 @@ export function StatsPage() {
     const streak = loadStreak();
     return { stats: loadStats(streak), achievements: syncAchievements(streak) };
   });
+  // The share under each badge starts from the bundled snapshot and redraws
+  // once the live counts arrive (see fetchAchievementRates).
+  const [, setLiveRates] = useState(false);
+  useEffect(() => {
+    void fetchAchievementRates().then((rates) => rates && setLiveRates(true));
+  }, []);
 
   if (stats.wordsFound === 0) {
     return (
@@ -36,6 +48,8 @@ export function StatsPage() {
             Play today’s puzzle
           </button>
         </p>
+        {/* Every badge still waiting, so there is something to aim for. */}
+        <Achievements statuses={achievements} />
       </main>
     );
   }
@@ -262,12 +276,13 @@ function ByMode({ stats }: { stats: PlayerStats }) {
 
 function Achievements({ statuses }: { statuses: AchievementStatus[] }) {
   const earned = statuses.filter((status) => status.earnedOn).length;
+  const completed = Math.round((100 * earned) / statuses.length);
   return (
     <section className="stats__section" aria-labelledby="stats-achievements">
       <h2 className="stats__heading" id="stats-achievements">
         Achievements
         <span className="stats__heading-note">
-          {earned} of {statuses.length}
+          {earned} of {statuses.length} · {completed}% completed
         </span>
       </h2>
       {ACHIEVEMENT_GROUPS.map((group) => {
@@ -292,6 +307,7 @@ function Achievements({ statuses }: { statuses: AchievementStatus[] }) {
 
 function AchievementCard({ status }: { status: AchievementStatus }) {
   const { achievement, earnedOn, progress } = status;
+  const share = earnedShareLabel(achievement.id);
   return (
     <li className={`stats__achievement${earnedOn ? " stats__achievement--earned" : ""}`}>
       <span className="stats__achievement-icon" aria-hidden="true">
@@ -315,6 +331,7 @@ function AchievementCard({ status }: { status: AchievementStatus }) {
         ) : (
           <span className="stats__achievement-meta">Locked</span>
         )}
+        {share && <span className="stats__achievement-share">{share}</span>}
       </span>
     </li>
   );

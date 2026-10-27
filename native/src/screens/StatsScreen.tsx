@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   ACHIEVEMENT_GROUPS,
+  earnedShareLabel,
+  fetchAchievementRates,
   syncAchievements,
   type AchievementStatus,
 } from '../../../src/game/achievements';
@@ -37,6 +39,12 @@ export function StatsScreen({ onPlay }: { onPlay?: () => void } = {}) {
     const streak = loadStreak();
     return { stats: loadStats(streak), achievements: syncAchievements(streak) };
   });
+  // The share under each badge starts from the bundled snapshot and redraws
+  // once the live counts arrive (see fetchAchievementRates).
+  const [, setLiveRates] = useState(false);
+  useEffect(() => {
+    void fetchAchievementRates().then((rates) => rates && setLiveRates(true));
+  }, []);
 
   if (stats.wordsFound === 0) {
     return (
@@ -60,6 +68,8 @@ export function StatsScreen({ onPlay }: { onPlay?: () => void } = {}) {
             </>
           )}
         </Text>
+        {/* Every badge still waiting, so there is something to aim for. */}
+        <Achievements statuses={achievements} />
       </ScrollView>
     );
   }
@@ -280,9 +290,10 @@ function ByMode({ stats }: { stats: PlayerStats }) {
 function Achievements({ statuses }: { statuses: AchievementStatus[] }) {
   const theme = useTheme();
   const earned = statuses.filter((status) => status.earnedOn).length;
+  const completed = Math.round((100 * earned) / statuses.length);
   return (
     <View style={styles.section}>
-      <Heading note={`${earned} of ${statuses.length}`}>Achievements</Heading>
+      <Heading note={`${earned} of ${statuses.length} · ${completed}% completed`}>Achievements</Heading>
       {ACHIEVEMENT_GROUPS.map((group) => ({
         group,
         inGroup: statuses.filter((status) => status.achievement.group === group),
@@ -314,6 +325,7 @@ function AchievementCard({ status }: { status: AchievementStatus }) {
     : progress
       ? `${progress.current} / ${progress.target}`
       : 'Locked';
+  const share = earnedShareLabel(achievement.id);
   return (
     <View
       style={[
@@ -323,7 +335,7 @@ function AchievementCard({ status }: { status: AchievementStatus }) {
           : { borderColor: theme.border, backgroundColor: theme.bgInset },
       ]}
       accessible
-      accessibilityLabel={`${achievement.title}: ${achievement.description}. ${meta}`}
+      accessibilityLabel={`${achievement.title}: ${achievement.description}. ${meta}${share ? `. ${share}` : ''}`}
     >
       {/* Greyed until earned: a filter has no React Native spelling, so a
           locked icon is simply faded. */}
@@ -358,6 +370,7 @@ function AchievementCard({ status }: { status: AchievementStatus }) {
             {meta}
           </Text>
         </View>
+        {share && <Text style={[styles.achievementShare, { color: theme.fgFaint }]}>{share}</Text>}
       </View>
     </View>
   );
@@ -375,6 +388,7 @@ const styles = StyleSheet.create({
   empty: {
     fontSize: 16,
     lineHeight: 23,
+    marginBottom: space.xl,
   },
   link: {
     fontWeight: '700',
@@ -574,6 +588,10 @@ const styles = StyleSheet.create({
   },
   achievementMetaText: {
     fontSize: 11.5,
+    fontVariant: ['tabular-nums'],
+  },
+  achievementShare: {
+    fontSize: 10.9,
     fontVariant: ['tabular-nums'],
   },
   progress: {

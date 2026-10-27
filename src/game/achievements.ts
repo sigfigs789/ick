@@ -13,13 +13,14 @@
  * and the streak, and the badges are worked out again from those.
  */
 
+import achievementRates from "../data/achievement-rates.json";
 import { addDays, todayDateString } from "./date";
 import { maxGuessesFor } from "./constants";
 import { modeIsChosen } from "./mode";
 import { nextMonthStart } from "./month";
 import { isWinningRarity } from "./rank";
 import { CURRENT_TIERS } from "./stats";
-import { playedHistory, playedOnItsDay } from "./storage";
+import { loadStreak, playedHistory, playedOnItsDay } from "./storage";
 import { takesPlayerMessages } from "./playerMessages";
 import { suggestedWords, type SuggestedWordRecord } from "./suggestions";
 import type { DailyProgress, Rarity, StreakState } from "./types";
@@ -554,6 +555,146 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     viaSuggestions: true,
   },
 ];
+
+/** How many players have ever guessed, and how many of them hold each badge. */
+export interface AchievementRates {
+  players: number;
+  earned: Record<string, number>;
+}
+
+/** The bundled counts, from scripts/achievement-rates.mts. */
+const snapshot: AchievementRates = achievementRates;
+
+/** The live counts from /api/achievements, once this session has them. */
+let liveRates: AchievementRates | null = null;
+let ratesRequest: Promise<AchievementRates | null> | null = null;
+
+function isRates(body: unknown): body is AchievementRates {
+  if (!body || typeof body !== "object") return false;
+  const { players, earned } = body as Partial<AchievementRates>;
+  return typeof players === "number" && Boolean(earned) && typeof earned === "object";
+}
+
+/**
+ * Ask the server how many players hold each badge, once a session (a failed
+ * ask is tried again by the next caller). Never needed: until it answers, and
+ * if it never does, the bundled snapshot stands in.
+ */
+export function fetchAchievementRates(): Promise<AchievementRates | null> {
+  ratesRequest ??= fetch("/api/achievements")
+    .then((response) => (response.ok ? response.json() : null))
+    .then((body: unknown) => {
+      if (!isRates(body)) throw new Error("no rates");
+      liveRates = body;
+      return liveRates;
+    })
+    .catch(() => {
+      ratesRequest = null;
+      return null;
+    });
+  return ratesRequest;
+}
+
+/** For tests: forget the live counts. */
+export function resetAchievementRates(live: AchievementRates | null = null): void {
+  liveRates = live;
+  ratesRequest = null;
+}
+
+/**
+ * The counts to show: the live ones, never below the bundled snapshot.
+ *
+ * A badge is kept for good, so a count only ever grows, and the snapshot
+ * (scripts/achievement-rates.mts) is a floor under it. That keeps the share
+ * right for the players the server has not heard from -- everyone before the
+ * game sent its badges, until the backfill, and anyone who never updates.
+ */
+function ratesNow(): AchievementRates {
+  const live = liveRates;
+  if (!live) return snapshot;
+  const earned = { ...snapshot.earned };
+  for (const [id, count] of Object.entries(live.earned)) {
+    earned[id] = Math.max(earned[id] ?? 0, Number(count) || 0);
+  }
+  return { players: Math.max(live.players, snapshot.players), earned };
+}
+
+/** The percentage of players who have ever guessed that hold `id`, if counted. */
+function shareOf(id: string, rates: AchievementRates): number | null {
+  const count = rates.earned[id];
+  if (count === undefined || rates.players === 0) return null;
+  return (100 * count) / rates.players;
+}
+
+/** "4.3%" under ten, "46%" above: a tenth matters only where the share is small. */
+function formatShare(share: number): string {
+  return `${share < 10 ? share.toFixed(1).replace(/\.0$/, "") : Math.round(share)}%`;
+}
+
+/**
+ * How many of the players who have ever guessed hold `id`, as the Stats page
+ * shows under each badge: "46% of players". Null for a badge nobody has
+ * counted yet.
+ */
+export function earnedShareLabel(id: string, rates: AchievementRates = ratesNow()): string | null {
+  const share = shareOf(id, rates);
+  if (share === null) return null;
+  if (share === 0) return "No player yet";
+  if (share < 1) return "Under 1% of players";
+  return `${formatShare(share)} of players`;
+}
+
+/**
+ * Whether nobody else held `id` when this session asked. Only the live count
+ * can say so: the snapshot is a day's guess, and a zero there may be stale.
+ * Read when the badge is earned, before this player's own report is counted --
+ * the counts are fetched as the page opens.
+ */
+export function firstToEarn(id: string): boolean {
+  return liveRates !== null && !ratesNow().earned[id];
+}
+
+/** Below this share a badge is rare enough to say "only". */
+const ONLY_BELOW = 10;
+
+/**
+ * Badges for days played, where a small share says how new the game is rather
+ * than how hard the badge is: "only 8% of players" have played ten days when
+ * most players started last month.
+ */
+const NO_ONLY = new Set(["days-10", "days-50", "days-100", "days-365"]);
+
+/**
+ * The line under a lone badge on the card that celebrates it (see
+ * components/AchievementCelebration.tsx): the first to earn it, or how many
+ * players have -- "Earned by 23% of players.", and "Earned by only 4.3% of
+ * players." for a rare one. Null when there is nothing worth saying.
+ */
+export function celebrationShareLine(id: string, rates: AchievementRates = ratesNow()): string | null {
+  if (firstToEarn(id)) return "You're the first player to earn it!";
+  const share = shareOf(id, rates);
+  if (!share) return null;
+  if (share < 1) return "Earned by fewer than 1% of players.";
+  const only = share < ONLY_BELOW && !NO_ONLY.has(id) ? "only " : "";
+  return `Earned by ${only}${formatShare(share)} of players.`;
+}
+
+/**
+ * The badges this device holds, `{ id: earnedOn }`, worked out afresh -- sent
+ * with every score (see game/leaderboard.ts) so the server can count them.
+ * Empty when the record cannot be read: a count is never worth a failed post.
+ */
+export function keptAchievements(): Record<string, string> {
+  try {
+    return Object.fromEntries(
+      syncAchievements(loadStreak()).flatMap(({ achievement, earnedOn }) =>
+        earnedOn ? [[achievement.id, earnedOn]] : []
+      )
+    );
+  } catch {
+    return {};
+  }
+}
 
 const EARNED_KEY = "ick:achievements";
 

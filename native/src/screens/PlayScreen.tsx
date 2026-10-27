@@ -28,6 +28,7 @@ import {
   earnedIds,
   markAchievementsAnnounced,
   newlyEarned,
+  fetchAchievementRates,
   syncAchievements,
   type Achievement,
 } from '../../../src/game/achievements';
@@ -240,6 +241,8 @@ export function PlayScreen({ covered = false }: Props) {
   // on the same card: the best few by name, and the rest left to Stats.
   const earnedAchievements = useRef<Set<string> | null>(null);
   useEffect(() => {
+    // The counts a lone badge's card reads, asked for before any word earns one.
+    void fetchAchievementRates();
     const statuses = syncAchievements(streak);
     earnedAchievements.current = earnedIds(statuses);
     const backlog = achievementsToCatchUp(announcedAchievements(), statuses);

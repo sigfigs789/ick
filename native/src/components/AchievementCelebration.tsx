@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
-import type { Achievement } from '../../../src/game/achievements';
+import { celebrationShareLine, type Achievement } from '../../../src/game/achievements';
 import { useTheme } from '../theme/useTheme';
-import { CelebrationCard } from './CelebrationCard';
+import { CelebrationCard, Highlight } from './CelebrationCard';
 import { ConfettiBurst, useReduceMotion } from './ConfettiBurst';
 
 /** The website's ink violet, hsl(265 72% 58%). */
@@ -41,6 +41,10 @@ export function AchievementCelebration({
   onDone: () => void;
 }) {
   const theme = useTheme();
+  // Read as the card opens, so this player's own report never changes it.
+  const [share] = useState(() =>
+    achievements.length === 1 && total === 1 ? celebrationShareLine(achievements[0].id) : null
+  );
   if (achievements.length === 0) return null;
   const [only] = achievements;
   const several = achievements.length > 1;
@@ -88,7 +92,17 @@ export function AchievementCelebration({
         }
         onDone={onDone}
       >
-        {several ? undefined : only.description}
+        {several ? undefined : (
+          <>
+            {only.description}
+            {share && (
+              <>
+                {'\n'}
+                <Highlight color={theme.dark ? 'hsl(265, 90%, 78%)' : 'hsl(265, 72%, 52%)'}>{share}</Highlight>
+              </>
+            )}
+          </>
+        )}
       </CelebrationCard>
     </>
   );
