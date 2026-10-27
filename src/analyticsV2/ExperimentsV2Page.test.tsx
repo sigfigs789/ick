@@ -110,12 +110,14 @@ describe("ExperimentsV2Page", () => {
     );
   });
 
-  it("draws the header celebrations test", async () => {
+  it("draws the header celebrations test, new and returning players apart", async () => {
     const headerCelebrations = {
       since: "2026-10-26",
       arms: [
         { variant: "shown", segment: "all", assigned: 300, d1: { cohort: 280, returned: 90 } },
+        { variant: "shown", segment: "new", assigned: 60, d1: { cohort: 55, returned: 15 } },
         { variant: "hidden", segment: "all", assigned: 100, d1: { cohort: 95, returned: 25 } },
+        { variant: "hidden", segment: "new", assigned: 20, d1: { cohort: 18, returned: 5 } },
       ],
     };
     const body = { wordOfDay: null, comeBack: null, headerCelebrations };
@@ -126,8 +128,9 @@ describe("ExperimentsV2Page", () => {
     expect(
       screen.getByRole("table", { name: "Everyone drawn: with the header celebrations against without." }),
     ).toBeTruthy();
-    // Read over everyone drawn alone, not split into new and returning players.
-    expect(screen.getAllByRole("table")).toHaveLength(1);
+    // Everyone, then new players, then returning players.
+    expect(screen.getAllByRole("table")).toHaveLength(3);
+    expect(screen.getByRole("heading", { name: "Returning" })).toBeTruthy();
   });
 
   it("draws the share name test, new and returning players apart", async () => {

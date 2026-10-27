@@ -7,20 +7,9 @@ import { count, percent, STANDING_NAMES, type Standing } from "./scorecard";
  * An experiment on /experimentsV2: the call first, then the two arms side by
  * side on the scorecard's own measures, for everyone drawn, then new and
  * returning players apart. `subject` names the thing tested ("the word of the
- * day"); `about` says who is drawn when, and how to force an arm. `segments`
- * narrows the tables, for a test read over everyone drawn alone.
+ * day"); `about` says who is drawn when, and how to force an arm.
  */
-export function ExperimentView({
-  experiment,
-  subject,
-  about,
-  segments = SEGMENTS,
-}: {
-  experiment: Experiment;
-  subject: string;
-  about: ReactNode;
-  segments?: readonly Segment[];
-}) {
+export function ExperimentView({ experiment, subject, about }: { experiment: Experiment; subject: string; about: ReactNode }) {
   const call = verdict(experiment, subject);
   return (
     <>
@@ -28,7 +17,7 @@ export function ExperimentView({
         <strong className="av2__verdict-headline">{call.headline}</strong>
         <p className="av2__verdict-reason">{call.reason}</p>
       </div>
-      {segments.map((segment) => (
+      {SEGMENTS.map((segment) => (
         <ArmTable key={segment} experiment={experiment} segment={segment} subject={subject} />
       ))}
       <p className="review__meta av2__note">
@@ -36,7 +25,9 @@ export function ExperimentView({
         {experiment.since ? ` Drawn since ${experiment.since}; ` : " "}
         every number counts from the day a player was drawn. The call rests on D1 for everyone drawn; 7-day return
         breaks a tie. Sharing and finishing later puzzles are guardrails: a big drop there is worth a look even when D1
-        is level. Activation is n/a: a player is drawn only once they have banked a word, so everyone in either arm is
+        is level. Later puzzles finished counts the days after the draw day on which a player banked a word, and of
+        those, the share where they went on to finish that day&rsquo;s puzzle; the draw day is left out, since the
+        player had already started it. Activation is n/a: a player is drawn only once they have banked a word, so everyone in either arm is
         already activated and the arms cannot differ on it. A gap marked * is a real one (p &lt; 0.05).
       </p>
     </>
