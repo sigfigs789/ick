@@ -128,6 +128,19 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
     new players and returning players. Force either arm with
     `?share-name=hidden` or `=shown`. Testers are forced to `hidden`. A
     forced arm or a host that reports nothing is never drawn.
+  - **Flames** (`src/game/shareFlamesTest.ts`, `src/hooks/useShareFlames.ts`,
+    `src/components/ShareFlames.tsx`): a 50/50 test. For `shown`, both Share
+    buttons (beside the guess log and in the share panel) burst into
+    flickering flames in the colour of the tier that the average score of the
+    puzzle's words earns, once that average reaches Extremely Rare. Each tier
+    up (Elusive, Mythic, Legend) adds a tongue and burns taller. `hidden`
+    keeps the plain buttons. A player is drawn the first time their average
+    reaches Extremely Rare and keeps that arm. The draw is a
+    `share_flames_assigned` event (with `returning`), scored on
+    `/experimentsV2`, new players and returning players apart. Force either
+    arm with `?share-flames=shown` or `=hidden`. Testers are forced to
+    `shown`. A forced arm, or a host that reports nothing (which keeps the
+    buttons plain), is never drawn.
   - **Text**: `buildShareText`'s `spoilerFree` option (default `true`)
     swaps between rarity squares and the actual words.
   - **Image**: `ShareImageButton` rasterizes the results card (via

@@ -6428,6 +6428,132 @@ button.app__menu-item + button.app__menu-item {
   background: var(--accent-hover);
 }
 
+/* The share flames test (see game/shareFlamesTest.ts): a Share button set
+   alight in the colour of the tier the player's words average. The button is
+   its own stacking context, so the tongues (at z-index -1) paint over its fill
+   but under its label, and rise out of the top of it. The tongue sizes, and
+   the count drawn by ShareFlames.tsx, climb with the tier. */
+.share-flames-host {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  animation: share-flames-glow 1.6s ease-in-out infinite;
+}
+.share-flames {
+  --flame-size: 0.85rem;
+  --flame-stretch: 1.5;
+  --flame-core: color-mix(in srgb, var(--flame) 35%, #fff);
+  --flame-halo: var(--flame);
+  position: absolute;
+  left: 50%;
+  bottom: 62%;
+  /* A blaze centred over the label: as wide as its tongues, overlapped, or a
+     little past the button's edges, whichever is narrower -- the tongues
+     shrink to fit a small one. */
+  width: min(calc(100% + 1.5rem), calc(var(--n) * var(--flame-size) * 0.8));
+  transform: translateX(-50%);
+  z-index: -1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  pointer-events: none;
+  filter: drop-shadow(0 0 0.3rem var(--flame-halo));
+}
+.share-flames--2 {
+  --flame-size: 1rem;
+  --flame-stretch: 1.7;
+}
+.share-flames--3 {
+  --flame-size: 1.15rem;
+  --flame-stretch: 1.95;
+}
+.share-flames--4 {
+  --flame-size: 1.35rem;
+  --flame-stretch: 2.25;
+}
+.share-flames--extremely-rare {
+  --flame: var(--rarity-extremely-rare-dot);
+}
+.share-flames--elusive {
+  --flame: var(--rarity-elusive-dot);
+}
+.share-flames--mythic {
+  --flame: var(--rarity-mythic-dot);
+}
+/* Legend burns white, like its dot, with its badge's black for a halo: the
+   halo carries it on a light page and the white on a dark one. */
+.share-flames--legend {
+  --flame: var(--rarity-legend-dot);
+  --flame-core: color-mix(in srgb, var(--rarity-legend-dot) 72%, var(--rarity-legend-bg));
+  --flame-halo: var(--rarity-legend-bg);
+}
+/* A teardrop pointing up: a square with one sharp corner, turned to the top,
+   then stretched tall -- the centre tongues tallest, by --tall. Neighbours
+   overlap, so the tongues read as one fire. */
+.share-flames__tongue {
+  --stretch: calc(var(--flame-stretch) * var(--tall, 1));
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: var(--flame-size);
+  aspect-ratio: 1;
+  margin: 0 calc(var(--flame-size) * -0.1) calc(var(--flame-size) * (var(--stretch) - 1) / 2);
+  border-radius: 50% 0 50% 50%;
+  background: var(--flame);
+  transform: scale(1, var(--stretch)) rotate(-45deg);
+  animation: share-flames-flicker calc(0.9s + var(--i) * 0.13s) ease-in-out
+    calc(var(--i) * -0.31s) infinite;
+}
+/* The hot core: the same teardrop, smaller, low on the flame's centre line. */
+.share-flames__tongue::after {
+  content: "";
+  position: absolute;
+  inset: 35% 35% 12% 12%;
+  border-radius: 50% 0 50% 50%;
+  background: var(--flame-core);
+}
+@keyframes share-flames-flicker {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1, var(--stretch)) rotate(-45deg);
+    opacity: 0.9;
+  }
+  25% {
+    transform: translate(-8%, -6%) scale(0.9, calc(var(--stretch) * 1.14)) rotate(-45deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(6%, -2%) scale(1.05, calc(var(--stretch) * 0.92)) rotate(-45deg);
+    opacity: 0.85;
+  }
+  75% {
+    transform: translate(-3%, -9%) scale(0.95, calc(var(--stretch) * 1.08)) rotate(-45deg);
+    opacity: 1;
+  }
+}
+/* The button's own glow breathes with the fire, in the same colour. */
+@keyframes share-flames-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0.4rem color-mix(in srgb, var(--share-glow, transparent) 55%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0.9rem color-mix(in srgb, var(--share-glow, transparent) 75%, transparent);
+  }
+}
+.share-flames-host:has(.share-flames--extremely-rare) {
+  --share-glow: var(--rarity-extremely-rare-dot);
+}
+.share-flames-host:has(.share-flames--elusive) {
+  --share-glow: var(--rarity-elusive-dot);
+}
+.share-flames-host:has(.share-flames--mythic) {
+  --share-glow: var(--rarity-mythic-dot);
+}
+.share-flames-host:has(.share-flames--legend) {
+  --share-glow: var(--rarity-legend-dot);
+}
+
 /* Freeform's rainbow stays on the input, where it says which game is being
    typed into; the cards go back to the neutral border, so the gold best word
    is the one card that stands out. */

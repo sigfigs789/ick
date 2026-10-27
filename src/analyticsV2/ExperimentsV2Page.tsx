@@ -61,7 +61,8 @@ export function ExperimentsV2Page() {
           !experiments.headerCelebrations &&
           !experiments.shareName &&
           !experiments.inputPlacement &&
-          !experiments.playTab)
+          !experiments.playTab &&
+          !experiments.shareFlames)
       }
     >
       {picker}
@@ -193,6 +194,28 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
                 icons; the rest have the wordmark alone, as before. Each is drawn once, on their first load. Try either
                 arm with <code>?play-tab=shown</code> or <code>=hidden</code>; a forced arm, or a tester (forced to
                 hidden), is not counted.
+              </>
+            }
+          />
+        </Section>
+      )}
+
+      {experiments.shareFlames && (
+        <Section
+          title="Share buttons on fire"
+          note={`Whether setting the Share buttons alight for a high-scoring day moves the scorecard. Over players, new and returning apart.${drawn}`}
+        >
+          <ExperimentView
+            experiment={experiments.shareFlames}
+            subject="the burning Share buttons"
+            about={
+              <>
+                Half of players see both Share buttons burst into flames, in the colour of the tier their words
+                average, once that average reaches Extremely Rare; each tier up, through Elusive and Mythic to Legend,
+                burns larger. The rest see the plain buttons. Each is drawn once, the first time their average reaches
+                Extremely Rare. Watch the sharing guardrail here as closely as D1. Try either arm with{" "}
+                <code>?share-flames=shown</code> or <code>=hidden</code>; a forced arm, or a tester (forced to shown),
+                is not counted.
               </>
             }
           />

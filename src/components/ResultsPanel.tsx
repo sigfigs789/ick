@@ -8,6 +8,7 @@ import { drawShareName, reportShareNameToggle } from "./shareNameDraw";
 import { loadPlayerId, selfName } from "../game/player";
 import { ShareButton } from "./ShareButton";
 import type { AcceptedWord, StreakState } from "../game/types";
+import type { FlameTier } from "../game/shareFlamesTest";
 import type { GameMode } from "../game/mode";
 import { trackResultCopied } from "../analytics";
 
@@ -43,6 +44,8 @@ interface Props {
    * a panel that is simply on the page when it loads stays where it is.
    */
   scrollSignal?: number;
+  /** The tier the Share button burns in, or none (see game/shareFlamesTest.ts). */
+  flames?: FlameTier | null;
 }
 
 const SPOILER_LABEL_ID = "results-panel-reveal-label";
@@ -90,6 +93,7 @@ export function ResultsPanel({
   mode,
   collapsible = false,
   scrollSignal = 0,
+  flames = null,
 }: Props) {
   const sectionRef = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -140,7 +144,7 @@ export function ResultsPanel({
   // The mode the shares report, which is the one buildShareText tags the link with.
   const sharedMode = mode ?? modeForDate(date);
   const shareButton = (
-    <ShareButton text={copiedShareText} onShared={() => trackResultCopied(sharedMode)} />
+    <ShareButton text={copiedShareText} onShared={() => trackResultCopied(sharedMode)} flames={flames} />
   );
   const preview = (
     <pre className="results-panel__preview" aria-hidden="true">

@@ -25,6 +25,7 @@ import type { ComeBackVariant } from "./game/comeBackTest";
 import type { HeaderCelebrationsVariant } from "./game/headerCelebrationsTest";
 import type { InputPlacementVariant } from "./game/inputPlacementTest";
 import type { PlayTabVariant } from "./game/playTabTest";
+import type { ShareFlamesVariant } from "./game/shareFlamesTest";
 import type { ShareNameVariant } from "./game/shareNameTest";
 import type { WordOfDayVariant } from "./game/wordOfDay";
 import { APP_VERSION } from "./version";
@@ -940,6 +941,24 @@ export function trackInputPlacementAssigned(placement: InputPlacementVariant, da
  */
 export function trackPlayTabAssigned(variant: PlayTabVariant, date: string, returning: boolean) {
   send("play_tab_assigned", {
+    variant,
+    returning,
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
+    live_date: todayDateString(),
+    mode: modeOf(date),
+  });
+}
+
+/**
+ * The share flames test's draw (see game/shareFlamesTest.ts), once per player,
+ * the first time their words average Extremely Rare or better with a Share
+ * button on the page. Shaped like the share name test's, for
+ * `analytics_v2_experiment`: `shown` is the burning buttons, `hidden` the
+ * plain ones.
+ */
+export function trackShareFlamesAssigned(variant: ShareFlamesVariant, date: string, returning: boolean) {
+  send("share_flames_assigned", {
     variant,
     returning,
     puzzle_date: date,

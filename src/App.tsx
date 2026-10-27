@@ -29,6 +29,7 @@ import { useYesterdaysBest, type ResolvedBest } from "./hooks/useYesterdaysBest"
 import { useAcceptedSuggestions } from "./hooks/useAcceptedSuggestions";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { useInputPlacement } from "./hooks/useInputPlacement";
+import { useShareFlames } from "./hooks/useShareFlames";
 import { isWinningRarity } from "./game/rank";
 import { celebrationFor } from "./game/celebration";
 import {
@@ -487,6 +488,10 @@ export default function App() {
   // Above the guess log or below it, by the input placement test (see
   // game/inputPlacementTest.ts), drawn the first time the input shows.
   const inputPlacement = useInputPlacement(date, !progress.completed);
+  // The tier both Share buttons burn in, by the share flames test (see
+  // game/shareFlamesTest.ts), drawn the first time the words average
+  // Extremely Rare or better -- always with the Share beside the log showing.
+  const shareFlames = useShareFlames(progress.acceptedWords, date);
   const guessEntry = (
     <>
       {!progress.completed && (
@@ -628,6 +633,7 @@ export default function App() {
                 isToday={isToday}
                 mode={progress.mode}
                 onShared={() => setShareRequests((n) => n + 1)}
+                flames={shareFlames}
               />
             ) : undefined
           }
@@ -685,6 +691,7 @@ export default function App() {
             mode={progress.mode}
             collapsible
             scrollSignal={shareRequests}
+            flames={shareFlames}
           />
         )}
 
