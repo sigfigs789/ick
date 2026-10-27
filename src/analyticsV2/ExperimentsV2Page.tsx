@@ -105,8 +105,8 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
             subject="the come-back tip"
             about={
               <>
-                Half of players never see the line under the streak that says what tomorrow is worth. Each is drawn
-                once, the first time it would appear: a word banked on today&rsquo;s puzzle. Try either arm with{" "}
+                One in three new draws never sees the line under the streak that says what tomorrow is worth (players
+                drawn while the split was 50/50 keep their arm). Each is drawn once, the first time it would appear: a word banked on today&rsquo;s puzzle. Try either arm with{" "}
                 <code>?come-back=hidden</code> or <code>=shown</code>; a forced arm, or a tester, is not counted.
               </>
             }
