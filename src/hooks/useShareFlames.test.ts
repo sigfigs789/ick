@@ -34,21 +34,21 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("useShareFlames", () => {
-  it("draws nobody while the average is below Extremely Rare", () => {
+  it("draws nobody while the average is below Elusive", () => {
     const { result } = renderHook(() => useShareFlames([word(6)], DATE));
     expect(result.current).toBeNull();
     expect(localStorage.getItem("ick:share-flames-test")).toBeNull();
     expect(trackShareFlamesAssigned).not.toHaveBeenCalled();
   });
 
-  it("draws a player once, when the average first reaches Extremely Rare, and reports it", () => {
+  it("draws a player once, when the average first reaches Elusive, and reports it", () => {
     const { result, rerender } = renderHook(({ words }) => useShareFlames(words, DATE), {
-      initialProps: { words: [word(6)] },
+      initialProps: { words: [word(8.4)] },
     });
-    rerender({ words: [word(6), word(10)] });
+    rerender({ words: [word(8.4), word(9.8)] });
     const arm = localStorage.getItem("ick:share-flames-test");
     expect(arm === "shown" || arm === "hidden").toBe(true);
-    expect(result.current).toBe(arm === "shown" ? "Extremely Rare" : null);
+    expect(result.current).toBe(arm === "shown" ? "Elusive" : null);
     expect(trackShareFlamesAssigned).toHaveBeenCalledTimes(1);
     expect(vi.mocked(trackShareFlamesAssigned).mock.calls[0][0]).toBe(arm);
 

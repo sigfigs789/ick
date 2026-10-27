@@ -132,11 +132,11 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
     `src/components/ShareFlames.tsx`): a 50/50 test. For `shown`, both Share
     buttons (beside the guess log and in the share panel) are engulfed in
     fire in the colour of the tier that the average score of the puzzle's
-    words earns, once that average reaches Extremely Rare: the whole button
+    words earns, once that average reaches Elusive: the whole button
     fill turns to that fire and flickering flames run along its top edge.
-    Each tier up (Elusive, Mythic, Legend) burns taller. `hidden`
+    Each tier up (Mythic, Legend) burns taller. `hidden`
     keeps the plain buttons. A player is drawn the first time their average
-    reaches Extremely Rare and keeps that arm. The draw is a
+    reaches Elusive and keeps that arm. The draw is a
     `share_flames_assigned` event (with `returning`), scored on
     `/experimentsV2`, new players and returning players apart. Force either
     arm with `?share-flames=shown` or `=hidden`. Testers are forced to

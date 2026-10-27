@@ -25,8 +25,7 @@ function scoring(score: number): { zipf: number } {
 }
 
 describe("shareFlameTier", () => {
-  it("names the tier the words' average score earns, from Extremely Rare up", () => {
-    expect(shareFlameTier([scoring(8.2), scoring(8.6)], DATE)).toBe("Extremely Rare");
+  it("names the tier the words' average score earns, from Elusive up", () => {
     expect(shareFlameTier([scoring(8.8), scoring(9.4)], DATE)).toBe("Elusive");
     expect(shareFlameTier([scoring(9.2), scoring(10)], DATE)).toBe("Mythic");
     expect(shareFlameTier([scoring(9.9), scoring(10)], DATE)).toBe("Legend");
@@ -34,11 +33,12 @@ describe("shareFlameTier", () => {
 
   it("goes by the average, not the best word", () => {
     expect(shareFlameTier([scoring(10), scoring(5)], DATE)).toBeNull();
-    expect(shareFlameTier([scoring(10), scoring(6.2)], DATE)).toBe("Extremely Rare");
+    expect(shareFlameTier([scoring(10), scoring(8.2)], DATE)).toBe("Elusive");
   });
 
-  it("does not burn below Extremely Rare, or with no words", () => {
+  it("does not burn below Elusive, or with no words", () => {
     expect(shareFlameTier([scoring(7.8)], DATE)).toBeNull();
+    expect(shareFlameTier([scoring(8.2), scoring(8.6)], DATE)).toBeNull();
     expect(shareFlameTier([], DATE)).toBeNull();
   });
 
@@ -49,10 +49,9 @@ describe("shareFlameTier", () => {
 
 describe("flameLevel", () => {
   it("burns larger each tier up", () => {
-    expect(flameLevel("Extremely Rare")).toBe(1);
-    expect(flameLevel("Elusive")).toBe(2);
-    expect(flameLevel("Mythic")).toBe(3);
-    expect(flameLevel("Legend")).toBe(4);
+    expect(flameLevel("Elusive")).toBe(1);
+    expect(flameLevel("Mythic")).toBe(2);
+    expect(flameLevel("Legend")).toBe(3);
   });
 });
 

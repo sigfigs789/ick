@@ -952,7 +952,7 @@ export function trackPlayTabAssigned(variant: PlayTabVariant, date: string, retu
 
 /**
  * The share flames test's draw (see game/shareFlamesTest.ts), once per player,
- * the first time their words average Extremely Rare or better with a Share
+ * the first time their words average Elusive or better with a Share
  * button on the page. Shaped like the share name test's, for
  * `analytics_v2_experiment`: `shown` is the burning buttons, `hidden` the
  * plain ones.

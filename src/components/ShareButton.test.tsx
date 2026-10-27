@@ -46,14 +46,14 @@ describe("ShareButton", () => {
     const { container, rerender } = render(<ShareButton text="x" />);
     expect(container.querySelector(".share-flames")).toBeNull();
 
-    rerender(<ShareButton text="x" flames="Extremely Rare" />);
+    rerender(<ShareButton text="x" flames="Elusive" />);
     const button = screen.getByRole("button", { name: "Share" });
-    expect(button).toHaveClass("share-flames-host", "share-flames--extremely-rare", "share-flames--1");
+    expect(button).toHaveClass("share-flames-host", "share-flames--elusive", "share-flames--1");
     const tongues = container.querySelectorAll(".share-flames__tongue").length;
     expect(tongues).toBeGreaterThan(10);
 
     rerender(<ShareButton text="x" flames="Legend" />);
-    expect(button).toHaveClass("share-flames--legend", "share-flames--4");
+    expect(button).toHaveClass("share-flames--legend", "share-flames--3");
     expect(button).not.toHaveClass("share-flames--1");
     // The same row of tongues along the top edge; the tier sets their height.
     expect(container.querySelectorAll(".share-flames__tongue")).toHaveLength(tongues);

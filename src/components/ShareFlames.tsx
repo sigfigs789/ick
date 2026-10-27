@@ -13,7 +13,7 @@ const HEIGHTS = [
 /**
  * The flames along a burning Share button's top edge: a row of tongues across
  * its whole width, in the tier's colour, flickering on staggered timings. They
- * burn taller each tier up, from a low lick at Extremely Rare to a blaze at
+ * burn taller each tier up, from a low lick at Elusive to a blaze at
  * Legend. The button sets `shareFlamesClass` (see game/shareFlamesTest.ts),
  * which carries the tier: its fill, colours and flame height.
  *

@@ -7,9 +7,9 @@ import type { AcceptedWord, Rarity } from "./types";
  * colour of the tier the player's words average, gets more results shared.
  *
  * Split 50/50: `shown` sees the flames, `hidden` the plain buttons as before.
- * Only an average of Extremely Rare or better burns, and each tier up burns
+ * Only an average of Elusive or better burns, and each tier up burns
  * larger (see `shareFlameTier`). A player is drawn the first time their
- * average reaches Extremely Rare with a Share button on the page -- the moment
+ * average reaches Elusive with a Share button on the page -- the moment
  * the two arms start to differ -- and keeps the arm for good. The draw is
  * reported once, as `share_flames_assigned`, and /experimentsV2 reads the arms
  * from that day on (see the analytics_v2_experiment migration).
@@ -18,7 +18,7 @@ import type { AcceptedWord, Rarity } from "./types";
 export type ShareFlamesVariant = "shown" | "hidden";
 
 /** The tiers that burn, weakest first; each later one burns larger. */
-export const FLAME_TIERS = ["Extremely Rare", "Elusive", "Mythic", "Legend"] as const;
+export const FLAME_TIERS = ["Elusive", "Mythic", "Legend"] as const;
 
 export type FlameTier = (typeof FLAME_TIERS)[number];
 
@@ -37,7 +37,7 @@ function isFlameTier(rarity: Rarity | null): rarity is FlameTier {
 
 /**
  * The tier the average score of `words` earns, when it is one that burns; null
- * below Extremely Rare, for no words, and for a puzzle whose tiers a score
+ * below Elusive, for no words, and for a puzzle whose tiers a score
  * alone cannot name (see `rarityForScore`).
  */
 export function shareFlameTier(words: readonly Pick<AcceptedWord, "zipf">[], date: string): FlameTier | null {
@@ -46,14 +46,14 @@ export function shareFlameTier(words: readonly Pick<AcceptedWord, "zipf">[], dat
   return isFlameTier(tier) ? tier : null;
 }
 
-/** How large `tier` burns: 1 for Extremely Rare up to 4 for Legend. */
+/** How large `tier` burns: 1 for Elusive up to 3 for Legend. */
 export function flameLevel(tier: FlameTier): number {
   return FLAME_TIERS.indexOf(tier) + 1;
 }
 
 /**
  * The classes a Share button takes to burn in `tier`: its whole fill turns
- * to the tier's fire, and `share-flames--1` to `--4` size the flames along its
+ * to the tier's fire, and `share-flames--1` to `--3` size the flames along its
  * top (see components/ShareFlames.tsx). Empty for no tier.
  */
 export function shareFlamesClass(tier: FlameTier | null): string {

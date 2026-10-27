@@ -6458,22 +6458,13 @@ button.app__menu-item + button.app__menu-item {
   filter: brightness(1.08);
 }
 .share-flames--1 {
-  --flame-height: 0.7rem;
-}
-.share-flames--2 {
   --flame-height: 1rem;
 }
-.share-flames--3 {
+.share-flames--2 {
   --flame-height: 1.35rem;
 }
-.share-flames--4 {
+.share-flames--3 {
   --flame-height: 1.8rem;
-}
-.share-flames--extremely-rare {
-  --flame: var(--rarity-extremely-rare-dot);
-  --flame-core: #f0c8ff;
-  --flame-text: #fff;
-  --flame-text-shadow: rgb(40 0 70 / 0.55);
 }
 .share-flames--elusive {
   --flame: var(--rarity-elusive-dot);

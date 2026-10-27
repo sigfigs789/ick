@@ -14,7 +14,7 @@ import type { AcceptedWord } from "../game/types";
 /**
  * The tier the Share buttons burn in for the puzzle at `date`, or null for no
  * flames (see game/shareFlamesTest.ts). The player is drawn here the first time
- * `words` average Extremely Rare or better -- the App only renders this while a
+ * `words` average Elusive or better -- the App only renders this while a
  * Share button is on the page -- and the draw is reported once, marked new or
  * returning. A forced arm is used without a draw, and a host that reports
  * nothing (the Reddit post) has nobody to measure one, so it keeps the plain
