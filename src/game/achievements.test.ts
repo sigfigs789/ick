@@ -472,3 +472,58 @@ describe("countedRecord", () => {
     expect(statusOf("first-legend", counted).earnedOn).toBe("2026-10-10");
   });
 });
+
+describe("the fun badges", () => {
+  const words = (...ws: string[]) => ws.map((w) => word("Common", w));
+
+  it("counts first letters for Alphabet soup, and every letter for The quick brown fox", () => {
+    const history = [day("2026-10-01", words("ant", "bat", "cat", "dog")), day("2026-10-02", words("eel", "fox", "gnu", "hen")), day("2026-10-03", words("ibis", "jay"))];
+    expect(statusOf("alphabet-10", { history }).earnedOn).toBe("2026-10-03");
+    expect(statusOf("alphabet-13", { history }).progress).toEqual({ current: 10, target: 13 });
+    const pangram = [day("2026-10-01", words("the", "quick", "brown", "fox")), day("2026-10-02", words("jumps", "over", "lazy", "dog"))];
+    expect(statusOf("pangram", { history: pangram }).earnedOn).toBe("2026-10-02");
+  });
+
+  it("reads one word for the word badges", () => {
+    const one = (id: string, w: string) => statusOf(id, { history: [day("2026-10-01", words(w))] }).earnedOn;
+    expect(one("old-macdonald", "television")).toBe("2026-10-01");
+    expect(one("old-macdonald", "oneliner")).toBeNull();
+    expect(one("x-word", "jazz")).toBeNull();
+    expect(one("x-word", "boxer")).toBe("2026-10-01");
+    expect(one("tenet", "racecar")).toBe("2026-10-01");
+    expect(one("rhythm-nation", "rhythm")).toBe("2026-10-01");
+    expect(one("q-without-u", "qatar")).toBe("2026-10-01");
+    expect(one("q-without-u", "quick")).toBeNull();
+    expect(one("triple-letter", "banana")).toBe("2026-10-01");
+    expect(one("double-dip", "inking")).toBeNull();
+    expect(one("double-dip", "inkinky")).toBe("2026-10-01");
+  });
+
+  it("needs a finished puzzle for the order badges", () => {
+    const check = (id: string, ...ws: string[]) => statusOf(id, { history: [day("2026-10-01", words(...ws))] }).earnedOn;
+    expect(check("abcs", "ant", "bat", "cat", "dog")).toBe("2026-10-01");
+    expect(check("abcs", "ant", "cat", "bat", "dog")).toBeNull();
+    expect(check("abcs", "ant", "bat", "cat")).toBeNull();
+    expect(check("chain-gang", "ink", "kin", "nap", "pin")).toBe("2026-10-01");
+    expect(check("honey-i-blew-up-the-kid", "ink", "kink", "pinks", "inkpot")).toBe("2026-10-01");
+    expect(check("peter-piper", "pink", "pick", "peck", "pack")).toBe("2026-10-01");
+    expect(check("voldemort", "listen", "silent")).toBe("2026-10-01");
+    expect(check("basic", "ant", "bat", "cat", "dog")).toBe("2026-10-01");
+  });
+
+  it("needs the same word on two days for Groundhog Day", () => {
+    const sameDay = [day("2026-10-01", words("pink"), { mode: "standard" }), day("2026-10-01", words("pink"), { mode: "freeform" })];
+    expect(statusOf("groundhog-day", { history: sameDay }).earnedOn).toBeNull();
+    const twoDays = [day("2026-10-01", words("pink")), day("2026-10-05", words("Pink"))];
+    expect(statusOf("groundhog-day", { history: twoDays }).earnedOn).toBe("2026-10-05");
+  });
+
+  it("counts days played on their own day for the weekend and the week", () => {
+    // 2026-10-03 is a Saturday.
+    expect(statusOf("weekend-at-bernies", { onItsDay: ["2026-10-03", "2026-10-04"] }).earnedOn).toBe("2026-10-04");
+    expect(statusOf("weekend-at-bernies", { onItsDay: ["2026-10-04", "2026-10-10"] }).earnedOn).toBeNull();
+    const week = Array.from({ length: 7 }, (_, i) => addDays("2026-10-01", i));
+    expect(statusOf("eight-days-a-week", { onItsDay: week }).earnedOn).toBe("2026-10-07");
+    expect(statusOf("eight-days-a-week", { onItsDay: week.slice(1) }).progress).toEqual({ current: 6, target: 7 });
+  });
+});
