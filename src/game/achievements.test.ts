@@ -5,6 +5,7 @@ import {
   achievementsToCatchUp,
   announcedAchievements,
   celebrationShareLine,
+  countedRecord,
   earnedIds,
   earnedShareLabel,
   firstToEarn,
@@ -346,5 +347,85 @@ describe("the card for a lone badge", () => {
     expect(celebrationShareLine("pantheon", rates)).toBe("Earned by only 4.3% of players.");
     expect(celebrationShareLine("streak-30", rates)).toBe("Earned by fewer than 1% of players.");
     expect(celebrationShareLine("days-10", rates)).toBe("Earned by 8.2% of players.");
+  });
+});
+
+describe("the harder badges", () => {
+  const legend = (w: string, zipf = 0.5): AcceptedWord => ({ word: w, rarity: "Legend", zipf });
+  const days = (n: number, from = "2026-10-01") =>
+    Array.from({ length: n }, (_, i) => addDays(from, i));
+
+  it("needs a Legend on 5 days in a row, each on its own day", () => {
+    const dates = days(5);
+    const history = dates.map((d) => day(d, [legend(`l${d}`)]));
+    expect(statusOf("legend-streak", { history, onItsDay: dates }).earnedOn).toBe("2026-10-05");
+    const gap = statusOf("legend-streak", { history, onItsDay: dates.filter((d) => d !== "2026-10-03") });
+    expect(gap.earnedOn).toBeNull();
+    expect(gap.progress).toEqual({ current: 2, target: 5 });
+  });
+
+  it("needs 7 days in a row with nothing turned away for Ironclad", () => {
+    const dates = days(7);
+    const history = dates.map((d) => day(d, [word("Common")]));
+    expect(statusOf("ironclad", { history, onItsDay: dates }).earnedOn).toBe("2026-10-07");
+    history[3] = day(dates[3], [word("Common")], { rejectedAttempts: ["zzz"] });
+    expect(statusOf("ironclad", { history, onItsDay: dates }).earnedOn).toBeNull();
+  });
+
+  it("needs every guess to score higher than the last for Climber, lower for Rappel", () => {
+    const climb = [3, 2, 1, 0.5].map((zipf, i) => ({ word: `c${i}`, rarity: "Rare" as const, zipf }));
+    expect(statusOf("climber", { history: [day("2026-10-10", climb)] }).earnedOn).toBe("2026-10-10");
+    expect(statusOf("dawn-wall", { history: [day("2026-10-10", climb)] }).earnedOn).toBeNull();
+    const summit = [...climb.slice(0, 3), { word: "c3", rarity: "Legend" as const, zipf: 0.5 }];
+    expect(statusOf("dawn-wall", { history: [day("2026-10-10", summit)] }).earnedOn).toBe(
+      "2026-10-10"
+    );
+    expect(statusOf("rappel", { history: [day("2026-10-10", [...climb].reverse())] }).earnedOn).toBe(
+      "2026-10-10"
+    );
+    const dip = [climb[0], climb[2], climb[1], climb[3]];
+    expect(statusOf("climber", { history: [day("2026-10-10", dip)] }).earnedOn).toBeNull();
+  });
+
+  it("needs a Mythic word starting with the drop and another ending with it for Bookends", () => {
+    const mythic = (w: string): AcceptedWord => ({ word: w, rarity: "Mythic", zipf: 1.2 });
+    const both = day("2026-10-10", [mythic("inkhorn"), mythic("bethink")]);
+    expect(statusOf("bookends", { history: [both] }).earnedOn).toBe("2026-10-10");
+    const one = day("2026-10-10", [mythic("inkhorn"), mythic("inkling")]);
+    expect(statusOf("bookends", { history: [one] }).earnedOn).toBeNull();
+  });
+
+  it("needs a Legend on every day of the week for Grand tour", () => {
+    const history = days(7).map((d) => day(d, [legend(`l${d}`)]));
+    expect(statusOf("grand-tour", { history }).earnedOn).toBe("2026-10-07");
+    expect(statusOf("grand-tour", { history: history.slice(1) }).progress).toEqual({
+      current: 6,
+      target: 7,
+    });
+  });
+
+  it("averages the day's best word for Master's average", () => {
+    const dates = days(10);
+    const history = dates.map((d) => day(d, [{ word: `e${d}`, rarity: "Mythic", zipf: 1 }]));
+    expect(statusOf("elusive-average", { history, onItsDay: dates }).earnedOn).toBe("2026-10-10");
+    const weak = dates.map((d) => day(d, [word("Common")]));
+    expect(statusOf("elusive-average", { history: weak, onItsDay: dates }).earnedOn).toBeNull();
+  });
+});
+
+describe("countedRecord", () => {
+  it("earns a badge from an unattested Legend but leaves it out of the count", () => {
+    const unattested: AcceptedWord = { word: "zzyzx", rarity: "Legend", zipf: -1.57 };
+    const history = [day("2026-10-10", [unattested])];
+    expect(statusOf("first-legend", { history }).earnedOn).toBe("2026-10-10");
+    const counted = countedRecord({ history, onItsDay: [], streak: noStreak });
+    expect(statusOf("first-legend", counted).earnedOn).toBeNull();
+    expect(statusOf("first-word", counted).earnedOn).toBe("2026-10-10");
+  });
+
+  it("still counts a measured Legend", () => {
+    const history = [day("2026-10-10", [{ word: "rare", rarity: "Legend", zipf: 0.5 }])];
+    const counted = countedRecord({ history, onItsDay: [], streak: noStreak });
+    expect(statusOf("first-legend", counted).earnedOn).toBe("2026-10-10");
   });
 });
