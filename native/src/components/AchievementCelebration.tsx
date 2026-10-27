@@ -14,6 +14,9 @@ const GOLD_FACE = 'hsl(45, 100%, 82%)';
 /** The website's pop-in, cubic-bezier(0.2, 1.6, 0.4, 1). */
 const POP = Easing.bezier(0.2, 1.6, 0.4, 1);
 
+/** The most badges the card names; the rest are left to Stats. */
+const MOST_SHOWN = 3;
+
 /**
  * The moment a word earns an achievement (see game/achievements.ts) -- a port
  * of the website's AchievementCelebration.
@@ -26,20 +29,23 @@ const POP = Easing.bezier(0.2, 1.6, 0.4, 1);
  * The same card welcomes a returning player's badges that were never announced
  * (see `achievementsToCatchUp`): `total` is how many there are, of which
  * `achievements` is the few worth naming, and the rest are left to Stats.
+ * No card names more than three, however many a word earns.
  *
  * The website's turning rays and the sheen across the card are CSS gradients
  * React Native does not draw; the badge's pop is kept, which is the part that
  * says something was handed over.
  */
 export function AchievementCelebration({
-  achievements,
-  total = achievements.length,
+  achievements: earned,
+  total: given = earned.length,
   onDone,
 }: {
   achievements: readonly Achievement[];
   total?: number;
   onDone: () => void;
 }) {
+  const achievements = earned.slice(0, MOST_SHOWN);
+  const total = Math.max(given, earned.length);
   const theme = useTheme();
   // Read as the card opens, so this player's own report never changes it.
   const [share] = useState(() =>

@@ -40,6 +40,18 @@ describe("AchievementCelebration", () => {
     expect(screen.getByText("And 5 more. See them all on your Stats page.")).toBeInTheDocument();
   });
 
+  it("names no more than three, however many a word earns", () => {
+    render(
+      <AchievementCelebration
+        achievements={[byId("first-word"), byId("first-win"), byId("first-legend"), byId("streak-7")]}
+        onDone={() => {}}
+      />
+    );
+    expect(screen.getByText("4 achievements unlocked")).toBeInTheDocument();
+    expect(document.querySelectorAll(".achievement-unlocked__item")).toHaveLength(3);
+    expect(screen.getByText("And 1 more. See them all on your Stats page.")).toBeInTheDocument();
+  });
+
   it("goes by itself after a while", () => {
     vi.useFakeTimers();
     const onDone = vi.fn();
