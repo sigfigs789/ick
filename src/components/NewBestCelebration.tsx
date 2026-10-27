@@ -5,7 +5,7 @@ import { ConfettiBurst } from "./ConfettiBurst";
  * game/newBest.ts), on the submission that takes it there.
  *
  * The streak climb's card, flame and all: it floats over the puzzle and stays
- * until it is tapped away.
+ * until it is closed with its ×.
  */
 export function NewBestCelebration({
   days,
@@ -20,10 +20,10 @@ export function NewBestCelebration({
     <>
       <ConfettiBurst rising />
       <div className="improvement improvement--streak" role="status">
-        <button type="button" className="improvement__card" onClick={onDone} title="Dismiss">
-          <span className="improvement__close" aria-hidden="true">
+        <div className="improvement__card">
+          <button type="button" className="improvement__close" onClick={onDone} title="Dismiss" aria-label="Dismiss">
             ×
-          </span>
+          </button>
           <span className="improvement__icon" aria-hidden="true">
             🔥
           </span>
@@ -32,7 +32,7 @@ export function NewBestCelebration({
             <span className="improvement__gain">{days} days</span> — past your best of{" "}
             <span className="improvement__tally">{best}</span>.
           </span>
-        </button>
+        </div>
       </div>
     </>
   );

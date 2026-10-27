@@ -9,7 +9,7 @@ import { perfectMonthName } from "../game/perfectMonth";
  * and a card naming the month. The card floats over the puzzle rather than
  * taking it over: the player is mid-guess on the last day, and a modal they had
  * to close before their next word would be a celebration in the way. It stays
- * up until it is tapped away.
+ * up until it is closed with its ×.
  */
 export function PerfectMonthCelebration({
   date,
@@ -25,10 +25,10 @@ export function PerfectMonthCelebration({
     <>
       <ConfettiBurst grand />
       <div className="perfect-month" role="status">
-        <button type="button" className="perfect-month__card" onClick={onDone} title="Dismiss">
-          <span className="perfect-month__close" aria-hidden="true">
+        <div className="perfect-month__card">
+          <button type="button" className="perfect-month__close" onClick={onDone} title="Dismiss" aria-label="Dismiss">
             ×
-          </span>
+          </button>
           <span className="perfect-month__trophy" aria-hidden="true">
             🏆
           </span>
@@ -40,7 +40,7 @@ export function PerfectMonthCelebration({
             </span>
             .
           </span>
-        </button>
+        </div>
       </div>
     </>
   );

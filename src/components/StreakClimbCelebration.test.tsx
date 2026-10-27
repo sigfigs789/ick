@@ -19,13 +19,15 @@ describe("StreakClimbCelebration", () => {
     expect(status).toHaveTextContent("climbed 1 place —");
   });
 
-  it("stays until it is tapped away", () => {
+  it("stays until its × is tapped, however long it has been up or wherever else is tapped", () => {
     vi.useFakeTimers();
     const onDone = vi.fn();
     render(<StreakClimbCelebration climb={{ from: 5, to: 4 }} onDone={onDone} />);
     vi.advanceTimersByTime(60_000);
     expect(onDone).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(document.querySelector(".improvement__card")!);
+    expect(onDone).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
     expect(onDone).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
   });

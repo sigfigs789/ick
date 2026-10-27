@@ -45,10 +45,12 @@ describe("BestWordNewsCard", () => {
     );
   });
 
-  it("goes on a tap", () => {
+  it("goes on a tap of its ×, and only that", () => {
     const onDone = vi.fn();
     render(<BestWordNewsCard kind="other" resolved={resolved([A])} onDone={onDone} />);
-    fireEvent.click(screen.getByTitle("Dismiss"));
+    fireEvent.click(document.querySelector(".improvement__card")!);
+    expect(onDone).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
     expect(onDone).toHaveBeenCalled();
   });
 });

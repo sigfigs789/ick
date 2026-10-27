@@ -19,7 +19,7 @@ function finderNames(ids: readonly string[], total: number): string {
  * of who did for everybody else.
  *
  * The improving average's card, in gold: it floats over the puzzle and stays
- * until it is tapped away.
+ * until it is closed with its ×.
  */
 export function BestWordNewsCard({
   kind,
@@ -42,10 +42,10 @@ export function BestWordNewsCard({
     <>
       {kind === "self" && <ConfettiBurst rising />}
       <div className="improvement improvement--best" role="status">
-        <button type="button" className="improvement__card" onClick={onDone} title="Dismiss">
-          <span className="improvement__close" aria-hidden="true">
+        <div className="improvement__card">
+          <button type="button" className="improvement__close" onClick={onDone} title="Dismiss" aria-label="Dismiss">
             ×
-          </span>
+          </button>
           <span className="improvement__icon" aria-hidden="true">
             {kind === "self" ? "🏆" : "👑"}
           </span>
@@ -63,7 +63,7 @@ export function BestWordNewsCard({
               </>
             )}
           </span>
-        </button>
+        </div>
       </div>
     </>
   );

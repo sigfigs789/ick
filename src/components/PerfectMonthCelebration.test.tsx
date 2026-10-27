@@ -13,13 +13,15 @@ describe("PerfectMonthCelebration", () => {
     expect(document.querySelectorAll(".confetti--grand .confetti__piece")).toHaveLength(48);
   });
 
-  it("stays until it is tapped away", () => {
+  it("stays until its × is tapped, however long it has been up or wherever else is tapped", () => {
     vi.useFakeTimers();
     const onDone = vi.fn();
     render(<PerfectMonthCelebration date="2026-09-30" days={30} onDone={onDone} />);
     vi.advanceTimersByTime(60_000);
     expect(onDone).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(document.querySelector(".perfect-month__card")!);
+    expect(onDone).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
     expect(onDone).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
   });

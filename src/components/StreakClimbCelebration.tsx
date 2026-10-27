@@ -7,7 +7,7 @@ import type { StreakClimb } from "../game/streakClimb";
  *
  * The improving average's card, in the streak's orange and with its flame: it
  * lands when the day is done, floats over the finished puzzle, and stays
- * until it is tapped away.
+ * until it is closed with its ×.
  */
 export function StreakClimbCelebration({
   climb,
@@ -22,10 +22,10 @@ export function StreakClimbCelebration({
     <>
       <ConfettiBurst rising />
       <div className="improvement improvement--streak" role="status">
-        <button type="button" className="improvement__card" onClick={onDone} title="Dismiss">
-          <span className="improvement__close" aria-hidden="true">
+        <div className="improvement__card">
+          <button type="button" className="improvement__close" onClick={onDone} title="Dismiss" aria-label="Dismiss">
             ×
-          </span>
+          </button>
           <span className="improvement__icon" aria-hidden="true">
             🔥
           </span>
@@ -43,7 +43,7 @@ export function StreakClimbCelebration({
             </span>
             .
           </span>
-        </button>
+        </div>
       </div>
     </>
   );
