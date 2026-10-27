@@ -631,7 +631,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     group: "Rarity",
     icon: "🏅",
     title: "Word of the day",
-    description: "Find the day's best word, the one named under the next puzzle.",
+    description: "Find the day's best word.",
     // The tally says how many days, not which, so the day it is first seen.
     check: ({ bestWordWins = 0 }, today) => ({ earnedOn: bestWordWins > 0 ? today : null }),
   },
