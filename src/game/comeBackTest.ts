@@ -4,7 +4,9 @@ import { isTester } from "./testers";
  * The come-back test: whether the line under the streak strip that says what
  * tomorrow is worth (see comeBack.ts) brings players back.
  *
- * Split 50/50: `shown` sees the line, `hidden` sees nothing in its place. A
+ * Split 2:1: `shown`, for two in three players, sees the line; `hidden`, for
+ * the other one in three, sees nothing in its place. The split was 50/50
+ * until 2026-10-27; players drawn before then keep the arm they had. A
  * player is drawn the first time the line would appear -- today's puzzle, a
  * word banked -- which is the moment the two arms start to differ, and keeps
  * the arm for good. The draw is reported once, as `come_back_assigned`, and
@@ -15,7 +17,7 @@ import { isTester } from "./testers";
 export type ComeBackVariant = "shown" | "hidden";
 
 /** The share of players who see the line. */
-export const COME_BACK_SHOW_SHARE = 0.5;
+export const COME_BACK_SHOW_SHARE = 2 / 3;
 
 const ASSIGNMENT_KEY = "ick:come-back-test";
 
