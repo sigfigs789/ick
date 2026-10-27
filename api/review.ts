@@ -437,20 +437,18 @@ async function handleGet(request: Request): Promise<Response> {
           { p_today: today, p_event: event, ...span },
           ANALYTICS_TIMEOUT_MS,
         );
-      const [wordOfDay, comeBack, headerCelebrations, shareName, inputPlacement, playTab, shareFlames, shareNudge] =
-        await Promise.all([
-          experiment("word_of_day_assigned"),
-          experiment("come_back_assigned"),
-          experiment("header_celebrations_assigned"),
-          experiment("share_name_assigned"),
-          experiment("input_placement_assigned"),
-          experiment("play_tab_assigned"),
-          experiment("share_flames_assigned"),
-          experiment("share_nudge_assigned"),
-        ]);
+      const [wordOfDay, comeBack, headerCelebrations, shareName, inputPlacement, playTab, shareFlames] = await Promise.all([
+        experiment("word_of_day_assigned"),
+        experiment("come_back_assigned"),
+        experiment("header_celebrations_assigned"),
+        experiment("share_name_assigned"),
+        experiment("input_placement_assigned"),
+        experiment("play_tab_assigned"),
+        experiment("share_flames_assigned"),
+      ]);
       return reply(
         200,
-        { wordOfDay, comeBack, headerCelebrations, shareName, inputPlacement, playTab, shareFlames, shareNudge },
+        { wordOfDay, comeBack, headerCelebrations, shareName, inputPlacement, playTab, shareFlames },
         ANALYTICS_V2_CACHE,
       );
     }

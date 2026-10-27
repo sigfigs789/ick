@@ -6596,39 +6596,6 @@ button.app__menu-item + button.app__menu-item {
     box-shadow: 0 0 1rem color-mix(in srgb, var(--flame-halo) 80%, transparent);
   }
 }
-/* After a great finish the Share asks to be pressed (see
-   game/shareNudgeTest.ts): a short hop and wiggle with a ring spreading out,
-   then a rest, three times over, and still from then on. Reduced motion runs
-   it once at no length, so the button simply stays put. */
-.quick-share--nudge {
-  animation: quick-share-nudge 2.6s ease-in-out 0.8s 3;
-}
-@keyframes quick-share-nudge {
-  0% {
-    transform: none;
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
-  }
-  6% {
-    transform: translateY(-2px) scale(1.08) rotate(-5deg);
-  }
-  12% {
-    transform: translateY(-2px) scale(1.08) rotate(5deg);
-  }
-  18% {
-    transform: translateY(-1px) scale(1.06) rotate(-3deg);
-  }
-  24% {
-    transform: scale(1.03) rotate(2deg);
-  }
-  30% {
-    transform: none;
-  }
-  45%,
-  100% {
-    transform: none;
-    box-shadow: 0 0 0 10px color-mix(in srgb, var(--accent) 0%, transparent);
-  }
-}
 
 /* Freeform's rainbow stays on the input, where it says which game is being
    typed into; the cards go back to the neutral border, so the gold best word

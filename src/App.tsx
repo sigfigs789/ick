@@ -30,7 +30,6 @@ import { useAcceptedSuggestions } from "./hooks/useAcceptedSuggestions";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { useInputPlacement } from "./hooks/useInputPlacement";
 import { useShareFlames } from "./hooks/useShareFlames";
-import { useShareNudge } from "./hooks/useShareNudge";
 import { isWinningRarity } from "./game/rank";
 import { celebrationFor } from "./game/celebration";
 import {
@@ -510,10 +509,6 @@ export default function App() {
   // game/shareFlamesTest.ts), drawn the first time the words average
   // Elusive or better -- always with the Share beside the log showing.
   const shareFlames = useShareFlames(progress.acceptedWords, date);
-  // A finish averaging Extremely Rare wiggles the Share, for half the players
-  // it reaches (see game/shareNudgeTest.ts); from Elusive up the flames above
-  // take over.
-  const shareNudge = useShareNudge(date, isToday, progress.completed, progress.acceptedWords);
   const guessEntry = (
     <>
       {!progress.completed && (
@@ -656,7 +651,6 @@ export default function App() {
                 mode={progress.mode}
                 onShared={() => setShareRequests((n) => n + 1)}
                 flames={shareFlames}
-                nudge={shareNudge}
               />
             ) : undefined
           }

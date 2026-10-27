@@ -144,8 +144,6 @@ export interface Experiments {
   playTab: Experiment | null;
   /** Its `shown` arm is the Share buttons burning in the average's tier (see game/shareFlamesTest.ts). */
   shareFlames: Experiment | null;
-  /** Its `shown` arm is the Share that wiggles after a great finish (see game/shareNudgeTest.ts). */
-  shareNudge: Experiment | null;
   /** The draw days counted, both ends, or null for everyone drawn. */
   span: { from: string; to: string } | null;
 }
@@ -328,7 +326,6 @@ export async function fetchExperiments(today: string, span?: { from: string; to:
     inputPlacement: parseExperiment(body.inputPlacement),
     playTab: parseExperiment(body.playTab),
     shareFlames: parseExperiment(body.shareFlames),
-    shareNudge: parseExperiment(body.shareNudge),
     span: span ?? null,
   };
 }

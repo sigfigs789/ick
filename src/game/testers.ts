@@ -6,8 +6,7 @@ import { accountName, loadPlayerId } from "./player";
  * treatment (see game/idleHint.ts), and the come-back line and the word of the
  * day shown (see game/comeBackTest.ts and game/wordOfDay.ts), the username
  * left out of shares by default (see game/shareNameTest.ts), and the Share
- * buttons on fire (see game/shareFlamesTest.ts), and the Share that wiggles
- * after a great finish (see game/shareNudgeTest.ts). The
+ * buttons on fire (see game/shareFlamesTest.ts). The
  * exceptions are the input placement test (see game/inputPlacementTest.ts),
  * where testers are kept in the old arm: the guess input above the guess log;
  * and the play tab test (see game/playTabTest.ts), where they are kept in the
