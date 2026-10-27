@@ -1,13 +1,17 @@
 import { useState } from "react";
 import { copyText } from "../clipboard";
+import { shareFlamesClass, type FlameTier } from "../game/shareFlamesTest";
+import { ShareFlames } from "./ShareFlames";
 
 interface Props {
   text: string;
   /** Called after the result has been copied to the player's clipboard. */
   onShared?: () => void;
+  /** The tier the button burns in, or none (see game/shareFlamesTest.ts). */
+  flames?: FlameTier | null;
 }
 
-export function ShareButton({ text, onShared }: Props) {
+export function ShareButton({ text, onShared, flames = null }: Props) {
   const [copied, setCopied] = useState(false);
 
   async function handleClick() {
@@ -20,10 +24,11 @@ export function ShareButton({ text, onShared }: Props) {
   return (
     <button
       type="button"
-      className="share-button"
+      className={`share-button${shareFlamesClass(flames)}`}
       onClick={handleClick}
       aria-live="polite"
     >
+      {flames && <ShareFlames />}
       {copied ? "Copied!" : "Share"}
       {!copied && (
         <svg

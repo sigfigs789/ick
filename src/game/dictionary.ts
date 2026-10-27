@@ -2337,6 +2337,17 @@ function decadeRarity(score: number): Rarity {
   return "Common";
 }
 
+/**
+ * The tier a bare score earns under `date`'s puzzle, for a number that is no
+ * single word's -- an average, say. From DECADE_BANDS_START every label is read
+ * off the shown score, so any score has one; null before it, where labels came
+ * off the Zipf bands and a score alone cannot say.
+ */
+export function rarityForScore(score: number, date?: string): Rarity | null {
+  if (date !== undefined && date < DECADE_BANDS_START) return null;
+  return topRankForScore(score) ?? decadeRarity(score);
+}
+
 function scoringFor(date?: string, mode?: GameMode): Scoring {
   if (date === undefined) return LATEST_SCORING; // newest system
   if (date < NEW_SCORING_START) return LEGACY_SCORING;
