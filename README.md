@@ -976,6 +976,13 @@ the rest of that group stay away until tomorrow. The claim is kept in
 a second card in. The two groups are independent: a player can see one streak
 card and one news card on the same day, one after the other.
 
+**None until a new player's third word** (`headerCelebrationsHeld`). A player
+who has banked fewer than three words in all — every day and mode counted —
+sees no header celebration, achievement cards included. A card held back
+claims no group's day and draws no arm of the test below. The badges earned
+meanwhile (First ink, at least) are not lost: the third word's achievement
+card names them, along with any that word earned, even across a reload.
+
 **Achievements unlocked** (`AchievementCelebration`) sit outside the groups:
 a badge is earned when it is earned, so its card claims no group's day and
 can show on any puzzle, archived ones too. After every verdict the app works

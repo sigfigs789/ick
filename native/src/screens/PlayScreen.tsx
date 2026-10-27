@@ -21,7 +21,7 @@ import {
 } from '../../../src/game/improvement';
 import { checkStreakClimb, type StreakClimb } from '../../../src/game/streakClimb';
 import { beatBestToday } from '../../../src/game/newBest';
-import { claimHeaderCelebration } from '../../../src/game/headerCelebrations';
+import { claimHeaderCelebration, headerCelebrationsHeld } from '../../../src/game/headerCelebrations';
 import {
   achievementsToCatchUp,
   announcedAchievements,
@@ -97,13 +97,14 @@ const CATCH_UP_SHOWN = 3;
 const CATCH_UP_KEY = -1;
 
 /**
- * Whether a header celebration due now may show: its group has not had its
- * card today (see src/game/headerCelebrations.ts). The website also draws a
+ * Whether a header celebration due now may show: the player is past their
+ * first few words, and its group has not had its card today (see
+ * src/game/headerCelebrations.ts). The website also draws a
  * 75/25 test here; this build reports nothing, so like the website's own
  * non-reporting hosts it never draws and always takes the "shown" arm.
  */
 function showHeaderCelebration(group: 'streak' | 'news', date: string): boolean {
-  return claimHeaderCelebration(group, date);
+  return !headerCelebrationsHeld() && claimHeaderCelebration(group, date);
 }
 
 /**
@@ -240,7 +241,12 @@ export function PlayScreen({ covered = false }: Props) {
   // Badges held as the screen opened that no card has ever named -- earned
   // before achievements existed, or before this card did -- are welcomed once,
   // on the same card: the best few by name, and the rest left to Stats.
+  //
+  // A new player hears of none of it until their third banked word (see
+  // headerCelebrationsHeld): that word's card names every badge held back
+  // until then, along with any it earned itself.
   const earnedAchievements = useRef<Set<string> | null>(null);
+  const achievementsHeld = useRef(headerCelebrationsHeld());
   useEffect(() => {
     // The counts a lone badge's card reads, asked for before any word earns one.
     void fetchAchievementRates();
@@ -248,7 +254,7 @@ export function PlayScreen({ covered = false }: Props) {
     const statuses = syncAchievements(streak);
     earnedAchievements.current = earnedIds(statuses);
     const backlog = achievementsToCatchUp(announcedAchievements(), statuses);
-    if (backlog.length === 0) return;
+    if (backlog.length === 0 || achievementsHeld.current) return;
     markAchievementsAnnounced(backlog.map((achievement) => achievement.id));
     setUnlocked({
       key: CATCH_UP_KEY,
@@ -262,7 +268,12 @@ export function PlayScreen({ covered = false }: Props) {
     if (!feedback || !before) return;
     const statuses = syncAchievements(streak);
     earnedAchievements.current = earnedIds(statuses);
-    const fresh = newlyEarned(before, statuses);
+    let fresh = newlyEarned(before, statuses);
+    if (achievementsHeld.current) {
+      if (headerCelebrationsHeld()) return;
+      achievementsHeld.current = false;
+      fresh = achievementsToCatchUp(announcedAchievements(), statuses);
+    }
     if (fresh.length === 0) return;
     markAchievementsAnnounced(fresh.map((achievement) => achievement.id));
     // A welcome still up gives way: today's badge is the news.
