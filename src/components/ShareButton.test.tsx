@@ -42,17 +42,20 @@ describe("ShareButton", () => {
     expect(screen.getByRole("button", { name: "Copied!" })).toBeInTheDocument();
   });
 
-  it("burns in its tier's colour, larger each tier up, without changing its name", () => {
+  it("burns all over in its tier's colour, taller each tier up, without changing its name", () => {
     const { container, rerender } = render(<ShareButton text="x" />);
     expect(container.querySelector(".share-flames")).toBeNull();
 
     rerender(<ShareButton text="x" flames="Extremely Rare" />);
-    expect(screen.getByRole("button", { name: "Share" })).toHaveClass("share-flames-host");
-    expect(container.querySelector(".share-flames--extremely-rare")).not.toBeNull();
-    expect(container.querySelectorAll(".share-flames__tongue")).toHaveLength(3);
+    const button = screen.getByRole("button", { name: "Share" });
+    expect(button).toHaveClass("share-flames-host", "share-flames--extremely-rare", "share-flames--1");
+    const tongues = container.querySelectorAll(".share-flames__tongue").length;
+    expect(tongues).toBeGreaterThan(10);
 
     rerender(<ShareButton text="x" flames="Legend" />);
-    expect(container.querySelector(".share-flames--legend")).not.toBeNull();
-    expect(container.querySelectorAll(".share-flames__tongue")).toHaveLength(6);
+    expect(button).toHaveClass("share-flames--legend", "share-flames--4");
+    expect(button).not.toHaveClass("share-flames--1");
+    // The same row of tongues along the top edge; the tier sets their height.
+    expect(container.querySelectorAll(".share-flames__tongue")).toHaveLength(tongues);
   });
 });

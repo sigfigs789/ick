@@ -8,7 +8,7 @@ import { loadPlayerId, selfName } from "../game/player";
 import { modeForDate, type GameMode } from "../game/mode";
 import { trackResultCopied } from "../analytics";
 import type { AcceptedWord, StreakState } from "../game/types";
-import type { FlameTier } from "../game/shareFlamesTest";
+import { shareFlamesClass, type FlameTier } from "../game/shareFlamesTest";
 import { ShareFlames } from "./ShareFlames";
 
 interface Props {
@@ -57,11 +57,11 @@ export function QuickShareButton({ date, drop, words, streak, isToday, mode, onS
   return (
     <button
       type="button"
-      className={`quick-share${flames ? " share-flames-host" : ""}`}
+      className={`quick-share${shareFlamesClass(flames)}`}
       onClick={() => void share()}
       aria-live="polite"
     >
-      {flames && <ShareFlames tier={flames} />}
+      {flames && <ShareFlames />}
       {copied ? "Copied!" : "Share"}
     </button>
   );

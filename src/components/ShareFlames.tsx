@@ -1,34 +1,29 @@
 import type { CSSProperties } from "react";
-import { flameLevel, type FlameTier } from "../game/shareFlamesTest";
-
-interface Props {
-  tier: FlameTier;
-}
 
 /**
- * The flames a Share button burns with in the share flames test (see
- * game/shareFlamesTest.ts): tongues in the tier's colour, rising from behind
- * the label and flickering. Each tier up adds a tongue and burns taller, from
- * three small ones at Extremely Rare to six tall ones at Legend. The middle
- * tongues stand tallest, so the fire peaks over the label.
- *
- * Drawn inside the button, which sets `.share-flames-host` so the tongues sit
- * between its fill and its label; decoration only, so hidden from readers.
+ * The tongues along the top edge, one per entry, spread across the button's
+ * whole width whatever it is: each one's share of the tier's flame height, a
+ * ragged pattern rather than a smooth one so the edge reads as fire, not a
+ * crown.
  */
-export function ShareFlames({ tier }: Props) {
-  const level = flameLevel(tier);
-  const count = level + 2;
-  const slug = tier.toLowerCase().replace(" ", "-");
+const HEIGHTS = [
+  0.5, 0.8, 0.6, 0.95, 0.7, 1, 0.65, 0.85, 0.55, 0.9, 1, 0.7, 0.95, 0.6, 0.85, 1, 0.65, 0.9, 0.6, 0.8, 0.5,
+];
+
+/**
+ * The flames along a burning Share button's top edge: a row of tongues across
+ * its whole width, in the tier's colour, flickering on staggered timings. They
+ * burn taller each tier up, from a low lick at Extremely Rare to a blaze at
+ * Legend. The button sets `shareFlamesClass` (see game/shareFlamesTest.ts),
+ * which carries the tier: its fill, colours and flame height.
+ *
+ * Decoration only, so hidden from readers.
+ */
+export function ShareFlames() {
   return (
-    <span
-      className={`share-flames share-flames--${level} share-flames--${slug}`}
-      style={{ "--n": count } as CSSProperties}
-      aria-hidden="true"
-    >
-      {Array.from({ length: count }, (_, i) => {
-        // 0 at either end, 1 in the middle.
-        const centre = 1 - Math.abs(i - (count - 1) / 2) / ((count - 1) / 2);
-        const style = { "--i": i, "--tall": (0.65 + 0.35 * centre).toFixed(2) } as CSSProperties;
+    <span className="share-flames" aria-hidden="true">
+      {HEIGHTS.map((tall, i) => {
+        const style = { "--i": i, "--x": i / (HEIGHTS.length - 1), "--tall": tall } as CSSProperties;
         return <span key={i} className="share-flames__tongue" style={style} />;
       })}
     </span>

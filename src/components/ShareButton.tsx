@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { copyText } from "../clipboard";
-import type { FlameTier } from "../game/shareFlamesTest";
+import { shareFlamesClass, type FlameTier } from "../game/shareFlamesTest";
 import { ShareFlames } from "./ShareFlames";
 
 interface Props {
@@ -24,11 +24,11 @@ export function ShareButton({ text, onShared, flames = null }: Props) {
   return (
     <button
       type="button"
-      className={`share-button${flames ? " share-flames-host" : ""}`}
+      className={`share-button${shareFlamesClass(flames)}`}
       onClick={handleClick}
       aria-live="polite"
     >
-      {flames && <ShareFlames tier={flames} />}
+      {flames && <ShareFlames />}
       {copied ? "Copied!" : "Share"}
       {!copied && (
         <svg

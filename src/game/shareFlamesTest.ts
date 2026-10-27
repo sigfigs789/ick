@@ -52,6 +52,17 @@ export function flameLevel(tier: FlameTier): number {
 }
 
 /**
+ * The classes a Share button takes to burn in `tier`: its whole fill turns
+ * to the tier's fire, and `share-flames--1` to `--4` size the flames along its
+ * top (see components/ShareFlames.tsx). Empty for no tier.
+ */
+export function shareFlamesClass(tier: FlameTier | null): string {
+  if (!tier) return "";
+  const slug = tier.toLowerCase().replace(" ", "-");
+  return ` share-flames-host share-flames--${flameLevel(tier)} share-flames--${slug}`;
+}
+
+/**
  * The player's arm, drawing one if they have none. `fresh` is true only on the
  * draw itself, so the caller reports it once. Null when storage cannot keep
  * the draw: a player re-drawn on every open is not in the test, so that
