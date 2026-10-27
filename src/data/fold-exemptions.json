@@ -4132,46 +4132,6 @@
     "reason": "Folded onto `opp`, costing up to 2.58 points, by stripping de- to `opping`. A real de- word, but the residue folds on to the wrong base: removing IRC operator status; built on op, not opp. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
     "scope": "prefix"
   },
-  "deoxidant": {
-    "since": "2027-02-07",
-    "reason": "Folded onto `oxidant` (deoxidant > oxidant), costing 1.78 points. Flagged by the daily fold check for the 2027-02-07 `DA` drop (reducing agent, opposite of oxidant) and confirmed on adversarial re-review (reducing agent, the opposite of an oxidant).",
-    "scope": "prefix"
-  },
-  "deoxidants": {
-    "since": "2027-02-07",
-    "reason": "Folded onto `oxidant` (deoxidants > deoxidant > oxidant), costing 1.78 points. Flagged by the daily fold check for the 2027-02-07 `DA` drop (reducing agents, opposite of oxidant) and confirmed on adversarial re-review (reducing agents, the opposite of oxidants).",
-    "scope": "prefix"
-  },
-  "deoxidated": {
-    "since": "2027-02-07",
-    "reason": "Folded onto `oxidated` (deoxidated > oxidated), costing 0.94 points. Flagged by the daily fold check for the 2027-02-07 `DA` drop (removing oxygen, opposite of oxidated) and confirmed on adversarial re-review (removing oxygen is the opposite of oxidating).",
-    "scope": "prefix"
-  },
-  "deoxidates": {
-    "since": "2027-02-07",
-    "reason": "Folded onto `oxidated` (deoxidates > oxidates > oxidate > oxidated), costing 0.94 points. Flagged by the daily fold check for the 2027-02-07 `DA` drop (removing oxygen, opposite of oxidate) and confirmed on adversarial re-review (removing oxygen is the opposite of oxidating).",
-    "scope": "prefix"
-  },
-  "deoxidating": {
-    "since": "2027-02-07",
-    "reason": "Folded onto `oxidated` (deoxidating > oxidating > oxidate > oxidated), costing 0.94 points. Flagged by the daily fold check for the 2027-02-07 `DA` drop (removing oxygen, opposite of oxidating) and confirmed on adversarial re-review (removing oxygen is the opposite of oxidating).",
-    "scope": "prefix"
-  },
-  "deoxidation": {
-    "since": "2027-02-07",
-    "reason": "Folded onto `oxidation` (deoxidation > deoxidations > oxidations > oxidation), costing 1.08 points. Flagged by the daily fold check for the 2027-02-07 `DA` drop (oxygen removal, opposite of oxidation) and confirmed on adversarial re-review (removing oxygen is the opposite of oxidation).",
-    "scope": "prefix"
-  },
-  "deoxidations": {
-    "since": "2027-02-07",
-    "reason": "Folded onto `oxidation` (deoxidations > oxidations > oxidation), costing 2.97 points. Flagged by the daily fold check for the 2027-02-07 `DA` drop (oxygen removal, opposite of oxidation) and confirmed on adversarial re-review (removing oxygen is the opposite of oxidation).",
-    "scope": "prefix"
-  },
-  "deoxidative": {
-    "since": "2027-02-07",
-    "reason": "Folded onto `oxidative` (deoxidative > oxidative), costing 2.59 points. Flagged by the daily fold check for the 2027-02-07 `DA` drop (opposite meaning of oxidative) and confirmed on adversarial re-review (negating prefix reverses meaning of oxidative).",
-    "scope": "prefix"
-  },
   "departedness": {
     "since": "2026-10-04",
     "reason": "Folded onto `part`, costing up to 2.88 points, by stripping de- to `partedness`. Not de- + `partedness`: state of having departed or died. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
@@ -13637,11 +13597,6 @@
   "underdaks": {
     "since": "2026-10-27",
     "reason": "Folded onto `dak` (underdaks > daks > dak), costing 2.66 points. Flagged by the daily fold check for the 2026-10-27 `KS` drop (daks trousers, not plural of dak) and confirmed on adversarial re-review (daks means trousers, not dak mail)."
-  },
-  "underdoing": {
-    "since": "2027-02-14",
-    "reason": "Folded onto `does` (underdoing > underdo > underdoes > does), costing 6.30 points. Flagged by the daily fold check for the 2027-02-14 `OIN` drop (lands on does, not underdo) and confirmed on adversarial re-review (lands on does, not underdo).",
-    "scope": "prefix"
   },
   "undergrad": {
     "since": "2026-12-02",
