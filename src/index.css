@@ -6886,6 +6886,7 @@ button.app__menu-item + button.app__menu-item {
  * and the rarity palette, so both themes come for free.
  */
 .stats__empty {
+  margin: 0 0 1.9rem;
   color: var(--fg-muted);
 }
 .stats__link {

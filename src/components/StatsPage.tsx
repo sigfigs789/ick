@@ -48,6 +48,8 @@ export function StatsPage() {
             Play today’s puzzle
           </button>
         </p>
+        {/* Every badge still waiting, so there is something to aim for. */}
+        <Achievements statuses={achievements} />
       </main>
     );
   }

@@ -68,6 +68,8 @@ export function StatsScreen({ onPlay }: { onPlay?: () => void } = {}) {
             </>
           )}
         </Text>
+        {/* Every badge still waiting, so there is something to aim for. */}
+        <Achievements statuses={achievements} />
       </ScrollView>
     );
   }
@@ -386,6 +388,7 @@ const styles = StyleSheet.create({
   empty: {
     fontSize: 16,
     lineHeight: 23,
+    marginBottom: space.xl,
   },
   link: {
     fontWeight: '700',
