@@ -10,7 +10,7 @@
  * here can keep anyone from playing a puzzle.
  */
 
-import { keptAchievements } from "./achievements";
+import { countedAchievements } from "./achievements";
 import { maxGuessesFor } from "./constants";
 import {
   rarityFor,
@@ -1093,7 +1093,7 @@ function send(playerId: string, scores: ScorePayload[]): Promise<Response> | nul
   // just saved, so one earned by this very word goes up with it. The server
   // keeps the first report of each, for the share the Stats page shows.
   const streak = currentStreakReport();
-  const achievements = keptAchievements();
+  const achievements = countedAchievements();
   const body = JSON.stringify({
     playerId,
     version: APP_VERSION,

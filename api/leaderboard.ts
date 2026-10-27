@@ -816,7 +816,7 @@ const MAX_ACHIEVEMENTS = 100;
 
 /**
  * The badges sent alongside the scores, as `{ id: earnedOn }` (see
- * `keptAchievements` in src/game/achievements.ts). Anything malformed is
+ * `countedAchievements` in src/game/achievements.ts). Anything malformed is
  * dropped rather than failing the batch: the scores are the write that
  * matters, and the next submission sends the whole set again.
  */

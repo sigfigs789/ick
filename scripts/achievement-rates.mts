@@ -5,7 +5,9 @@
  * Achievements live only on each player's device, so this rebuilds every
  * player's record from what the server keeps -- the leaderboard's scores,
  * finds and streaks, plus the analytics events that carry a player id -- and
- * runs the game's own checks over it. The base is every player who has ever
+ * runs the game's own checks over it -- on `countedRecord`, so an unattested
+ * Legend counts toward no badge here, the way the game counts it when it
+ * reports a player's badges. The base is every player who has ever
  * guessed a word, accepted or not; bots, Muse and the maintainer are left out
  * the way the analytics page leaves them out.
  *
@@ -34,9 +36,10 @@ import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const { ACHIEVEMENTS } = await import("../src/game/achievements.ts");
+const { ACHIEVEMENTS, countedRecord } = await import("../src/game/achievements.ts");
 const { rarityFor, rarityForZipf, scoringReady } = await import("../src/game/dictionary.ts");
 const { maxGuessesFor } = await import("../src/game/constants.ts");
+const { dropForDate } = await import("../src/game/drop.ts");
 type AchievementRecord = import("../src/game/achievements.ts").AchievementRecord;
 type DailyProgress = import("../src/game/types.ts").DailyProgress;
 type Rarity = import("../src/game/types.ts").Rarity;
@@ -132,14 +135,20 @@ const suggestions = new Map(
 await scoringReady("2026-08-10");
 await scoringReady();
 
-function rarityOf(word: string, zipf: number, date: string, mode?: GameMode): Rarity {
-  return rarityFor(word, date, mode)?.rarity ?? rarityForZipf(Number(zipf), date, mode);
+/** A word scored as the game scores it now, falling back on the Zipf the board kept. */
+function scored(word: string, zipf: number, date: string, mode?: GameMode) {
+  return (
+    rarityFor(word, date, mode) ?? {
+      rarity: rarityForZipf(Number(zipf), date, mode),
+      zipf: Number(zipf),
+    }
+  );
 }
 
 interface Puzzle {
   date: string;
   mode?: GameMode;
-  words: { word: string; rarity: Rarity }[];
+  words: { word: string; rarity: Rarity; zipf: number }[];
   ranked?: Row;
 }
 const puzzles = new Map<string, Map<string, Puzzle>>();
@@ -152,14 +161,14 @@ function puzzle(pid: string, date: string, mode: string | null): Puzzle {
 }
 for (const f of finds) {
   const p = puzzle(f.player_id, f.puzzle_date, f.mode);
-  p.words.push({ word: f.word, rarity: rarityOf(f.word, f.zipf, f.puzzle_date, p.mode) });
+  p.words.push({ word: f.word, ...scored(f.word, f.zipf, f.puzzle_date, p.mode) });
 }
 for (const s of scores) {
   const p = puzzle(s.player_id, s.puzzle_date, s.mode);
   p.ranked = s;
   if (p.words.length > 0) continue;
-  p.words.push({ word: s.top_word, rarity: rarityOf(s.top_word, s.top_zipf, s.puzzle_date, p.mode) });
-  for (let i = 1; i < s.words; i++) p.words.push({ word: "", rarity: "Common" });
+  p.words.push({ word: s.top_word, ...scored(s.top_word, s.top_zipf, s.puzzle_date, p.mode) });
+  for (let i = 1; i < s.words; i++) p.words.push({ word: "", rarity: "Common", zipf: 7 });
 }
 
 function recordFor(pid: string): AchievementRecord {
@@ -170,9 +179,9 @@ function recordFor(pid: string): AchievementRecord {
     const rejectionsKnown = p.date >= ANALYTICS_PID_START && ev;
     return {
       date: p.date,
-      drop: "",
+      drop: dropForDate(p.date),
       mode: p.mode,
-      acceptedWords: p.words.map((w) => ({ ...w, zipf: 0 })),
+      acceptedWords: p.words,
       rejectedAttempts: rejectionsKnown ? Array<string>(ev.rej).fill("") : [""],
       completed: p.words.length >= maxGuessesFor(p.date) || Boolean(ev?.comp),
       retryUsed: Boolean(p.ranked?.retried),
@@ -208,7 +217,7 @@ const today = new Date().toISOString().slice(0, 10);
 const earned: Record<string, number> = Object.fromEntries(ACHIEVEMENTS.map((a) => [a.id, 0]));
 const rows: string[] = [];
 for (const pid of guessers) {
-  const record = recordFor(pid);
+  const record = countedRecord(recordFor(pid));
   for (const a of ACHIEVEMENTS) {
     const { earnedOn } = a.check(record, today);
     if (!earnedOn) continue;

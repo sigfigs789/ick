@@ -14,8 +14,10 @@
  */
 
 import achievementRates from "../data/achievement-rates.json";
-import { addDays, todayDateString } from "./date";
+import { addDays, dayOfWeek, todayDateString } from "./date";
 import { maxGuessesFor } from "./constants";
+import { isUnattestedZipf, rarityForZipf, rarityScore } from "./dictionary";
+import { dropForDate } from "./drop";
 import { modeIsChosen } from "./mode";
 import { nextMonthStart } from "./month";
 import { isWinningRarity } from "./rank";
@@ -23,7 +25,7 @@ import { CURRENT_TIERS } from "./stats";
 import { loadStreak, playedHistory, playedOnItsDay } from "./storage";
 import { takesPlayerMessages } from "./playerMessages";
 import { suggestedWords, type SuggestedWordRecord } from "./suggestions";
-import type { DailyProgress, Rarity, StreakState } from "./types";
+import type { AcceptedWord, DailyProgress, Rarity, StreakState } from "./types";
 
 export type AchievementGroup =
   | "Getting started"
@@ -85,6 +87,41 @@ export interface AchievementStatus {
 }
 
 const MYTHIC_OR_BETTER: readonly Rarity[] = ["Mythic", "Legend"];
+
+/**
+ * `record` as the share of players holding each badge counts it: with every
+ * Legend no corpus measures counted as no tier at all. That 10.00 is the
+ * stand-in score for a word nothing attests (see `isUnattestedZipf`), not a
+ * find, and it is the easiest Legend there is. The player still earns and keeps
+ * badges from those words -- this only keeps them out of the "12% of players"
+ * under each badge, so the share says how hard the badge is to earn on words
+ * the data says are rare.
+ */
+export function countedRecord(record: AchievementRecord): AchievementRecord {
+  return {
+    ...record,
+    history: record.history.map((progress) =>
+      progress.acceptedWords.some(isUnattestedLegend)
+        ? {
+            ...progress,
+            acceptedWords: progress.acceptedWords.map((word) =>
+              isUnattestedLegend(word) ? { ...word, ...NO_TIER } : word
+            ),
+          }
+        : progress
+    ),
+  };
+}
+
+/**
+ * A word that counts as no tier: Quotidian is the retired bottom tier, which no
+ * badge asks for, and a Zipf of 8 scores nothing on any scale.
+ */
+const NO_TIER = { rarity: "Quotidian", zipf: 8 } as const;
+
+function isUnattestedLegend(word: AcceptedWord): boolean {
+  return word.rarity === "Legend" && isUnattestedZipf(word.zipf);
+}
 
 /** The first puzzle with a word that passes `test`. */
 function firstWord(test: (rarity: Rarity) => boolean): Achievement["check"] {
@@ -252,6 +289,186 @@ function countOf(rarities: readonly Rarity[]) {
     progress.acceptedWords.filter((word) => rarities.includes(word.rarity)).length;
 }
 
+/** Every tier, weakest first, for "this tier or better". */
+const TIER_ORDER: readonly Rarity[] = [
+  "Quotidian",
+  "Common",
+  "Uncommon",
+  "Rare",
+  "Extremely Rare",
+  "Elusive",
+  "Mythic",
+  "Legend",
+];
+
+function atLeast(floor: Rarity): (rarity: Rarity) => boolean {
+  const min = TIER_ORDER.indexOf(floor);
+  return (rarity) => TIER_ORDER.indexOf(rarity) >= min;
+}
+
+/** A word's score, on the date its puzzle is scored under. */
+function scoreOf(word: AcceptedWord, date: string): number {
+  return rarityScore(word.zipf, date);
+}
+
+/** The best word of one puzzle, by score. */
+function bestScored(progress: DailyProgress): AcceptedWord | undefined {
+  let best: AcceptedWord | undefined;
+  for (const word of progress.acceptedWords) {
+    if (!best || scoreOf(word, progress.date) > scoreOf(best, progress.date)) best = word;
+  }
+  return best;
+}
+
+/**
+ * The puzzles played on their own day, grouped by date in date order: both
+ * modes of one day count as that day.
+ */
+function onItsDayPuzzles({ history, onItsDay }: AchievementRecord): [string, DailyProgress[]][] {
+  const played = new Set(onItsDay);
+  const byDate = new Map<string, DailyProgress[]>();
+  for (const progress of history) {
+    if (!played.has(progress.date)) continue;
+    byDate.set(progress.date, [...(byDate.get(progress.date) ?? []), progress]);
+  }
+  return [...byDate].sort(([a], [b]) => a.localeCompare(b));
+}
+
+/**
+ * `target` days in a row, each played on its own day with a puzzle `passes` is
+ * true of. One day without one starts the count again.
+ */
+function runOf(
+  target: number,
+  passes: (progress: DailyProgress) => boolean
+): Achievement["check"] {
+  return (record) => {
+    let run = 0;
+    let best = 0;
+    let last: string | null = null;
+    for (const [date, puzzles] of onItsDayPuzzles(record)) {
+      if (!puzzles.some(passes)) {
+        run = 0;
+        last = null;
+        continue;
+      }
+      run = last !== null && addDays(last, 1) === date ? run + 1 : 1;
+      last = date;
+      best = Math.max(best, run);
+      if (run >= target) return { earnedOn: date };
+    }
+    return { earnedOn: null, progress: { current: best, target } };
+  };
+}
+
+/** A word of `tier` or better in the puzzle. */
+function hasTier(tier: Rarity) {
+  const test = atLeast(tier);
+  return (progress: DailyProgress): boolean =>
+    progress.acceptedWords.some((word) => test(word.rarity));
+}
+
+/** Every guess spent and the puzzle finished, with nothing turned away. */
+function flawless(progress: DailyProgress): boolean {
+  return progress.completed && progress.rejectedAttempts.length === 0;
+}
+
+/** Every guess spent, each scoring higher (`up`) or lower than the one before. */
+function eachGuess(up: boolean) {
+  return (progress: DailyProgress): boolean => {
+    const words = progress.acceptedWords;
+    if (!progress.completed || words.length < maxGuessesFor(progress.date)) return false;
+    return words.every((word, i) => {
+      if (i === 0) return true;
+      const change = scoreOf(word, progress.date) - scoreOf(words[i - 1], progress.date);
+      return up ? change > 0 : change < 0;
+    });
+  };
+}
+
+const climber = eachGuess(true);
+
+/** Climber, with the last guess a Legend -- after the hardest big wall ever freed. */
+function dawnWall(progress: DailyProgress): boolean {
+  const words = progress.acceptedWords;
+  return climber(progress) && words[words.length - 1].rarity === "Legend";
+}
+
+/**
+ * The lowest score `tier` starts at on `date`'s scale, found by walking the
+ * Zipf scale down until a word would be that tier. Cached per date.
+ */
+const floorCache = new Map<string, number>();
+function tierFloorScore(tier: Rarity, date: string): number {
+  const key = `${tier}|${date}`;
+  const cached = floorCache.get(key);
+  if (cached !== undefined) return cached;
+  const reaches = atLeast(tier);
+  let floor = 10;
+  for (let zipf = 8; zipf >= -2; zipf -= 0.01) {
+    if (reaches(rarityForZipf(zipf, date))) {
+      floor = rarityScore(zipf, date);
+      break;
+    }
+  }
+  floorCache.set(key, floor);
+  return floor;
+}
+
+/**
+ * `days` days in a row played on their own day whose best words average a
+ * `tier` score or better. A day's best is its best word across both modes.
+ */
+function averageOf(days: number, tier: Rarity): Achievement["check"] {
+  return (record) => {
+    const window: { date: string; score: number; floor: number }[] = [];
+    let best = 0;
+    for (const [date, puzzles] of onItsDayPuzzles(record)) {
+      const last = window[window.length - 1];
+      if (last && addDays(last.date, 1) !== date) window.length = 0;
+      const score = Math.max(
+        0,
+        ...puzzles.map((p) => {
+          const word = bestScored(p);
+          return word ? scoreOf(word, date) : 0;
+        })
+      );
+      window.push({ date, score, floor: tierFloorScore(tier, date) });
+      if (window.length > days) window.shift();
+      best = Math.max(best, window.length);
+      if (window.length < days) continue;
+      const sum = (pick: (d: (typeof window)[number]) => number) =>
+        window.reduce((total, d) => total + pick(d), 0);
+      if (sum((d) => d.score) >= sum((d) => d.floor)) return { earnedOn: date };
+    }
+    return { earnedOn: null, progress: { current: Math.min(best, days - 1), target: days } };
+  };
+}
+
+/** Two Mythic or better words in one puzzle, one starting with the drop, one ending with it. */
+function bookends(progress: DailyProgress): boolean {
+  const drop = (progress.drop || dropForDate(progress.date)).toLowerCase();
+  const mythic = progress.acceptedWords.filter((word) =>
+    atLeast("Mythic")(word.rarity)
+  );
+  return mythic.some(
+    (start) =>
+      start.word.toLowerCase().startsWith(drop) &&
+      mythic.some((end) => end !== start && end.word.toLowerCase().endsWith(drop))
+  );
+}
+
+/** A Legend in the puzzle of every day of the week. */
+function grandTour({ history }: AchievementRecord): Check {
+  const days = new Set<number>();
+  for (const progress of history) {
+    if (!hasTier("Legend")(progress)) continue;
+    days.add(dayOfWeek(progress.date));
+    if (days.size === 7) return { earnedOn: progress.date };
+  }
+  return { earnedOn: null, progress: { current: days.size, target: 7 } };
+}
+
 export const ACHIEVEMENTS: readonly Achievement[] = [
   {
     id: "first-word",
@@ -374,6 +591,35 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     check: firstPuzzle(everyGuess((rarity) => MYTHIC_OR_BETTER.includes(rarity))),
   },
   {
+    id: "perfect-ink",
+    group: "Rarity",
+    icon: "💎",
+    title: "Perfect ink",
+    description: "Finish with every guess Mythic or better, no guess turned away and no retry.",
+    check: firstPuzzle(
+      (progress) =>
+        everyGuess((rarity) => MYTHIC_OR_BETTER.includes(rarity))(progress) &&
+        flawless(progress) &&
+        !progress.retryUsed
+    ),
+  },
+  {
+    id: "royal-flush",
+    group: "Rarity",
+    icon: "🃏",
+    title: "Royal flush",
+    description: "Finish a puzzle with every guess a Legend.",
+    check: firstPuzzle(everyGuess((rarity) => rarity === "Legend")),
+  },
+  {
+    id: "grand-tour",
+    group: "Rarity",
+    icon: "🗺️",
+    title: "Grand tour",
+    description: "Find a Legend in a Monday's puzzle, a Tuesday's, and every day's through Sunday.",
+    check: grandTour,
+  },
+  {
     id: "streak-3",
     group: "Streaks",
     icon: "🎩",
@@ -420,6 +666,62 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Perfect month",
     description: "Play every day of a calendar month on its own day.",
     check: perfectMonth,
+  },
+  {
+    id: "extremely-rare-week",
+    group: "Streaks",
+    icon: "🔎",
+    title: "Keen week",
+    description: "Find an Extremely Rare or better word 7 days in a row.",
+    check: runOf(7, hasTier("Extremely Rare")),
+  },
+  {
+    id: "elusive-week",
+    group: "Streaks",
+    icon: "🥇",
+    title: "Golden week",
+    description: "Find an Elusive or better word 7 days in a row.",
+    check: runOf(7, hasTier("Elusive")),
+  },
+  {
+    id: "mythic-week",
+    group: "Streaks",
+    icon: "🐲",
+    title: "Mythic week",
+    description: "Find a Mythic or better word 7 days in a row.",
+    check: runOf(7, hasTier("Mythic")),
+  },
+  {
+    id: "legend-streak",
+    group: "Streaks",
+    icon: "🌠",
+    title: "Legend streak",
+    description: "Find a Legend 5 days in a row.",
+    check: runOf(5, hasTier("Legend")),
+  },
+  {
+    id: "sweep-week",
+    group: "Streaks",
+    icon: "🧽",
+    title: "Sweep week",
+    description: "Finish with every guess Rare or better 7 days in a row.",
+    check: runOf(7, everyGuess(isWinningRarity)),
+  },
+  {
+    id: "ironclad",
+    group: "Streaks",
+    icon: "🛡️",
+    title: "Ironclad",
+    description: "Finish 7 days in a row without a guess turned away.",
+    check: runOf(7, flawless),
+  },
+  {
+    id: "elusive-average",
+    group: "Streaks",
+    icon: "🎓",
+    title: "Master's average",
+    description: "Average an Elusive score or better with your best word over 10 days in a row.",
+    check: averageOf(10, "Elusive"),
   },
   {
     id: "mythic-10",
@@ -535,6 +837,70 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Both ways",
     description: "Find a Rare or better word in the same puzzle in Standard and Freeform.",
     check: bothWays,
+  },
+  {
+    id: "gauntlet",
+    group: "Style",
+    icon: "⚔️",
+    title: "Gauntlet",
+    description: "Finish with every guess Elusive or better and no guess turned away.",
+    check: firstPuzzle(
+      (progress) => everyGuess(atLeast("Elusive"))(progress) && flawless(progress)
+    ),
+  },
+  {
+    id: "climber",
+    group: "Style",
+    icon: "🧗",
+    title: "Climber",
+    description: "Score higher with every guess than the one before.",
+    check: firstPuzzle(climber),
+  },
+  {
+    id: "dawn-wall",
+    group: "Style",
+    icon: "🏔️",
+    title: "The Dawn Wall",
+    description: "Score higher with every guess than the one before, ending on a Legend.",
+    check: firstPuzzle(dawnWall),
+  },
+  {
+    id: "rappel",
+    group: "Style",
+    icon: "🪢",
+    title: "Rappel",
+    description: "Score lower with every guess than the one before.",
+    check: firstPuzzle(eachGuess(false)),
+  },
+  {
+    id: "double-sesquipedalian",
+    group: "Style",
+    icon: "📐",
+    title: "Double sesquipedalian",
+    description: `Bank two words of ${LONG_WORD} letters or more in one puzzle.`,
+    check: firstPuzzle(
+      (progress) => progress.acceptedWords.filter((w) => w.word.length >= LONG_WORD).length >= 2
+    ),
+  },
+  {
+    id: "small-but-mighty",
+    group: "Style",
+    icon: "🐜",
+    title: "Small but mighty",
+    description: "Find a Mythic or better word of 6 letters or fewer.",
+    check: firstPuzzle((progress) =>
+      progress.acceptedWords.some(
+        (word) => word.word.length <= 6 && atLeast("Mythic")(word.rarity)
+      )
+    ),
+  },
+  {
+    id: "bookends",
+    group: "Style",
+    icon: "🔖",
+    title: "Bookends",
+    description: "Find a Mythic or better word that starts with the drop and one that ends with it, in one puzzle.",
+    check: firstPuzzle(bookends),
   },
   {
     id: "word-suggested",
@@ -680,14 +1046,18 @@ export function celebrationShareLine(id: string, rates: AchievementRates = rates
 }
 
 /**
- * The badges this device holds, `{ id: earnedOn }`, worked out afresh -- sent
- * with every score (see game/leaderboard.ts) so the server can count them.
- * Empty when the record cannot be read: a count is never worth a failed post.
+ * The badges this device's record earns as the shares count them,
+ * `{ id: earnedOn }` -- sent with every score (see game/leaderboard.ts) so the
+ * server can count them. Worked out from `countedRecord`, not read from the kept
+ * badges: a badge held only through an unattested Legend stays the player's,
+ * and stays out of the count. Empty when the record cannot be read: a count is
+ * never worth a failed post.
  */
-export function keptAchievements(): Record<string, string> {
+export function countedAchievements(): Record<string, string> {
   try {
+    const record = countedRecord(deviceRecord(loadStreak()));
     return Object.fromEntries(
-      syncAchievements(loadStreak()).flatMap(({ achievement, earnedOn }) =>
+      achievementStatuses(record, {}, todayDateString()).flatMap(({ achievement, earnedOn }) =>
         earnedOn ? [[achievement.id, earnedOn]] : []
       )
     );
@@ -734,14 +1104,19 @@ export function achievementStatuses(
   });
 }
 
-/** This browser's achievements, keeping any newly earned for good. */
-export function syncAchievements(streak: StreakState): AchievementStatus[] {
-  const record: AchievementRecord = {
+/** This browser's record, as the achievements read it. */
+function deviceRecord(streak: StreakState): AchievementRecord {
+  return {
     history: playedHistory(),
     onItsDay: playedOnItsDay().map((progress) => progress.date),
     streak,
     suggestions: suggestedWords(),
   };
+}
+
+/** This browser's achievements, keeping any newly earned for good. */
+export function syncAchievements(streak: StreakState): AchievementStatus[] {
+  const record = deviceRecord(streak);
   const kept = readEarned();
   const statuses = achievementStatuses(record, kept, todayDateString());
   const earned = Object.fromEntries(
