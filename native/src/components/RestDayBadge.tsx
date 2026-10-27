@@ -23,7 +23,7 @@ function weekdayRule(played: number, reachable: boolean, sundayOnly: boolean): s
   if (played >= REST_DAY_PLAYS) {
     return sundayOnly
       ? "Unlocked: Sunday's for snoozing, skipping it can't break your streak."
-      : "Unlocked: kick back all weekend, skipping Saturday and Sunday can't break your streak.";
+      : "Unlocked: kick back all weekend, skipping Saturday and Sunday won't break your streak.";
   }
   if (!reachable) {
     return "Play any 3 days by Friday for a lazy weekend 😴, or by Saturday for a lazy Sunday: skipping them can't break your streak.";
