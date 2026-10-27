@@ -1,0 +1,27 @@
+{
+  "since": "2026-11-18",
+  "drop": "TY",
+  "model": "claude-opus-5-5",
+  "source": "claude",
+  "run": "https://github.com/sigfigs789/ick/actions/runs/40391565722",
+  "estimatedAt": "2026-10-26T19:59:39Z",
+  "zipf": {
+    "atherothrombogenicity": -0.9,
+    "cotranscriptionality": -0.9,
+    "desacetylscilliroside": -1.3,
+    "fluoroacetylsalicylic": -1.3,
+    "heliohydroelectricity": -1.4,
+    "heterobifunctionality": -0.9,
+    "heterosubspecificity": -0.6,
+    "hexafluoroisobutylene": -0.5,
+    "hydrokryptoacetylene": -1.3,
+    "hyperviscoelasticity": -0.4,
+    "immunoexcitotoxicity": -0.5,
+    "noncircumventability": -1.0,
+    "nonconstitutionality": -0.7,
+    "nonunderstandability": -1.1,
+    "preterintentionality": -0.8,
+    "quadridimensionality": -1.0,
+    "superantiwettability": -1.2
+  }
+}
