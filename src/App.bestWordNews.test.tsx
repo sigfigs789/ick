@@ -101,11 +101,19 @@ beforeEach(() => {
 
 describe("yesterday's best word news", () => {
   it("celebrates the finder on opening, once a day", () => {
+    playedDays(3);
     vi.mocked(useYesterdaysBest).mockReturnValue(best([OTHER, SELF]));
     const { unmount } = render(<App />);
     expect(screen.getByText("You had yesterday's best word!")).toBeTruthy();
     unmount();
 
+    render(<App />);
+    expect(screen.queryByText("You had yesterday's best word!")).toBeNull();
+  });
+
+  it("keeps the finder's card from a player still on their first few words", () => {
+    playedDays(2);
+    vi.mocked(useYesterdaysBest).mockReturnValue(best([SELF]));
     render(<App />);
     expect(screen.queryByText("You had yesterday's best word!")).toBeNull();
   });
