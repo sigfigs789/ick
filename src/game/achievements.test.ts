@@ -315,8 +315,29 @@ describe("earnedShareLabel", () => {
     expect(earnedShareLabel("new-badge", rates)).toBeNull();
   });
 
+  /**
+   * Badges added since scripts/achievement-rates.mts last ran: they show no
+   * share until the live counts or the next snapshot have them. Empty this once
+   * the snapshot is taken again.
+   */
+  const AWAITING_SNAPSHOT = new Set([
+    "double-extremely-rare",
+    "podium",
+    "triple-extremely-rare",
+    "extremely-rare-average",
+    "extremely-rare-25",
+    "alphabet-soup",
+    "extremely-rare-100",
+    "quick-draw",
+    "sharpshooter",
+    "little-gem",
+  ]);
+
   it("has a share for every badge in the shipped snapshot", () => {
-    for (const { id } of ACHIEVEMENTS) expect(earnedShareLabel(id)).not.toBeNull();
+    for (const { id } of ACHIEVEMENTS) {
+      if (AWAITING_SNAPSHOT.has(id)) expect(earnedShareLabel(id)).toBeNull();
+      else expect(earnedShareLabel(id)).not.toBeNull();
+    }
   });
 });
 
@@ -410,6 +431,73 @@ describe("the harder badges", () => {
     expect(statusOf("elusive-average", { history, onItsDay: dates }).earnedOn).toBe("2026-10-10");
     const weak = dates.map((d) => day(d, [word("Common")]));
     expect(statusOf("elusive-average", { history: weak, onItsDay: dates }).earnedOn).toBeNull();
+  });
+});
+
+describe("the Extremely Rare badges", () => {
+  const days = (n: number, from = "2026-10-01") =>
+    Array.from({ length: n }, (_, i) => addDays(from, i));
+
+  it("counts Extremely Rare or better words in one puzzle for Double take and Three of a kind", () => {
+    const two = day("2026-10-10", [word("Extremely Rare"), word("Rare"), word("Elusive")]);
+    const three = day("2026-10-11", [word("Extremely Rare"), word("Mythic"), word("Elusive")]);
+    expect(statusOf("double-extremely-rare", { history: [two] }).earnedOn).toBe("2026-10-10");
+    expect(statusOf("triple-extremely-rare", { history: [two] }).earnedOn).toBeNull();
+    expect(statusOf("triple-extremely-rare", { history: [two, three] }).earnedOn).toBe("2026-10-11");
+  });
+
+  it("needs exactly a Rare, an Extremely Rare and an Elusive for Podium finish", () => {
+    const higher = day("2026-10-10", [word("Rare"), word("Extremely Rare"), word("Mythic")]);
+    const medals = day("2026-10-11", [word("Elusive"), word("Common"), word("Rare"), word("Extremely Rare")]);
+    expect(statusOf("podium", { history: [higher] }).earnedOn).toBeNull();
+    expect(statusOf("podium", { history: [higher, medals] }).earnedOn).toBe("2026-10-11");
+  });
+
+  it("needs the first word Extremely Rare or better for Quick draw", () => {
+    const history = [
+      day("2026-10-01", [word("Rare"), word("Legend")]),
+      day("2026-10-02", [word("Extremely Rare")]),
+    ];
+    expect(statusOf("quick-draw", { history }).earnedOn).toBe("2026-10-02");
+  });
+
+  it("needs every guess Extremely Rare or better for Sharpshooter", () => {
+    const slip = day("2026-10-10", [word("Elusive"), word("Rare"), word("Mythic"), word("Extremely Rare")]);
+    const all = day("2026-10-11", [word("Extremely Rare"), word("Elusive"), word("Extremely Rare"), word("Legend")]);
+    expect(statusOf("sharpshooter", { history: [slip] }).earnedOn).toBeNull();
+    expect(statusOf("sharpshooter", { history: [slip, all] }).earnedOn).toBe("2026-10-11");
+  });
+
+  it("needs a short Extremely Rare word for Little gem", () => {
+    const history = [
+      day("2026-10-01", [word("Elusive", "inkles"), word("Rare", "inkle")]),
+      day("2026-10-02", [word("Extremely Rare", "inkle")]),
+    ];
+    expect(statusOf("little-gem", { history }).earnedOn).toBe("2026-10-02");
+  });
+
+  it("counts Extremely Rare or better words for Magpie and Cabinet of curiosities", () => {
+    const history = [day("2026-10-01", [word("Extremely Rare"), word("Legend"), word("Rare")])];
+    expect(statusOf("extremely-rare-25", { history }).progress).toEqual({ current: 2, target: 25 });
+    expect(statusOf("extremely-rare-100", { history }).progress).toEqual({ current: 2, target: 100 });
+  });
+
+  it("counts the first letters of Extremely Rare or better words for Alphabet soup", () => {
+    const letters = "abcdefghijklm".split("");
+    const history = letters.map((l, i) =>
+      day(addDays("2026-10-01", i), [word("Extremely Rare", `${l}ink`), word("Rare", `zink${i}`)])
+    );
+    expect(statusOf("alphabet-soup", { history }).earnedOn).toBe("2026-10-13");
+    const repeat = [...history.slice(0, 12), day("2026-10-13", [word("Mythic", "aink")])];
+    expect(statusOf("alphabet-soup", { history: repeat }).progress).toEqual({ current: 12, target: 13 });
+  });
+
+  it("averages the day's best word for Bachelor's average", () => {
+    const dates = days(7);
+    const history = dates.map((d) => day(d, [{ word: `e${d}`, rarity: "Elusive", zipf: 1.5 }]));
+    expect(statusOf("extremely-rare-average", { history, onItsDay: dates }).earnedOn).toBe("2026-10-07");
+    const weak = dates.map((d) => day(d, [word("Common")]));
+    expect(statusOf("extremely-rare-average", { history: weak, onItsDay: dates }).earnedOn).toBeNull();
   });
 });
 

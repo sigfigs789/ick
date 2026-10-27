@@ -87,6 +87,7 @@ export interface AchievementStatus {
 }
 
 const MYTHIC_OR_BETTER: readonly Rarity[] = ["Mythic", "Legend"];
+const EXTREMELY_RARE_OR_BETTER: readonly Rarity[] = ["Extremely Rare", "Elusive", ...MYTHIC_OR_BETTER];
 
 /**
  * `record` as the share of players holding each badge counts it: with every
@@ -458,6 +459,28 @@ function bookends(progress: DailyProgress): boolean {
   );
 }
 
+/** A Rare, an Extremely Rare and an Elusive word in one puzzle: bronze, silver and gold. */
+function podium(progress: DailyProgress): boolean {
+  const tiers = new Set(progress.acceptedWords.map((word) => word.rarity));
+  return tiers.has("Rare") && tiers.has("Extremely Rare") && tiers.has("Elusive");
+}
+
+/** Extremely Rare or better words opening with `target` different letters. */
+function alphabetSoup(target: number): Achievement["check"] {
+  return ({ history }) => {
+    const keen = atLeast("Extremely Rare");
+    const letters = new Set<string>();
+    for (const progress of history) {
+      for (const word of progress.acceptedWords) {
+        const letter = word.word.charAt(0).toLowerCase();
+        if (keen(word.rarity) && letter) letters.add(letter);
+      }
+      if (letters.size >= target) return { earnedOn: progress.date };
+    }
+    return { earnedOn: null, progress: { current: letters.size, target } };
+  };
+}
+
 /** A Legend in the puzzle of every day of the week. */
 function grandTour({ history }: AchievementRecord): Check {
   const days = new Set<number>();
@@ -541,6 +564,30 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Gold strike",
     description: "Find an Elusive word.",
     check: firstWord((rarity) => rarity === "Elusive"),
+  },
+  {
+    id: "double-extremely-rare",
+    group: "Rarity",
+    icon: "👀",
+    title: "Double take",
+    description: "Find two Extremely Rare or better words in one puzzle.",
+    check: firstPuzzle((progress) => countOf(EXTREMELY_RARE_OR_BETTER)(progress) >= 2),
+  },
+  {
+    id: "podium",
+    group: "Rarity",
+    icon: "🏅",
+    title: "Podium finish",
+    description: "Find a Rare, an Extremely Rare and an Elusive word in one puzzle.",
+    check: firstPuzzle(podium),
+  },
+  {
+    id: "triple-extremely-rare",
+    group: "Rarity",
+    icon: "🎲",
+    title: "Three of a kind",
+    description: "Find three Extremely Rare or better words in one puzzle.",
+    check: firstPuzzle((progress) => countOf(EXTREMELY_RARE_OR_BETTER)(progress) >= 3),
   },
   {
     id: "first-mythic",
@@ -668,6 +715,14 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     check: perfectMonth,
   },
   {
+    id: "extremely-rare-average",
+    group: "Streaks",
+    icon: "🎒",
+    title: "Bachelor's average",
+    description: "Average an Extremely Rare score or better with your best word over 7 days in a row.",
+    check: averageOf(7, "Extremely Rare"),
+  },
+  {
     id: "extremely-rare-week",
     group: "Streaks",
     icon: "🔎",
@@ -724,12 +779,36 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     check: averageOf(10, "Elusive"),
   },
   {
+    id: "extremely-rare-25",
+    group: "Collections",
+    icon: "🪺",
+    title: "Magpie",
+    description: "Find 25 Extremely Rare or better words.",
+    check: countTo(25, countOf(EXTREMELY_RARE_OR_BETTER)),
+  },
+  {
+    id: "alphabet-soup",
+    group: "Collections",
+    icon: "🥣",
+    title: "Alphabet soup",
+    description: "Find Extremely Rare or better words beginning with 13 different letters.",
+    check: alphabetSoup(13),
+  },
+  {
     id: "mythic-10",
     group: "Collections",
     icon: "✨",
     title: "Rare air",
     description: "Find 10 Mythic or better words.",
     check: countTo(10, countOf(MYTHIC_OR_BETTER)),
+  },
+  {
+    id: "extremely-rare-100",
+    group: "Collections",
+    icon: "🗄️",
+    title: "Cabinet of curiosities",
+    description: "Find 100 Extremely Rare or better words.",
+    check: countTo(100, countOf(EXTREMELY_RARE_OR_BETTER)),
   },
   {
     id: "mythic-50",
@@ -799,6 +878,18 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     ),
   },
   {
+    id: "quick-draw",
+    group: "Style",
+    icon: "🤠",
+    title: "Quick draw",
+    description: "Make the first word of a puzzle Extremely Rare or better.",
+    check: firstPuzzle(
+      (progress) =>
+        progress.acceptedWords.length > 0 &&
+        atLeast("Extremely Rare")(progress.acceptedWords[0].rarity)
+    ),
+  },
+  {
     id: "clean-copy",
     group: "Style",
     icon: "📝",
@@ -837,6 +928,14 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Both ways",
     description: "Find a Rare or better word in the same puzzle in Standard and Freeform.",
     check: bothWays,
+  },
+  {
+    id: "sharpshooter",
+    group: "Style",
+    icon: "🎖️",
+    title: "Sharpshooter",
+    description: "Finish a puzzle with every guess Extremely Rare or better.",
+    check: firstPuzzle(everyGuess(atLeast("Extremely Rare"))),
   },
   {
     id: "gauntlet",
@@ -880,6 +979,18 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     description: `Bank two words of ${LONG_WORD} letters or more in one puzzle.`,
     check: firstPuzzle(
       (progress) => progress.acceptedWords.filter((w) => w.word.length >= LONG_WORD).length >= 2
+    ),
+  },
+  {
+    id: "little-gem",
+    group: "Style",
+    icon: "💍",
+    title: "Little gem",
+    description: "Find an Extremely Rare or better word of 5 letters or fewer.",
+    check: firstPuzzle((progress) =>
+      progress.acceptedWords.some(
+        (word) => word.word.length <= 5 && atLeast("Extremely Rare")(word.rarity)
+      )
     ),
   },
   {
