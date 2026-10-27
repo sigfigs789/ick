@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ACHIEVEMENT_GROUPS, syncAchievements, type AchievementStatus } from "../game/achievements";
+import {
+  ACHIEVEMENT_GROUPS,
+  earnedShareLabel,
+  fetchAchievementRates,
+  syncAchievements,
+  type AchievementStatus,
+} from "../game/achievements";
 import { formatDateLabel } from "../game/date";
 import { formatTotal } from "../game/dictionary";
 import { MODE_LABELS } from "../game/mode";
@@ -23,6 +29,12 @@ export function StatsPage() {
     const streak = loadStreak();
     return { stats: loadStats(streak), achievements: syncAchievements(streak) };
   });
+  // The share under each badge starts from the bundled snapshot and redraws
+  // once the live counts arrive (see fetchAchievementRates).
+  const [, setLiveRates] = useState(false);
+  useEffect(() => {
+    void fetchAchievementRates().then((rates) => rates && setLiveRates(true));
+  }, []);
 
   if (stats.wordsFound === 0) {
     return (
@@ -292,6 +304,7 @@ function Achievements({ statuses }: { statuses: AchievementStatus[] }) {
 
 function AchievementCard({ status }: { status: AchievementStatus }) {
   const { achievement, earnedOn, progress } = status;
+  const share = earnedShareLabel(achievement.id);
   return (
     <li className={`stats__achievement${earnedOn ? " stats__achievement--earned" : ""}`}>
       <span className="stats__achievement-icon" aria-hidden="true">
@@ -315,6 +328,7 @@ function AchievementCard({ status }: { status: AchievementStatus }) {
         ) : (
           <span className="stats__achievement-meta">Locked</span>
         )}
+        {share && <span className="stats__achievement-share">{share}</span>}
       </span>
     </li>
   );

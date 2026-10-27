@@ -804,11 +804,43 @@ function readRestDay(raw: unknown, lastPlayed: string): string | null {
   return raw === saturday ? raw : null;
 }
 
+/** One badge the device holds, as `submit_player_achievements` takes it. */
+interface AchievementEntry {
+  id: string;
+  earnedOn: string;
+}
+
+const ACHIEVEMENT_ID_RE = /^[a-z0-9-]{1,40}$/;
+/** Comfortably above the game's count, which is under forty. */
+const MAX_ACHIEVEMENTS = 100;
+
+/**
+ * The badges sent alongside the scores, as `{ id: earnedOn }` (see
+ * `keptAchievements` in src/game/achievements.ts). Anything malformed is
+ * dropped rather than failing the batch: the scores are the write that
+ * matters, and the next submission sends the whole set again.
+ */
+function readAchievements(raw: unknown): AchievementEntry[] {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
+  return Object.entries(raw as Record<string, unknown>)
+    .slice(0, MAX_ACHIEVEMENTS)
+    .flatMap(([id, earnedOn]) =>
+      ACHIEVEMENT_ID_RE.test(id) && typeof earnedOn === "string" && validPuzzleDate(earnedOn)
+        ? [{ id, earnedOn }]
+        : []
+    );
+}
+
 function readSubmission(parsed: unknown):
-  | { playerId: string; scores: ScoreEntry[]; streak: StreakReport | null }
+  | {
+      playerId: string;
+      scores: ScoreEntry[];
+      streak: StreakReport | null;
+      achievements: AchievementEntry[];
+    }
   | string {
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return "malformed-body";
-  const { playerId, version, scores, streak } = parsed as Record<string, unknown>;
+  const { playerId, version, scores, streak, achievements } = parsed as Record<string, unknown>;
 
   if (typeof playerId !== "string" || !UUID_RE.test(playerId)) return "bad-player-id";
   // Absent is every client from before the field, and is simply below the floor.
@@ -831,7 +863,12 @@ function readSubmission(parsed: unknown):
     if (typeof score === "string") return score;
     checked.push(ranked ? score : { ...score, unranked: true });
   }
-  return { playerId, scores: checked, streak: readStreakReport(streak) };
+  return {
+    playerId,
+    scores: checked,
+    streak: readStreakReport(streak),
+    achievements: readAchievements(achievements),
+  };
 }
 
 /**
@@ -1361,6 +1398,15 @@ async function handlePost(request: Request, context?: EdgeContext): Promise<Resp
         p_last_played: submission.streak.lastPlayed,
         p_rest_day: submission.streak.restDay,
       },
+      context
+    );
+  }
+  // The badges the device holds, for the share of players the Stats page shows
+  // under each (see api/achievements.ts). Its own write, like the streak.
+  if (submission.achievements.length > 0) {
+    await record(
+      "rpc/submit_player_achievements",
+      { p_player_id: submission.playerId, p_achievements: submission.achievements },
       context
     );
   }

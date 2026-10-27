@@ -4,9 +4,13 @@ import {
   achievementStatuses,
   achievementsToCatchUp,
   announcedAchievements,
+  celebrationShareLine,
   earnedIds,
+  earnedShareLabel,
+  firstToEarn,
   markAchievementsAnnounced,
   newlyEarned,
+  resetAchievementRates,
   syncAchievements,
   type AchievementRecord,
 } from "./achievements";
@@ -293,5 +297,46 @@ describe("achievementsToCatchUp", () => {
     expect(ids).not.toContain("first-legend");
     expect(ids).not.toContain("first-word");
     expect(ids).toContain("first-mythic");
+  });
+});
+
+describe("earnedShareLabel", () => {
+  const rates = { players: 200, earned: { none: 0, one: 1, few: 9, some: 92 } };
+
+  it("reads the share of players who have guessed", () => {
+    expect(earnedShareLabel("few", rates)).toBe("4.5% of players");
+    expect(earnedShareLabel("some", rates)).toBe("46% of players");
+    expect(earnedShareLabel("one", rates)).toBe("Under 1% of players");
+    expect(earnedShareLabel("none", rates)).toBe("No player yet");
+  });
+
+  it("says nothing for a badge the snapshot predates", () => {
+    expect(earnedShareLabel("new-badge", rates)).toBeNull();
+  });
+
+  it("has a share for every badge in the shipped snapshot", () => {
+    for (const { id } of ACHIEVEMENTS) expect(earnedShareLabel(id)).not.toBeNull();
+  });
+});
+
+describe("the card for a lone badge", () => {
+  beforeEach(() => resetAchievementRates());
+
+  it("never calls a player first off the snapshot alone", () => {
+    expect(firstToEarn("days-365")).toBe(false);
+    expect(celebrationShareLine("days-365")).toBeNull();
+  });
+
+  it("calls the player first when the live count has nobody", () => {
+    resetAchievementRates({ players: 700, earned: {} });
+    expect(firstToEarn("days-365")).toBe(true);
+    expect(celebrationShareLine("days-365")).toBe("You're the first player to earn it!");
+  });
+
+  it("keeps the snapshot as a floor under the live counts", () => {
+    // The live count has not heard from the players before reporting began.
+    resetAchievementRates({ players: 700, earned: { "first-word": 3 } });
+    expect(firstToEarn("first-word")).toBe(false);
+    expect(celebrationShareLine("first-word")).toMatch(/^\d+% of players have it\.$/);
   });
 });

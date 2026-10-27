@@ -10,6 +10,7 @@
  * here can keep anyone from playing a puzzle.
  */
 
+import { keptAchievements } from "./achievements";
 import { maxGuessesFor } from "./constants";
 import {
   rarityFor,
@@ -1087,12 +1088,18 @@ function send(playerId: string, scores: ScorePayload[]): Promise<Response> | nul
   // board, which shows what the game shows rather than working it out again
   // from the days on the board (see streakReport in game/streakFreeze.ts). Sent
   // with every write, so a sync on open repairs it the way it repairs the days.
+  //
+  // `achievements` is every badge this device holds, worked out from the words
+  // just saved, so one earned by this very word goes up with it. The server
+  // keeps the first report of each, for the share the Stats page shows.
   const streak = currentStreakReport();
+  const achievements = keptAchievements();
   const body = JSON.stringify({
     playerId,
     version: APP_VERSION,
     scores,
     ...(streak ? { streak } : {}),
+    ...(Object.keys(achievements).length > 0 ? { achievements } : {}),
   });
   try {
     return Promise.resolve(fetch("/api/leaderboard", {
