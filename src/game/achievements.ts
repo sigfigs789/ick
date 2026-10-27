@@ -619,18 +619,29 @@ function ratesNow(): AchievementRates {
   return { players: Math.max(live.players, snapshot.players), earned };
 }
 
+/** The percentage of players who have ever guessed that hold `id`, if counted. */
+function shareOf(id: string, rates: AchievementRates): number | null {
+  const count = rates.earned[id];
+  if (count === undefined || rates.players === 0) return null;
+  return (100 * count) / rates.players;
+}
+
+/** "4.3%" under ten, "46%" above: a tenth matters only where the share is small. */
+function formatShare(share: number): string {
+  return `${share < 10 ? share.toFixed(1).replace(/\.0$/, "") : Math.round(share)}%`;
+}
+
 /**
  * How many of the players who have ever guessed hold `id`, as the Stats page
  * shows under each badge: "46% of players". Null for a badge nobody has
  * counted yet.
  */
 export function earnedShareLabel(id: string, rates: AchievementRates = ratesNow()): string | null {
-  const count = rates.earned[id];
-  if (count === undefined || rates.players === 0) return null;
-  if (count === 0) return "No player yet";
-  const share = (100 * count) / rates.players;
+  const share = shareOf(id, rates);
+  if (share === null) return null;
+  if (share === 0) return "No player yet";
   if (share < 1) return "Under 1% of players";
-  return `${share < 10 ? share.toFixed(1).replace(/\.0$/, "") : Math.round(share)}% of players`;
+  return `${formatShare(share)} of players`;
 }
 
 /**
@@ -643,15 +654,29 @@ export function firstToEarn(id: string): boolean {
   return liveRates !== null && !ratesNow().earned[id];
 }
 
+/** Below this share a badge is rare enough to say "only". */
+const ONLY_BELOW = 10;
+
+/**
+ * Badges for days played, where a small share says how new the game is rather
+ * than how hard the badge is: "only 8% of players" have played ten days when
+ * most players started last month.
+ */
+const NO_ONLY = new Set(["days-10", "days-50", "days-100", "days-365"]);
+
 /**
  * The line under a lone badge on the card that celebrates it (see
  * components/AchievementCelebration.tsx): the first to earn it, or how many
- * players have. Null when there is nothing worth saying.
+ * players have -- "Earned by 23% of players.", and "Earned by only 4.3% of
+ * players." for a rare one. Null when there is nothing worth saying.
  */
-export function celebrationShareLine(id: string): string | null {
+export function celebrationShareLine(id: string, rates: AchievementRates = ratesNow()): string | null {
   if (firstToEarn(id)) return "You're the first player to earn it!";
-  const label = earnedShareLabel(id);
-  return label && label !== "No player yet" ? `${label} have it.` : null;
+  const share = shareOf(id, rates);
+  if (!share) return null;
+  if (share < 1) return "Earned by fewer than 1% of players.";
+  const only = share < ONLY_BELOW && !NO_ONLY.has(id) ? "only " : "";
+  return `Earned by ${only}${formatShare(share)} of players.`;
 }
 
 /**

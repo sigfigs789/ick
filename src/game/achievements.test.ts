@@ -337,6 +337,14 @@ describe("the card for a lone badge", () => {
     // The live count has not heard from the players before reporting began.
     resetAchievementRates({ players: 700, earned: { "first-word": 3 } });
     expect(firstToEarn("first-word")).toBe(false);
-    expect(celebrationShareLine("first-word")).toMatch(/^\d+% of players have it\.$/);
+    expect(celebrationShareLine("first-word")).toMatch(/^Earned by \d+% of players\.$/);
+  });
+
+  it("says only for a rare badge, but never for days played", () => {
+    const rates = { players: 1000, earned: { "first-legend": 250, pantheon: 43, "days-10": 82, "streak-30": 6 } };
+    expect(celebrationShareLine("first-legend", rates)).toBe("Earned by 25% of players.");
+    expect(celebrationShareLine("pantheon", rates)).toBe("Earned by only 4.3% of players.");
+    expect(celebrationShareLine("streak-30", rates)).toBe("Earned by fewer than 1% of players.");
+    expect(celebrationShareLine("days-10", rates)).toBe("Earned by 8.2% of players.");
   });
 });
