@@ -120,8 +120,6 @@ function showHeaderCelebration(group: HeaderCelebrationGroup, date: string): boo
   return drawn.variant === "shown";
 }
 
-/** The most badges the welcome for a returning player names (see App). */
-const CATCH_UP_SHOWN = 3;
 /** The welcome's card key: no verdict's, as no verdict brought it. */
 const CATCH_UP_KEY = -1;
 
@@ -298,7 +296,7 @@ export default function App() {
   // day one. A badge kept from them is not marked announced, so it is welcomed
   // if the cards ever come back.
   //
-  // A new player hears of none of it until their third banked word (see
+  // A new player hears of none of it until their fourth banked word (see
   // headerCelebrationsHeld): that word's card names every badge held back
   // until then -- First ink, at least -- along with any it earned itself.
   const earnedAchievements = useRef<Set<string> | null>(null);
@@ -315,7 +313,7 @@ export default function App() {
     markAchievementsAnnounced(backlog.map((achievement) => achievement.id));
     setUnlocked({
       key: CATCH_UP_KEY,
-      achievements: backlog.slice(0, CATCH_UP_SHOWN),
+      achievements: backlog,
       total: backlog.length,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the baseline, once

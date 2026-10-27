@@ -16,8 +16,8 @@
  * card to claim its group's day is the one with priority. The claim is kept in storage, so a
  * reload between the first word and the finish does not let a second card in.
  *
- * A new player sees none of them until they have banked their third word:
- * the first two are for finding their feet, not for cards over the puzzle.
+ * A new player sees none of them until they have banked their fourth word:
+ * the first three are for finding their feet, not for cards over the puzzle.
  */
 
 import { playedHistory } from "./storage";
@@ -27,7 +27,7 @@ export type HeaderCelebrationGroup = "streak" | "news";
 const KEY_PREFIX = "ick:headerCelebration:";
 
 /** The words a player banks, across every day and mode, before any card shows. */
-export const HEADER_CELEBRATIONS_MIN_WORDS = 3;
+export const HEADER_CELEBRATIONS_MIN_WORDS = 4;
 
 /**
  * Whether the header celebrations are still held back from a new player: true

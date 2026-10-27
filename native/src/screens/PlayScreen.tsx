@@ -91,8 +91,6 @@ interface Props {
  * that word's write to land. The website's figure (src/App.tsx).
  */
 const STREAK_CHECK_DELAY_MS = 1500;
-/** The most badges the welcome for a returning player names. */
-const CATCH_UP_SHOWN = 3;
 /** The welcome's card key: no verdict's, as no verdict brought it. */
 const CATCH_UP_KEY = -1;
 
@@ -242,7 +240,7 @@ export function PlayScreen({ covered = false }: Props) {
   // before achievements existed, or before this card did -- are welcomed once,
   // on the same card: the best few by name, and the rest left to Stats.
   //
-  // A new player hears of none of it until their third banked word (see
+  // A new player hears of none of it until their fourth banked word (see
   // headerCelebrationsHeld): that word's card names every badge held back
   // until then, along with any it earned itself.
   const earnedAchievements = useRef<Set<string> | null>(null);
@@ -258,7 +256,7 @@ export function PlayScreen({ covered = false }: Props) {
     markAchievementsAnnounced(backlog.map((achievement) => achievement.id));
     setUnlocked({
       key: CATCH_UP_KEY,
-      achievements: backlog.slice(0, CATCH_UP_SHOWN),
+      achievements: backlog,
       total: backlog.length,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the baseline, once

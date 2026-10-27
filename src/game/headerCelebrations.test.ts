@@ -31,12 +31,14 @@ describe("header celebrations", () => {
     expect(claimHeaderCelebration("news", "2026-10-25")).toBe(true);
   });
 
-  it("are held back from a new player until their third banked word", () => {
+  it("are held back from a new player until their fourth banked word", () => {
     expect(headerCelebrationsHeld()).toBe(true);
     bank("2026-10-24", ["string"]);
     bank("2026-10-25", ["strong"]);
     expect(headerCelebrationsHeld()).toBe(true);
     bank("2026-10-25", ["strong", "strange"]);
+    expect(headerCelebrationsHeld()).toBe(true);
+    bank("2026-10-25", ["strong", "strange", "street"]);
     expect(headerCelebrationsHeld()).toBe(false);
   });
 });

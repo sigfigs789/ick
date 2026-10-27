@@ -4,6 +4,8 @@ import { celebrationShareLine, type Achievement } from "../game/achievements";
 
 /** How long the card stays up if nobody closes it, as the other cards do. */
 const CELEBRATION_MS = 7000;
+/** The most badges the card names; the rest are left to the Stats page. */
+const MOST_SHOWN = 3;
 
 /**
  * The moment a word earns an achievement (see game/achievements.ts) -- until
@@ -17,21 +19,23 @@ const CELEBRATION_MS = 7000;
  * The same card welcomes a returning player's badges that were never announced
  * (see `achievementsToCatchUp`): `total` is how many there are, of which
  * `achievements` is the few worth naming, and the rest are left to the Stats
- * page.
+ * page. No card names more than three, however many a word earns.
  *
  * A lone badge also says how many players hold it, or that this player is the
  * first -- read as the card opens, so this player's own report, landing a
  * moment later, never changes it.
  */
 export function AchievementCelebration({
-  achievements,
-  total = achievements.length,
+  achievements: earned,
+  total: given = earned.length,
   onDone,
 }: {
   achievements: readonly Achievement[];
   total?: number;
   onDone: () => void;
 }) {
+  const achievements = earned.slice(0, MOST_SHOWN);
+  const total = Math.max(given, earned.length);
   const [share] = useState(() =>
     achievements.length === 1 && total === 1 ? celebrationShareLine(achievements[0].id) : null
   );
