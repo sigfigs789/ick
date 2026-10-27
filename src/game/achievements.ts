@@ -74,6 +74,11 @@ export interface Achievement {
    * game/playerMessages.ts) rather than shown as a badge nobody there can get.
    */
   viaSuggestions?: true;
+  /**
+   * What simply playing on counts toward, for one earned by coming back (see
+   * game/comeBack.ts): the current streak, days played, or words banked.
+   */
+  byPlaying?: "streak" | "days" | "words";
 }
 
 export interface AchievementStatus {
@@ -276,6 +281,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Regular",
     description: "Play on 10 different days.",
     check: daysPlayed(10),
+    byPlaying: "days",
   },
   {
     id: "days-50",
@@ -284,6 +290,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Devotee",
     description: "Play on 50 different days.",
     check: daysPlayed(50),
+    byPlaying: "days",
   },
   {
     id: "days-100",
@@ -292,6 +299,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Fixture",
     description: "Play on 100 different days.",
     check: daysPlayed(100),
+    byPlaying: "days",
   },
   {
     id: "days-365",
@@ -300,6 +308,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Almanac",
     description: "Play on 365 different days.",
     check: daysPlayed(365),
+    byPlaying: "days",
   },
   {
     id: "archive-play",
@@ -380,6 +389,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Hat trick",
     description: "Reach a 3 day streak.",
     check: streakOf(3),
+    byPlaying: "streak",
   },
   {
     id: "streak-7",
@@ -388,6 +398,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "One week",
     description: "Reach a 7 day streak.",
     check: streakOf(7),
+    byPlaying: "streak",
   },
   {
     id: "streak-30",
@@ -396,6 +407,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "One month",
     description: "Reach a 30 day streak.",
     check: streakOf(30),
+    byPlaying: "streak",
   },
   {
     id: "streak-100",
@@ -404,6 +416,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Centurion",
     description: "Reach a 100 day streak.",
     check: streakOf(100),
+    byPlaying: "streak",
   },
   {
     id: "streak-365",
@@ -412,6 +425,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Year of ink",
     description: "Reach a 365 day streak.",
     check: streakOf(365),
+    byPlaying: "streak",
   },
   {
     id: "perfect-month",
@@ -460,6 +474,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Hundred words",
     description: "Bank 100 words.",
     check: countTo(100, (progress) => progress.acceptedWords.length),
+    byPlaying: "words",
   },
   {
     id: "words-500",
@@ -468,6 +483,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Five hundred words",
     description: "Bank 500 words.",
     check: countTo(500, (progress) => progress.acceptedWords.length),
+    byPlaying: "words",
   },
   {
     id: "words-1000",
@@ -476,6 +492,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Thousand words",
     description: "Bank 1,000 words.",
     check: countTo(1000, (progress) => progress.acceptedWords.length),
+    byPlaying: "words",
   },
   {
     id: "clean-sweep",
@@ -617,6 +634,11 @@ function ratesNow(): AchievementRates {
     earned[id] = Math.max(earned[id] ?? 0, Number(count) || 0);
   }
   return { players: Math.max(live.players, snapshot.players), earned };
+}
+
+/** How many players hold `id`, by the counts shown: 0 for one never counted. */
+export function holdersOf(id: string): number {
+  return ratesNow().earned[id] ?? 0;
 }
 
 /** The percentage of players who have ever guessed that hold `id`, if counted. */

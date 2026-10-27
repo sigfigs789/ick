@@ -9,8 +9,9 @@
  * earns, a weekend off, or the best streak it is closing in on.
  */
 
-import type { AchievementStatus } from "./achievements";
-import { daysSinceEpoch } from "./date";
+import { holdersOf, type AchievementStatus } from "./achievements";
+import { maxGuessesFor } from "./constants";
+import { addDays } from "./date";
 import { freezeCap, freezeRules, LAZY_WEEKEND_RULE, restDayProgress } from "./streakFreeze";
 import type { StreakState } from "./types";
 
@@ -37,10 +38,10 @@ const LAZY_SUNDAY_RULE =
  * its week. A lazy weekend is only promised while the week has days enough
  * left to earn it, and once unlocked is not mentioned again.
  *
- * With none of those ahead -- the freeze cap full, no lazy weekend left to
- * earn, and the best streak the current one -- it names an achievement still
- * locked (see game/achievements.ts), picked at random from `locked`. With
- * nothing at all left to earn, it is null and nothing is said.
+ * Once no freeze and no lazy weekend is left to earn, it points at an
+ * achievement still locked instead (see `achievementGoal`), ahead of beating
+ * the best streak. With nothing at all left to earn, it is null and nothing is
+ * said.
  *
  * A freeze past the cap is not kept, so it is not promised. A player already
  * holding one hears which it would be -- a 2nd, a 3rd -- since "your next
@@ -64,8 +65,8 @@ export interface GoalExplainer {
 
 /**
  * `streakGoal`'s line, with what the reward it names is where that is not
- * plain from the line itself: a 🧊 freeze, or a lazy weekend. Beating the best
- * streak needs no explaining, and an achievement's line carries its own.
+ * plain from the line itself: a 🧊 freeze, a lazy weekend, or an achievement.
+ * Beating the best streak needs no explaining.
  */
 export function comeBackGoal(
   streak: StreakState,
@@ -122,6 +123,8 @@ export function comeBackGoal(
     goals.push({ away: rest.needed, rank: 1, line, explainer });
   }
 
+  if (goals.length === 0 && locked.length > 0) return achievementGoal(locked, streak, today);
+
   if (best > days) {
     goals.push({ away: best - days + 1, rank: 2, line: `${best - days + 1} days to beat your best streak of ${best}.` });
   }
@@ -131,21 +134,51 @@ export function comeBackGoal(
     const { line, explainer } = goals[0];
     return { line, explainer };
   }
-  if (locked.length > 0) return { line: achievementGoal(locked[pickFor(today, locked.length)]) };
   return null;
 }
 
+/** How far ahead an achievement is worth naming as nearly there. */
+const NEAR_DAYS = 3;
+
 /**
- * A random index below `count`, the same all of `date`: the line stays put
- * across reloads that day and moves on the next.
+ * Days of coming back until playing alone earns `status`, or null for one
+ * that takes more than turning up (a Mythic, a clean sweep).
  */
-function pickFor(date: string, count: number): number {
-  // Knuth's multiplicative hash, so neighbouring days land far apart.
-  return ((daysSinceEpoch(date, "2000-01-01") * 2654435761) >>> 0) % count;
+function daysToEarn({ achievement, progress }: AchievementStatus, streak: StreakState, today: string): number | null {
+  if (!progress) return null;
+  const left = progress.target - progress.current;
+  switch (achievement.byPlaying) {
+    case "streak":
+      return progress.target - streak.currentStreak;
+    case "days":
+      return left;
+    case "words":
+      return Math.ceil(left / maxGuessesFor(addDays(today, 1)));
+    default:
+      return null;
+  }
 }
 
-/** The line for an achievement still locked, with how far along a count is. */
-function achievementGoal({ achievement, progress }: AchievementStatus): string {
-  const along = progress && progress.current > 0 ? ` (${progress.current}/${progress.target})` : "";
-  return `Still to unlock: ${achievement.icon} ${achievement.title}${along}. ${achievement.description}`;
+/**
+ * An achievement still locked, to shoot for: the one coming back earns
+ * soonest, if that is within `NEAR_DAYS`; otherwise the easiest, the one the
+ * most players hold. A tie goes to the easier, then to the earlier listed.
+ */
+function achievementGoal(
+  locked: readonly AchievementStatus[],
+  streak: StreakState,
+  today: string
+): { line: string; explainer: GoalExplainer } {
+  const ranked = locked
+    .map((status, order) => ({ status, order, days: daysToEarn(status, streak, today), held: holdersOf(status.achievement.id) }))
+    .sort((x, y) => y.held - x.held || x.order - y.order);
+  const near = ranked
+    .filter(({ days }) => days !== null && days <= NEAR_DAYS)
+    .sort((x, y) => x.days! - y.days!)[0];
+  const { achievement, progress } = (near ?? ranked[0]).status;
+  const along = progress && progress.current > 0 ? ` (${progress.current}/${progress.target} so far)` : "";
+  return {
+    line: `Shoot for ${achievement.icon} ${achievement.title} Achievement!`,
+    explainer: { title: achievement.title, text: `${achievement.description}${along}` },
+  };
 }
