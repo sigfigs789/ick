@@ -2684,9 +2684,20 @@ button.app__menu-item + button.app__menu-item {
   }
 }
 
+/* The header cards -- this one, in all its colours, and the perfect month's
+   below -- sit at the top of what the player can see, but under the header
+   while any of it is on screen rather than over it: --header-clearance is how
+   far down the screen the header still reaches (see
+   hooks/useHeaderClearance.ts), 0 once it has scrolled away. */
+:root {
+  --header-card-top: max(
+    calc(var(--header-clearance, 0px) + 0.75rem),
+    calc(env(safe-area-inset-top, 0px) + 1.25rem)
+  );
+}
 .improvement {
   position: fixed;
-  top: 1.25rem;
+  top: var(--header-card-top);
   left: 50%;
   transform: translateX(-50%);
   z-index: 21;
@@ -2921,7 +2932,7 @@ button.app__menu-item + button.app__menu-item {
 }
 .perfect-month {
   position: fixed;
-  top: 1.25rem;
+  top: var(--header-card-top);
   left: 50%;
   transform: translateX(-50%);
   z-index: 21;

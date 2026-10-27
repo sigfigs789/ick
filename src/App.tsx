@@ -28,6 +28,7 @@ import { useWordOfDay } from "./hooks/useWordOfDay";
 import { useYesterdaysBest, type ResolvedBest } from "./hooks/useYesterdaysBest";
 import { useAcceptedSuggestions } from "./hooks/useAcceptedSuggestions";
 import { useForceUpdate } from "./hooks/useForceUpdate";
+import { useHeaderClearance } from "./hooks/useHeaderClearance";
 import { useInputPlacement } from "./hooks/useInputPlacement";
 import { isWinningRarity } from "./game/rank";
 import { celebrationFor } from "./game/celebration";
@@ -500,6 +501,12 @@ export default function App() {
     if (unlockedShown) sound.achievement();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unlockedShown, unlocked?.key]);
+
+  // Any of the header cards below sits at the top of what the player can see,
+  // under the header rather than over it (see hooks/useHeaderClearance.ts).
+  useHeaderClearance(
+    showPerfectMonth || !!newBest || !!improvement || !!climb || !!bestNews || !!unlocked
+  );
 
   // Above the guess log or below it, by the input placement test (see
   // game/inputPlacementTest.ts), drawn the first time the input shows.
