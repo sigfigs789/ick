@@ -204,6 +204,33 @@ describe("ExperimentsV2Page", () => {
     expect(screen.getAllByRole("table")).toHaveLength(3);
   });
 
+  it("draws the share nudge test, new and returning players apart", async () => {
+    const shareNudge = {
+      since: "2026-10-28",
+      arms: [
+        { variant: "shown", segment: "all", assigned: 40, d1: { cohort: 36, returned: 20 } },
+        { variant: "shown", segment: "new", assigned: 10, d1: { cohort: 9, returned: 4 } },
+        { variant: "hidden", segment: "all", assigned: 40, d1: { cohort: 36, returned: 18 } },
+        { variant: "hidden", segment: "new", assigned: 12, d1: { cohort: 10, returned: 4 } },
+      ],
+    };
+    const body = {
+      wordOfDay: null,
+      comeBack: null,
+      headerCelebrations: null,
+      shareName: null,
+      inputPlacement: null,
+      playTab: null,
+      shareNudge,
+    };
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(body), { status: 200 })));
+    render(<ExperimentsV2Page />);
+
+    expect(await screen.findByRole("heading", { name: "Share nudge after a great finish" })).toBeTruthy();
+    expect(screen.getByRole("table", { name: "Everyone drawn: with the Share nudge against without." })).toBeTruthy();
+    expect(screen.getAllByRole("table")).toHaveLength(3);
+  });
+
   it("says so when the database sent no experiment", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ wordOfDay: null, comeBack: null }), { status: 200 })));
     render(<ExperimentsV2Page />);

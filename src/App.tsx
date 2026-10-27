@@ -29,6 +29,7 @@ import { useYesterdaysBest, type ResolvedBest } from "./hooks/useYesterdaysBest"
 import { useAcceptedSuggestions } from "./hooks/useAcceptedSuggestions";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { useInputPlacement } from "./hooks/useInputPlacement";
+import { useShareNudge } from "./hooks/useShareNudge";
 import { isWinningRarity } from "./game/rank";
 import { celebrationFor } from "./game/celebration";
 import {
@@ -504,6 +505,9 @@ export default function App() {
   // Above the guess log or below it, by the input placement test (see
   // game/inputPlacementTest.ts), drawn the first time the input shows.
   const inputPlacement = useInputPlacement(date, !progress.completed);
+  // A great finish wiggles the Share, for half the players it reaches (see
+  // game/shareNudgeTest.ts).
+  const shareNudge = useShareNudge(date, isToday, progress.completed, progress.acceptedWords);
   const guessEntry = (
     <>
       {!progress.completed && (
@@ -645,6 +649,7 @@ export default function App() {
                 isToday={isToday}
                 mode={progress.mode}
                 onShared={() => setShareRequests((n) => n + 1)}
+                nudge={shareNudge}
               />
             ) : undefined
           }

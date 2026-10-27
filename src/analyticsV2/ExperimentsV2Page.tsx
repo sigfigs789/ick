@@ -61,7 +61,8 @@ export function ExperimentsV2Page() {
           !experiments.headerCelebrations &&
           !experiments.shareName &&
           !experiments.inputPlacement &&
-          !experiments.playTab)
+          !experiments.playTab &&
+          !experiments.shareNudge)
       }
     >
       {picker}
@@ -193,6 +194,28 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
                 icons; the rest have the wordmark alone, as before. Each is drawn once, on their first load. Try either
                 arm with <code>?play-tab=shown</code> or <code>=hidden</code>; a forced arm, or a tester (forced to
                 hidden), is not counted.
+              </>
+            }
+          />
+        </Section>
+      )}
+
+      {experiments.shareNudge && (
+        <Section
+          title="Share nudge after a great finish"
+          note={`Whether a wiggling Share, after a finish averaging Extremely Rare or better, moves the scorecard. Over players, new and returning apart.${drawn}`}
+        >
+          <ExperimentView
+            experiment={experiments.shareNudge}
+            subject="the Share nudge"
+            about={
+              <>
+                Half of players who finish today&rsquo;s puzzle with words averaging Extremely Rare or better (8.0+)
+                see the Share beside the guess count hop and wiggle three times; the other half see it sit still, as
+                before. Only that finish draws a player, so nobody is in this test who has not earned the nudge, and
+                each keeps the arm after. Watch the sharing guardrail here as closely as D1. Try either arm with{" "}
+                <code>?share-nudge=shown</code> or <code>=hidden</code> (it still needs a finish that earns it); a
+                forced arm, or a tester (forced to shown), is not counted.
               </>
             }
           />

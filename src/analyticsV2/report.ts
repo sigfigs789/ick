@@ -142,6 +142,8 @@ export interface Experiments {
   inputPlacement: Experiment | null;
   /** Its `shown` arm is the Play icon in the header (see game/playTabTest.ts). */
   playTab: Experiment | null;
+  /** Its `shown` arm is the Share that wiggles after a great finish (see game/shareNudgeTest.ts). */
+  shareNudge: Experiment | null;
   /** The draw days counted, both ends, or null for everyone drawn. */
   span: { from: string; to: string } | null;
 }
@@ -323,6 +325,7 @@ export async function fetchExperiments(today: string, span?: { from: string; to:
     shareName: parseExperiment(body.shareName),
     inputPlacement: parseExperiment(body.inputPlacement),
     playTab: parseExperiment(body.playTab),
+    shareNudge: parseExperiment(body.shareNudge),
     span: span ?? null,
   };
 }

@@ -18,6 +18,11 @@ interface Props {
   mode?: GameMode;
   /** After the copy: the page opens the share panel and scrolls to it. */
   onShared?: () => void;
+  /**
+   * Wiggle to ask for a share, after a great finish (see
+   * game/shareNudgeTest.ts). Stops for good once this button has copied.
+   */
+  nudge?: boolean;
 }
 
 /**
@@ -28,8 +33,9 @@ interface Props {
  * the moment of the tap from the same saved choices the panel reads and writes
  * (answers shown, username on or off), so the two can never disagree.
  */
-export function QuickShareButton({ date, drop, words, streak, isToday, mode, onShared }: Props) {
+export function QuickShareButton({ date, drop, words, streak, isToday, mode, onShared, nudge = false }: Props) {
   const [copied, setCopied] = useState(false);
+  const [shared, setShared] = useState(false);
 
   async function share() {
     const playerId = loadPlayerId();
@@ -45,13 +51,19 @@ export function QuickShareButton({ date, drop, words, streak, isToday, mode, onS
     });
     await copyText(text);
     setCopied(true);
+    setShared(true);
     trackResultCopied(mode ?? modeForDate(date));
     onShared?.();
     window.setTimeout(() => setCopied(false), 2000);
   }
 
   return (
-    <button type="button" className="quick-share" onClick={() => void share()} aria-live="polite">
+    <button
+      type="button"
+      className={nudge && !shared ? "quick-share quick-share--nudge" : "quick-share"}
+      onClick={() => void share()}
+      aria-live="polite"
+    >
       {copied ? "Copied!" : "Share"}
     </button>
   );

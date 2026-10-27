@@ -26,6 +26,7 @@ import type { HeaderCelebrationsVariant } from "./game/headerCelebrationsTest";
 import type { InputPlacementVariant } from "./game/inputPlacementTest";
 import type { PlayTabVariant } from "./game/playTabTest";
 import type { ShareNameVariant } from "./game/shareNameTest";
+import type { ShareNudgeVariant } from "./game/shareNudgeTest";
 import type { WordOfDayVariant } from "./game/wordOfDay";
 import { APP_VERSION } from "./version";
 import { isBotUserAgent } from "./game/botUa";
@@ -940,6 +941,23 @@ export function trackInputPlacementAssigned(placement: InputPlacementVariant, da
  */
 export function trackPlayTabAssigned(variant: PlayTabVariant, date: string, returning: boolean) {
   send("play_tab_assigned", {
+    variant,
+    returning,
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
+    live_date: todayDateString(),
+    mode: modeOf(date),
+  });
+}
+
+/**
+ * The share nudge test's draw (see game/shareNudgeTest.ts), once per player, on
+ * the first live puzzle they finish with words averaging Extremely Rare or
+ * better. Shaped like the play tab test's, for `analytics_v2_experiment`:
+ * `shown` is the Share that wiggles, `hidden` the one that sits still.
+ */
+export function trackShareNudgeAssigned(variant: ShareNudgeVariant, date: string, returning: boolean) {
+  send("share_nudge_assigned", {
     variant,
     returning,
     puzzle_date: date,

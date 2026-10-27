@@ -128,6 +128,18 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
     new players and returning players. Force either arm with
     `?share-name=hidden` or `=shown`. Testers are forced to `hidden`. A
     forced arm or a host that reports nothing is never drawn.
+  - **Share nudge** (`src/game/shareNudgeTest.ts`,
+    `src/hooks/useShareNudge.ts`): when today's puzzle is finished and its
+    words average Extremely Rare or better (8.0+, as the average displays),
+    the Share beside the guess count hops and wiggles three times for half of
+    players (`shown`); the other half (`hidden`) see it sit still. Only that
+    finish draws a player, so nobody who never earns the nudge is in the test,
+    and a player keeps the arm for good. The wiggle stops once the button has
+    copied. The draw is a `share_nudge_assigned` event (with `returning`),
+    scored on `/experimentsV2`. Force either arm with `?share-nudge=shown` or
+    `=hidden` (it still needs a finish that earns it). Testers are forced to
+    `shown`. A forced arm, or a host that reports nothing (which keeps the
+    button still), is never drawn.
   - **Text**: `buildShareText`'s `spoilerFree` option (default `true`)
     swaps between rarity squares and the actual words.
   - **Image**: `ShareImageButton` rasterizes the results card (via
