@@ -413,6 +413,16 @@ describe("the harder badges", () => {
   });
 });
 
+describe("Royal flush", () => {
+  it("needs one word from each of the four top tiers in one puzzle", () => {
+    const top = ["Legend", "Mythic", "Elusive", "Extremely Rare"] as const;
+    const flush = day("2026-10-10", top.map((r) => word(r)));
+    expect(statusOf("top-four", { history: [flush] }).earnedOn).toBe("2026-10-10");
+    const short = day("2026-10-10", [word("Legend"), word("Legend"), word("Mythic"), word("Elusive")]);
+    expect(statusOf("top-four", { history: [short] }).earnedOn).toBeNull();
+  });
+});
+
 describe("Word of the day", () => {
   it("is earned once the tally has a day for the player, unattested words and all", () => {
     expect(statusOf("word-of-the-day", { bestWordWins: 1 }).earnedOn).toBe(TODAY);

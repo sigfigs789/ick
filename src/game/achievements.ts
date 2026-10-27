@@ -95,6 +95,9 @@ export interface AchievementStatus {
 
 const MYTHIC_OR_BETTER: readonly Rarity[] = ["Mythic", "Legend"];
 
+/** The four top tiers, one word each, for Royal flush. */
+const ROYAL_FLUSH: readonly Rarity[] = ["Legend", "Mythic", "Elusive", "Extremely Rare"];
+
 /**
  * `record` as the share of players holding each badge counts it: with every
  * Legend no corpus measures counted as no tier at all. That 10.00 is the
@@ -611,12 +614,23 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     ),
   },
   {
+    // Shipped as Royal flush; the id stays so a badge already kept keeps its name.
     id: "royal-flush",
     group: "Rarity",
     icon: "🃏",
-    title: "Royal flush",
+    title: "Four of a kind",
     description: "Finish a puzzle with every guess a Legend.",
     check: firstPuzzle(everyGuess((rarity) => rarity === "Legend")),
+  },
+  {
+    id: "top-four",
+    group: "Rarity",
+    icon: "♠️",
+    title: "Royal flush",
+    description: "Find a Legend, a Mythic, an Elusive and an Extremely Rare word in one puzzle.",
+    check: firstPuzzle((progress) =>
+      ROYAL_FLUSH.every((tier) => progress.acceptedWords.some((word) => word.rarity === tier))
+    ),
   },
   {
     id: "grand-tour",
