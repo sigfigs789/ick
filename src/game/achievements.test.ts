@@ -413,6 +413,15 @@ describe("the harder badges", () => {
   });
 });
 
+describe("Word of the day", () => {
+  it("is earned once the tally has a day for the player, unattested words and all", () => {
+    expect(statusOf("word-of-the-day", { bestWordWins: 1 }).earnedOn).toBe(TODAY);
+    expect(statusOf("word-of-the-day", {}).earnedOn).toBeNull();
+    const counted = countedRecord({ history: [], onItsDay: [], streak: noStreak, bestWordWins: 2 });
+    expect(statusOf("word-of-the-day", counted).earnedOn).toBe(TODAY);
+  });
+});
+
 describe("countedRecord", () => {
   it("earns a badge from an unattested Legend but leaves it out of the count", () => {
     const unattested: AcceptedWord = { word: "zzyzx", rarity: "Legend", zipf: -1.57 };

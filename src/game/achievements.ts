@@ -20,6 +20,7 @@ import { isUnattestedZipf, rarityForZipf, rarityScore } from "./dictionary";
 import { dropForDate } from "./drop";
 import { modeIsChosen } from "./mode";
 import { nextMonthStart } from "./month";
+import { loadPlayerId } from "./player";
 import { isWinningRarity } from "./rank";
 import { CURRENT_TIERS } from "./stats";
 import { loadStreak, playedHistory, playedOnItsDay } from "./storage";
@@ -53,6 +54,12 @@ export interface AchievementRecord {
   streak: Pick<StreakState, "currentStreak" | "longestStreak" | "lastCompletedDate">;
   /** The words this player has suggested (see game/suggestions.ts). */
   suggestions?: readonly SuggestedWordRecord[];
+  /**
+   * How many days this player's word was the day's best -- the word the line
+   * under the next puzzle names, unattested words included (see
+   * `fetchWordOfTheDayWins`). Absent until the server has said.
+   */
+  bestWordWins?: number;
 }
 
 /**
@@ -620,6 +627,15 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     check: grandTour,
   },
   {
+    id: "word-of-the-day",
+    group: "Rarity",
+    icon: "🏅",
+    title: "Word of the day",
+    description: "Find the day's best word, the one named under the next puzzle.",
+    // The tally says how many days, not which, so the day it is first seen.
+    check: ({ bestWordWins = 0 }, today) => ({ earnedOn: bestWordWins > 0 ? today : null }),
+  },
+  {
     id: "streak-3",
     group: "Streaks",
     icon: "🎩",
@@ -1111,7 +1127,52 @@ function deviceRecord(streak: StreakState): AchievementRecord {
     onItsDay: playedOnItsDay().map((progress) => progress.date),
     streak,
     suggestions: suggestedWords(),
+    bestWordWins: readBestWordWins(),
   };
+}
+
+const BEST_WORD_KEY = "ick:best-word-wins";
+
+function readBestWordWins(): number {
+  try {
+    return Number(localStorage.getItem(BEST_WORD_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+let bestWordRequest: Promise<number> | null = null;
+
+/**
+ * Ask the server how many days this player had the best word, once a session,
+ * and keep the count for `syncAchievements`. The same tally the line under the
+ * puzzle settles its ties with (see `fetchBestWordWins` in game/leaderboard.ts),
+ * shared by every reader through the CDN. Never needed: a failed ask leaves the
+ * last count, and the badge, where they were.
+ */
+export function fetchWordOfTheDayWins(): Promise<number> {
+  const playerId = loadPlayerId()?.toLowerCase();
+  if (!playerId) return Promise.resolve(readBestWordWins());
+  bestWordRequest ??= fetch(
+    `/api/leaderboard?bestWins=1&today=${encodeURIComponent(todayDateString())}`
+  )
+    .then((response) => (response.ok ? response.json() : null))
+    .then((body: unknown) => {
+      const wins = (body as { wins?: Record<string, unknown> } | null)?.wins;
+      if (!wins || typeof wins !== "object") throw new Error("no wins");
+      const count = Number(wins[playerId]) || 0;
+      try {
+        localStorage.setItem(BEST_WORD_KEY, String(count));
+      } catch {
+        // Unwritable storage only means asking again next session.
+      }
+      return count;
+    })
+    .catch(() => {
+      bestWordRequest = null;
+      return readBestWordWins();
+    });
+  return bestWordRequest;
 }
 
 /** This browser's achievements, keeping any newly earned for good. */
