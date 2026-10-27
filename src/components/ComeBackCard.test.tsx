@@ -43,7 +43,7 @@ describe("ComeBackCard", () => {
   it("leaves a line with nothing to explain as plain text", async () => {
     localStorage.setItem("ick:come-back-test", "shown");
     // Cap full, no weekend left this week: beating the best is all that's ahead.
-    const capped = { ...streak, currentStreak: 8, longestStreak: 12, bankedFreezes: 1 };
+    const capped = { ...streak, currentStreak: 11, longestStreak: 12, bankedFreezes: 1 };
     render(<ComeBackCard streak={capped} date="2026-10-30" />);
     expect(await screen.findByText(/days to beat your best streak/)).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();

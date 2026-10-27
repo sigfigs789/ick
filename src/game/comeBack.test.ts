@@ -142,13 +142,14 @@ describe("streakGoal", () => {
           "2026-10-26"
         )
       ).toBe("Play 2 more days this week and unlock a lazy weekend 😴");
-      // Tied with beating the best: the lazy weekend, which lapses.
+      // Two days from beating the best too: the best streak, since a lazy
+      // weekend only leads from one day away.
       expect(
         streakGoal(
           streak({ currentStreak: 8, longestStreak: 9, bankedFreezes: 2, playedDates: ["2026-10-26"] }),
           "2026-10-26"
         )
-      ).toBe("Play 2 more days this week and unlock a lazy weekend 😴");
+      ).toBe("2 days to beat your best streak of 9.");
     });
 
     it("comes after a freeze tomorrow earns", () => {
@@ -158,7 +159,7 @@ describe("streakGoal", () => {
     });
   });
 
-  describe("with nothing else within 5 days", () => {
+  describe("with nothing else soon enough", () => {
     // Cap full, and a Friday with no lazy weekend left to earn.
     const maxed = streak({ currentStreak: 30, longestStreak: 30, bankedFreezes: 2 });
     const byId = (id: string) => ACHIEVEMENTS.find((a) => a.id === id)!;
@@ -210,20 +211,31 @@ describe("streakGoal", () => {
       expect(streakGoal(behind, FRIDAY, [])).toMatch(/beat your best/);
     });
 
-    it("is not used while a freeze is within 5 days", () => {
+    it("is not used while a freeze is within 2 days", () => {
       expect(streakGoal(streak({}), FRIDAY, [lockedOne("straight-in")])).toBe("2 days to your next 🧊 streak freeze.");
-      // A full cap of 1 rises at 14 days: 5 away from 9, 6 away from 8.
-      expect(streakGoal(streak({ currentStreak: 9, longestStreak: 9, bankedFreezes: 1 }), FRIDAY, [lockedOne("straight-in")])).toBe(
-        "5 days until your 🧊 freeze limit goes up to 2."
+      // A full cap of 1 rises at 14 days: 2 away from 12, 3 away from 11.
+      expect(streakGoal(streak({ currentStreak: 12, longestStreak: 12, bankedFreezes: 1 }), FRIDAY, [lockedOne("straight-in")])).toBe(
+        "2 days until your 🧊 freeze limit goes up to 2."
       );
-      expect(streakGoal(streak({ currentStreak: 8, longestStreak: 8, bankedFreezes: 1 }), FRIDAY, [lockedOne("straight-in")])).toBe(
+      expect(streakGoal(streak({ currentStreak: 11, longestStreak: 11, bankedFreezes: 1 }), FRIDAY, [lockedOne("straight-in")])).toBe(
         'Shoot for 🏹 "Straight in" Achievement!'
       );
     });
 
-    it("is not used while beating the best streak is within 5 days", () => {
-      const close = streak({ currentStreak: 36, longestStreak: 40, bankedFreezes: 2 });
-      expect(streakGoal(close, FRIDAY, [lockedOne("straight-in")])).toBe("5 days to beat your best streak of 40.");
+    it("is not used while beating the best streak is within 2 days", () => {
+      const close = streak({ currentStreak: 39, longestStreak: 40, bankedFreezes: 2 });
+      expect(streakGoal(close, FRIDAY, [lockedOne("straight-in")])).toBe("2 days to beat your best streak of 40.");
+      const far = streak({ currentStreak: 38, longestStreak: 40, bankedFreezes: 2 });
+      expect(streakGoal(far, FRIDAY, [lockedOne("straight-in")])).toBe('Shoot for 🏹 "Straight in" Achievement!');
+    });
+
+    it("is not used while a lazy weekend is one day away, and is past that", () => {
+      const monday = "2026-10-26";
+      const locked = [lockedOne("straight-in")];
+      const oneAway = streak({ currentStreak: 30, longestStreak: 30, bankedFreezes: 2, playedDates: ["2026-10-26", "2026-10-27"] });
+      expect(streakGoal(oneAway, "2026-10-27", locked)).toBe("Play tomorrow and unlock a lazy weekend 😴");
+      const twoAway = streak({ currentStreak: 30, longestStreak: 30, bankedFreezes: 2, playedDates: [monday] });
+      expect(streakGoal(twoAway, monday, locked)).toBe('Shoot for 🏹 "Straight in" Achievement!');
     });
 
     it("says nothing with every achievement earned", () => {
