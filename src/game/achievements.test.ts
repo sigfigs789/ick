@@ -437,11 +437,22 @@ describe("the easier rungs", () => {
     expect(statusOf("legend-week", { history: far }).earnedOn).toBeNull();
   });
 
-  it("needs three words of one Elusive or better tier for Three of a kind", () => {
-    const three = day("2026-10-10", [word("Elusive"), word("Elusive"), word("Elusive"), word("Rare")]);
+  it("needs three words of one Extremely Rare or better tier for Three of a kind", () => {
+    const three = day("2026-10-10", [word("Extremely Rare"), word("Extremely Rare"), word("Extremely Rare"), word("Rare")]);
     expect(statusOf("three-of-a-kind", { history: [three] }).earnedOn).toBe("2026-10-10");
+    const rare = day("2026-10-10", [word("Rare"), word("Rare"), word("Rare"), word("Legend")]);
+    expect(statusOf("three-of-a-kind", { history: [rare] }).earnedOn).toBeNull();
     const mixed = day("2026-10-10", [word("Elusive"), word("Elusive"), word("Mythic"), word("Mythic")]);
     expect(statusOf("three-of-a-kind", { history: [mixed] }).earnedOn).toBeNull();
+  });
+
+  it("needs four words of one Mythic or better tier for Four of a kind", () => {
+    const four = day("2026-10-10", [word("Mythic"), word("Mythic"), word("Mythic"), word("Mythic"), word("Rare")]);
+    expect(statusOf("royal-flush", { history: [four] }).earnedOn).toBe("2026-10-10");
+    const elusive = day("2026-10-10", [word("Elusive"), word("Elusive"), word("Elusive"), word("Elusive")]);
+    expect(statusOf("royal-flush", { history: [elusive] }).earnedOn).toBeNull();
+    const mixed = day("2026-10-10", [word("Legend"), word("Legend"), word("Mythic"), word("Mythic")]);
+    expect(statusOf("royal-flush", { history: [mixed] }).earnedOn).toBeNull();
   });
 
   it("needs a Mythic word starting with the drop for Head start", () => {

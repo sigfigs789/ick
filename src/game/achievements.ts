@@ -513,11 +513,11 @@ function headStart(progress: DailyProgress): boolean {
   );
 }
 
-/** Three words sharing one tier, Elusive or better. */
-function threeOfAKind(progress: DailyProgress): boolean {
-  return (["Elusive", "Mythic", "Legend"] as const).some(
-    (tier) => progress.acceptedWords.filter((word) => word.rarity === tier).length >= 3
-  );
+/** `count` words sharing one tier, `floor` or better. */
+function ofAKind(count: number, floor: Rarity): (progress: DailyProgress) => boolean {
+  const tiers = TIER_ORDER.filter(atLeast(floor));
+  return (progress) =>
+    tiers.some((tier) => progress.acceptedWords.filter((word) => word.rarity === tier).length >= count);
 }
 
 /**
@@ -751,8 +751,8 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     group: "Rarity",
     icon: "🎲",
     title: "Three of a kind",
-    description: "Find three words of the same tier in one puzzle, Elusive or better.",
-    check: firstPuzzle(threeOfAKind),
+    description: "Find three words of the same tier in one puzzle, Extremely Rare or better.",
+    check: firstPuzzle(ofAKind(3, "Extremely Rare")),
   },
   {
     // Shipped as Royal flush; the id stays so a badge already kept keeps its name.
@@ -760,8 +760,8 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     group: "Rarity",
     icon: "🃏",
     title: "Four of a kind",
-    description: "Finish a puzzle with every guess a Legend.",
-    check: firstPuzzle(everyGuess((rarity) => rarity === "Legend")),
+    description: "Find four words of the same tier in one puzzle, Mythic or better.",
+    check: firstPuzzle(ofAKind(4, "Mythic")),
   },
   {
     id: "top-four",
