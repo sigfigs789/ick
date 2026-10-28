@@ -959,15 +959,25 @@ button.app__menu-item + button.app__menu-item {
 
 /* One quiet footnote at the foot of the play screen: yesterday's rarest find.
    A hairline sets it apart from the player's own streak and total above. */
+/* The footnotes under the puzzle (App.tsx): the come-back line, then
+   yesterday's best, under one divider. Gone when neither has anything to say. */
+.page-footnotes {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1.25rem 0 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+}
+.page-footnotes:empty {
+  display: none;
+}
 .yesterdays-best {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 0.2rem 0.4rem;
-  margin: 1.25rem 0 1rem;
-  padding-top: 0.9rem;
-  border-top: 1px solid var(--border);
+  margin: 0;
   font-size: 0.82rem;
   color: var(--fg-muted);
   text-align: center;
@@ -7054,10 +7064,10 @@ button.app__menu-item + button.app__menu-item {
 }
 
 /* The come-back line (components/ComeBackCard.tsx): what playing tomorrow does
-   for the streak, as a caption to the streak strip right above it rather than a
-   card of its own -- a box there restated the streak and the 🧊 a second time. */
+   for the streak, as one line under the footnotes divider rather than a card of
+   its own -- a box restated the streak and the 🧊 a second time. */
 .come-back {
-  margin: 0.15rem 0 1rem;
+  margin: 0;
   text-align: center;
   font-size: 0.85rem;
   animation: panel-in 0.4s var(--ease-standard);
