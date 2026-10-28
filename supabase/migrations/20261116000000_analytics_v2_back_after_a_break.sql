@@ -4,6 +4,10 @@
 -- the scorecard's "Back after a break" row, over lost players rather than all
 -- players, so new players arriving neither raise nor lower it.
 --
+-- Each of `weekly` gains `playedNextWeek`: of the week's players, how many
+-- banked a word the week after too. The rest of the week before last's
+-- players are the scorecard's weekly churn.
+--
 -- The function is otherwise 20261111000000_analytics_v2_window_everywhere.sql,
 -- whose notes stand. The signature is unchanged, so it is replaced in place.
 
@@ -275,7 +279,11 @@ as $$
         where p.start = w.start and p.first_active between w.start and w.start + 6),
       'daysPlayed', (select coalesce(jsonb_object_agg(x.n, x.c), '{}'::jsonb) from (
         select p.days_played as n, count(*) as c from week_players p
-        where p.start = w.start and p.days_played > 0 group by 1) x)
+        where p.start = w.start and p.days_played > 0 group by 1) x),
+      'playedNextWeek', (select count(*) from week_players p
+        where p.start = w.start and p.days_played > 0 and exists (
+          select 1 from week_players q
+          where q.start = w.start + 7 and q.player_id = p.player_id and q.days_played > 0))
     ) order by w.start desc), '[]'::jsonb) as v
     from weeks w
   ),

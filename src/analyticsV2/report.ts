@@ -39,6 +39,8 @@ export interface Week {
   newPlayers: number;
   /** Players by how many of the week's days they banked a word on, 1 to 7. */
   daysPlayed: Record<number, number>;
+  /** Of its players, how many banked a word the week after too; null before the 2026-11-16 migration. */
+  playedNextWeek: number | null;
 }
 
 export interface Source {
@@ -283,6 +285,7 @@ export function parseReport(raw: unknown): Report {
         players: num(x.players),
         newPlayers: num(x.newPlayers),
         daysPlayed: counts(x.daysPlayed),
+        playedNextWeek: x.playedNextWeek === undefined || x.playedNextWeek === null ? null : num(x.playedNextWeek),
       })),
     sources: parseSources(r.sources),
     window: parseWindow(r.window),
