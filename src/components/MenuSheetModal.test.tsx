@@ -80,7 +80,7 @@ describe("the suggest-a-word sheet", () => {
     await userEvent.type(input, "  Enshittification ");
     await userEvent.click(screen.getByRole("button", { name: "Suggest word" }));
     expect(trackWordSuggestion).toHaveBeenCalledWith("enshittification");
-    expect(screen.getByRole("status")).toHaveTextContent(/thanks for the suggestion/i);
+    expect(screen.getByText(/thanks for the suggestion/i)).toBeInTheDocument();
   });
 
   it("draws nothing when no sheet is open", () => {

@@ -50,17 +50,33 @@ describe("WordRulesModal", () => {
     await userEvent.type(input, "Zibeline");
     await userEvent.click(screen.getByRole("button", { name: /suggest word/i }));
     expect(suggestedWords().map((w) => w.word)).toEqual(["zibeline"]);
-    expect(screen.getByRole("status")).toHaveTextContent("Achievement unlocked: 💡 Word scout.");
+    // The badge's own card, as a word's badge gets.
+    expect(screen.getByText("Achievement unlocked")).toBeInTheDocument();
+    expect(screen.getByText("Word scout")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+    expect(screen.queryByText("Word scout")).toBeNull();
 
     await userEvent.type(input, "snollygoster");
     await userEvent.click(screen.getByRole("button", { name: /suggest word/i }));
     expect(suggestedWords().map((w) => w.word)).toEqual(["zibeline", "snollygoster"]);
-    expect(screen.getByRole("status")).not.toHaveTextContent("Achievement unlocked");
+    expect(screen.queryByText(/achievement unlocked/i)).toBeNull();
 
     // Not a word the queue would take, so not one to wait on a verdict for.
     await userEvent.type(input, "two words");
     await userEvent.click(screen.getByRole("button", { name: /suggest word/i }));
     expect(suggestedWords()).toHaveLength(2);
+  });
+
+  it("names Word scout in the thank-you where the header celebrations test hides cards", async () => {
+    localStorage.clear();
+    window.history.pushState(null, "", "/?header-celebrations=hidden");
+    render(<WordRulesModal open onClose={vi.fn()} />);
+
+    await userEvent.type(screen.getByLabelText(/suggest a word/i), "zibeline");
+    await userEvent.click(screen.getByRole("button", { name: /suggest word/i }));
+    expect(screen.getByRole("status")).toHaveTextContent("Achievement unlocked: 💡 Word scout.");
+    expect(screen.queryByRole("button", { name: "Dismiss" })).toBeNull();
+    window.history.pushState(null, "", "/");
   });
 
   it("offers the queue once a word is suggested, and closes on the way there", async () => {
