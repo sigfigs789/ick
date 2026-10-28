@@ -115,7 +115,8 @@ describe("scorecard", () => {
     expect(loss({ cohort: 100, lost: 25 }).standing).toBe("between");
     expect(loss({ cohort: 100, lost: 15 }).standing).toBe("promising");
     expect(loss({ cohort: 100, lost: 8 })).toMatchObject({ value: "8%", standing: "great", detail: "8 of 100 players holding a 5+ day streak lost it" });
-    expect(loss({ cohort: 20, lost: 10 })).toMatchObject({ value: null, standing: null, detail: "needs 30 players holding a 5+ day streak" });
+    expect(loss({ cohort: 5, lost: 1 })).toMatchObject({ value: "20%", standing: "promising", detail: "1 of 5 players holding a 5+ day streak lost it" });
+    expect(loss({ cohort: 4, lost: 1 })).toMatchObject({ value: null, standing: null, detail: "needs 5 players holding a 5+ day streak" });
     expect(loss()).toMatchObject({ value: null, detail: "needs the 2026-11-17 migration" });
   });
 });
