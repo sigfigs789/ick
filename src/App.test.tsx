@@ -8,10 +8,15 @@ import { markSeen } from "./game/whatsNew";
 import { addDays } from "./game/date";
 import { checkStreakClimb } from "./game/streakClimb";
 import { claimHeaderCelebration } from "./game/headerCelebrations";
+import { checkTopRank, markTopRankCelebrated } from "./game/topRank";
 
 vi.mock("./hooks/useDailyPuzzle", () => ({ useDailyPuzzle: vi.fn() }));
 vi.mock("./hooks/useSound", () => ({ useSound: vi.fn() }));
 vi.mock("./game/streakClimb", () => ({ checkStreakClimb: vi.fn(async () => null) }));
+vi.mock("./game/topRank", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./game/topRank")>()),
+  checkTopRank: vi.fn(async () => null),
+}));
 
 const submitWord = vi.fn();
 const retryAnswer = vi.fn();
@@ -90,6 +95,7 @@ describe("App", () => {
     markSeen("instructions");
     window.history.pushState(null, "", "/");
     vi.mocked(checkStreakClimb).mockResolvedValue(null);
+    vi.mocked(checkTopRank).mockResolvedValue(null);
     vi.mocked(useSound).mockReturnValue({
       accept: vi.fn(),
       reject: vi.fn(),
@@ -353,6 +359,54 @@ describe("App", () => {
     });
   });
 
+  describe("a top-three place on the boards", () => {
+    const today = "2026-08-13";
+    const word = (key: number) =>
+      puzzle({
+        feedback: { kind: "accepted", message: "accepted.", rarity: "Common", key },
+      }) as ReturnType<typeof useDailyPuzzle>;
+
+    beforeEach(() => {
+      bankWords("2026-08-12", ["strong", "strange", "street", "strap"]);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("is celebrated a moment after a word, on a quiet day", async () => {
+      vi.useFakeTimers();
+      vi.mocked(checkTopRank).mockResolvedValue({ board: "weekly", rank: 2 });
+      vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
+      const { rerender } = render(<App />);
+      vi.mocked(useDailyPuzzle).mockReturnValue(word(1));
+      rerender(<App />);
+      await act(() => vi.advanceTimersByTimeAsync(1500));
+      expect(checkTopRank).toHaveBeenCalledWith(today);
+      expect(screen.getByText("Top 3 this week!")).toBeInTheDocument();
+    });
+
+    it("waits a week after the last one", async () => {
+      vi.useFakeTimers();
+      markTopRankCelebrated("2026-08-08");
+      vi.mocked(checkTopRank).mockResolvedValue({ board: "daily", rank: 1 });
+      vi.mocked(useDailyPuzzle).mockReturnValue(word(1));
+      render(<App />);
+      await act(() => vi.advanceTimersByTimeAsync(1500));
+      expect(checkTopRank).not.toHaveBeenCalled();
+    });
+
+    it("stays away on a day another header celebration had", async () => {
+      vi.useFakeTimers();
+      claimHeaderCelebration("streak", today);
+      vi.mocked(checkTopRank).mockResolvedValue({ board: "monthly", rank: 1 });
+      vi.mocked(useDailyPuzzle).mockReturnValue(word(1));
+      render(<App />);
+      await act(() => vi.advanceTimersByTimeAsync(1500));
+      expect(checkTopRank).not.toHaveBeenCalled();
+      expect(screen.queryByText("#1 this month!")).not.toBeInTheDocument();
+    });
+  });
 });
 
 describe("the results on a finished puzzle", () => {

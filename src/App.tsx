@@ -15,6 +15,7 @@ import { JackpotStamp } from "./components/JackpotStamp";
 import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
 import { ImprovementCelebration } from "./components/ImprovementCelebration";
 import { StreakClimbCelebration } from "./components/StreakClimbCelebration";
+import { TopRankCelebration } from "./components/TopRankCelebration";
 import { NewBestCelebration } from "./components/NewBestCelebration";
 import { AchievementCelebration } from "./components/AchievementCelebration";
 import { QuickShareButton } from "./components/QuickShareButton";
@@ -50,6 +51,7 @@ import { welcomeBack } from "./game/streakFreeze";
 import { beatBestToday } from "./game/newBest";
 import {
   claimHeaderCelebration,
+  headerCelebrationShown,
   headerCelebrationsHeld,
   type HeaderCelebrationGroup,
 } from "./game/headerCelebrations";
@@ -65,6 +67,12 @@ import {
   markImprovementCelebrated,
   type Improvement,
 } from "./game/improvement";
+import {
+  checkTopRank,
+  markTopRankCelebrated,
+  topRankCelebrationDue,
+  type TopRank,
+} from "./game/topRank";
 import { checkStreakClimb, type StreakClimb } from "./game/streakClimb";
 import { totalRarityScore } from "./game/dictionary";
 import { addDays } from "./game/date";
@@ -176,6 +184,8 @@ export default function App() {
   const endImprovement = useCallback(() => setImprovement(null), []);
   const [climb, setClimb] = useState<StreakClimb | null>(null);
   const endClimb = useCallback(() => setClimb(null), []);
+  const [topRank, setTopRank] = useState<TopRank | null>(null);
+  const endTopRank = useCallback(() => setTopRank(null), []);
   const [unlocked, setUnlocked] = useState<{
     key: number;
     achievements: Achievement[];
@@ -460,6 +470,47 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [climbShown]);
 
+  // A top-three place on the monthly, weekly or daily board (see
+  // game/topRank.ts), looked for a moment after each word banked on today's
+  // puzzle, so that word's write has landed. The quietest card: only once a
+  // week, and only on a day no header celebration has had and with nothing
+  // else up -- no card, burst, badge, welcome or fold notice. Read up front
+  // and again when the answer comes back, as a card may have landed meanwhile.
+  const quiet = () =>
+    !headerCelebrationShown("news", date) &&
+    !headerCelebrationShown("streak", date) &&
+    !showPerfectMonth &&
+    !newBest &&
+    !improvement &&
+    !climb &&
+    !bestNews &&
+    !burst &&
+    !unlocked &&
+    !welcome &&
+    foldNotices.length === 0;
+  const quietRef = useRef(quiet);
+  quietRef.current = quiet;
+  useEffect(() => {
+    if (!isToday || feedback?.kind !== "accepted") return;
+    if (!topRankCelebrationDue(date) || headerCelebrationsHeld()) return;
+    let cancelled = false;
+    const check = window.setTimeout(() => {
+      if (!quietRef.current()) return;
+      void checkTopRank(date).then((found) => {
+        if (!found || cancelled || !quietRef.current()) return;
+        if (!showHeaderCelebration("news", date)) return;
+        markTopRankCelebrated(date);
+        sound.rising();
+        setTopRank(found);
+      });
+    }, STREAK_CHECK_DELAY_MS);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(check);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per verdict
+  }, [feedback]);
+
   // Yesterday's best word, announced as the site opens (see
   // game/bestWordNews.ts): its finder is celebrated, and a player with a few
   // days behind them who has never seen the card is told who found it, once
@@ -484,7 +535,7 @@ export default function App() {
       bestWordNewsEverShown(),
     );
     if (!kind) return;
-    const busy = showPerfectMonth || improvement || climb || burst || unlocked || welcome;
+    const busy = showPerfectMonth || improvement || climb || topRank || burst || unlocked || welcome;
     if (kind === "other" && busy) return;
     if (!showHeaderCelebration("news", date)) return;
     markBestWordNewsShown(yesterdaysBest.day);
@@ -495,7 +546,14 @@ export default function App() {
   // The achievement card's fanfare when the card actually shows, which is after
   // any card ahead of it and after the word's own burst.
   const unlockedShown =
-    !showPerfectMonth && !newBest && !improvement && !climb && !bestNews && !burst && unlocked !== null;
+    !showPerfectMonth &&
+    !newBest &&
+    !improvement &&
+    !climb &&
+    !bestNews &&
+    !topRank &&
+    !burst &&
+    unlocked !== null;
   useEffect(() => {
     if (unlockedShown) sound.achievement();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -561,6 +619,8 @@ export default function App() {
           resolved={bestNews.resolved}
           onDone={endBestNews}
         />
+      ) : topRank ? (
+        <TopRankCelebration top={topRank} onDone={endTopRank} />
       ) : burst ? (
         // Ahead of the achievement card, so a word's own moment -- a jackpot
         // stamp most of all -- plays out before the badge it earned.

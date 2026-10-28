@@ -640,7 +640,7 @@ export function trackSessionTime(report: SessionTimeReport) {
  * a display name in the analytics stream for no reason. Nothing records which
  * board was looked at, because all three are on screen at once.
  */
-export function trackLeaderboardOpened(from: "header" | "results") {
+export function trackLeaderboardOpened(from: "header" | "results" | "top_rank") {
   send("leaderboard_opened", { from, puzzle_date: todayDateString() });
   markLooked("leaderboard");
 }
