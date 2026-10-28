@@ -8,7 +8,7 @@ import { markSeen } from "./game/whatsNew";
 import { addDays } from "./game/date";
 import { checkStreakClimb } from "./game/streakClimb";
 import { claimHeaderCelebration } from "./game/headerCelebrations";
-import { checkTopRank, markTopRankCelebrated } from "./game/topRank";
+import { checkTopRank } from "./game/topRank";
 
 vi.mock("./hooks/useDailyPuzzle", () => ({ useDailyPuzzle: vi.fn() }));
 vi.mock("./hooks/useSound", () => ({ useSound: vi.fn() }));
@@ -395,17 +395,17 @@ describe("App", () => {
 
     it("is celebrated a moment after the puzzle is finished", async () => {
       vi.useFakeTimers();
-      vi.mocked(checkTopRank).mockResolvedValue({ board: "weekly", rank: 2 });
+      vi.mocked(checkTopRank).mockResolvedValue(2);
       await finish();
       expect(checkTopRank).toHaveBeenCalledWith(today);
-      expect(screen.getByText("Top 3 this week!")).toBeInTheDocument();
+      expect(screen.getByText("Top 3 today!")).toBeInTheDocument();
     });
 
     it("is looked for again when a retry's replacement word finishes the puzzle", async () => {
       vi.useFakeTimers();
       const rerender = await finish();
       expect(checkTopRank).toHaveBeenCalledTimes(1);
-      vi.mocked(checkTopRank).mockResolvedValue({ board: "daily", rank: 1 });
+      vi.mocked(checkTopRank).mockResolvedValue(1);
       // The retry takes a word back and re-opens the puzzle...
       vi.mocked(useDailyPuzzle).mockReturnValue(day(3, false, { retrySpent: true }));
       rerender(<App />);
@@ -435,27 +435,20 @@ describe("App", () => {
 
     it("is not kept away by a fold notice", async () => {
       vi.useFakeTimers();
-      vi.mocked(checkTopRank).mockResolvedValue({ board: "monthly", rank: 3 });
+      vi.mocked(checkTopRank).mockResolvedValue(3);
       await finish({ foldNotices: [{ word: "strings", base: "string", zipf: 3 }] });
-      expect(screen.getByText("Top 3 this month!")).toBeInTheDocument();
-    });
-
-    it("waits a week after the last one", async () => {
-      vi.useFakeTimers();
-      markTopRankCelebrated("2026-08-08");
-      vi.mocked(checkTopRank).mockResolvedValue({ board: "daily", rank: 1 });
-      await finish();
-      expect(checkTopRank).not.toHaveBeenCalled();
+      expect(screen.getByText("Top 3 today!")).toBeInTheDocument();
     });
 
     it("stays away on a day another header celebration had", async () => {
       vi.useFakeTimers();
       claimHeaderCelebration("streak", today);
-      vi.mocked(checkTopRank).mockResolvedValue({ board: "monthly", rank: 1 });
+      vi.mocked(checkTopRank).mockResolvedValue(1);
       await finish();
       expect(checkTopRank).not.toHaveBeenCalled();
-      expect(screen.queryByText("#1 this month!")).not.toBeInTheDocument();
+      expect(screen.queryByText("#1 today!")).not.toBeInTheDocument();
     });
+
   });
 });
 

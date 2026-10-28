@@ -67,12 +67,7 @@ import {
   markImprovementCelebrated,
   type Improvement,
 } from "./game/improvement";
-import {
-  checkTopRank,
-  markTopRankCelebrated,
-  topRankCelebrationDue,
-  type TopRank,
-} from "./game/topRank";
+import { checkTopRank } from "./game/topRank";
 import { checkStreakClimb, type StreakClimb } from "./game/streakClimb";
 import { totalRarityScore } from "./game/dictionary";
 import { addDays } from "./game/date";
@@ -184,7 +179,7 @@ export default function App() {
   const endImprovement = useCallback(() => setImprovement(null), []);
   const [climb, setClimb] = useState<StreakClimb | null>(null);
   const endClimb = useCallback(() => setClimb(null), []);
-  const [topRank, setTopRank] = useState<TopRank | null>(null);
+  const [topRank, setTopRank] = useState<number | null>(null);
   const endTopRank = useCallback(() => setTopRank(null), []);
   const [unlocked, setUnlocked] = useState<{
     key: number;
@@ -470,15 +465,15 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [climbShown]);
 
-  // A top-three place on the monthly, weekly or daily board (see
-  // game/topRank.ts), looked for a moment after today's puzzle is finished, so
-  // the last word's write has landed -- only on the finish itself, as the
-  // rising average is, so a puzzle that mounts finished looks for none. The
-  // last header celebration in priority:
-  // only once a week, and only on a day no other header celebration has had
-  // or has up, in either group. Read up front and again when the answer comes back, as one may
-  // have landed meanwhile. It waits behind a word's burst, and an achievement
-  // card waits behind it.
+  // A place in the top three of today's board (see game/topRank.ts), looked
+  // for a moment after today's puzzle is finished, so the last word's write has
+  // landed -- only on the finish itself, as the rising average is, so a puzzle
+  // that mounts finished looks for none. A retry re-opens the puzzle, so its
+  // replacement word's finish looks again. The last header celebration in
+  // priority: it shows only on a day no other header celebration has had or
+  // has up, in either group, read up front and again when the answer comes
+  // back, as one may have landed meanwhile. It waits behind a word's burst, and
+  // an achievement card waits behind it.
   const quiet = () =>
     !headerCelebrationShown("news", date) &&
     !headerCelebrationShown("streak", date) &&
@@ -494,15 +489,13 @@ export default function App() {
     const before = wasFinishedForRank.current;
     wasFinishedForRank.current = { date, finished: finishedToday };
     if (!finishedToday || before.date !== date || before.finished) return;
-    if (!topRankCelebrationDue(date)) return;
     let cancelled = false;
     const check = window.setTimeout(() => {
       if (!quietRef.current()) return;
-      void checkTopRank(date).then((found) => {
-        if (!found || cancelled || !quietRef.current()) return;
+      void checkTopRank(date).then((rank) => {
+        if (rank === null || cancelled || !quietRef.current()) return;
         if (!showHeaderCelebration("news", date)) return;
-        markTopRankCelebrated(date);
-        setTopRank(found);
+        setTopRank(rank);
       });
     }, STREAK_CHECK_DELAY_MS);
     return () => {
@@ -633,7 +626,7 @@ export default function App() {
           {burst.grand && <JackpotStamp rarity={burst.rarity} date={date} />}
         </Fragment>
       ) : topRank ? (
-        <TopRankCelebration top={topRank} onDone={endTopRank} />
+        <TopRankCelebration rank={topRank} onDone={endTopRank} />
       ) : (
         unlocked && (
           <AchievementCelebration

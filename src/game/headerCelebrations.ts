@@ -8,7 +8,7 @@
  *   the streak board (StreakClimbCelebration).
  * - **news**: yesterday's best word (BestWordNewsCard), then a perfect month
  *   (PerfectMonthCelebration), then an improving average
- *   (ImprovementCelebration), then a top-three place on a board
+ *   (ImprovementCelebration), then a top-three place on today's board
  *   (TopRankCelebration).
  *
  * The top-three card is last of all: it shows only on a day neither group has

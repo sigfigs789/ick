@@ -2,25 +2,18 @@ import { useEffect, type MouseEvent } from "react";
 import { ConfettiBurst } from "./ConfettiBurst";
 import { trackLeaderboardOpened } from "../analytics";
 import { navigate, pathFor } from "../routes";
-import type { TopRank, TopRankBoard } from "../game/topRank";
 
 /** How long the card stays up if nobody closes it, as the streak climb's does. */
 const CELEBRATION_MS = 7000;
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
-const WINDOW: Record<TopRankBoard, string> = {
-  daily: "today",
-  weekly: "this week",
-  monthly: "this month",
-};
-
 /**
- * A place in the top three of the daily, weekly or monthly board (see
- * game/topRank.ts): the climb's card, in yesterday's-best gold, with the
- * medal for the place and a link to the board itself.
+ * A place in the top three of today's board (see game/topRank.ts): the
+ * climb's card, in yesterday's-best gold, with the medal for the place and a
+ * link to the board itself.
  */
-export function TopRankCelebration({ top, onDone }: { top: TopRank; onDone: () => void }) {
+export function TopRankCelebration({ rank, onDone }: { rank: number; onDone: () => void }) {
   useEffect(() => {
     const timeout = window.setTimeout(onDone, CELEBRATION_MS);
     return () => window.clearTimeout(timeout);
@@ -36,7 +29,6 @@ export function TopRankCelebration({ top, onDone }: { top: TopRank; onDone: () =
     navigate("leaderboard");
   }
 
-  const { board, rank } = top;
   return (
     <>
       <ConfettiBurst rising />
@@ -48,11 +40,9 @@ export function TopRankCelebration({ top, onDone }: { top: TopRank; onDone: () =
           <span className="improvement__icon" aria-hidden="true">
             {MEDALS[rank - 1]}
           </span>
-          <span className="improvement__title">
-            {rank === 1 ? `#1 ${WINDOW[board]}!` : `Top 3 ${WINDOW[board]}!`}
-          </span>
+          <span className="improvement__title">{rank === 1 ? "#1 today!" : "Top 3 today!"}</span>
           <span className="improvement__body">
-            You're <span className="improvement__gain">#{rank}</span> on the {board} board.
+            You're <span className="improvement__gain">#{rank}</span> on today's board.
           </span>
           <a className="improvement__link" href={pathFor("leaderboard")} onClick={seeBoard}>
             See the leaderboard
