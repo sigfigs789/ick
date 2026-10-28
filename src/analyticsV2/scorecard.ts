@@ -118,6 +118,9 @@ export function windowOf(report: Report): Range {
 /** The least cohort a rate is judged over; under it the row says it is too early. */
 export const LEAST = 30;
 
+/** Activation is judged sooner: a first visit is cheap to count, and the page wants the read early. */
+export const LEAST_FIRST_VISITS = 10;
+
 function retentionRow(metric: string, n: number, rate: Rate, bands: Row["bands"], marks: Marks): Row {
   const ok = rate.cohort >= LEAST;
   return {
@@ -177,13 +180,13 @@ export function scorecard(report: Report, span: Range = windowOf(report)): Row[]
     {
       metric: "Activation",
       bands: { nowhere: "Under 30%", promising: "40–59%", great: "60%+" },
-      value: w.firstVisits >= LEAST ? percent(w.firstVisitPlayed / w.firstVisits) : null,
-      points: w.firstVisits >= LEAST ? whole(w.firstVisitPlayed / w.firstVisits) : null,
-      standing: w.firstVisits >= LEAST ? stand(w.firstVisitPlayed / w.firstVisits, ACTIVATION_MARKS) : null,
+      value: w.firstVisits >= LEAST_FIRST_VISITS ? percent(w.firstVisitPlayed / w.firstVisits) : null,
+      points: w.firstVisits >= LEAST_FIRST_VISITS ? whole(w.firstVisitPlayed / w.firstVisits) : null,
+      standing: w.firstVisits >= LEAST_FIRST_VISITS ? stand(w.firstVisitPlayed / w.firstVisits, ACTIVATION_MARKS) : null,
       detail:
-        w.firstVisits >= LEAST
+        w.firstVisits >= LEAST_FIRST_VISITS
           ? `${count(w.firstVisitPlayed)} of ${count(w.firstVisits)} first-time visitors banked a word`
-          : `needs ${LEAST} first-time visitors`,
+          : `needs ${LEAST_FIRST_VISITS} first-time visitors`,
       how:
         "Of first-time visitors in the window, the share who banked a word. The table has no activation row, so " +
         "these marks are the page's: under 30% is going nowhere, 40% promising, 60% great.",
