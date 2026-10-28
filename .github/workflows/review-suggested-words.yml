@@ -1,0 +1,239 @@
+name: Review suggested words
+
+# Every day, Claude judges the words waiting on /suggested-words and opens ONE
+# draft pull request with every verdict and its reason.
+#
+#   1. The untriaged rows (`word_sightings.status` 'new') come off production
+#      through `list_suggested_words`, the function the page itself reads.
+#   2. scripts/suggestion-review/facts.mts asks the game's own code what it makes
+#      of each word today: in the curated list, in the corpus and with which
+#      tags, playable in Standard and Freeform or refused and why.
+#   3. Claude Code, on the CLI, judges each word by
+#      scripts/suggestion-review/RUBRIC.md -- when in doubt, accept; reject only
+#      misspellings, non-words, run-together phrases, foreign and offensive
+#      words -- estimates a Zipf for each word nothing measures, and writes
+#      .tmp/verdicts.json.
+#   4. `review.py add` puts every accepted word that does not already play on
+#      the suggested list (scripts/suggested-words.txt), the way "Add a word"
+#      does, and facts.mts runs again to check each one now plays.
+#   5. `review.py ledger` writes scripts/suggestion-review/verdicts/<date>-<run>.json
+#      and the PR body: accepted and rejected words, each with its reason.
+#   6. Once the PR is open, the queue is marked: rejected words get their cross
+#      on /suggested-words straight away, and accepted words go to 'deferred' --
+#      still unmarked on the page, but out of tomorrow's run. Every judged word
+#      also gets its Zipf on the page: the game's own measurement where it has
+#      one, else Claude's estimate, which the page marks "est.". Accepted words
+#      nothing measures carry that estimate into the game as a batch in
+#      src/data/estimated-zipf/, from two days out.
+#
+# Merging the PR ticks the accepted words (suggested-words-merged.yml). The tick
+# is the mark the game already watches: each player who suggested one is
+# thanked over the puzzle and earns 📖 In the dictionary (src/game/suggestions.ts).
+# Closing the PR unmerged puts its accepted words back on the queue.
+#
+#   gh workflow run review-suggested-words.yml --repo sigfigs789/ick
+#
+# Needs CLAUDE_CODE_OAUTH_TOKEN (Claude subscription, `claude setup-token`) and
+# SUPABASE_ACCESS_TOKEN (the one supabase-migrations.yml uses). The PR is opened
+# with the built-in GITHUB_TOKEN, so "Test" does not run on it; this job runs
+# the checks itself.
+
+on:
+  schedule:
+    # Off the hour: GitHub drops :00 schedules under load.
+    - cron: "41 15 * * *"
+  workflow_dispatch:
+    inputs:
+      model:
+        description: Claude model to judge with
+        required: false
+        default: claude-opus-5-5
+        type: choice
+        options:
+          - claude-opus-5-5
+          - claude-sonnet-5-5
+          - claude-fable-5-1
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: review-suggested-words
+  cancel-in-progress: false
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: hjjdnbftdwswkfqnsejt
+      MODEL: ${{ inputs.model || 'claude-opus-5-5' }}
+
+    steps:
+      - name: Check for the tokens
+        run: |
+          missing=0
+          [ -n "$CLAUDE_CODE_OAUTH_TOKEN" ] || { echo "::error::Add a CLAUDE_CODE_OAUTH_TOKEN repository secret (from \`claude setup-token\`)."; missing=1; }
+          [ -n "$SUPABASE_ACCESS_TOKEN" ] || { echo "::error::Add a SUPABASE_ACCESS_TOKEN repository secret."; missing=1; }
+          exit $missing
+
+      - name: Check out WordInk
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          python -m pip install wordfreq==3.1.1
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Read the queue
+        id: queue
+        run: |
+          set -euo pipefail
+          mkdir -p .tmp
+          supabase link --project-ref "$PROJECT_REF"
+          supabase db query --linked --agent no --output-format json \
+            "select word, origin, zipf, suggestions, first_at from public.list_suggested_words(500) where status = 'new'" \
+            > .tmp/queue-raw.json
+          # A bare array of rows; agent mode wraps it in { rows }, so take either.
+          jq 'if type == "array" then . else .rows end' .tmp/queue-raw.json > .tmp/queue.json
+          count=$(jq 'length' .tmp/queue.json)
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+          echo "$count untriaged word(s): $(jq -r '[.[].word] | join(", ")' .tmp/queue.json)"
+
+      - name: Ask the game about each word
+        if: steps.queue.outputs.count != '0'
+        run: |
+          ./node_modules/.bin/vite-node scripts/suggestion-review/facts.mts -- \
+            --queue .tmp/queue.json --date "${{ steps.queue.outputs.date }}" --out .tmp/facts.json
+
+      - name: Install Claude Code
+        if: steps.queue.outputs.count != '0'
+        # @latest: an unpinned install has restored a version the API refuses.
+        run: npm install -g @anthropic-ai/claude-code@latest
+
+      - name: Judge the words with Claude
+        if: steps.queue.outputs.count != '0'
+        run: |
+          set -uo pipefail
+          claude -p "Read scripts/suggestion-review/RUBRIC.md and do exactly what it asks." \
+            --model "$MODEL" --max-turns 80 \
+            --allowedTools "Read,Write,WebSearch,WebFetch" \
+            > .tmp/claude.log 2>&1 || echo "::warning::Claude exited non-zero: $(tail -c 500 .tmp/claude.log)"
+          # A run that wrote nothing has judged nothing, however green it looks.
+          [ -s .tmp/verdicts.json ] || { echo "::error::No .tmp/verdicts.json came back."; tail -c 2000 .tmp/claude.log; exit 1; }
+
+      - name: Keep the well-formed verdicts
+        if: steps.queue.outputs.count != '0'
+        run: |
+          python scripts/suggestion-review/review.py check \
+            --facts .tmp/facts.json --verdicts .tmp/verdicts.json --out .tmp/judged.json
+
+      - name: Add the accepted words to the dictionary
+        if: steps.queue.outputs.count != '0'
+        run: |
+          python scripts/suggestion-review/review.py add --judged .tmp/judged.json
+          # Every accepted word should play now; the ledger flags any that don't.
+          ./node_modules/.bin/vite-node scripts/suggestion-review/facts.mts -- \
+            --queue .tmp/queue.json --date "${{ steps.queue.outputs.date }}" --out .tmp/facts-after.json
+
+      - name: Write the ledger and the PR body
+        if: steps.queue.outputs.count != '0'
+        run: |
+          python scripts/suggestion-review/review.py ledger \
+            --judged .tmp/judged.json --verified .tmp/facts-after.json --model "$MODEL" \
+            --name "${{ steps.queue.outputs.date }}-${{ github.run_number }}" \
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --summary-out .tmp/summary.md
+          cat .tmp/summary.md >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "body<<SUMMARY_EOF"
+            cat .tmp/summary.md
+            echo
+            echo "🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+            echo "SUMMARY_EOF"
+          } >> "$GITHUB_ENV"
+
+      - name: Verify the dictionary and estimates load, and the app builds
+        if: steps.queue.outputs.count != '0'
+        run: |
+          npx vitest run src/game/dictionary.test.ts src/game/estimated-zipf.test.ts
+          npm run build
+
+      - name: Update the coverage snapshot
+        if: steps.queue.outputs.count != '0'
+        # An added word or a recorded estimate moves the measured / estimated /
+        # unattested counts, so the PR carries the new snapshot.
+        run: npx vitest run -u src/game/zipf-coverage.test.ts
+
+      - name: Open draft pull request
+        id: pr
+        if: steps.queue.outputs.count != '0'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: main
+          branch: automated/suggested-words-${{ steps.queue.outputs.date }}-${{ github.run_number }}
+          delete-branch: true
+          draft: true
+          commit-message: "Review suggested words, ${{ steps.queue.outputs.date }}"
+          title: "Review suggested words, ${{ steps.queue.outputs.date }}"
+          body: ${{ env.body }}
+          add-paths: |
+            scripts/suggestion-review/verdicts/
+            scripts/suggested-words.txt
+            src/data/estimated-zipf/
+            src/data/zipf-coverage.json
+            src/data/dictionary.json
+            src/data/rarity.json
+            src/data/rarity-legacy.json
+            src/data/rejection-metadata.json
+            src/game/dictionary.test.ts
+
+      - name: Mark the queue
+        if: steps.pr.outputs.pull-request-url != ''
+        # After the PR, so a run that fails earlier leaves every word 'new' for
+        # tomorrow. Rejections show their cross now; acceptances wait on the PR.
+        run: |
+          set -euo pipefail
+          R=scripts/suggestion-review/review.py
+          python $R sql --judged .tmp/judged.json --status rejected > .tmp/mark.sql
+          python $R sql --judged .tmp/judged.json --status deferred >> .tmp/mark.sql
+          # The Zipf goes on after the marks, which give every judged word a row:
+          # the game's own measurement, or Claude's estimate (shown as "est.").
+          python $R zipf-sql --judged .tmp/judged.json >> .tmp/mark.sql
+          if [ -s .tmp/mark.sql ]; then
+            cat .tmp/mark.sql
+            supabase db query --linked --agent no -f .tmp/mark.sql
+          fi
+
+      - name: Report the result
+        env:
+          PR_URL: ${{ steps.pr.outputs.pull-request-url }}
+        run: |
+          if [ -n "$PR_URL" ]; then
+            echo "Opened $PR_URL" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No PR: nothing waiting on the queue." | tee -a "$GITHUB_STEP_SUMMARY"
+          fi

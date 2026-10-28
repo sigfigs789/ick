@@ -1,0 +1,81 @@
+name: Settle reviewed suggestions
+
+# The other half of review-suggested-words.yml. When one of its pull requests
+# closes, the words it accepted leave 'deferred':
+#
+#   merged      -> 'accepted': the tick on /suggested-words. The game asks for a
+#                  player's own suggestions and their marks (list_player_suggestions)
+#                  every few hours while one is waiting, so each player who
+#                  suggested one of these words is thanked over the puzzle and
+#                  earns 📖 In the dictionary -- see src/game/suggestions.ts and
+#                  components/SuggestionAcceptedNotice.tsx. The ledger's rejected
+#                  words are marked again too, so a call moved to `rejected` on
+#                  the PR is crossed out.
+#   closed      -> back to 'new', so the next daily run judges them again. Only
+#                  words still 'deferred' move; a mark set by hand since stays.
+#
+# The ledger read is the PR's own: scripts/suggestion-review/verdicts/*.json
+# files the PR added, as they stood when it closed.
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: settle-suggestions-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  settle:
+    if: >-
+      startsWith(github.event.pull_request.head.ref, 'automated/suggested-words-') &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: hjjdnbftdwswkfqnsejt
+      MERGED: ${{ github.event.pull_request.merged }}
+
+    steps:
+      - name: Check out the PR as it closed
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Mark the words
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          supabase link --project-ref "$PROJECT_REF"
+          ledgers=$(git diff --name-only --diff-filter=A "$BASE_SHA...$HEAD_SHA" -- 'scripts/suggestion-review/verdicts/*.json')
+          if [ -z "$ledgers" ]; then
+            echo "No verdict ledger in this PR; nothing to settle."
+            exit 0
+          fi
+          if [ "$MERGED" = "true" ]; then statuses="accepted rejected"; else statuses="new"; fi
+          for ledger in $ledgers; do
+            for status in $statuses; do
+              python scripts/suggestion-review/review.py sql --ledger "$ledger" --status "$status" > settle.sql
+              if [ -s settle.sql ]; then
+                cat settle.sql | tee -a "$GITHUB_STEP_SUMMARY"
+                supabase db query --linked --agent no -f settle.sql
+              fi
+            done
+          done
