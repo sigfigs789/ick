@@ -63,12 +63,15 @@ REASON_MAX = 200
 BODY_MAX = 60_000
 
 # A short word is more often one somebody knows, so its estimate is nudged a
-# little more common -- a slightly lower score than Claude's guess alone gives.
-# Small on purpose: in the deep tail (Zipf 1 down to -1.57 spans 9.9..10.00) it
-# is about a hundredth of a point. Applied when the batch is recorded, so a
+# little more common -- a slightly lower score than Claude's guess alone gives,
+# by at most 0.03. The deep tail (Zipf 1 down to the -1.57 floor) spans 9.9..10.00,
+# 0.1 over 2.57 Zipf, so 0.77 Zipf there is 0.03 of score. Above Zipf 1 the
+# measured curve moves about a point per Zipf, so the nudge stops at Zipf 1 and a
+# guess at or above it is left alone. Applied when the batch is recorded, so a
 # batch already in src/data/estimated-zipf/ keeps the numbers it shipped with.
 SHORT_WORD_MAX_LEN = 4
-SHORT_WORD_ZIPF_BUMP = 0.25
+SHORT_WORD_ZIPF_BUMP = 0.77
+SHORT_WORD_BUMP_CEILING = 1.0
 
 # The words the PR body shows besides the played ones: those that fall
 # furthest from 10.00, then an even spread across the Zipf bands.
@@ -199,7 +202,7 @@ def parse_estimates(raw: str, asked: list[dict]) -> dict[str, Estimate]:
     """The estimates Claude wrote, kept only where the Zipf is a finite number in
     range for a word it was asked about. Anything else is dropped, not fixed. A
     missing reason only blanks that column. A word under five letters gets the
-    SHORT_WORD_ZIPF_BUMP on top of the guess."""
+    SHORT_WORD_ZIPF_BUMP on top of the guess, up to SHORT_WORD_BUMP_CEILING."""
     wanted = {c["word"] for c in asked}
     out: dict[str, Estimate] = {}
     for item in json.loads(raw).get("estimates", []):
@@ -208,8 +211,8 @@ def parse_estimates(raw: str, asked: list[dict]) -> dict[str, Estimate]:
         word, zipf = str(item.get("word", "")).strip().lower(), _number(item.get("zipf"))
         if word not in wanted or zipf is None or not ZIPF_MIN <= zipf <= ZIPF_MAX:
             continue
-        if len(word) <= SHORT_WORD_MAX_LEN:
-            zipf = min(zipf + SHORT_WORD_ZIPF_BUMP, ZIPF_MAX)
+        if len(word) <= SHORT_WORD_MAX_LEN and zipf < SHORT_WORD_BUMP_CEILING:
+            zipf = min(zipf + SHORT_WORD_ZIPF_BUMP, SHORT_WORD_BUMP_CEILING)
         reason = " ".join(str(item.get("reason") or "").split())
         if len(reason) > REASON_MAX:
             reason = reason[: REASON_MAX - 1].rstrip() + "…"
@@ -384,8 +387,9 @@ def summary(report: dict, estimates: dict[str, Estimate], scores: dict, model: s
         "fire `estimated_score_used`, which feed the **Claude-estimated scores** section "
         "on /analytics.",
         "",
-        f"Words under five letters carry +{SHORT_WORD_ZIPF_BUMP} Zipf on top of Claude's guess "
-        "(already included below), so a short word scores a little lower.",
+        f"Words under five letters carry up to +{SHORT_WORD_ZIPF_BUMP} Zipf on top of Claude's "
+        f"guess, stopping at Zipf {SHORT_WORD_BUMP_CEILING:g} (already included below), so a "
+        "short word scores at most 0.03 lower.",
         "",
         f"**Merge before {report['date']}**, or the batch re-prices a puzzle that is "
         "already being played.",
