@@ -3,8 +3,9 @@
 // /feedback.
 //
 // GET /api/review?list=suggested-words&limit=200
-//   -> { words: [{ word, origin, zipf, pos, firstUse, mwSource, lookups,
-//                  suggestions, firstAt, lastAt, mark, liveApproved }] }
+//   -> { words: [{ word, origin, zipf, zipfEstimate, pos, firstUse, mwSource,
+//                  lookups, suggestions, suggestedBy, suggesters, firstAt,
+//                  lastAt, mark, liveApproved }] }
 // GET /api/review?list=feedback&limit=200
 //   -> { feedback: [{ id, text, at, mark }] }
 // GET /api/review?list=freeform&limit=200
@@ -91,6 +92,7 @@
 // be handed to the next caller, and a triage list read once in a while is not
 // the sort of traffic a cache is for.
 
+import { handleFor } from "../src/game/handle";
 import { rpc, supabaseConfigured } from "./_supabase";
 
 export const config = { runtime: "edge" };
@@ -126,6 +128,10 @@ interface SuggestedRow {
   status: string | null;
   /** playable | unknown | suggested: the live MW verdict, when there was one. */
   outcome: string | null;
+  /** The player ids that suggested it, earliest first. Never sent on. */
+  suggesters: string[] | null;
+  /** Claude's estimated Zipf, from the daily suggestion review. */
+  zipf_estimate: number | string | null;
 }
 
 /** One row as `list_player_suggestions` returns it. */
@@ -521,11 +527,17 @@ async function handleGet(request: Request): Promise<Response> {
         word: row.word,
         origin: row.origin,
         zipf: num(row.zipf),
+        zipfEstimate: num(row.zipf_estimate),
         pos: row.pos ?? [],
         firstUse: row.first_use,
         mwSource: row.mw_source,
         lookups: num(row.lookups) ?? 0,
         suggestions: num(row.suggestions) ?? 0,
+        // Who asked, as the board names them: the first player's handle and
+        // how many players asked in all. The ids stay here -- a handle is all
+        // anybody else ever sees of a player.
+        suggestedBy: row.suggesters?.length ? handleFor(row.suggesters[0]) : null,
+        suggesters: row.suggesters?.length ?? 0,
         firstAt: row.first_at,
         lastAt: row.last_at,
         mark: asMark(row.status),

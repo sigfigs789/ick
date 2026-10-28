@@ -175,6 +175,44 @@ describe("SuggestedWordsPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("names who suggested a word, and how many others asked", async () => {
+    stubFetch([
+      { ...WORDS[0], word: "blorp", suggestions: 4, suggestedBy: "StormyFox47", suggesters: 3 },
+      { ...WORDS[0], word: "zorp", suggestions: 2, suggestedBy: "CalmOtter12", suggesters: 2 },
+      { ...WORDS[0], word: "glorp", suggestions: 1, suggestedBy: "MistyLark3", suggesters: 1 },
+      // Played and asked for: both are said.
+      { ...WORDS[1], word: "susurrus", liveApproved: true, suggestedBy: "BoldIvy8", suggesters: 1 },
+    ]);
+    render(<SuggestedWordsPage />);
+
+    await screen.findByText("blorp");
+    const row = (word: string) => within(screen.getByText(word).closest("li") as HTMLElement);
+    expect(row("blorp").getByText("suggested by StormyFox47 and 2 other people")).toBeInTheDocument();
+    expect(row("zorp").getByText("suggested by CalmOtter12 and 1 other person")).toBeInTheDocument();
+    expect(row("glorp").getByText("suggested by MistyLark3")).toBeInTheDocument();
+    expect(row("blorp").queryByText("4 suggestions")).not.toBeInTheDocument();
+    expect(row("susurrus").getByText("played")).toBeInTheDocument();
+    expect(row("susurrus").getByText("suggested by BoldIvy8")).toBeInTheDocument();
+  });
+
+  it("shows an estimated score, marked as one, where nothing measures the word", async () => {
+    stubFetch([
+      { ...WORDS[0], word: "blorp", zipf: null, zipfEstimate: 1.42 },
+      { ...WORDS[0], word: "zorp", zipf: null, zipfEstimate: null },
+    ]);
+    render(<SuggestedWordsPage />);
+
+    await screen.findByText("blorp");
+    const estimated = within(screen.getByText("blorp").closest("li") as HTMLElement);
+    // The same score a measured 1.42 shows (enshittification's 9.3), with "est."
+    expect(estimated.getByText("9.3", { exact: false })).toBeInTheDocument();
+    expect(estimated.getByText("est.")).toBeInTheDocument();
+    expect(estimated.queryByText("TBD")).not.toBeInTheDocument();
+    expect(
+      within(screen.getByText("zorp").closest("li") as HTMLElement).getByText("TBD"),
+    ).toBeInTheDocument();
+  });
+
   it("names the fault when a word has a reviewed rejection on file", async () => {
     // Both are in the shipped rejection ledger: absconce as not-a-word, dremel
     // as a proper noun (a brand name).
