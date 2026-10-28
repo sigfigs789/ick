@@ -156,6 +156,14 @@ describe("achievements", () => {
     expect(words.progress).toEqual({ current: 2, target: 500 });
   });
 
+  it("dates a Straight in to the first puzzle opened with a win", () => {
+    const history = [
+      day("2026-10-01", [word("Common"), word("Rare")]),
+      day("2026-10-02", [word("Elusive"), word("Common")]),
+    ];
+    expect(statusOf("straight-in", { history }).earnedOn).toBe("2026-10-02");
+  });
+
   it("needs a win with nothing turned away for Clean copy", () => {
     const history = [
       day("2026-10-01", [word("Rare")], { rejectedAttempts: ["inkk"] }),
@@ -272,6 +280,16 @@ describe("newlyEarned", () => {
     expect(ids).toContain("small-but-mighty");
     expect(ids).not.toContain("short-king");
     expect(ids).not.toContain("word-suggested");
+  });
+
+  it("keeps the quiet ones off the card, though they are earned", () => {
+    const statuses = achievementStatuses(record, {}, TODAY);
+    const quiet = ["first-word", "first-win", "straight-in", "triple-letter"];
+    for (const id of quiet) expect(ACHIEVEMENTS.find((a) => a.id === id)?.quiet).toBe(true);
+    expect(earnedIds(statuses).has("first-word")).toBe(true);
+    const announced = newlyEarned(new Set(), statuses).map((a) => a.id);
+    expect(announced.filter((id) => quiet.includes(id))).toEqual([]);
+    expect(achievementsToCatchUp(new Set(), statuses).map((a) => a.id)).not.toContain("first-word");
   });
 
   it("lists nothing when nothing changed", () => {
@@ -535,6 +553,7 @@ describe("the fun badges", () => {
     expect(one("rhythm-nation", "rhythm")).toBe("2026-10-01");
     expect(one("q-without-u", "qatar")).toBe("2026-10-01");
     expect(one("q-without-u", "quick")).toBeNull();
+    expect(one("triple-letter", "banana")).toBe("2026-10-01");
     expect(one("double-dip", "inking")).toBeNull();
     expect(one("double-dip", "inkinky")).toBe("2026-10-01");
   });
