@@ -26,6 +26,7 @@ import type { HeaderCelebrationsVariant } from "./game/headerCelebrationsTest";
 import type { InputPlacementVariant } from "./game/inputPlacementTest";
 import type { PlayTabVariant } from "./game/playTabTest";
 import type { ShareNameVariant } from "./game/shareNameTest";
+import type { ShareTintVariant } from "./game/shareTintTest";
 import type { WordOfDayVariant } from "./game/wordOfDay";
 import { APP_VERSION } from "./version";
 import { isBotUserAgent } from "./game/botUa";
@@ -940,6 +941,23 @@ export function trackInputPlacementAssigned(placement: InputPlacementVariant, da
  */
 export function trackPlayTabAssigned(variant: PlayTabVariant, date: string, returning: boolean) {
   send("play_tab_assigned", {
+    variant,
+    returning,
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
+    live_date: todayDateString(),
+    mode: modeOf(date),
+  });
+}
+
+/**
+ * The share tint test's draw (see game/shareTintTest.ts), once per player, the
+ * first time their words average Extremely Rare with a Share button on the
+ * page. Shaped like the share name test's, for `analytics_v2_experiment`:
+ * `shown` is the tinted buttons, `hidden` the plain ones.
+ */
+export function trackShareTintAssigned(variant: ShareTintVariant, date: string, returning: boolean) {
+  send("share_tint_assigned", {
     variant,
     returning,
     puzzle_date: date,

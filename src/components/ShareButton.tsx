@@ -9,9 +9,11 @@ interface Props {
   onShared?: () => void;
   /** The tier the button burns in, or none (see game/shareFlames.ts). */
   flames?: FlameTier | null;
+  /** Filled with the Extremely Rare colour (see game/shareTintTest.ts). */
+  tinted?: boolean;
 }
 
-export function ShareButton({ text, onShared, flames = null }: Props) {
+export function ShareButton({ text, onShared, flames = null, tinted = false }: Props) {
   const [copied, setCopied] = useState(false);
 
   async function handleClick() {
@@ -24,7 +26,7 @@ export function ShareButton({ text, onShared, flames = null }: Props) {
   return (
     <button
       type="button"
-      className={`share-button${shareFlamesClass(flames)}`}
+      className={`share-button${shareFlamesClass(flames)}${tinted && !flames ? " share-tint" : ""}`}
       onClick={handleClick}
       aria-live="polite"
     >

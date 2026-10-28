@@ -6456,6 +6456,18 @@ button.app__menu-item + button.app__menu-item {
   background: var(--accent-hover);
 }
 
+/* The share tint test (see game/shareTintTest.ts): a Share button filled
+   with the Extremely Rare colour while the player's words average Extremely
+   Rare. Set on :hover too, so the plain buttons' hover colour never drops it. */
+.share-tint:not(:disabled),
+.share-tint:not(:disabled):hover {
+  background: var(--rarity-extremely-rare-dot);
+  color: #fff;
+}
+.share-tint:not(:disabled):hover {
+  filter: brightness(1.08);
+}
+
 /* The Share buttons on fire (see game/shareFlames.ts): a Share button
    engulfed in the colour of the tier the player's words average. Its whole
    fill turns to fire -- hottest at the bottom, the tier's colour at the top --

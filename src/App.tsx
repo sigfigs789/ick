@@ -30,6 +30,7 @@ import { useAcceptedSuggestions } from "./hooks/useAcceptedSuggestions";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { useInputPlacement } from "./hooks/useInputPlacement";
 import { shareFlameTier } from "./game/shareFlames";
+import { useShareTint } from "./hooks/useShareTint";
 import { isWinningRarity } from "./game/rank";
 import { celebrationFor } from "./game/celebration";
 import {
@@ -506,6 +507,10 @@ export default function App() {
   // The tier both Share buttons burn in once the words average Elusive or
   // better (see game/shareFlames.ts).
   const shareFlames = shareFlameTier(progress.acceptedWords, date);
+  // Whether they take the Extremely Rare colour instead, by the share tint
+  // test (see game/shareTintTest.ts), drawn the first time the words average
+  // Extremely Rare -- always with the Share beside the log showing.
+  const shareTint = useShareTint(progress.acceptedWords, date);
   const guessEntry = (
     <>
       {!progress.completed && (
@@ -648,6 +653,7 @@ export default function App() {
                 mode={progress.mode}
                 onShared={() => setShareRequests((n) => n + 1)}
                 flames={shareFlames}
+                tinted={shareTint}
               />
             ) : undefined
           }
@@ -706,6 +712,7 @@ export default function App() {
             collapsible
             scrollSignal={shareRequests}
             flames={shareFlames}
+            tinted={shareTint}
           />
         )}
 

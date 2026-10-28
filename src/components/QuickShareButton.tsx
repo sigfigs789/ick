@@ -22,6 +22,8 @@ interface Props {
   onShared?: () => void;
   /** The tier the button burns in, or none (see game/shareFlames.ts). */
   flames?: FlameTier | null;
+  /** Filled with the Extremely Rare colour (see game/shareTintTest.ts). */
+  tinted?: boolean;
 }
 
 /**
@@ -32,7 +34,7 @@ interface Props {
  * the moment of the tap from the same saved choices the panel reads and writes
  * (answers shown, username on or off), so the two can never disagree.
  */
-export function QuickShareButton({ date, drop, words, streak, isToday, mode, onShared, flames = null }: Props) {
+export function QuickShareButton({ date, drop, words, streak, isToday, mode, onShared, flames = null, tinted = false }: Props) {
   const [copied, setCopied] = useState(false);
 
   async function share() {
@@ -57,7 +59,7 @@ export function QuickShareButton({ date, drop, words, streak, isToday, mode, onS
   return (
     <button
       type="button"
-      className={`quick-share${shareFlamesClass(flames)}`}
+      className={`quick-share${shareFlamesClass(flames)}${tinted && !flames ? " share-tint" : ""}`}
       onClick={() => void share()}
       aria-live="polite"
     >
