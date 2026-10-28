@@ -18,13 +18,13 @@ describe("AchievementCelebration", () => {
   it("lists several at once", () => {
     render(
       <AchievementCelebration
-        achievements={[byId("first-word"), byId("first-win"), byId("first-legend")]}
+        achievements={[byId("streak-3"), byId("first-extremely-rare"), byId("first-legend")]}
         onDone={() => {}}
       />
     );
     expect(screen.getByText("3 achievements unlocked")).toBeInTheDocument();
-    expect(screen.getByText("First ink")).toBeInTheDocument();
-    expect(screen.getByText("On the board")).toBeInTheDocument();
+    expect(screen.getByText("Hat trick")).toBeInTheDocument();
+    expect(screen.getByText("Sharp eye")).toBeInTheDocument();
     expect(screen.getByText("Living legend")).toBeInTheDocument();
   });
 
@@ -43,7 +43,7 @@ describe("AchievementCelebration", () => {
   it("names no more than three, however many a word earns", () => {
     render(
       <AchievementCelebration
-        achievements={[byId("first-word"), byId("first-win"), byId("first-legend"), byId("streak-7")]}
+        achievements={[byId("streak-3"), byId("first-extremely-rare"), byId("first-legend"), byId("streak-7")]}
         onDone={() => {}}
       />
     );
@@ -55,14 +55,14 @@ describe("AchievementCelebration", () => {
   it("goes by itself after a while", () => {
     vi.useFakeTimers();
     const onDone = vi.fn();
-    render(<AchievementCelebration achievements={[byId("first-word")]} onDone={onDone} />);
+    render(<AchievementCelebration achievements={[byId("first-legend")]} onDone={onDone} />);
     act(() => vi.advanceTimersByTime(7000));
     expect(onDone).toHaveBeenCalled();
   });
 
   it("goes on a tap of its ×, but not on a tap elsewhere on it", () => {
     const onDone = vi.fn();
-    render(<AchievementCelebration achievements={[byId("first-word")]} onDone={onDone} />);
+    render(<AchievementCelebration achievements={[byId("first-legend")]} onDone={onDone} />);
     fireEvent.click(document.querySelector(".improvement__card")!);
     expect(onDone).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));

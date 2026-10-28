@@ -293,14 +293,14 @@ export default function App() {
   // page.
   //
   // Both are kept from the players the header celebrations test hides the
-  // cards from, but are never the thing that draws a player into it: every
-  // player earns a badge on their first word, which would enrol them all on
-  // day one. A badge kept from them is not marked announced, so it is welcomed
-  // if the cards ever come back.
+  // cards from, but are never the thing that draws a player into it: most
+  // players earn a badge on their first puzzle, which would enrol nearly all
+  // of them on day one. A badge kept from them is not marked announced, so it
+  // is welcomed if the cards ever come back.
   //
   // A new player hears of none of it until their fourth banked word (see
   // headerCelebrationsHeld): that word's card names every badge held back
-  // until then -- First ink, at least -- along with any it earned itself.
+  // until then along with any it earned itself.
   const earnedAchievements = useRef<Set<string> | null>(null);
   const achievementsHeld = useRef(headerCelebrationsHeld());
   useEffect(() => {
