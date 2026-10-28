@@ -85,6 +85,12 @@ export interface Achievement {
    */
   viaSuggestions?: true;
   /**
+   * Earned by most players on their first puzzle, so kept on the Stats page but
+   * never announced by the celebration card (see `newlyEarned`): a card for each
+   * would spend the fun of earning one on day one.
+   */
+  quiet?: true;
+  /**
    * What simply playing on counts toward, for one earned by coming back (see
    * game/comeBack.ts): the current streak, days played, or words banked.
    */
@@ -621,6 +627,24 @@ function dropTwice(word: string, progress: DailyProgress): boolean {
 
 export const ACHIEVEMENTS: readonly Achievement[] = [
   {
+    id: "first-word",
+    group: "Getting started",
+    icon: "✒️",
+    title: "First ink",
+    description: "Bank your first word.",
+    check: firstPuzzle((progress) => progress.acceptedWords.length > 0),
+    quiet: true,
+  },
+  {
+    id: "first-win",
+    group: "Getting started",
+    icon: "🎯",
+    title: "On the board",
+    description: "Find a Rare or better word.",
+    check: firstWord(isWinningRarity),
+    quiet: true,
+  },
+  {
     id: "days-10",
     group: "Getting started",
     icon: "📅",
@@ -1017,6 +1041,18 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     check: firstPuzzle(everyGuess(isWinningRarity)),
   },
   {
+    id: "straight-in",
+    group: "Style",
+    icon: "🏹",
+    title: "Straight in",
+    description: "Make the first word of a puzzle Rare or better.",
+    check: firstPuzzle(
+      (progress) =>
+        progress.acceptedWords.length > 0 && isWinningRarity(progress.acceptedWords[0].rarity)
+    ),
+    quiet: true,
+  },
+  {
     id: "clean-copy",
     group: "Style",
     icon: "📝",
@@ -1175,6 +1211,15 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "The quick brown fox",
     description: "Use every letter of the alphabet across the words you bank.",
     check: lettersSeen(26, (word) => word),
+  },
+  {
+    id: "triple-letter",
+    group: "Style",
+    icon: "📺",
+    title: "Three's Company",
+    description: "Bank a word with one letter in it three times.",
+    check: anyWord((word) => /(.).*\1.*\1/.test(word)),
+    quiet: true,
   },
   {
     id: "short-king",
@@ -1628,14 +1673,17 @@ export function earnedIds(statuses: readonly AchievementStatus[]): Set<string> {
  * The achievements in `statuses` earned since `before` (see earnedIds), for
  * the card that celebrates them (see components/AchievementCelebration.tsx).
  * The suggestion box's two are left out: each is announced where it is earned,
- * by the box itself and by the thank-you for an accepted word.
+ * by the box itself and by the thank-you for an accepted word. So are the quiet
+ * ones, which are never announced at all.
  */
 export function newlyEarned(
   before: ReadonlySet<string>,
   statuses: readonly AchievementStatus[]
 ): Achievement[] {
   return statuses.flatMap(({ achievement, earnedOn }) =>
-    earnedOn && !before.has(achievement.id) && !achievement.viaSuggestions ? [achievement] : []
+    earnedOn && !before.has(achievement.id) && !achievement.viaSuggestions && !achievement.quiet
+      ? [achievement]
+      : []
   );
 }
 
