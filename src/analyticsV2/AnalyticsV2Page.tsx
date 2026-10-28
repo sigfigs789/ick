@@ -11,9 +11,10 @@ import { WindowPicker } from "./WindowPicker";
 /**
  * The daily dashboard, at /analyticsV2.
  *
- * A scorecard against the bands for a small daily browser word game, then
- * acquisition, retention, engagement, virality and momentum, then the numbers
- * particular to WordInk that say why players come back or leave.
+ * Visitor and player counts, a scorecard against the bands for a small daily
+ * browser word game, then retention, engagement, virality and momentum, the
+ * numbers particular to WordInk that say why players come back or leave, and
+ * acquisition by source last.
  *
  * Visitors and players are kept apart throughout: a visitor turned up, a
  * player banked a word. Activation is the step between them. Retention, active
@@ -132,6 +133,15 @@ function Dashboard({ report, before }: { report: Report; before: Report | null }
         </p>
       )}
 
+      <Tiles
+        tiles={[
+          { label: "Unique visitors", value: count(w.visitors) },
+          { label: "First-time visitors", value: count(w.firstVisits) },
+          { label: "First-time players", value: count(w.newPlayers), note: "banked their first-ever word" },
+          { label: "Returning players", value: count(w.players - w.newPlayers), note: "banked a word before this window" },
+        ]}
+      />
+
       <Section
         title="Scorecard"
         note={
@@ -140,17 +150,6 @@ function Dashboard({ report, before }: { report: Report; before: Report | null }
         }
       >
         <Scorecard rows={scorecard(report, span)} before={before ? scorecard(before) : []} />
-      </Section>
-
-      <Section title="Acquisition" note={`${label}.`}>
-        <Tiles
-          tiles={[
-            { label: "Unique visitors", value: count(w.visitors) },
-            { label: "First-time visitors", value: count(w.firstVisits) },
-            { label: "First-time players", value: count(w.newPlayers), note: "banked their first-ever word" },
-          ]}
-        />
-        <SourceTable sources={span.sources} />
       </Section>
 
       <Section
@@ -294,6 +293,10 @@ function Dashboard({ report, before }: { report: Report; before: Report | null }
             },
           ]}
         />
+      </Section>
+
+      <Section title="Acquisition" note={`${label}.`}>
+        <SourceTable sources={span.sources} />
       </Section>
     </div>
   );
