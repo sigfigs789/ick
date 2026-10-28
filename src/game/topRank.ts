@@ -1,8 +1,9 @@
 /**
  * A place in the top three of the daily, weekly or monthly board.
  *
- * The quietest of the header celebrations: it shows only on a day nothing else
- * has, at most once a week across all three boards, and only on a board with
+ * The last header celebration in priority (see headerCelebrations.ts): it shows
+ * only on a day no other header celebration has had, in either group, at most
+ * once a week across all three boards, and only on a board with
  * at least TOP_RANK_MIN_PLAYERS players -- third of five is not news. When the
  * player is up on more than one board at once, the longest window wins: a month
  * at the top says more than a day.

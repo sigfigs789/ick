@@ -471,11 +471,14 @@ export default function App() {
   }, [climbShown]);
 
   // A top-three place on the monthly, weekly or daily board (see
-  // game/topRank.ts), looked for a moment after each word banked on today's
-  // puzzle, so that word's write has landed. The quietest card: only once a
-  // week, and only on a day no header celebration has had and with nothing
-  // else up -- no card, burst, badge, welcome or fold notice. Read up front
-  // and again when the answer comes back, as a card may have landed meanwhile.
+  // game/topRank.ts), looked for a moment after today's puzzle is finished, so
+  // the last word's write has landed -- only on the finish itself, as the
+  // rising average is, so a puzzle that mounts finished looks for none. The
+  // last header celebration in priority:
+  // only once a week, and only on a day no other header celebration has had
+  // or has up, in either group. Read up front and again when the answer comes back, as one may
+  // have landed meanwhile. It waits behind a word's burst, and an achievement
+  // card waits behind it.
   const quiet = () =>
     !headerCelebrationShown("news", date) &&
     !headerCelebrationShown("streak", date) &&
@@ -483,16 +486,15 @@ export default function App() {
     !newBest &&
     !improvement &&
     !climb &&
-    !bestNews &&
-    !burst &&
-    !unlocked &&
-    !welcome &&
-    foldNotices.length === 0;
+    !bestNews;
   const quietRef = useRef(quiet);
   quietRef.current = quiet;
+  const wasFinishedForRank = useRef({ date, finished: finishedToday });
   useEffect(() => {
-    if (!isToday || feedback?.kind !== "accepted") return;
-    if (!topRankCelebrationDue(date) || headerCelebrationsHeld()) return;
+    const before = wasFinishedForRank.current;
+    wasFinishedForRank.current = { date, finished: finishedToday };
+    if (!finishedToday || before.date !== date || before.finished) return;
+    if (!topRankCelebrationDue(date)) return;
     let cancelled = false;
     const check = window.setTimeout(() => {
       if (!quietRef.current()) return;
@@ -500,7 +502,6 @@ export default function App() {
         if (!found || cancelled || !quietRef.current()) return;
         if (!showHeaderCelebration("news", date)) return;
         markTopRankCelebrated(date);
-        sound.rising();
         setTopRank(found);
       });
     }, STREAK_CHECK_DELAY_MS);
@@ -508,8 +509,13 @@ export default function App() {
       cancelled = true;
       window.clearTimeout(check);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per verdict
-  }, [feedback]);
+  }, [finishedToday, date]);
+  // Its chime when the card actually shows, which is after the word's burst.
+  const topRankShown = !burst && topRank !== null;
+  useEffect(() => {
+    if (topRankShown) sound.rising();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topRankShown]);
 
   // Yesterday's best word, announced as the site opens (see
   // game/bestWordNews.ts): its finder is celebrated, and a player with a few
@@ -619,8 +625,6 @@ export default function App() {
           resolved={bestNews.resolved}
           onDone={endBestNews}
         />
-      ) : topRank ? (
-        <TopRankCelebration top={topRank} onDone={endTopRank} />
       ) : burst ? (
         // Ahead of the achievement card, so a word's own moment -- a jackpot
         // stamp most of all -- plays out before the badge it earned.
@@ -628,6 +632,8 @@ export default function App() {
           <ConfettiBurst grand={burst.grand} />
           {burst.grand && <JackpotStamp rarity={burst.rarity} date={date} />}
         </Fragment>
+      ) : topRank ? (
+        <TopRankCelebration top={topRank} onDone={endTopRank} />
       ) : (
         unlocked && (
           <AchievementCelebration

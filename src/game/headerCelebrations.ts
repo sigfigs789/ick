@@ -8,11 +8,16 @@
  *   the streak board (StreakClimbCelebration).
  * - **news**: yesterday's best word (BestWordNewsCard), then a perfect month
  *   (PerfectMonthCelebration), then an improving average
- *   (ImprovementCelebration).
+ *   (ImprovementCelebration), then a top-three place on a board
+ *   (TopRankCelebration).
+ *
+ * The top-three card is last of all: it shows only on a day neither group has
+ * claimed, and claims the news group's day itself.
  *
  * Each group's cards come due in that order through the day -- the best word
  * as the site opens, a perfect month and a new best on the first word, the
- * climb a moment after that word, the average on the finish -- so the first
+ * climb a moment after that word, the average on the finish, the top three a
+ * moment after the finish -- so the first
  * card to claim its group's day is the one with priority. The claim is kept in storage, so a
  * reload between the first word and the finish does not let a second card in.
  *

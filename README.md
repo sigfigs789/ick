@@ -982,7 +982,7 @@ month has its own). They tap away or go by themselves.
 | News | `BestWordNewsCard` — yesterday's best word | as the site opens; every time the player found it, but only once ever when somebody else did (from their 4th day played) |
 | News | `PerfectMonthCelebration` — "Perfect {month}!" | the first word that completes a month without a missed day |
 | News | `ImprovementCelebration` — "You're on the rise!" | the finish, at most once a week |
-| News | `TopRankCelebration` — "Top 3 this week!", with a link to the leaderboard | a moment after a word, on a day nothing else has shown; at most once a week, monthly before weekly before daily, on a board of 20+ players |
+| News | `TopRankCelebration` — "Top 3 this week!", with a link to the leaderboard | a moment after the finish (a retry's re-finish too); last of all, so only on a day neither group has claimed; at most once a week, monthly before weekly before daily, on a board of 20+ players |
 
 **One card per group per day** (`src/game/headerCelebrations.ts`). Each
 group's cards are listed in priority order, which is also the order they
