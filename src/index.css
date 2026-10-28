@@ -2762,6 +2762,14 @@ button.app__menu-item + button.app__menu-item {
 .improvement--best .improvement__gain {
   color: hsl(38 92% 40%);
 }
+/* The top-three card's way to the board (see components/TopRankCelebration.tsx). */
+.improvement__link {
+  margin-top: 0.25rem;
+  font-weight: 700;
+  color: hsl(38 92% 36%);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
 /* An achievement unlocked (see components/AchievementCelebration.tsx): the same
    card, in ink violet, with the badge as its centrepiece -- a medallion that
    pops in over a slowly turning burst of rays, and a sheen that sweeps the card
