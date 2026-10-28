@@ -19,11 +19,21 @@ function playedOn(date: string) {
   );
 }
 
+/** A Freeform word banked on `date`'s puzzle. */
+function playedFreeform(date: string) {
+  localStorage.setItem(
+    `ick:progress:${date}:freeform`,
+    JSON.stringify({ date, acceptedWords: [{ word: "quixotic" }] }),
+  );
+}
+
 describe("which win a day congratulates", () => {
   beforeEach(() => {
     localStorage.clear();
     // Around since the summer, so every month in these tests is one they saw.
     playedOn("2026-07-15");
+    // And on Freeform lately, so its winners are named too.
+    playedFreeform("2026-10-01");
   });
 
   it("names last week's winner from the Monday to the Thursday", () => {
@@ -135,7 +145,7 @@ describe("which win a day congratulates", () => {
     localStorage.clear();
     // 2026-11-03 owes October's month and the last week of it. A player whose
     // first puzzle was today's is told about the week only.
-    playedOn("2026-11-03");
+    playedFreeform("2026-11-03");
     expect(pendingCongratsSpots("2026-11-03").map((s) => s.window)).toEqual([
       "week",
       "week",
@@ -148,6 +158,20 @@ describe("which win a day congratulates", () => {
       "week",
       "week",
     ]);
+  });
+
+  it("names Freeform's winners only to a player who played Freeform in their last five play days", () => {
+    localStorage.clear();
+    playedOn("2026-07-15");
+    const modes = () => pendingCongratsSpots("2026-10-13").map((s) => s.mode);
+    expect(modes()).toEqual(["standard"]);
+    playedFreeform("2026-10-05");
+    expect(modes()).toEqual(["standard", "freeform"]);
+    // Five Standard days since push that Freeform day out of the window.
+    for (const date of ["2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10"]) {
+      playedOn(date);
+    }
+    expect(modes()).toEqual(["standard"]);
   });
 
   it("names only one winner for a window that closed before the split", () => {

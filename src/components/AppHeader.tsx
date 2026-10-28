@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { trackFoundWordsOpened, trackLeaderboardOpened, trackStatsOpened } from "../analytics";
 import { navigate, pathFor, type Route } from "../routes";
 import { ModeSegments, ModeToggle } from "./ModeToggle";
 import type { GameMode } from "../game/mode";
+import { playedFreeformLately } from "../game/storage";
 import type { MenuSheet } from "./MenuSheetModal";
 
 /**
@@ -242,11 +243,17 @@ export function AppHeader({
    *
    * The switch itself lives in the "?" menu, out of the way of the puzzle; on
    * those two pages a long list is read against the mode, so once the header
-   * has gone the pill follows the reader down.
+   * has gone the pill follows the reader down -- for a player who has played
+   * Freeform lately (see `playedFreeformLately`). To anyone else the pill is a
+   * shortcut to a game they are not playing, floating over every row.
    */
   const headerBar = useRef<HTMLDivElement>(null);
   const [docked, setDocked] = useState(false);
-  const dockable = Boolean(mode && onModeChange) && DOCKED_SWITCH_ROUTES.includes(route);
+  // Read per page rather than per render: it walks every save in the browser.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `route` is the trigger
+  const playsFreeform = useMemo(() => playedFreeformLately(), [route]);
+  const dockable =
+    Boolean(mode && onModeChange) && DOCKED_SWITCH_ROUTES.includes(route) && playsFreeform;
   useEffect(() => {
     const target = headerBar.current;
     // No observer (jsdom, very old browsers) is no dock: the menu's switch is

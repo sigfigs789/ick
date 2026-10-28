@@ -377,7 +377,16 @@ describe("the docked mode switch", () => {
         disconnect() {}
       },
     );
-    return () => vi.unstubAllGlobals();
+    // A Freeform word on a recent puzzle: the pill is only for such a player.
+    localStorage.clear();
+    localStorage.setItem(
+      "ick:progress:2026-10-27:freeform",
+      JSON.stringify({ date: "2026-10-27", acceptedWords: [{ word: "quixotic" }] }),
+    );
+    return () => {
+      vi.unstubAllGlobals();
+      localStorage.clear();
+    };
   });
 
   const switches = () =>
@@ -401,6 +410,20 @@ describe("the docked mode switch", () => {
     await userEvent.click(switches()[0]);
     expect(onModeChange).toHaveBeenCalledWith("freeform");
     act(() => report(true));
+    expect(switches()).toHaveLength(0);
+  });
+
+  it("stays in the menu for a player who has not played Freeform lately", () => {
+    localStorage.clear();
+    render(
+      <AppHeader
+        route="leaderboard"
+        onHowToPlay={howToPlay}
+        mode="standard"
+        onModeChange={vi.fn()}
+      />,
+    );
+    act(() => report(false));
     expect(switches()).toHaveLength(0);
   });
 
