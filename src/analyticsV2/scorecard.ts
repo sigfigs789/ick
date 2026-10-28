@@ -39,6 +39,8 @@ export interface Row {
   detail: string;
   /** How it is measured. */
   how: string;
+  /** For churn, where a number going up is bad news. */
+  lowerIsBetter?: boolean;
 }
 
 /** Below `nowhere` is going nowhere, from `promising` promising, from `great` great; between the first two, in between. */
@@ -56,6 +58,10 @@ export const WEEK_MARKS: Marks = { nowhere: 0.25, promising: 0.35, great: 0.5 };
 export const MONTH_MARKS: Marks = { nowhere: 0.3, promising: 0.4, great: 0.55 };
 /** Activation is not in the table, so these marks are the page's. */
 export const ACTIVATION_MARKS: Marks = { nowhere: 0.3, promising: 0.4, great: 0.6 };
+/** Nor is coming back after a break, so these marks are the page's. */
+export const BREAK_MARKS: Marks = { nowhere: 0.05, promising: 0.1, great: 0.2 };
+/** Nor is weekly churn; these marks are on the players kept, its other side. */
+export const KEPT_MARKS: Marks = { nowhere: 0.4, promising: 0.5, great: 0.65 };
 /** Sharing has no great mark of its own: great is consistent sharing that also brings players. */
 export const SHARE_MARKS: Marks = { nowhere: 0.05, promising: 0.1, great: Infinity };
 
@@ -172,6 +178,12 @@ export function scorecard(report: Report, span: Range = windowOf(report)): Row[]
   const driven = shares.all > 0 ? shares.fromShares / shares.all : 0;
   const lastWeek = report.weekly[1];
   const reg = lastWeek ? regulars(lastWeek) : null;
+  // The week before last, and how many of its players banked a word last week too.
+  const churnWeek = report.weekly[2];
+  const churnOk = churnWeek?.playedNextWeek != null && churnWeek.players >= LEAST;
+  const kept = churnOk ? churnWeek.playedNextWeek! / churnWeek.players : 0;
+  const lost = w.lapsed;
+  const backOk = lost !== null && lost.cohort >= LEAST;
 
   return [
     {
@@ -244,6 +256,43 @@ export function scorecard(report: Report, span: Range = windowOf(report)): Row[]
       standing: reg && reg.players >= LEAST ? stand(reg.regulars / reg.players, { nowhere: 0.1, promising: 0.2, great: 0.4 }) : null,
       detail: reg ? `${count(reg.regulars)} of ${count(reg.players)} players last full week` : "needs a full week",
       how: "*Of the last full week's players (Monday to Sunday), the share who banked a word on 3 or more of its 7 days.",
+    },
+    {
+      metric: "Weekly churn*",
+      bands: { nowhere: "Over 60%", promising: "36–50%", great: "35% or under" },
+      // Shown as 100 less the kept share's whole percent, so it is always judged on the number shown.
+      value: churnOk ? `${100 - whole(kept)}%` : null,
+      points: churnOk ? 100 - whole(kept) : null,
+      standing: churnOk ? stand(kept, KEPT_MARKS) : null,
+      detail: !churnWeek
+        ? "needs two full weeks"
+        : churnWeek.playedNextWeek === null
+          ? "needs the 2026-11-16 migration"
+          : churnWeek.players >= LEAST
+            ? `${count(churnWeek.players - churnWeek.playedNextWeek)} of ${count(churnWeek.players)} players the week before last banked no word last week`
+            : `needs ${LEAST} players the week before last`,
+      how:
+        "*Of the players the week before last (Monday to Sunday), the share who banked no word last week. Lower is " +
+        "better. The table has no row for it, so these marks are the page's: over 60% is going nowhere, 50% or under " +
+        "promising, 35% or under great.",
+      lowerIsBetter: true,
+    },
+    {
+      metric: "Back after a break",
+      bands: { nowhere: "Under 5%", promising: "10–19%", great: "20%+" },
+      value: backOk ? percent(lost.returned / lost.cohort) : null,
+      points: backOk ? whole(lost.returned / lost.cohort) : null,
+      standing: backOk ? stand(lost.returned / lost.cohort, BREAK_MARKS) : null,
+      detail:
+        lost === null
+          ? "needs the 2026-11-16 migration"
+          : lost.cohort >= LEAST
+            ? `${count(lost.returned)} of ${count(lost.cohort)} lost players came back`
+            : `needs ${LEAST} lost players`,
+      how:
+        "Players lost when the window began -- a word banked before, but none in the 7 days just before it -- and the " +
+        "share who banked a word in the window. New players are in neither number. The table has no row for it, so " +
+        "these marks are the page's: under 5% is going nowhere, 10% promising, 20% great.",
     },
   ];
 }

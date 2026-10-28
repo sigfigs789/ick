@@ -106,4 +106,34 @@ describe("scorecard", () => {
     );
     expect(rows[8]).toMatchObject({ value: "25%", standing: "promising" });
   });
+
+  it("counts weekly churn as the week before last's players with no word last week", () => {
+    const churn = (players: number, playedNextWeek?: number) =>
+      scorecard(
+        report(() => 10, {
+          weekly: [
+            { start: "2026-10-19", players: 50 },
+            { start: "2026-10-12", players: 80 },
+            { start: "2026-10-05", players, playedNextWeek },
+          ],
+        }),
+      )[9];
+    expect(churn(100, 30)).toMatchObject({ metric: "Weekly churn*", value: "70%", standing: "nowhere", lowerIsBetter: true });
+    expect(churn(100, 45).standing).toBe("between");
+    expect(churn(100, 55)).toMatchObject({ value: "45%", standing: "promising" });
+    expect(churn(100, 70)).toMatchObject({ value: "30%", standing: "great", detail: "30 of 100 players the week before last banked no word last week" });
+    expect(churn(20, 10)).toMatchObject({ value: null, standing: null });
+    expect(churn(100)).toMatchObject({ value: null, detail: "needs the 2026-11-16 migration" });
+  });
+
+  it("counts lost players who came back over the lost players, and waits for enough of them", () => {
+    const back = (lapsed?: { cohort: number; returned: number }) =>
+      scorecard(report(() => 10, { window: { players: 500, lapsed } }))[10];
+    expect(back({ cohort: 100, returned: 4 })).toMatchObject({ metric: "Back after a break", value: "4%", standing: "nowhere" });
+    expect(back({ cohort: 100, returned: 7 }).standing).toBe("between");
+    expect(back({ cohort: 100, returned: 12 }).standing).toBe("promising");
+    expect(back({ cohort: 100, returned: 25 })).toMatchObject({ value: "25%", standing: "great", detail: "25 of 100 lost players came back" });
+    expect(back({ cohort: 20, returned: 10 })).toMatchObject({ value: null, standing: null, detail: "needs 30 lost players" });
+    expect(back()).toMatchObject({ value: null, detail: "needs the 2026-11-16 migration" });
+  });
 });
