@@ -1,7 +1,14 @@
-import { type FormEvent, type Ref, useEffect, useRef, useState } from "react";
+import { type FormEvent, type Ref, useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { trackWordSuggestion } from "../analytics";
+import { AchievementCelebration } from "./AchievementCelebration";
+import { ACHIEVEMENTS } from "../game/achievements";
 import { usesFreeformRules } from "../game/dictionary";
 import { modeIsChosen } from "../game/mode";
+import {
+  drawnHeaderCelebrationsArm,
+  forcedHeaderCelebrationsVariant,
+} from "../game/headerCelebrationsTest";
 import { takesPlayerMessages } from "../game/playerMessages";
 import { recordSuggestion } from "../game/suggestions";
 import { useGameMode } from "../hooks/useGameMode";
@@ -87,6 +94,8 @@ export function WordRulesModal({ open, date, onClose }: Props) {
 /** What the review queue accepts as a word (see the suggested_words migration). */
 const SUGGESTION_RE = /^[a-z]{2,30}$/;
 
+const WORD_SCOUT = ACHIEVEMENTS.find((achievement) => achievement.id === "word-suggested");
+
 /**
  * The box for suggesting a word, shared by Word rules (where a turned-away word
  * sends a player) and the "?" menu's Suggest a word.
@@ -107,6 +116,11 @@ export function WordSuggestionForm({
   const [suggestion, setSuggestion] = useState("");
   const [sent, setSent] = useState(false);
   const [firstSuggestion, setFirstSuggestion] = useState(false);
+  // Word scout gets the same card a word's badge does, over whatever sheet
+  // holds the box -- unless the header celebrations test hides those cards,
+  // where the thank-you names it instead.
+  const [celebrating, setCelebrating] = useState(false);
+  const endCelebrating = useCallback(() => setCelebrating(false), []);
 
   function submitSuggestion(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -116,7 +130,10 @@ export function WordSuggestionForm({
     // Kept on the device so the player can be thanked if it gets in (see
     // game/suggestions.ts). Only a word the queue would take: anything else
     // never comes back with a verdict.
-    setFirstSuggestion(SUGGESTION_RE.test(word) && recordSuggestion(word));
+    const first = SUGGESTION_RE.test(word) && recordSuggestion(word);
+    const arm = forcedHeaderCelebrationsVariant() ?? drawnHeaderCelebrationsArm();
+    setFirstSuggestion(first && arm === "hidden");
+    setCelebrating(first && arm !== "hidden");
     setSuggestion("");
     setSent(true);
   }
@@ -164,6 +181,12 @@ export function WordSuggestionForm({
           </button>
         </p>
       )}
+      {celebrating &&
+        WORD_SCOUT &&
+        createPortal(
+          <AchievementCelebration achievements={[WORD_SCOUT]} onDone={endCelebrating} />,
+          document.body
+        )}
     </form>
   );
 }
