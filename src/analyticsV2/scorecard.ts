@@ -39,6 +39,8 @@ export interface Row {
   detail: string;
   /** How it is measured. */
   how: string;
+  /** For a loss, where a number going up is bad news. */
+  lowerIsBetter?: boolean;
 }
 
 /** Below `nowhere` is going nowhere, from `promising` promising, from `great` great; between the first two, in between. */
@@ -56,6 +58,8 @@ export const WEEK_MARKS: Marks = { nowhere: 0.25, promising: 0.35, great: 0.5 };
 export const MONTH_MARKS: Marks = { nowhere: 0.3, promising: 0.4, great: 0.55 };
 /** Activation is not in the table, so these marks are the page's. */
 export const ACTIVATION_MARKS: Marks = { nowhere: 0.3, promising: 0.4, great: 0.6 };
+/** Nor is losing a long streak; these marks are on the streaks kept, its other side. */
+export const STREAK_KEPT_MARKS: Marks = { nowhere: 0.7, promising: 0.8, great: 0.9 };
 /** Sharing has no great mark of its own: great is consistent sharing that also brings players. */
 export const SHARE_MARKS: Marks = { nowhere: 0.05, promising: 0.1, great: Infinity };
 
@@ -175,6 +179,9 @@ export function scorecard(report: Report, span: Range = windowOf(report)): Row[]
   const driven = shares.all > 0 ? shares.fromShares / shares.all : 0;
   const lastWeek = report.weekly[1];
   const reg = lastWeek ? regulars(lastWeek) : null;
+  const streaks = w.streakLoss;
+  const streaksOk = streaks !== null && streaks.cohort >= LEAST;
+  const streaksKept = streaksOk ? 1 - streaks.lost / streaks.cohort : 0;
 
   return [
     {
@@ -247,6 +254,26 @@ export function scorecard(report: Report, span: Range = windowOf(report)): Row[]
       standing: reg && reg.players >= LEAST ? stand(reg.regulars / reg.players, { nowhere: 0.1, promising: 0.2, great: 0.4 }) : null,
       detail: reg ? `${count(reg.regulars)} of ${count(reg.players)} players last full week` : "needs a full week",
       how: "*Of the last full week's players (Monday to Sunday), the share who banked a word on 3 or more of its 7 days.",
+    },
+    {
+      metric: "Lost a 5+ day streak",
+      bands: { nowhere: "Over 30%", promising: "11–20%", great: "10% or under" },
+      // Shown as 100 less the kept share's whole percent, so it is always judged on the number shown.
+      value: streaksOk ? `${100 - whole(streaksKept)}%` : null,
+      points: streaksOk ? 100 - whole(streaksKept) : null,
+      standing: streaksOk ? stand(streaksKept, STREAK_KEPT_MARKS) : null,
+      detail:
+        streaks === null
+          ? "needs the 2026-11-17 migration"
+          : streaks.cohort >= LEAST
+            ? `${count(streaks.lost)} of ${count(streaks.cohort)} players holding a 5+ day streak lost it`
+            : `needs ${LEAST} players holding a 5+ day streak`,
+      how:
+        "Of players who came back to play in the window holding a streak of 5 or more days, the share whose streak " +
+        "had reset that day. Lower is better. Read off the streak each play reports, so a player who stops playing " +
+        "altogether is not counted: that is churn. The table has no row for it, so these marks are the page's: over " +
+        "30% is going nowhere, 20% or under promising, 10% or under great.",
+      lowerIsBetter: true,
     },
   ];
 }
