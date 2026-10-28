@@ -78,6 +78,11 @@ beforeEach(() => {
     "ick:progress:2026-07-15",
     JSON.stringify({ date: "2026-07-15", acceptedWords: [{ word: "quixotic" }] }),
   );
+  // And on Freeform lately, so its winners are named too.
+  localStorage.setItem(
+    "ick:progress:2026-10-01:freeform",
+    JSON.stringify({ date: "2026-10-01", acceptedWords: [{ word: "quixotic" }] }),
+  );
 });
 afterEach(() => vi.unstubAllGlobals());
 

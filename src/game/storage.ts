@@ -250,7 +250,10 @@ export function playedBefore(date: string): boolean {
   });
 }
 
-/** How many of the player's most recent play days `playedBothModesLately` looks at. */
+/**
+ * How many of the player's most recent play days `playedBothModesLately` and
+ * `playedFreeformLately` look at.
+ */
 export const RECENT_PLAY_DAYS = 5;
 
 /**
@@ -261,11 +264,27 @@ export const RECENT_PLAY_DAYS = 5;
  * have stopped playing. Raw JSON like `playedPuzzleCount`, for the same reason.
  */
 export function playedBothModesLately(): boolean {
+  return recentPlayModes().size === 2;
+}
+
+/**
+ * Whether the player has banked a Freeform word across their last
+ * `RECENT_PLAY_DAYS` play days -- the same window as `playedBothModesLately`.
+ * The boards and the finds only push Freeform at such a player (the docked
+ * switch, Freeform's congratulations): to anyone else it is a game they are
+ * not playing.
+ */
+export function playedFreeformLately(): boolean {
+  return recentPlayModes().has("freeform");
+}
+
+/** The modes played across the player's last `RECENT_PLAY_DAYS` play days. */
+function recentPlayModes(): Set<GameMode> {
   let keys: string[];
   try {
     keys = Object.keys(localStorage).filter((key) => key.startsWith(PROGRESS_PREFIX));
   } catch {
-    return false;
+    return new Set();
   }
   const modesByDate = new Map<string, Set<GameMode>>();
   for (const key of keys) {
@@ -278,8 +297,7 @@ export function playedBothModesLately(): boolean {
     modesByDate.set(date, modes);
   }
   const recent = [...modesByDate.keys()].sort().reverse().slice(0, RECENT_PLAY_DAYS);
-  const seen = new Set(recent.flatMap((date) => [...modesByDate.get(date)!]));
-  return seen.size === 2;
+  return new Set(recent.flatMap((date) => [...modesByDate.get(date)!]));
 }
 
 export function playedOnItsDay(): DailyProgress[] {

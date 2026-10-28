@@ -28,14 +28,15 @@
  *
  * Each mode is its own board (see `boardFor` in game/mode.ts), so each closed
  * window has two winners to name, Standard's and Freeform's -- and both are
- * named whichever mode the reader happens to be playing, because a result is
+ * named whichever mode the reader happens to be playing (Freeform's only to a
+ * player who has played it lately), because a result is
  * news to the whole game, not only to the half of it on the same switch.
  */
 
 import { addDays, daysSinceEpoch, todayDateString } from "./date";
 import { MODE_CHOICE_START, MODE_LABELS, type GameMode } from "./mode";
 import { nextMonthStart, previousMonthStart } from "./month";
-import { playedBefore } from "./storage";
+import { playedBefore, playedFreeformLately } from "./storage";
 import { previousWeek, weekEnd, weekStart } from "./week";
 
 /** A window that has closed and is worth naming a winner for. */
@@ -121,11 +122,17 @@ export function pendingCongratsSpot(date: string = todayDateString()): CongratsS
  * knew the game, and four bubbles over the boards on a first look is a page
  * shouting about nothing they took part in. The week's is short enough to be
  * news to anybody, so it is not held back.
+ *
+ * A Freeform win only for a player who has played Freeform lately (see
+ * `playedFreeformLately`): to a Standard-only player it is a board they are
+ * not on.
  */
 export function pendingCongratsSpots(date: string = todayDateString()): CongratsSpot[] {
+  const freeform = playedFreeformLately();
   return congratsSpots(date).filter(
     (spot) =>
       !congratsPopped(spot) &&
+      (spot.mode !== "freeform" || freeform) &&
       (spot.window !== "month" || playedBefore(nextMonthStart(spot.start))),
   );
 }
