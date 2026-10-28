@@ -4688,6 +4688,11 @@ button.app__menu-item + button.app__menu-item {
   font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
 }
+/* A score from Claude's estimate rather than a corpus: marked, and quieter. */
+.review__estimate {
+  font-size: 0.7rem;
+  font-style: italic;
+}
 /* Everything about a row that isn't the row: where it came from, the counts, the
    labels, when it last turned up. One line that wraps, with the separators drawn
    rather than typed so no row ends on a stray dot. */

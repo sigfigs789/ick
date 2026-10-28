@@ -90,7 +90,20 @@ export function SuggestedWordsPage() {
                     this list is for. "TBD" is the honest reading: the word has
                     no score anybody has measured, and what it would be handed
                     instead is a placeholder waiting on a decision. */}
-                {row.zipf === null ? "TBD" : formatRarityScore(row.zipf)}
+                {row.zipf !== null ? (
+                  formatRarityScore(row.zipf)
+                ) : row.zipfEstimate !== null ? (
+                  /* A guess, and said to be one: no corpus measures the word,
+                     so the daily suggestion review estimated how often it is
+                     used. Better than "TBD" for a reader wondering what their
+                     word is worth; marked so nobody takes it for a measurement. */
+                  <span title="Estimated: no frequency corpus measures this word">
+                    {formatRarityScore(row.zipfEstimate)}{" "}
+                    <span className="review__estimate">est.</span>
+                  </span>
+                ) : (
+                  "TBD"
+                )}
               </span>
             </div>
             <p className="review__meta">
@@ -111,12 +124,19 @@ export function SuggestedWordsPage() {
                   a row with no live verdict and no event left to count -- the
                   kind a review pass seeded -- because it is the only other way
                   onto this list. */}
-              {row.liveApproved ? (
-                <span className="review__live">played</span>
+              {row.liveApproved && <span className="review__live">played</span>}
+              {/* Who asked, by board handle, whenever the queue knows: most
+                  readers here are looking for their own word, and their name
+                  on it is how they find it. A played word can carry one too --
+                  somebody asked for it as well. */}
+              {row.suggestedBy ? (
+                <span>suggested by {suggesterList(row.suggestedBy, row.suggesters)}</span>
               ) : (
-                <span>
-                  {row.suggestions > 1 ? `${row.suggestions} suggestions` : "suggested"}
-                </span>
+                !row.liveApproved && (
+                  <span>
+                    {row.suggestions > 1 ? `${row.suggestions} suggestions` : "suggested"}
+                  </span>
+                )
               )}
               {/* Why the word is unplayable, when the repo has a reason on
                   file. The mark says a word was rejected; this says what the
@@ -147,6 +167,13 @@ export function SuggestedWordsPage() {
       </ul>
     </ReviewPage>
   );
+}
+
+/** "StormyFox47", "StormyFox47 and 1 other person", "StormyFox47 and 3 other people". */
+function suggesterList(first: string, count: number): string {
+  const others = count - 1;
+  if (others < 1) return first;
+  return `${first} and ${others} other ${others === 1 ? "person" : "people"}`;
 }
 
 /**

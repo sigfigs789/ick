@@ -32,6 +32,23 @@ describe("useAcceptedSuggestions", () => {
     expect(result.current.firstAcceptance).toBe(true);
   });
 
+  it("still thanks a player who already holds the badge for a later word", async () => {
+    // The badge comes once; the thank-you comes for every word that gets in.
+    localStorage.setItem(
+      SUGGESTIONS_KEY,
+      JSON.stringify({
+        checkedAt: Date.now(),
+        words: [
+          { word: "zibeline", suggestedOn: "2026-10-01", acceptedOn: "2026-10-20", thanked: true },
+          { word: "snollygoster", suggestedOn: "2026-10-21", acceptedOn: "2026-10-28", thanked: false },
+        ],
+      })
+    );
+    const { result } = renderHook(() => useAcceptedSuggestions(false));
+    await waitFor(() => expect(result.current.words).toEqual(["snollygoster"]));
+    expect(result.current.firstAcceptance).toBe(false);
+  });
+
   it("waits for another day once a header celebration has shown today", async () => {
     accept("zibeline");
     claimHeaderCelebration("news", todayDateString());

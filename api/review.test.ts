@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import handler from "./review";
+import { handleFor } from "../src/game/handle";
 
 const CONFIGURED = {
   SUPABASE_URL: "https://project.supabase.co",
@@ -59,12 +60,20 @@ describe("api/review", () => {
         // The live check approved this word mid-puzzle, which the row reports
         // separately from the verdict a person reached afterwards.
         outcome: "playable",
+        suggesters: [
+          "87d3b6e1-0000-4928-acee-b4a7086c6e86",
+          "11111111-2222-4333-8444-555555555555",
+        ],
+        zipf_estimate: "0.40",
       },
     ]);
     const response = await handler(get("?list=suggested-words"));
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
+    const body = await response.json();
+    // Who asked goes out as the board's handle; the ids never leave.
+    expect(JSON.stringify(body)).not.toContain("87d3b6e1");
+    expect(body).toEqual({
       words: [
         {
           word: "enshittification",
@@ -75,6 +84,9 @@ describe("api/review", () => {
           mwSource: "collegiate",
           lookups: 3,
           suggestions: 2,
+          suggestedBy: handleFor("87d3b6e1-0000-4928-acee-b4a7086c6e86"),
+          suggesters: 2,
+          zipfEstimate: 0.4,
           firstAt: "2026-09-08T09:00:00Z",
           lastAt: "2026-09-10T12:00:00Z",
           mark: "accepted",

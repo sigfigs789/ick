@@ -33,6 +33,11 @@ export interface SuggestedWord {
   origin: string;
   /** Frequency, or null when no corpus attests the word at all. */
   zipf: number | null;
+  /**
+   * Claude's guess at the frequency of a word nothing measures, from the daily
+   * suggestion review; null until a review has judged the word.
+   */
+  zipfEstimate: number | null;
   /** Merriam-Webster's functional labels. */
   pos: readonly string[];
   firstUse: string | null;
@@ -41,6 +46,10 @@ export interface SuggestedWord {
   lookups: number;
   /** How many times a player typed it into the suggestion box. */
   suggestions: number;
+  /** The board handle of the first player who suggested it, if one is known. */
+  suggestedBy: string | null;
+  /** How many different players suggested it. */
+  suggesters: number;
   /** When the word first turned up, by either door: the queue's own order. */
   firstAt: string | null;
   /** The most recent of the two, which is not what the list is sorted on. */
@@ -224,11 +233,14 @@ function parseWords(raw: unknown): SuggestedWord[] {
       word: row.word,
       origin: typeof row.origin === "string" ? row.origin : "player",
       zipf: typeof row.zipf === "number" ? row.zipf : null,
+      zipfEstimate: typeof row.zipfEstimate === "number" ? row.zipfEstimate : null,
       pos: Array.isArray(row.pos) ? row.pos.filter((p): p is string => typeof p === "string") : [],
       firstUse: typeof row.firstUse === "string" ? row.firstUse : null,
       mwSource: typeof row.mwSource === "string" ? row.mwSource : null,
       lookups: typeof row.lookups === "number" ? row.lookups : 0,
       suggestions: typeof row.suggestions === "number" ? row.suggestions : 0,
+      suggestedBy: typeof row.suggestedBy === "string" && row.suggestedBy !== "" ? row.suggestedBy : null,
+      suggesters: typeof row.suggesters === "number" ? row.suggesters : 0,
       mark: asMark(row.mark),
       firstAt: typeof row.firstAt === "string" ? row.firstAt : null,
       lastAt: typeof row.lastAt === "string" ? row.lastAt : null,

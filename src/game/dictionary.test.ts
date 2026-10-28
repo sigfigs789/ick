@@ -23,6 +23,7 @@ import {
 } from "./dictionary";
 import { MODE_CHOICE_START, resetModeCache, setMode } from "./mode";
 import rarityData from "../data/rarity.json";
+import rarityLegacyData from "../data/rarity-legacy.json";
 import scoreOverrides from "../data/score-overrides.json";
 import wordRejections from "../data/word-rejections.json";
 import derivedRejections from "../data/derived-rejections.json";
@@ -638,6 +639,18 @@ describe("unattestedZipf", () => {
     expect(rarityForZipf(1.54, "2026-08-18")).toBe("Extremely Rare");
     expect(rarityScore(1.54, "2026-08-18")).toBeLessThan(9.5);
     expect(rarityForZipf(4.29, "2026-08-18")).toBe("Common");
+  });
+});
+
+describe("rarity data alignment", () => {
+  // Both rarity files are read by dictionary index. A word added without its
+  // legacy placeholder ("floterial", #281) shifted every later word's archived
+  // score onto its neighbour's and left `align-legacy` refusing every add after.
+  it("has one rarity and one legacy entry per dictionary word", () => {
+    const size = dictionaryWords.length;
+    expect(rarityData.zipfHundredths).toHaveLength(size);
+    expect(rarityLegacyData.zipfTenths).toHaveLength(size);
+    expect(rarityLegacyData.codes).toHaveLength(size);
   });
 });
 
