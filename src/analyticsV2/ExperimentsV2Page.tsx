@@ -166,14 +166,12 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
           <ExperimentView
             experiment={experiments.inputPlacement}
             subject="the input below the guess log"
+            arms={{ shown: "Below", hidden: "Above" }}
             about={
               <>
-                One in five new draws gets the guess input, and the feedback under it, below the guess log instead of
-                straight under the drop (players drawn while the split was 50/50 keep their arm). In the tables, Shown is the input below and Hidden is the input above, where it has
-                always been. Each is drawn once, the first time the input appears on an unfinished puzzle, which can be
-                before their first word: a player drawn who never banks one is counted as returning. Try either arm
-                with <code>?input-placement=below</code> or <code>=above</code>; a forced arm, or a tester (forced to
-                above), is not counted.
+                One in five new draws gets the input below the guess log; the rest keep it above. Each is drawn once,
+                the first time the input appears. Try either arm with <code>?input-placement=below</code> or{" "}
+                <code>=above</code>; a forced arm, or a tester, is not counted.
               </>
             }
           />
