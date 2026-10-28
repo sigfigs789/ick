@@ -344,7 +344,7 @@ function Scorecard({ rows, before }: { rows: Row[]; before: Row[] }) {
                 <td className="av2__standing">
                   <strong className="av2__score">
                     {r.value ?? "–"}
-                    <Moved by={moved(r, before.find((b) => b.metric === r.metric))} />
+                    <Moved by={moved(r, before.find((b) => b.metric === r.metric))} lowerIsBetter={r.lowerIsBetter} />
                   </strong>
                   <span className={`av2__pill av2__pill--${r.standing ?? "early"}`}>
                     {r.standing ? STANDING_NAMES[r.standing] : "Too early"}
@@ -372,13 +372,15 @@ function Scorecard({ rows, before }: { rows: Row[]; before: Row[] }) {
 }
 
 /** The change since yesterday, in points: up, down, or level. */
-function Moved({ by }: { by: number | null }) {
+function Moved({ by, lowerIsBetter = false }: { by: number | null; lowerIsBetter?: boolean }) {
   if (by === null) return null;
   const pts = (n: number) => `${n} ${n === 1 ? "pt" : "pts"}`;
   const [dir, mark, label] =
     by > 0 ? ["up", "▲", `up ${pts(by)} since yesterday`] : by < 0 ? ["down", "▼", `down ${pts(-by)} since yesterday`] : ["level", "–", "no change since yesterday"];
+  // The colour says good or bad news: for a loss, up is bad.
+  const tone = lowerIsBetter && dir !== "level" ? (dir === "up" ? "down" : "up") : dir;
   return (
-    <span className={`av2__moved av2__moved--${dir}`} title={label} aria-label={label}>
+    <span className={`av2__moved av2__moved--${tone}`} title={label} aria-label={label}>
       <span aria-hidden="true">
         {mark}
         {by !== 0 && ` ${Math.abs(by)}`}
