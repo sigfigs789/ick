@@ -678,15 +678,6 @@ export default function App() {
           />
         )}
 
-        {/* Once today's word is banked -- which is when the streak counts the
-            day, whether or not the puzzle is locked in -- say what coming
-            back tomorrow is worth (see game/comeBack.ts). Straight under the
-            streak it talks about (in the guess log on a finished puzzle), so
-            the two read as one block rather than a second card restating it.
-            Below the guesses, so it never sits between a player and the
-            guesses they have left. */}
-        {isToday && progress.acceptedWords.length > 0 && <ComeBackCard streak={streak} date={date} />}
-
         {/* From the first banked word, not from the end of the puzzle.
             Sharing used to be the reward for pressing "I'm done guessing",
             which was the only way to reach this panel short of spending every
@@ -723,7 +714,16 @@ export default function App() {
             input would push the input down the page as it did. On every
             puzzle, archived ones too: it reports the day before the one being
             played, by its date when that isn't yesterday. */}
-        <YesterdaysBest date={date} isToday={isToday} />
+        <div className="page-footnotes">
+          {/* Once today's word is banked -- which is when the streak counts
+              the day, whether or not the puzzle is locked in -- say what
+              coming back tomorrow is worth (see game/comeBack.ts). Under the
+              divider, just above yesterday's best: a look ahead to tomorrow,
+              read with the footnotes rather than between the player and the
+              guesses they have left. */}
+          {isToday && progress.acceptedWords.length > 0 && <ComeBackCard streak={streak} date={date} />}
+          <YesterdaysBest date={date} isToday={isToday} />
+        </div>
       </main>
 
       {/* Dev only, and pinned beside the dev date bar rather than in the
