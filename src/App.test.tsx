@@ -566,50 +566,50 @@ describe("celebrating an achievement", () => {
     const { rerender } = render(<App />);
     expect(screen.queryByText("Achievement unlocked")).toBeNull();
 
-    // The first word earns First ink, but the card waits.
-    bankWords("2026-08-13", ["strange"]);
+    // The first word earns Short King, but the card waits.
+    bankWords("2026-08-13", ["stir"]);
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ feedback: accepted(1) }) as ReturnType<typeof useDailyPuzzle>);
     rerender(<App />);
-    bankWords("2026-08-13", ["strange", "strong"]);
+    bankWords("2026-08-13", ["stir", "strong"]);
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ feedback: accepted(2) }) as ReturnType<typeof useDailyPuzzle>);
     rerender(<App />);
-    bankWords("2026-08-13", ["strange", "strong", "street"]);
+    bankWords("2026-08-13", ["stir", "strong", "street"]);
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ feedback: accepted(3) }) as ReturnType<typeof useDailyPuzzle>);
     rerender(<App />);
     expect(screen.queryByText("Achievement unlocked")).toBeNull();
     expect(achievement).not.toHaveBeenCalled();
 
-    bankWords("2026-08-13", ["strange", "strong", "street", "strap"]);
+    bankWords("2026-08-13", ["stir", "strong", "street", "strap"]);
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ feedback: accepted(4) }) as ReturnType<typeof useDailyPuzzle>);
     rerender(<App />);
     expect(screen.getByText("Achievement unlocked")).toBeInTheDocument();
-    expect(screen.getByText("First ink")).toBeInTheDocument();
+    expect(screen.getByText("Short King")).toBeInTheDocument();
     expect(achievement).toHaveBeenCalledTimes(1);
 
     // Gone on a tap of its ×, and not announced again by the next word.
-    const card = screen.getByText("First ink").closest<HTMLElement>(".improvement__card")!;
+    const card = screen.getByText("Short King").closest<HTMLElement>(".improvement__card")!;
     act(() => within(card).getByRole("button", { name: "Dismiss" }).click());
-    expect(screen.queryByText("First ink")).toBeNull();
+    expect(screen.queryByText("Short King")).toBeNull();
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ feedback: accepted(5) }) as ReturnType<typeof useDailyPuzzle>);
     rerender(<App />);
     expect(screen.queryByText("Achievement unlocked")).toBeNull();
   });
 
   it("still names a held badge on the fourth word after a reload", () => {
-    bankWords("2026-08-13", ["strange", "strong", "street"]);
+    bankWords("2026-08-13", ["stir", "strong", "street"]);
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
     const { rerender } = render(<App />);
     expect(screen.queryByText(/achievements? unlocked/i)).toBeNull();
 
-    bankWords("2026-08-13", ["strange", "strong", "street", "strap"]);
+    bankWords("2026-08-13", ["stir", "strong", "street", "strap"]);
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ feedback: accepted(1) }) as ReturnType<typeof useDailyPuzzle>);
     rerender(<App />);
-    expect(screen.getByText("First ink")).toBeInTheDocument();
+    expect(screen.getByText("Short King")).toBeInTheDocument();
   });
 
   it("never announces a badge already announced, as the page opened or after", () => {
-    bankWords("2026-08-12", ["strong", "strange", "street", "strap"]);
-    localStorage.setItem("ick:achievements-announced", JSON.stringify(["first-word"]));
+    bankWords("2026-08-12", ["strong", "stir", "street", "strap"]);
+    localStorage.setItem("ick:achievements-announced", JSON.stringify(["short-king"]));
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
     const { rerender } = render(<App />);
     expect(screen.queryByText("Achievement unlocked")).toBeNull();
@@ -653,7 +653,7 @@ describe("celebrating an achievement", () => {
 
   it("keeps the welcome from the players the header celebrations test hides the cards from", () => {
     localStorage.setItem("ick:header-celebrations-test", "hidden");
-    bankWords("2026-08-12", ["strong", "strange", "street", "strap"]);
+    bankWords("2026-08-12", ["strong", "stir", "street", "strap"]);
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
     render(<App />);
     expect(screen.queryByText("Achievement unlocked")).toBeNull();
@@ -664,7 +664,7 @@ describe("celebrating an achievement", () => {
     localStorage.setItem("ick:header-celebrations-test", "hidden");
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
     const { rerender } = render(<App />);
-    bankWords("2026-08-13", ["strange", "strong", "street", "strap"]);
+    bankWords("2026-08-13", ["stir", "strong", "street", "strap"]);
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ feedback: accepted(1) }) as ReturnType<typeof useDailyPuzzle>);
     rerender(<App />);
     expect(screen.queryByText("Achievement unlocked")).toBeNull();
@@ -675,10 +675,10 @@ describe("celebrating an achievement", () => {
     localStorage.removeItem("ick:header-celebrations-test");
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
     const { rerender } = render(<App />);
-    bankWords("2026-08-13", ["strange", "strong", "street", "strap"]);
+    bankWords("2026-08-13", ["stir", "strong", "street", "strap"]);
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ feedback: accepted(1) }) as ReturnType<typeof useDailyPuzzle>);
     rerender(<App />);
-    expect(screen.getByText("First ink")).toBeInTheDocument();
+    expect(screen.getByText("Short King")).toBeInTheDocument();
     expect(localStorage.getItem("ick:header-celebrations-test")).toBeNull();
   });
 });

@@ -245,9 +245,20 @@ function cleanCopy(progress: DailyProgress): boolean {
   return progress.completed && progress.rejectedAttempts.length === 0 && hasWin(progress);
 }
 
-/** The puzzle's retry spent, and a Rare or better word found all the same. */
-function secondChance(progress: DailyProgress): boolean {
-  return Boolean(progress.retryUsed) && hasWin(progress);
+/**
+ * How the retry went: the replacement's score against the word it gave up, as
+ * `compare` sees the two. False until the replacement is banked, and on a retry
+ * from before the game kept the word it gave up.
+ */
+function retryScored(compare: (replacement: number, retried: number) => boolean) {
+  return (progress: DailyProgress): boolean => {
+    const replacement = progress.retried && progress.acceptedWords[progress.retried.replacedAt];
+    if (!progress.retried || !replacement) return false;
+    return compare(
+      scoreOf(replacement, progress.date),
+      scoreOf(progress.retried.word, progress.date)
+    );
+  };
 }
 
 /** A word as long as "sesquipedalian" or longer. */
@@ -609,22 +620,6 @@ function dropTwice(word: string, progress: DailyProgress): boolean {
 }
 
 export const ACHIEVEMENTS: readonly Achievement[] = [
-  {
-    id: "first-word",
-    group: "Getting started",
-    icon: "✒️",
-    title: "First ink",
-    description: "Bank your first word.",
-    check: firstPuzzle((progress) => progress.acceptedWords.length > 0),
-  },
-  {
-    id: "first-win",
-    group: "Getting started",
-    icon: "🎯",
-    title: "On the board",
-    description: "Find a Rare or better word.",
-    check: firstWord(isWinningRarity),
-  },
   {
     id: "days-10",
     group: "Getting started",
@@ -1022,17 +1017,6 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     check: firstPuzzle(everyGuess(isWinningRarity)),
   },
   {
-    id: "straight-in",
-    group: "Style",
-    icon: "🏹",
-    title: "Straight in",
-    description: "Make the first word of a puzzle Rare or better.",
-    check: firstPuzzle(
-      (progress) =>
-        progress.acceptedWords.length > 0 && isWinningRarity(progress.acceptedWords[0].rarity)
-    ),
-  },
-  {
     id: "clean-copy",
     group: "Style",
     icon: "📝",
@@ -1053,8 +1037,16 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     group: "Style",
     icon: "🔁",
     title: "Second chance",
-    description: "Spend a puzzle's retry and still find a Rare or better word.",
-    check: firstPuzzle(secondChance),
+    description: "Retry a word and score higher than the one you gave up.",
+    check: firstPuzzle(retryScored((replacement, retried) => replacement > retried)),
+  },
+  {
+    id: "buyers-remorse",
+    group: "Style",
+    icon: "🫠",
+    title: "Buyer's remorse",
+    description: "Retry a word and score lower than the one you gave up.",
+    check: firstPuzzle(retryScored((replacement, retried) => replacement < retried)),
   },
   {
     id: "sesquipedalian",
@@ -1183,14 +1175,6 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "The quick brown fox",
     description: "Use every letter of the alphabet across the words you bank.",
     check: lettersSeen(26, (word) => word),
-  },
-  {
-    id: "triple-letter",
-    group: "Style",
-    icon: "📺",
-    title: "Three's Company",
-    description: "Bank a word with one letter in it three times.",
-    check: anyWord((word) => /(.).*\1.*\1/.test(word)),
   },
   {
     id: "short-king",
@@ -1629,7 +1613,9 @@ export function syncAchievements(streak: StreakState): AchievementStatus[] {
   const earned = Object.fromEntries(
     statuses.flatMap(({ achievement, earnedOn }) => (earnedOn ? [[achievement.id, earnedOn]] : []))
   );
-  if (Object.keys(earned).length !== Object.keys(kept).length) writeEarned({ ...kept, ...earned });
+  // Checked id by id, not by count: the kept ones can include a retired badge,
+  // which would make a count match while a new one still went unwritten.
+  if (Object.keys(earned).some((id) => !kept[id])) writeEarned({ ...kept, ...earned });
   return statuses;
 }
 

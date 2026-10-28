@@ -170,14 +170,14 @@ describe("streakGoal", () => {
     });
 
     it("names the easiest locked achievement, by how many players hold it", () => {
-      // straight-in is held by far more players than pantheon or both-ways.
-      const locked = [lockedOne("pantheon"), lockedOne("straight-in"), lockedOne("both-ways")];
-      expect(streakGoal(maxed, FRIDAY, locked)).toBe('Shoot for 🏹 "Straight in" Achievement!');
+      // clean-sweep is held by far more players than pantheon or both-ways.
+      const locked = [lockedOne("pantheon"), lockedOne("clean-sweep"), lockedOne("both-ways")];
+      expect(streakGoal(maxed, FRIDAY, locked)).toBe('Shoot for 🧹 "Clean sweep" Achievement!');
     });
 
     it("names the one coming back earns soonest, within 3 days", () => {
       const locked = [
-        lockedOne("straight-in"),
+        lockedOne("clean-sweep"),
         lockedOne("streak-100", { current: 30, target: 100 }),
         lockedOne("days-50", { current: 47, target: 50 }),
         lockedOne("words-100", { current: 96, target: 100 }),
@@ -189,13 +189,13 @@ describe("streakGoal", () => {
 
     it("counts a streak achievement from the current streak", () => {
       const run = streak({ currentStreak: 28, longestStreak: 28, bankedFreezes: 2 });
-      const locked = [lockedOne("straight-in"), lockedOne("streak-30", { current: 28, target: 30 })];
+      const locked = [lockedOne("clean-sweep"), lockedOne("streak-30", { current: 28, target: 30 })];
       expect(streakGoal(run, FRIDAY, locked)).toBe('Shoot for 🌕 "One month" Achievement!');
     });
 
     it("falls back to the easiest past 3 days", () => {
-      const locked = [lockedOne("days-50", { current: 46, target: 50 }), lockedOne("straight-in")];
-      expect(streakGoal(maxed, FRIDAY, locked)).toBe('Shoot for 🏹 "Straight in" Achievement!');
+      const locked = [lockedOne("days-50", { current: 46, target: 50 }), lockedOne("clean-sweep")];
+      expect(streakGoal(maxed, FRIDAY, locked)).toBe('Shoot for 🧹 "Clean sweep" Achievement!');
     });
 
     it("explains the achievement, with how far along a count is", () => {
@@ -207,35 +207,35 @@ describe("streakGoal", () => {
 
     it("comes ahead of beating the best streak", () => {
       const behind = streak({ currentStreak: 30, longestStreak: 40, bankedFreezes: 2 });
-      expect(streakGoal(behind, FRIDAY, [lockedOne("straight-in")])).toBe('Shoot for 🏹 "Straight in" Achievement!');
+      expect(streakGoal(behind, FRIDAY, [lockedOne("clean-sweep")])).toBe('Shoot for 🧹 "Clean sweep" Achievement!');
       expect(streakGoal(behind, FRIDAY, [])).toMatch(/beat your best/);
     });
 
     it("is not used while a freeze is within 2 days", () => {
-      expect(streakGoal(streak({}), FRIDAY, [lockedOne("straight-in")])).toBe("2 days to your next 🧊 streak freeze.");
+      expect(streakGoal(streak({}), FRIDAY, [lockedOne("clean-sweep")])).toBe("2 days to your next 🧊 streak freeze.");
       // A full cap of 1 rises at 14 days: 2 away from 12, 3 away from 11.
-      expect(streakGoal(streak({ currentStreak: 12, longestStreak: 12, bankedFreezes: 1 }), FRIDAY, [lockedOne("straight-in")])).toBe(
+      expect(streakGoal(streak({ currentStreak: 12, longestStreak: 12, bankedFreezes: 1 }), FRIDAY, [lockedOne("clean-sweep")])).toBe(
         "2 days until your 🧊 freeze limit goes up to 2."
       );
-      expect(streakGoal(streak({ currentStreak: 11, longestStreak: 11, bankedFreezes: 1 }), FRIDAY, [lockedOne("straight-in")])).toBe(
-        'Shoot for 🏹 "Straight in" Achievement!'
+      expect(streakGoal(streak({ currentStreak: 11, longestStreak: 11, bankedFreezes: 1 }), FRIDAY, [lockedOne("clean-sweep")])).toBe(
+        'Shoot for 🧹 "Clean sweep" Achievement!'
       );
     });
 
     it("is not used while beating the best streak is within 2 days", () => {
       const close = streak({ currentStreak: 39, longestStreak: 40, bankedFreezes: 2 });
-      expect(streakGoal(close, FRIDAY, [lockedOne("straight-in")])).toBe("2 days to beat your best streak of 40.");
+      expect(streakGoal(close, FRIDAY, [lockedOne("clean-sweep")])).toBe("2 days to beat your best streak of 40.");
       const far = streak({ currentStreak: 38, longestStreak: 40, bankedFreezes: 2 });
-      expect(streakGoal(far, FRIDAY, [lockedOne("straight-in")])).toBe('Shoot for 🏹 "Straight in" Achievement!');
+      expect(streakGoal(far, FRIDAY, [lockedOne("clean-sweep")])).toBe('Shoot for 🧹 "Clean sweep" Achievement!');
     });
 
     it("is not used while a lazy weekend is one day away, and is past that", () => {
       const monday = "2026-10-26";
-      const locked = [lockedOne("straight-in")];
+      const locked = [lockedOne("clean-sweep")];
       const oneAway = streak({ currentStreak: 30, longestStreak: 30, bankedFreezes: 2, playedDates: ["2026-10-26", "2026-10-27"] });
       expect(streakGoal(oneAway, "2026-10-27", locked)).toBe("Play tomorrow and unlock a lazy weekend 😴");
       const twoAway = streak({ currentStreak: 30, longestStreak: 30, bankedFreezes: 2, playedDates: [monday] });
-      expect(streakGoal(twoAway, monday, locked)).toBe('Shoot for 🏹 "Straight in" Achievement!');
+      expect(streakGoal(twoAway, monday, locked)).toBe('Shoot for 🧹 "Clean sweep" Achievement!');
     });
 
     it("says nothing with every achievement earned", () => {

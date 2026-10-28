@@ -84,6 +84,15 @@ export interface DailyProgress {
    */
   retryUsed?: boolean;
   /**
+   * The word the retry gave up, and where in `acceptedWords` its replacement
+   * lands -- the next word banked after the retry. Read by the two retry badges,
+   * which compare the replacement's score with the word it replaced.
+   *
+   * Absent on a retry spent before this field existed, and on one forfeited to
+   * the reveal (see storage.forfeitRetry), where no word moved.
+   */
+  retried?: { word: AcceptedWord; replacedAt: number };
+  /**
    * When the first word was accepted, as an ISO timestamp.
    *
    * The only record of when a puzzle was actually *played*, as opposed to

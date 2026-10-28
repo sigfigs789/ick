@@ -648,6 +648,7 @@ export function retryWord(progress: DailyProgress, word: string): DailyProgress 
     ...progress,
     acceptedWords,
     retryUsed: true,
+    retried: { word: removed, replacedAt: acceptedWords.length },
     completed,
     // Both are facts about a finished puzzle. A puzzle the retry re-opened has
     // neither until it finishes again.

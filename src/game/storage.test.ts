@@ -854,6 +854,8 @@ describe("retryWord", () => {
 
     expect(retried.acceptedWords).toEqual([word("strut", 3.2, "Rare")]);
     expect(retried.retryUsed).toBe(true);
+    // The word given up, and the slot its replacement will fill.
+    expect(retried.retried).toEqual({ word: word("strange"), replacedAt: 1 });
     // And it survives the round trip through storage, so a reload doesn't hand
     // the word back.
     expect(loadProgress("2024-01-01")).toMatchObject({
