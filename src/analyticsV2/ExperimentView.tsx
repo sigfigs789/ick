@@ -7,9 +7,20 @@ import { count, percent, STANDING_NAMES, type Standing } from "./scorecard";
  * An experiment on /experimentsV2: the call first, then the two arms side by
  * side on the scorecard's own measures, for everyone drawn, then new and
  * returning players apart. `subject` names the thing tested ("the word of the
- * day"); `about` says who is drawn when, and how to force an arm.
+ * day"); `about` says who is drawn when, and how to force an arm. `arms` heads
+ * the two arm columns, Shown and Hidden unless an experiment names its own.
  */
-export function ExperimentView({ experiment, subject, about }: { experiment: Experiment; subject: string; about: ReactNode }) {
+export function ExperimentView({
+  experiment,
+  subject,
+  about,
+  arms = DEFAULT_ARMS,
+}: {
+  experiment: Experiment;
+  subject: string;
+  about: ReactNode;
+  arms?: ArmNames;
+}) {
   const call = verdict(experiment, subject);
   return (
     <>
@@ -18,7 +29,7 @@ export function ExperimentView({ experiment, subject, about }: { experiment: Exp
         <p className="av2__verdict-reason">{call.reason}</p>
       </div>
       {SEGMENTS.map((segment) => (
-        <ArmTable key={segment} experiment={experiment} segment={segment} subject={subject} />
+        <ArmTable key={segment} experiment={experiment} segment={segment} subject={subject} arms={arms} />
       ))}
       <p className="review__meta av2__note">
         {about}
@@ -34,6 +45,11 @@ export function ExperimentView({ experiment, subject, about }: { experiment: Exp
   );
 }
 
+/** The column headings for the `shown` and `hidden` arms. */
+export type ArmNames = { shown: string; hidden: string };
+
+const DEFAULT_ARMS: ArmNames = { shown: "Shown", hidden: "Hidden" };
+
 const SEGMENTS: readonly Segment[] = ["all", "new", "returning"];
 
 const SEGMENT_NAMES: Record<Segment, string> = { all: "Everyone", new: "New", returning: "Returning" };
@@ -47,7 +63,17 @@ const captions = (subject: string): Record<Segment, string> => ({
     "Returning players alone: drawn on a later day, who had played before. They stay returning for good.",
 });
 
-function ArmTable({ experiment, segment, subject }: { experiment: Experiment; segment: Segment; subject: string }) {
+function ArmTable({
+  experiment,
+  segment,
+  subject,
+  arms,
+}: {
+  experiment: Experiment;
+  segment: Segment;
+  subject: string;
+  arms: ArmNames;
+}) {
   const caption = captions(subject)[segment];
   const shown = arm(experiment, "shown", segment);
   const hidden = arm(experiment, "hidden", segment);
@@ -76,8 +102,8 @@ function ArmTable({ experiment, segment, subject }: { experiment: Experiment; se
         <thead>
           <tr>
             <th scope="col">Measure</th>
-            <th scope="col">Shown</th>
-            <th scope="col">Hidden</th>
+            <th scope="col">{arms.shown}</th>
+            <th scope="col">{arms.hidden}</th>
             <th scope="col">Gap</th>
           </tr>
         </thead>

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { ExperimentsV2Page } from "./ExperimentsV2Page";
 
 vi.mock("../game/date", async (importOriginal) => ({
@@ -170,9 +170,15 @@ describe("ExperimentsV2Page", () => {
     render(<ExperimentsV2Page />);
 
     expect(await screen.findByRole("heading", { name: "Input below the guess log" })).toBeTruthy();
-    expect(
-      screen.getByRole("table", { name: "Everyone drawn: with the input below the guess log against without." }),
-    ).toBeTruthy();
+    const everyone = screen.getByRole("table", {
+      name: "Everyone drawn: with the input below the guess log against without.",
+    });
+    expect(within(everyone).getAllByRole("columnheader").map((th) => th.textContent)).toEqual([
+      "Measure",
+      "Below",
+      "Above",
+      "Gap",
+    ]);
     expect(screen.getAllByRole("table")).toHaveLength(3);
   });
 
