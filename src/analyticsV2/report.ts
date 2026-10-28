@@ -39,8 +39,6 @@ export interface Week {
   newPlayers: number;
   /** Players by how many of the week's days they banked a word on, 1 to 7. */
   daysPlayed: Record<number, number>;
-  /** Of its players, how many banked a word the week after too; null before the 2026-11-16 migration. */
-  playedNextWeek: number | null;
 }
 
 export interface Source {
@@ -81,12 +79,6 @@ export interface Window {
   referralVisits: number;
   referralNewVisitors: number;
   referralNewPlayers: number;
-  /**
-   * Players lost when it began -- a word banked before, but none in the 7 days
-   * just before it -- and how many banked a word in it; null from a database
-   * that does not count them yet (before the 2026-11-16 migration).
-   */
-  lapsed: Rate | null;
   afterBoard: { viewed: Rate; notViewed: Rate };
   afterShare: { shared: Returns; notShared: Returns };
 }
@@ -215,7 +207,6 @@ function parseWindow(raw: unknown): Window {
     referralVisits: num(w.referralVisits),
     referralNewVisitors: num(w.referralNewVisitors),
     referralNewPlayers: num(w.referralNewPlayers),
-    lapsed: w.lapsed === undefined || w.lapsed === null ? null : rate(w.lapsed),
     afterBoard: { viewed: rate(obj(w.afterBoard).viewed), notViewed: rate(obj(w.afterBoard).notViewed) },
     afterShare: { shared: returns(obj(w.afterShare).shared), notShared: returns(obj(w.afterShare).notShared) },
   };
@@ -285,7 +276,6 @@ export function parseReport(raw: unknown): Report {
         players: num(x.players),
         newPlayers: num(x.newPlayers),
         daysPlayed: counts(x.daysPlayed),
-        playedNextWeek: x.playedNextWeek === undefined || x.playedNextWeek === null ? null : num(x.playedNextWeek),
       })),
     sources: parseSources(r.sources),
     window: parseWindow(r.window),
