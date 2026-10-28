@@ -125,6 +125,9 @@ export const LEAST = 30;
 /** Activation is judged sooner: a first visit is cheap to count, and the page wants the read early. */
 export const LEAST_FIRST_VISITS = 10;
 
+/** Losing a long streak too: few players hold a 5+ day streak, and the page wants the read early. */
+export const LEAST_STREAKS = 5;
+
 function retentionRow(metric: string, n: number, rate: Rate, bands: Row["bands"], marks: Marks): Row {
   const ok = rate.cohort >= LEAST;
   return {
@@ -180,7 +183,7 @@ export function scorecard(report: Report, span: Range = windowOf(report)): Row[]
   const lastWeek = report.weekly[1];
   const reg = lastWeek ? regulars(lastWeek) : null;
   const streaks = w.streakLoss;
-  const streaksOk = streaks !== null && streaks.cohort >= LEAST;
+  const streaksOk = streaks !== null && streaks.cohort >= LEAST_STREAKS;
   const streaksKept = streaksOk ? 1 - streaks.lost / streaks.cohort : 0;
 
   return [
@@ -265,9 +268,9 @@ export function scorecard(report: Report, span: Range = windowOf(report)): Row[]
       detail:
         streaks === null
           ? "needs the 2026-11-17 migration"
-          : streaks.cohort >= LEAST
+          : streaksOk
             ? `${count(streaks.lost)} of ${count(streaks.cohort)} players holding a 5+ day streak lost it`
-            : `needs ${LEAST} players holding a 5+ day streak`,
+            : `needs ${LEAST_STREAKS} players holding a 5+ day streak`,
       how:
         "Of players who came back to play in the window holding a streak of 5 or more days, the share whose streak " +
         "had reset that day. Lower is better. Read off the streak each play reports, so a player who stops playing " +
