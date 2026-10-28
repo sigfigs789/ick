@@ -134,6 +134,15 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
     puzzle's words earns, once that average reaches Elusive: the whole button
     fill turns to that fire and flickering flames run along its top edge.
     Each tier up (Mythic, Legend) burns taller.
+  - **Tint** (`src/game/shareTintTest.ts`, `src/hooks/useShareTint.ts`): a
+    20/80 test. For `shown`, both Share buttons fill with the Extremely Rare
+    colour while the average is Extremely Rare (Elusive and up burn
+    instead, for everyone). `hidden` keeps the plain buttons. A player is
+    drawn the first time their average is Extremely Rare and keeps that arm.
+    The draw is a `share_tint_assigned` event (with `returning`), scored on
+    `/experimentsV2`, new players and returning players apart. Force either
+    arm with `?share-tint=shown` or `=hidden`. Testers are forced to
+    `shown`. A forced arm, or a host that reports nothing, is never drawn.
   - **Text**: `buildShareText`'s `spoilerFree` option (default `true`)
     swaps between rarity squares and the actual words.
   - **Image**: `ShareImageButton` rasterizes the results card (via

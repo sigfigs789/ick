@@ -61,7 +61,8 @@ export function ExperimentsV2Page() {
           !experiments.headerCelebrations &&
           !experiments.shareName &&
           !experiments.inputPlacement &&
-          !experiments.playTab)
+          !experiments.playTab &&
+          !experiments.shareTint)
       }
     >
       {picker}
@@ -193,6 +194,27 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
                 icons; the rest have the wordmark alone, as before. Each is drawn once, on their first load. Try either
                 arm with <code>?play-tab=shown</code> or <code>=hidden</code>; a forced arm, or a tester (forced to
                 hidden), is not counted.
+              </>
+            }
+          />
+        </Section>
+      )}
+
+      {experiments.shareTint && (
+        <Section
+          title="Share buttons in Extremely Rare"
+          note={`Whether filling the Share buttons with the Extremely Rare colour moves the scorecard. Over players, new and returning apart.${drawn}`}
+        >
+          <ExperimentView
+            experiment={experiments.shareTint}
+            subject="the Extremely Rare Share buttons"
+            about={
+              <>
+                One player in five sees both Share buttons filled with the Extremely Rare colour while their words average
+                Extremely Rare; the rest see the plain buttons. Elusive and up burn for everyone either way. Each is
+                drawn once, the first time their average is Extremely Rare. Watch the sharing guardrail here as closely
+                as D1. Try either arm with <code>?share-tint=shown</code> or <code>=hidden</code>; a forced arm, or a
+                tester (forced to shown), is not counted.
               </>
             }
           />
