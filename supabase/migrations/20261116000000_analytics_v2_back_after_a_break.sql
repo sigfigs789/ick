@@ -1,7 +1,8 @@
--- The window numbers gain `backAfterBreak`: the players who banked a word in
--- the span on a day after 7 or more days without one, having played before.
--- Over `players`, it is the scorecard's "Back after a break" row: how many of
--- the span's players were lapsed players coming back.
+-- The window numbers gain `lapsed`: of the players lost when the span began
+-- -- a word banked before it, but none in the 7 days just before it -- how
+-- many (`cohort`) and how many banked a word in the span (`returned`). It is
+-- the scorecard's "Back after a break" row, over lost players rather than all
+-- players, so new players arriving neither raise nor lower it.
 --
 -- The function is otherwise 20261111000000_analytics_v2_window_everywhere.sql,
 -- whose notes stand. The signature is unchanged, so it is replaced in place.
@@ -324,9 +325,6 @@ as $$
       'referralVisits', count(*) filter (where f.share_arrival),
       'referralNewVisitors', count(*) filter (where f.day = f.first_seen and f.source_share),
       'referralNewPlayers', count(*) filter (where f.day = f.first_seen and f.source_share and f.first_active is not null),
-      -- Players back after a break: a word banked on a day after 7 or more
-      -- days without one, by a player whose first word was before.
-      'backAfterBreak', count(distinct f.player_id) filter (where f.back_after_break),
       -- From a player's day, the share who banked a word again the next day
       -- and within a week, split by what they did that day.
       'afterBoard', jsonb_build_object(
@@ -354,14 +352,26 @@ as $$
           f.*,
           f.day + 1 < p_today as next_over,
           f.day + 7 < p_today as week_over,
-          v.source in ('share', 't') as source_share,
-          f.active and f.first_active < f.day and not exists (
-            select 1 from days p
-            where p.player_id = f.player_id and p.active and p.day between f.day - 7 and f.day - 1
-          ) as back_after_break
+          v.source in ('share', 't') as source_share
         from followed f
           join visitors v using (player_id)
       ) f on f.day between s.lo and s.hi
+    group by s.span
+  ),
+
+  -- Players lost when each span began: a word banked before its 7 days just
+  -- before it, and none in them; and how many banked a word in the span.
+  lapsed as (
+    select s.span, jsonb_build_object(
+      'cohort', count(v.player_id),
+      'returned', count(v.player_id) filter (where exists (
+        select 1 from days d
+        where d.player_id = v.player_id and d.active and d.day between s.lo and s.hi))
+    ) as v
+    from spans s
+      left join visitors v on v.first_active < s.lo - 7 and not exists (
+        select 1 from days d
+        where d.player_id = v.player_id and d.active and d.day between s.lo - 7 and s.lo - 1)
     group by s.span
   ),
 
@@ -473,14 +483,16 @@ as $$
     'cohorts', (select v from cohorts),
     'weekly', (select v from weekly),
     'sources', (select v from sources where span = 'standard'),
-    'window', coalesce((select v from window_numbers where span = 'standard'), '{}'::jsonb),
+    'window', coalesce((select v from window_numbers where span = 'standard'), '{}'::jsonb)
+      || jsonb_build_object('lapsed', (select v from lapsed where span = 'standard')),
     'scores', (select v from scores where span = 'standard'),
     'range', (
       select jsonb_build_object(
         'from', s.lo,
         'to', s.hi,
         'sources', (select v from sources where span = s.span),
-        'window', coalesce((select v from window_numbers where span = s.span), '{}'::jsonb),
+        'window', coalesce((select v from window_numbers where span = s.span), '{}'::jsonb)
+          || jsonb_build_object('lapsed', (select v from lapsed where span = s.span)),
         'scores', (select v from scores where span = s.span),
         'retention', (select v from range_retention),
         'prior', (select v from prior_days where span = s.span)

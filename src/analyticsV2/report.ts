@@ -80,11 +80,11 @@ export interface Window {
   referralNewVisitors: number;
   referralNewPlayers: number;
   /**
-   * Players who banked a word in it after 7 or more days without one, having
-   * played before; null from a database that does not count it yet (before
-   * the 2026-11-16 migration).
+   * Players lost when it began -- a word banked before, but none in the 7 days
+   * just before it -- and how many banked a word in it; null from a database
+   * that does not count them yet (before the 2026-11-16 migration).
    */
-  backAfterBreak: number | null;
+  lapsed: Rate | null;
   afterBoard: { viewed: Rate; notViewed: Rate };
   afterShare: { shared: Returns; notShared: Returns };
 }
@@ -213,7 +213,7 @@ function parseWindow(raw: unknown): Window {
     referralVisits: num(w.referralVisits),
     referralNewVisitors: num(w.referralNewVisitors),
     referralNewPlayers: num(w.referralNewPlayers),
-    backAfterBreak: w.backAfterBreak === undefined || w.backAfterBreak === null ? null : num(w.backAfterBreak),
+    lapsed: w.lapsed === undefined || w.lapsed === null ? null : rate(w.lapsed),
     afterBoard: { viewed: rate(obj(w.afterBoard).viewed), notViewed: rate(obj(w.afterBoard).notViewed) },
     afterShare: { shared: returns(obj(w.afterShare).shared), notShared: returns(obj(w.afterShare).notShared) },
   };

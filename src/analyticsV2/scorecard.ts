@@ -57,7 +57,7 @@ export const MONTH_MARKS: Marks = { nowhere: 0.3, promising: 0.4, great: 0.55 };
 /** Activation is not in the table, so these marks are the page's. */
 export const ACTIVATION_MARKS: Marks = { nowhere: 0.3, promising: 0.4, great: 0.6 };
 /** Nor is coming back after a break, so these marks are the page's. */
-export const BREAK_MARKS: Marks = { nowhere: 0.03, promising: 0.05, great: 0.1 };
+export const BREAK_MARKS: Marks = { nowhere: 0.05, promising: 0.1, great: 0.2 };
 /** Sharing has no great mark of its own: great is consistent sharing that also brings players. */
 export const SHARE_MARKS: Marks = { nowhere: 0.05, promising: 0.1, great: Infinity };
 
@@ -174,8 +174,8 @@ export function scorecard(report: Report, span: Range = windowOf(report)): Row[]
   const driven = shares.all > 0 ? shares.fromShares / shares.all : 0;
   const lastWeek = report.weekly[1];
   const reg = lastWeek ? regulars(lastWeek) : null;
-  const back = w.backAfterBreak;
-  const backOk = back !== null && w.players >= LEAST;
+  const lost = w.lapsed;
+  const backOk = lost !== null && lost.cohort >= LEAST;
 
   return [
     {
@@ -251,20 +251,20 @@ export function scorecard(report: Report, span: Range = windowOf(report)): Row[]
     },
     {
       metric: "Back after a break",
-      bands: { nowhere: "Under 3%", promising: "5–9%", great: "10%+" },
-      value: backOk ? percent(back / w.players) : null,
-      points: backOk ? whole(back / w.players) : null,
-      standing: backOk ? stand(back / w.players, BREAK_MARKS) : null,
+      bands: { nowhere: "Under 5%", promising: "10–19%", great: "20%+" },
+      value: backOk ? percent(lost.returned / lost.cohort) : null,
+      points: backOk ? whole(lost.returned / lost.cohort) : null,
+      standing: backOk ? stand(lost.returned / lost.cohort, BREAK_MARKS) : null,
       detail:
-        back === null
+        lost === null
           ? "needs the 2026-11-16 migration"
-          : w.players >= LEAST
-            ? `${count(back)} of ${count(w.players)} players came back after 7+ days away`
-            : `needs ${LEAST} players in the window`,
+          : lost.cohort >= LEAST
+            ? `${count(lost.returned)} of ${count(lost.cohort)} lost players came back`
+            : `needs ${LEAST} lost players`,
       how:
-        "Of the window's players, the share who banked a word after 7 or more days without one, having played before. " +
-        "A flood of new players lowers it without fewer coming back. The table has no row for it, so these marks are " +
-        "the page's: under 3% is going nowhere, 5% promising, 10% great.",
+        "Players lost when the window began -- a word banked before, but none in the 7 days just before it -- and the " +
+        "share who banked a word in the window. New players are in neither number. The table has no row for it, so " +
+        "these marks are the page's: under 5% is going nowhere, 10% promising, 20% great.",
     },
   ];
 }
