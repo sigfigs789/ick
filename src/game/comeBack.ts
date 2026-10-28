@@ -38,6 +38,10 @@ const LAZY_SUNDAY_RULE =
  * its week. A lazy weekend is only promised while the week has days enough
  * left to earn it, and once unlocked is not mentioned again.
  *
+ * A new player, whose best streak is a single day, hears none of those: a
+ * freeze, a weekend off and a best to beat mean nothing before a streak has
+ * started. They get the achievement alone (see `NEW_PLAYER_BEST`).
+ *
  * When none of those lands within its window (`SOON_DAYS`: two days played for
  * a freeze or the best streak, one for a lazy weekend), it points at an
  * achievement still locked instead (see `achievementGoal`). With nothing at
@@ -76,6 +80,7 @@ export function comeBackGoal(
   const days = streak.currentStreak;
   const next = days + 1;
   const best = Math.max(streak.longestStreak, days);
+  if (best <= NEW_PLAYER_BEST) return locked.length > 0 ? achievementGoal(locked, streak, today) : null;
   const banked = streak.bankedFreezes ?? 0;
   const keeps = (on: number) => earnsFreezeOn(on) && banked < freezeCap(Math.max(best, on));
 
@@ -139,6 +144,9 @@ export function comeBackGoal(
   if (locked.length > 0) return achievementGoal(locked, streak, today);
   return soonest ? { line: soonest.line, explainer: soonest.explainer } : null;
 }
+
+/** The best streak at or below which a player is new, and only hears of an achievement. */
+const NEW_PLAYER_BEST = 1;
 
 /** How many days played ahead each reward still leads the line over an achievement. */
 const SOON_DAYS = { freeze: 2, lazyWeekend: 1, best: 2 } as const;
