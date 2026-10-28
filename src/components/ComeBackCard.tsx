@@ -12,9 +12,8 @@ interface Props {
 }
 
 /**
- * Under the streak strip once today's word is banked: what playing tomorrow
- * is worth, in one line (see game/comeBack.ts for why it is here). No 🔥 of its
- * own -- the strip right above it already wears one.
+ * Under the footnotes divider, just above yesterday's best, once today's word
+ * is banked: what playing tomorrow is worth, in one line (see game/comeBack.ts).
  *
  * Shown to the `shown` arm of the come-back test (see game/comeBackTest.ts),
  * which is drawn here, the first time the line would appear. A host that
