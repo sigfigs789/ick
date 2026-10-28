@@ -46,7 +46,8 @@ describe("scorecard", () => {
     expect(activation(100, 35).standing).toBe("between");
     expect(activation(100, 40).standing).toBe("promising");
     expect(activation(100, 60).standing).toBe("great");
-    expect(activation(20, 15)).toMatchObject({ value: null, standing: null });
+    expect(activation(10, 4)).toMatchObject({ value: "40%", standing: "promising" });
+    expect(activation(9, 6)).toMatchObject({ value: null, standing: null, detail: "needs 10 first-time visitors" });
   });
 
   it("bands D1, D7, back within a week, D30 and back within a month over players, and waits for a cohort big enough to judge", () => {
