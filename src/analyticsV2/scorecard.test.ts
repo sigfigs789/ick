@@ -106,4 +106,15 @@ describe("scorecard", () => {
     );
     expect(rows[8]).toMatchObject({ value: "25%", standing: "promising" });
   });
+
+  it("counts players back after a break over the window's players, and waits for the count", () => {
+    const back = (players: number, backAfterBreak?: number) =>
+      scorecard(report(() => 10, { window: { players, backAfterBreak } }))[9];
+    expect(back(100, 2)).toMatchObject({ metric: "Back after a break", value: "2%", standing: "nowhere" });
+    expect(back(100, 4).standing).toBe("between");
+    expect(back(100, 6).standing).toBe("promising");
+    expect(back(100, 12)).toMatchObject({ value: "12%", standing: "great", detail: "12 of 100 players came back after 7+ days away" });
+    expect(back(20, 5)).toMatchObject({ value: null, standing: null });
+    expect(back(100)).toMatchObject({ value: null, detail: "needs the 2026-11-16 migration" });
+  });
 });

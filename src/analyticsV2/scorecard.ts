@@ -56,6 +56,8 @@ export const WEEK_MARKS: Marks = { nowhere: 0.25, promising: 0.35, great: 0.5 };
 export const MONTH_MARKS: Marks = { nowhere: 0.3, promising: 0.4, great: 0.55 };
 /** Activation is not in the table, so these marks are the page's. */
 export const ACTIVATION_MARKS: Marks = { nowhere: 0.3, promising: 0.4, great: 0.6 };
+/** Nor is coming back after a break, so these marks are the page's. */
+export const BREAK_MARKS: Marks = { nowhere: 0.03, promising: 0.05, great: 0.1 };
 /** Sharing has no great mark of its own: great is consistent sharing that also brings players. */
 export const SHARE_MARKS: Marks = { nowhere: 0.05, promising: 0.1, great: Infinity };
 
@@ -172,6 +174,8 @@ export function scorecard(report: Report, span: Range = windowOf(report)): Row[]
   const driven = shares.all > 0 ? shares.fromShares / shares.all : 0;
   const lastWeek = report.weekly[1];
   const reg = lastWeek ? regulars(lastWeek) : null;
+  const back = w.backAfterBreak;
+  const backOk = back !== null && w.players >= LEAST;
 
   return [
     {
@@ -244,6 +248,23 @@ export function scorecard(report: Report, span: Range = windowOf(report)): Row[]
       standing: reg && reg.players >= LEAST ? stand(reg.regulars / reg.players, { nowhere: 0.1, promising: 0.2, great: 0.4 }) : null,
       detail: reg ? `${count(reg.regulars)} of ${count(reg.players)} players last full week` : "needs a full week",
       how: "*Of the last full week's players (Monday to Sunday), the share who banked a word on 3 or more of its 7 days.",
+    },
+    {
+      metric: "Back after a break",
+      bands: { nowhere: "Under 3%", promising: "5–9%", great: "10%+" },
+      value: backOk ? percent(back / w.players) : null,
+      points: backOk ? whole(back / w.players) : null,
+      standing: backOk ? stand(back / w.players, BREAK_MARKS) : null,
+      detail:
+        back === null
+          ? "needs the 2026-11-16 migration"
+          : w.players >= LEAST
+            ? `${count(back)} of ${count(w.players)} players came back after 7+ days away`
+            : `needs ${LEAST} players in the window`,
+      how:
+        "Of the window's players, the share who banked a word after 7 or more days without one, having played before. " +
+        "A flood of new players lowers it without fewer coming back. The table has no row for it, so these marks are " +
+        "the page's: under 3% is going nowhere, 5% promising, 10% great.",
     },
   ];
 }
