@@ -8,18 +8,18 @@ import type { AcceptedWord } from "./types";
  * results shared. Elusive and up burn instead (see shareFlames.ts), for
  * everyone, so this test covers only the tier below them.
  *
- * Split 50/50: `shown` sees the tinted buttons, `hidden` the plain ones. A
- * player is drawn the first time their average is Extremely Rare with a Share
- * button on the page -- the moment the two arms start to differ -- and keeps
- * the arm for good. The draw is reported once, as `share_tint_assigned`, and
- * /experimentsV2 reads the arms from that day on (see the
- * analytics_v2_experiment migration).
+ * Split 20/80: `shown`, for 20% of players, sees the tinted buttons; `hidden`,
+ * for the other 80%, the plain ones. A player is drawn the first time their
+ * average is Extremely Rare with a Share button on the page -- the moment the
+ * two arms start to differ -- and keeps the arm for good. The draw is reported
+ * once, as `share_tint_assigned`, and /experimentsV2 reads the arms from that
+ * day on (see the analytics_v2_experiment migration).
  */
 
 export type ShareTintVariant = "shown" | "hidden";
 
 /** The share of players who see the tinted buttons. */
-export const SHARE_TINT_SHOW_SHARE = 0.5;
+export const SHARE_TINT_SHOW_SHARE = 0.2;
 
 const ASSIGNMENT_KEY = "ick:share-tint-test";
 

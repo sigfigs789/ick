@@ -32,10 +32,10 @@ describe("shareTinted", () => {
 });
 
 describe("assignShareTintArm", () => {
-  it("splits players 50/50", () => {
-    expect(assignShareTintArm(() => 0.49)).toEqual({ variant: "shown", fresh: true });
+  it("splits players 20/80", () => {
+    expect(assignShareTintArm(() => 0.19)).toEqual({ variant: "shown", fresh: true });
     localStorage.clear();
-    expect(assignShareTintArm(() => 0.5)).toEqual({ variant: "hidden", fresh: true });
+    expect(assignShareTintArm(() => 0.2)).toEqual({ variant: "hidden", fresh: true });
   });
 
   it("keeps the first draw for good", () => {

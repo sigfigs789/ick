@@ -210,7 +210,7 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
             subject="the Extremely Rare Share buttons"
             about={
               <>
-                Half of players see both Share buttons filled with the Extremely Rare colour while their words average
+                One player in five sees both Share buttons filled with the Extremely Rare colour while their words average
                 Extremely Rare; the rest see the plain buttons. Elusive and up burn for everyone either way. Each is
                 drawn once, the first time their average is Extremely Rare. Watch the sharing guardrail here as closely
                 as D1. Try either arm with <code>?share-tint=shown</code> or <code>=hidden</code>; a forced arm, or a

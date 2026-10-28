@@ -135,7 +135,7 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
     fill turns to that fire and flickering flames run along its top edge.
     Each tier up (Mythic, Legend) burns taller.
   - **Tint** (`src/game/shareTintTest.ts`, `src/hooks/useShareTint.ts`): a
-    50/50 test. For `shown`, both Share buttons fill with the Extremely Rare
+    20/80 test. For `shown`, both Share buttons fill with the Extremely Rare
     colour while the average is Extremely Rare (Elusive and up burn
     instead, for everyone). `hidden` keeps the plain buttons. A player is
     drawn the first time their average is Extremely Rare and keeps that arm.
