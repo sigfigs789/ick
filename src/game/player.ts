@@ -70,6 +70,20 @@ export function newId(): string {
 }
 
 /**
+ * A new player's id: `newId` with its version nibble set to 8.
+ *
+ * Still random in every other bit, and still the UUID shape every endpoint
+ * accepts. The 8 is what names the player from the longer handle lists (see
+ * `namedFromLongLists` in game/handle.ts): every id minted before those lists
+ * is a v4, so marking the new ones is how growing the lists left everybody
+ * already playing with the name they had.
+ */
+export function newPlayerId(): string {
+  const id = newId();
+  return `${id.slice(0, 14)}8${id.slice(15)}`;
+}
+
+/**
  * The account this player is signed in as, where the host has accounts.
  *
  * Null on this site, which has none. Identity here is a UUID the browser
@@ -142,7 +156,7 @@ export function joinBoard(): string | null {
   if (account) return account;
   const existing = loadPlayerId();
   if (existing) return existing;
-  const id = newId();
+  const id = newPlayerId();
   try {
     localStorage.setItem(PLAYER_KEY, JSON.stringify({ id }));
   } catch {
