@@ -200,38 +200,38 @@
     },
     {
       "date": "2026-10-24",
-      "drop": "CTI",
-      "estimated": 4190,
-      "unattested": 2892,
-      "swept": "59.2%"
+      "drop": "EP",
+      "estimated": 17094,
+      "unattested": 0,
+      "swept": "100.0%"
     },
     {
       "date": "2026-10-25",
-      "drop": "KIN",
-      "estimated": 2084,
-      "unattested": 2844,
-      "swept": "42.3%"
+      "drop": "TTE",
+      "estimated": 4755,
+      "unattested": 0,
+      "swept": "100.0%"
     },
     {
       "date": "2026-10-26",
-      "drop": "OUN",
-      "estimated": 2198,
-      "unattested": 1774,
-      "swept": "55.3%"
+      "drop": "SES",
+      "estimated": 9533,
+      "unattested": 0,
+      "swept": "100.0%"
     },
     {
       "date": "2026-10-27",
-      "drop": "SIO",
-      "estimated": 1773,
-      "unattested": 1627,
-      "swept": "52.1%"
+      "drop": "KS",
+      "estimated": 6597,
+      "unattested": 0,
+      "swept": "100.0%"
     },
     {
       "date": "2026-10-28",
-      "drop": "STA",
-      "estimated": 8167,
-      "unattested": 15,
-      "swept": "99.8%"
+      "drop": "EME",
+      "estimated": 3600,
+      "unattested": 0,
+      "swept": "100.0%"
     },
     {
       "date": "2026-10-29",

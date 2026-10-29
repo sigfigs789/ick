@@ -99,8 +99,9 @@ describe("the shipped estimates", () => {
   it("say who made every batch and for which puzzle", () => {
     for (const b of batches) {
       expect(b.since).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-      // One drop for a daily batch; a sweep lists every drop it covered.
-      expect(b.drop).toMatch(/^[A-Z]+(, [A-Z]+)*$/);
+      // One drop for a daily batch; a sweep lists every drop it covered; a
+      // batch made by hand for no puzzle (queue words) lists none.
+      expect(b.drop).toMatch(/^([A-Z]+(, [A-Z]+)*)?$/);
       expect(b.model).toMatch(/^claude-/);
     }
   });
