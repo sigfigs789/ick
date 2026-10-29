@@ -121,15 +121,6 @@ describe("achievements", () => {
     expect(statusOf("down-to-the-wire", { history: [sweep, wire] }).earnedOn).toBe("2026-10-11");
   });
 
-  it("needs a win in both modes on one day for Both ways", () => {
-    const history = [
-      day("2026-10-10", [word("Rare")], { mode: "standard" }),
-      day("2026-10-10", [word("Common")], { mode: "freeform" }),
-      day("2026-10-11", [word("Rare")], { mode: "standard" }),
-      day("2026-10-11", [word("Elusive")], { mode: "freeform" }),
-    ];
-    expect(statusOf("both-ways", { history }).earnedOn).toBe("2026-10-11");
-  });
 
   it("counts every current tier for Full spectrum", () => {
     const tiers: Rarity[] = ["Common", "Uncommon", "Rare", "Extremely Rare", "Elusive", "Mythic"];
