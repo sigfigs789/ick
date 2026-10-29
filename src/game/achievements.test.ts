@@ -25,7 +25,7 @@ import {
   type AchievementStatus,
 } from "./achievements";
 import { addDays } from "./date";
-import { totalRarityScore } from "./dictionary";
+import { setEstimatedZipfForTests, totalRarityScore } from "./dictionary";
 import { handleFor } from "./handle";
 import { PLAYER_KEY } from "./player";
 import { setPlayerMessages } from "./playerMessages";
@@ -733,6 +733,33 @@ describe("countedRecord", () => {
     const counted = countedRecord({ history, onItsDay: [], streak: noStreak });
     expect(statusOf("first-legend", counted).earnedOn).toBeNull();
     expect(statusOf("x-word", counted).earnedOn).toBe("2026-10-10");
+  });
+
+  it("counts a Legend Claude estimated, even one floored to the sentinel or banked before its estimate", () => {
+    setEstimatedZipfForTests([
+      { since: "2026-10-20", drop: "", model: "claude", zipf: { zzyzx: -3 } },
+    ]);
+    try {
+      const history = [day("2026-10-10", [{ word: "zzyzx", rarity: "Legend", zipf: -1.57 }])];
+      const counted = countedRecord({ history, onItsDay: [], streak: noStreak });
+      expect(statusOf("first-legend", counted).earnedOn).toBe("2026-10-10");
+    } finally {
+      setEstimatedZipfForTests([]);
+    }
+  });
+
+  it("counts an estimated word at the tier its estimate gives", () => {
+    setEstimatedZipfForTests([
+      { since: "2026-10-20", drop: "", model: "claude", zipf: { zzyzx: 3 } },
+    ]);
+    try {
+      const history = [day("2026-10-10", [{ word: "zzyzx", rarity: "Legend", zipf: -1.57 }])];
+      const counted = countedRecord({ history, onItsDay: [], streak: noStreak });
+      expect(statusOf("first-legend", counted).earnedOn).toBeNull();
+      expect(counted.history[0].acceptedWords[0].zipf).toBe(3);
+    } finally {
+      setEstimatedZipfForTests([]);
+    }
   });
 
   it("still counts a measured Legend", () => {
