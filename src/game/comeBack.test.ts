@@ -1,8 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { ACHIEVEMENTS } from "./achievements";
-import { comeBackGoal, streakGoal } from "./comeBack";
+import { ACHIEVEMENT_VERBS, comeBackGoal as rawComeBackGoal, streakGoal as rawStreakGoal } from "./comeBack";
 import { addDays } from "./date";
 import type { StreakState } from "./types";
+
+// Every achievement line as if it opened "Shoot for", whichever verb the day drew.
+const leadingVerb = new RegExp(`^(${ACHIEVEMENT_VERBS.join("|")}) (?=\\S+ ")`);
+const sameVerb = (line: string) => line.replace(leadingVerb, "Shoot for ");
+const streakGoal = (...args: Parameters<typeof rawStreakGoal>) => {
+  const line = rawStreakGoal(...args);
+  return line === null ? null : sameVerb(line);
+};
+const comeBackGoal = (...args: Parameters<typeof rawComeBackGoal>) => {
+  const goal = rawComeBackGoal(...args);
+  return goal && { ...goal, line: sameVerb(goal.line) };
+};
 
 const streak = (over: Partial<StreakState>): StreakState => ({
   currentStreak: 1,
@@ -220,14 +232,40 @@ describe("streakGoal", () => {
       expect(streakGoal(run, FRIDAY, locked)).toBe('Shoot for 🌕 "One month" Achievement!');
     });
 
-    it("falls back to a draw past 3 days", () => {
-      const locked = [lockedOne("days-50", { current: 46, target: 50 }), lockedOne("clean-sweep")];
+    it("falls back to a draw past 3 days, leaving out streaks and days played", () => {
+      const locked = [
+        lockedOne("days-50", { current: 46, target: 50 }),
+        lockedOne("streak-100", { current: 30, target: 100 }),
+        lockedOne("words-100", { current: 10, target: 100 }),
+        lockedOne("clean-sweep"),
+      ];
       let day = FRIDAY;
       const lines = new Set<string | null>();
       for (let i = 0; i < 60; i++, day = addDays(day, 1)) lines.add(streakGoal(maxed, day, locked));
       expect(lines).toEqual(
-        new Set(['Shoot for 🧹 "Clean sweep" Achievement!', 'Shoot for 🗓️ "Devotee" Achievement!'])
+        new Set(['Shoot for 🧹 "Clean sweep" Achievement!', 'Shoot for 📚 "Hundred words" Achievement!'])
       );
+    });
+
+    it("says nothing with only far-off streaks and days played left", () => {
+      const locked = [lockedOne("days-50", { current: 46, target: 50 }), lockedOne("streak-100", { current: 30, target: 100 })];
+      expect(streakGoal(maxed, FRIDAY, locked)).toBeNull();
+      expect(streakGoal(streak({}), FRIDAY, [lockedOne("days-50", { current: 1, target: 50 })])).toBeNull();
+    });
+
+    it("opens with a verb drawn for the day", () => {
+      const locked = [lockedOne("clean-sweep")];
+      const verbs = new Set<string>();
+      let day = FRIDAY;
+      for (let i = 0; i < 365; i++, day = addDays(day, 1)) {
+        const line = rawStreakGoal(maxed, day, locked)!;
+        expect(rawStreakGoal(maxed, day, locked)).toBe(line);
+        const verb = ACHIEVEMENT_VERBS.find((v) => line.startsWith(`${v} 🧹 `));
+        expect(verb).toBeDefined();
+        verbs.add(verb!);
+      }
+      expect(ACHIEVEMENT_VERBS).toHaveLength(16);
+      expect(verbs.size).toBe(ACHIEVEMENT_VERBS.length);
     });
 
     it("explains the achievement, with how far along a count is", () => {

@@ -44,8 +44,9 @@ const LAZY_SUNDAY_RULE =
  *
  * When none of those lands within its window (`SOON_DAYS`: two days played for
  * a freeze or the best streak, one for a lazy weekend), it points at an
- * achievement still locked instead (see `achievementGoal`). With nothing at
- * all left to earn, it is null and nothing is said.
+ * achievement still locked instead (see `achievementGoal`), skipping a streak
+ * or days-played one more than `NEAR_DAYS` away. With nothing at all left to
+ * earn, it is null and nothing is said.
  *
  * A freeze past the cap is not kept, so it is not promised. A player already
  * holding one hears which it would be -- a 2nd, a 3rd -- since "your next
@@ -80,7 +81,7 @@ export function comeBackGoal(
   const days = streak.currentStreak;
   const next = days + 1;
   const best = Math.max(streak.longestStreak, days);
-  if (best <= NEW_PLAYER_BEST) return locked.length > 0 ? achievementGoal(locked, streak, today) : null;
+  if (best <= NEW_PLAYER_BEST) return achievementGoal(locked, streak, today);
   const banked = streak.bankedFreezes ?? 0;
   const keeps = (on: number) => earnsFreezeOn(on) && banked < freezeCap(Math.max(best, on));
 
@@ -141,7 +142,8 @@ export function comeBackGoal(
   const soon = goals.find((goal) => goal.away <= goal.soon);
   if (soon) return { line: soon.line, explainer: soon.explainer };
   const soonest = goals[0];
-  if (locked.length > 0) return achievementGoal(locked, streak, today);
+  const achievement = achievementGoal(locked, streak, today);
+  if (achievement) return achievement;
   return soonest ? { line: soonest.line, explainer: soonest.explainer } : null;
 }
 
@@ -191,6 +193,26 @@ function dailyDraw(today: string): number {
   return (h >>> 0) / 2 ** 32;
 }
 
+/** How an achievement line opens, one drawn per day so the line doesn't read the same every time. */
+export const ACHIEVEMENT_VERBS = [
+  "Shoot for",
+  "Go for",
+  "Chase",
+  "Hunt down",
+  "Unlock",
+  "Grab",
+  "Claim",
+  "Snag",
+  "Nab",
+  "Score",
+  "Bag",
+  "Crush",
+  "Conquer",
+  "Snatch",
+  "Seize",
+  "Pounce on",
+] as const;
+
 /**
  * An achievement still locked, to shoot for: the one coming back earns
  * soonest, if that is within `NEAR_DAYS` (a tie going to the easier, then to
@@ -200,17 +222,28 @@ function dailyDraw(today: string): number {
  * day. Each counts as held by one more than it is, so a badge nobody holds yet
  * can still come up. The draw is fixed per day, so the line does not change
  * between visits.
+ *
+ * A streak or days-played achievement is only named within `NEAR_DAYS`: one
+ * weeks away is no reason to come back tomorrow. With no other left to draw,
+ * it is null.
  */
 function achievementGoal(
   locked: readonly AchievementStatus[],
   streak: StreakState,
   today: string
-): { line: string; explainer: GoalExplainer } {
-  const candidates = locked.map((status) => ({
-    status,
-    days: daysToEarn(status, streak, today),
-    weight: holdersOf(status.achievement.id) + 1,
-  }));
+): { line: string; explainer: GoalExplainer } | null {
+  const candidates = locked
+    .map((status) => ({
+      status,
+      days: daysToEarn(status, streak, today),
+      weight: holdersOf(status.achievement.id) + 1,
+    }))
+    .filter(
+      ({ status, days }) =>
+        (status.achievement.byPlaying !== "streak" && status.achievement.byPlaying !== "days") ||
+        (days !== null && days <= NEAR_DAYS)
+    );
+  if (candidates.length === 0) return null;
   const near = candidates
     .filter(({ days }) => days !== null && days <= NEAR_DAYS)
     .sort((x, y) => x.days! - y.days! || y.weight - x.weight)[0];
@@ -221,8 +254,10 @@ function achievementGoal(
   }
   const { achievement, progress } = pick.status;
   const along = progress && progress.current > 0 ? ` (${progress.current}/${progress.target} so far)` : "";
+  // Drawn apart from the achievement, so the same one doesn't always get the same verb.
+  const verb = ACHIEVEMENT_VERBS[Math.floor(dailyDraw(`${today}:verb`) * ACHIEVEMENT_VERBS.length)];
   return {
-    line: `Shoot for ${achievement.icon} "${achievement.title}" Achievement!`,
+    line: `${verb} ${achievement.icon} "${achievement.title}" Achievement!`,
     explainer: { title: achievement.title, text: `${achievement.description}${along}` },
   };
 }
