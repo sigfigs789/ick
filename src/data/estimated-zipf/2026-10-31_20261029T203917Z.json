@@ -1,0 +1,16 @@
+{
+  "since": "2026-10-31",
+  "drop": "AL, HO, TE, UH, VE",
+  "model": "claude-opus-5-5",
+  "source": "claude",
+  "run": "https://github.com/sigfigs789/ick/actions/runs/40950562070",
+  "estimatedAt": "2026-10-29T20:39:17Z",
+  "note": "Words accepted off the suggested-words queue on 2026-10-29 that no corpus measures.",
+  "zipf": {
+    "aliferous": -0.8,
+    "hoddypeak": -1.0,
+    "temerate": -1.3,
+    "uhtceare": 0.2,
+    "veteratorian": -1.5
+  }
+}

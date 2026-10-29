@@ -10,23 +10,24 @@ import b1 from "./2026-10-09_20261007T161313Z.json";
 import b2 from "./2026-10-10_20261008T172313Z.json";
 import b3 from "./2026-10-11_20261009T224824Z.json";
 import b4 from "./2026-10-24_20261024T180000Z.json";
-import b5 from "./2026-11-09_20261018T080551Z.json";
-import b6 from "./2026-11-10_20261018T172623Z.json";
-import b7 from "./2026-11-12_20261019T200004Z.json";
-import b8 from "./2026-11-13_20261020T183130Z.json";
-import b9 from "./2026-11-14_20261022T183747Z.json";
-import b10 from "./2026-11-16_20261023T182758Z.json";
-import b11 from "./2026-11-17_20261024T173007Z.json";
-import b12 from "./2026-11-18_20261026T195939Z.json";
-import b13 from "./2026-11-19_20261027T192845Z.json";
-import b14 from "./2026-11-20_20261028T193859Z.json";
-import b15 from "./2026-11-21_20261029T194217Z.json";
-import b16 from "./2026-11-22_20261023T230629Z.json";
-import b17 from "./2026-11-24_20261023T225605Z.json";
-import b18 from "./2026-11-28_20261023T225605Z.json";
-import b19 from "./2026-11-29_20261023T230631Z.json";
-import b20 from "./2026-12-03_20261023T225605Z.json";
+import b5 from "./2026-10-31_20261029T203917Z.json";
+import b6 from "./2026-11-09_20261018T080551Z.json";
+import b7 from "./2026-11-10_20261018T172623Z.json";
+import b8 from "./2026-11-12_20261019T200004Z.json";
+import b9 from "./2026-11-13_20261020T183130Z.json";
+import b10 from "./2026-11-14_20261022T183747Z.json";
+import b11 from "./2026-11-16_20261023T182758Z.json";
+import b12 from "./2026-11-17_20261024T173007Z.json";
+import b13 from "./2026-11-18_20261026T195939Z.json";
+import b14 from "./2026-11-19_20261027T192845Z.json";
+import b15 from "./2026-11-20_20261028T193859Z.json";
+import b16 from "./2026-11-21_20261029T194217Z.json";
+import b17 from "./2026-11-22_20261023T230629Z.json";
+import b18 from "./2026-11-24_20261023T225605Z.json";
+import b19 from "./2026-11-28_20261023T225605Z.json";
+import b20 from "./2026-11-29_20261023T230631Z.json";
+import b21 from "./2026-12-03_20261023T225605Z.json";
 
 export default {
-  batches: [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20],
+  batches: [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21],
 };
