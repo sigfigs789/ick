@@ -1,7 +1,8 @@
 name: Review suggested words
 
 # Every day, Claude judges the words waiting on /suggested-words and opens ONE
-# draft pull request with every verdict and its reason.
+# pull request with every verdict and its reason, then merges it once the full
+# checks pass.
 #
 #   1. The untriaged rows (`word_sightings.status` 'new') come off production
 #      through `list_suggested_words`, the function the page itself reads.
@@ -18,15 +19,22 @@ name: Review suggested words
 #      does, and facts.mts runs again to check each one now plays.
 #   5. `review.py ledger` writes scripts/suggestion-review/verdicts/<date>-<run>.json
 #      and the PR body: accepted and rejected words, each with its reason.
-#   6. Once the PR is open, the queue is marked: rejected words get their cross
-#      on /suggested-words straight away, and accepted words go to 'deferred' --
-#      still unmarked on the page, but out of tomorrow's run. Every judged word
+#      Accepted words nothing measures get Claude's estimate as a batch, and are
+#      pinned in dictionary.test.ts again at the score that estimate gives.
+#   6. The full checks run (npm test, tsc, build). If they fail, Claude gets one
+#      go at bringing the tests in line with the run's changes, and they run again.
+#   7. The PR opens either way. Passing checks merge it straight away; failing
+#      ones leave it a draft, with the failure at the top, for a person to fix.
+#   8. The queue is marked: rejected words get their cross on /suggested-words
+#      straight away. Accepted words get their tick if the PR merged, else go to
+#      'deferred' -- still unmarked, but out of tomorrow's run. Every judged word
 #      also gets its Zipf on the page: the game's own measurement where it has
 #      one, else Claude's estimate, which the page marks "est.". Accepted words
 #      nothing measures carry that estimate into the game as a batch in
 #      src/data/estimated-zipf/, from two days out.
 #
-# Merging the PR ticks the accepted words (suggested-words-merged.yml). The tick
+# A draft PR merged by hand ticks its accepted words (suggested-words-merged.yml;
+# a merge made with GITHUB_TOKEN never starts it, hence step 8). The tick
 # is the mark the game already watches: each player who suggested one is
 # thanked over the puzzle and earns 📖 In the dictionary (src/game/suggestions.ts).
 # Closing the PR unmerged puts its accepted words back on the queue.
@@ -35,8 +43,8 @@ name: Review suggested words
 #
 # Needs CLAUDE_CODE_OAUTH_TOKEN (Claude subscription, `claude setup-token`) and
 # SUPABASE_ACCESS_TOKEN (the one supabase-migrations.yml uses). The PR is opened
-# with the built-in GITHUB_TOKEN, so "Test" does not run on it; this job runs
-# the checks itself.
+# and merged with the built-in GITHUB_TOKEN, so "Test" does not run on it; this
+# job runs the checks itself, and they are the merge gate.
 
 on:
   schedule:
@@ -175,19 +183,72 @@ jobs:
             echo "SUMMARY_EOF"
           } >> "$GITHUB_ENV"
 
-      - name: Verify the dictionary and estimates load, and the app builds
-        if: steps.queue.outputs.count != '0'
-        run: |
-          npx vitest run src/game/dictionary.test.ts src/game/estimated-zipf.test.ts
-          npm run build
-
       - name: Update the coverage snapshot
         if: steps.queue.outputs.count != '0'
         # An added word or a recorded estimate moves the measured / estimated /
         # unattested counts, so the PR carries the new snapshot.
         run: npx vitest run -u src/game/zipf-coverage.test.ts
 
-      - name: Open draft pull request
+      - name: Run the checks
+        id: verify
+        if: steps.queue.outputs.count != '0'
+        # The PR is opened with GITHUB_TOKEN, so "Test" never runs on it: this is
+        # the gate the merge below waits on. A failure does not end the run.
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          { npm test && npx tsc --noEmit && npm run build; } 2>&1 | tee .tmp/checks.log
+
+      - name: Fix the failing tests with Claude
+        if: steps.queue.outputs.count != '0' && steps.verify.outcome == 'failure'
+        run: |
+          set -uo pipefail
+          tail -c 20000 .tmp/checks.log > .tmp/checks-tail.log
+          claude -p "This run added the accepted suggested words to WordInk's dictionary (see git diff), and the checks then failed; the end of their output is in .tmp/checks-tail.log. Make the checks pass by bringing the tests and recorded data in line with what this run changed -- for example re-pinning a word with \`python scripts/manage-extra-word.py record-word <word> --list suggested\`. Do not change game code under src/ other than *.test.ts files, and do not drop or re-judge any word. Re-run the failing test files with npx vitest run until they pass." \
+            --model "$MODEL" --max-turns 60 \
+            --allowedTools "Read,Edit,Bash(git diff:*),Bash(git status:*),Bash(npx vitest run:*),Bash(python scripts/manage-extra-word.py:*)" \
+            > .tmp/claude-fix.log 2>&1 || echo "::warning::Claude exited non-zero: $(tail -c 500 .tmp/claude-fix.log)"
+
+      - name: Run the checks again
+        id: recheck
+        if: steps.queue.outputs.count != '0' && steps.verify.outcome == 'failure'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          { npm test && npx tsc --noEmit && npm run build; } 2>&1 | tee .tmp/checks.log
+
+      - name: Settle the checks
+        id: checks
+        if: steps.queue.outputs.count != '0'
+        env:
+          VERIFY: ${{ steps.verify.outcome }}
+          RECHECK: ${{ steps.recheck.outcome }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "$VERIFY" = "success" ] || [ "$RECHECK" = "success" ]; then
+            echo "passed=true" >> "$GITHUB_OUTPUT"
+            [ "$RECHECK" = "success" ] && echo "fixed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "passed=false" >> "$GITHUB_OUTPUT"
+          echo "::warning::The checks still fail; opening the PR as a draft for a person to fix."
+          {
+            echo "body<<SUMMARY_EOF"
+            echo "> [!CAUTION]"
+            echo "> **The checks failed on this run, and Claude could not fix them.** This PR was left"
+            echo "> open as a draft instead of merging; fix it before merging. See the [run log]($RUN_URL)."
+            echo ">"
+            echo '> ```'
+            grep -E "FAIL|AssertionError|error TS|Error:" .tmp/checks.log | head -20 | sed 's/^/> /'
+            echo '> ```'
+            echo
+            cat .tmp/summary.md
+            echo
+            echo "🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+            echo "SUMMARY_EOF"
+          } >> "$GITHUB_ENV"
+
+      - name: Open the pull request
         id: pr
         if: steps.queue.outputs.count != '0'
         uses: peter-evans/create-pull-request@v7
@@ -196,7 +257,7 @@ jobs:
           base: main
           branch: automated/suggested-words-${{ steps.queue.outputs.date }}-${{ github.run_number }}
           delete-branch: true
-          draft: true
+          draft: ${{ steps.checks.outputs.passed != 'true' }}
           commit-message: "Review suggested words, ${{ steps.queue.outputs.date }}"
           title: "Review suggested words, ${{ steps.queue.outputs.date }}"
           body: ${{ env.body }}
@@ -209,17 +270,43 @@ jobs:
             src/data/rarity.json
             src/data/rarity-legacy.json
             src/data/rejection-metadata.json
-            src/game/dictionary.test.ts
+            src/**/*.test.ts
+
+      - name: Merge the pull request
+        id: merge
+        if: steps.pr.outputs.pull-request-url != '' && steps.checks.outputs.passed == 'true'
+        # Squashed as github-actions[bot], which Vercel deploys. A merge that
+        # fails leaves the PR open and the accepted words deferred on it.
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ steps.pr.outputs.pull-request-url }}
+        run: |
+          # GitHub needs a moment to work out a new PR's mergeability.
+          for attempt in 1 2 3 4 5; do
+            if gh pr merge "$PR_URL" --squash --delete-branch; then
+              echo "merged=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::warning::Could not merge $PR_URL; it stays open."
+          exit 1
 
       - name: Mark the queue
         if: steps.pr.outputs.pull-request-url != ''
         # After the PR, so a run that fails earlier leaves every word 'new' for
-        # tomorrow. Rejections show their cross now; acceptances wait on the PR.
+        # tomorrow. Rejections show their cross now. Accepted words get their tick
+        # here when the PR merged above -- a merge made with GITHUB_TOKEN does not
+        # start suggested-words-merged.yml -- and otherwise wait on the PR.
+        env:
+          MERGED: ${{ steps.merge.outputs.merged }}
         run: |
           set -euo pipefail
           R=scripts/suggestion-review/review.py
+          if [ "$MERGED" = "true" ]; then waiting=accepted; else waiting=deferred; fi
           python $R sql --judged .tmp/judged.json --status rejected > .tmp/mark.sql
-          python $R sql --judged .tmp/judged.json --status deferred >> .tmp/mark.sql
+          python $R sql --judged .tmp/judged.json --status "$waiting" >> .tmp/mark.sql
           # The Zipf goes on after the marks, which give every judged word a row:
           # the game's own measurement, or Claude's estimate (shown as "est.").
           python $R zipf-sql --judged .tmp/judged.json >> .tmp/mark.sql
@@ -231,9 +318,12 @@ jobs:
       - name: Report the result
         env:
           PR_URL: ${{ steps.pr.outputs.pull-request-url }}
+          MERGED: ${{ steps.merge.outputs.merged }}
         run: |
-          if [ -n "$PR_URL" ]; then
-            echo "Opened $PR_URL" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "$MERGED" = "true" ]; then
+            echo "Merged $PR_URL" | tee -a "$GITHUB_STEP_SUMMARY"
+          elif [ -n "$PR_URL" ]; then
+            echo "Opened $PR_URL; it was not merged (see the steps above)." | tee -a "$GITHUB_STEP_SUMMARY"
           else
             echo "No PR: nothing waiting on the queue." | tee -a "$GITHUB_STEP_SUMMARY"
           fi

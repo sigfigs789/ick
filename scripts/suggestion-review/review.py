@@ -271,6 +271,14 @@ def ledger(args) -> None:
                 "zipf": dict(sorted(estimated.items())),
             }
         )
+        # `add` pinned these words in dictionary.test.ts at the sentinel, before
+        # the batch existed; the game scores them from the estimate now, so pin
+        # them again from it.
+        for word in sorted(w for w in estimated if any(e["word"] == w and e.get("added") for e in judged["words"])):
+            result = run(str(MANAGE), "record-word", word, "--list", "suggested")
+            print(result.stdout + result.stderr, end="")
+            if result.returncode != 0:
+                sys.exit(f"record-word {word} failed")
 
     LEDGER_DIR.mkdir(parents=True, exist_ok=True)
     path = LEDGER_DIR / f"{args.name or date}.json"
