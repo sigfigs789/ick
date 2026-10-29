@@ -1,0 +1,11 @@
+{
+  "since": "2026-11-21",
+  "drop": "EE",
+  "model": "claude-opus-5-5",
+  "source": "claude",
+  "run": "https://github.com/sigfigs789/ick/actions/runs/40942401040",
+  "estimatedAt": "2026-10-29T19:42:17Z",
+  "zipf": {
+    "immunobioengineering": 0.35
+  }
+}
