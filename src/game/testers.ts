@@ -20,7 +20,7 @@ import { accountName, loadPlayerId } from "./player";
  *
  * Browser players only: an account (the Reddit post) is not given a handle.
  */
-export const TESTER_HANDLES: ReadonlySet<string> = new Set(["FleetAspen87"]);
+export const TESTER_HANDLES: ReadonlySet<string> = new Set(["NorthernBear87"]);
 
 /** Whether this browser's player is one of the hand-picked testers. */
 export function isTester(): boolean {
