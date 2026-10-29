@@ -616,6 +616,22 @@ describe("api/leaderboard reads", () => {
     expect(rpcCall(fetchMock)?.args).toEqual({ p_limit: 999, p_player: PLAYER });
   });
 
+  it("cuts the puzzles-played board at a requested limit, the reader's row below it", async () => {
+    withEnv();
+    const fetchMock = stubFetch([
+      [
+        { rank: 1, player_id: OTHER_TOTAL, puzzles: 40, first_played: "2026-07-01", last_played: "2026-08-24" },
+        { rank: 7, player_id: PLAYER, puzzles: 12, first_played: "2026-08-01", last_played: "2026-08-25" },
+      ],
+    ]);
+    const response = await handler(get(`?total=1&limit=1&player=${PLAYER}`));
+
+    const body = (await response.json()) as Record<string, unknown>;
+    expect(body.total).toHaveLength(1);
+    expect(body.totalSelf).toMatchObject({ rank: 7, playerId: PLAYER, puzzles: 12 });
+    expect(rpcCall(fetchMock)?.args).toEqual({ p_limit: 1, p_player: PLAYER });
+  });
+
   it("reports a failed puzzles-played read as unavailable", async () => {
     withEnv();
     stubFetch([404]);

@@ -984,6 +984,7 @@ month has its own). They tap away or go by themselves.
 |---|---|---|
 | Streak | `NewBestCelebration` — "Your longest streak yet!" | today's first word, when it takes the streak past the player's best |
 | Streak | `StreakClimbCelebration` — "Up the streak board!" | a moment after today's first word takes the streak up, if it passed somebody else's run |
+| Streak | `DaysClimbCelebration` — "Up the days-played board!" | read alongside the streak climb, if today's first word moved the player up the days-played board; only when no streak card above has the day |
 | News | `BestWordNewsCard` — yesterday's best word | as the site opens; every time the player found it, but only once ever when somebody else did (from their 4th day played) |
 | News | `PerfectMonthCelebration` — "Perfect {month}!" | the first word that completes a month without a missed day |
 | News | `ImprovementCelebration` — "You're on the rise!" | the finish, at most once a week |

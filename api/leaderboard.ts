@@ -19,7 +19,8 @@
 //   streak -- and has no window.
 //   `total=1` returns only the puzzles-played board (`total`, `totalSelf`):
 //   every player, most puzzles played first, either mode (see the
-//   20261017100000 migration). It takes `player` and nothing else.
+//   20261017100000 migration). It takes `player`, and `limit` (default the
+//   whole board, MAX_LIMIT) for a caller that only wants its own rank.
 //   `dead=1` returns only the dead-streaks board (`deadStreaks`): players with
 //   two or more days played whose streak ended and who never came back, longest
 //   streak first (see the 20261017000000 migration).
@@ -1074,16 +1075,20 @@ interface TotalEntry {
  *
  * Its own request: it has no window, so none of the boards' dates apply. It
  * carries `player`, so the asking player's row comes back from below the cut
- * the same way it does on the other boards.
+ * the same way it does on the other boards. `limit` cuts the board shorter,
+ * for the game's days-played climb (see src/game/daysClimb.ts), which wants
+ * nothing but that row.
  */
 async function handleTotalGet(params: URLSearchParams): Promise<Response> {
   const claimedPlayer = params.get("player") ?? "";
   const player = UUID_RE.test(claimedPlayer) ? claimedPlayer.toLowerCase() : null;
+  const requested = Number.parseInt(params.get("limit") ?? "", 10);
+  const limit = Number.isFinite(requested) ? Math.min(Math.max(requested, 1), MAX_LIMIT) : MAX_LIMIT;
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   try {
     const rows = await rpc<TotalRow[]>("leaderboard_total_played", {
-      p_limit: MAX_LIMIT,
+      p_limit: limit,
       p_player: player,
     });
     const entries: TotalEntry[] = [];
@@ -1096,7 +1101,7 @@ async function handleTotalGet(params: URLSearchParams): Promise<Response> {
         firstPlayed: String(row.first_played),
         lastPlayed: String(row.last_played),
       };
-      if (entry.rank > MAX_LIMIT) self = entry;
+      if (entry.rank > limit) self = entry;
       else entries.push(entry);
     }
     return reply(200, { total: entries, totalSelf: self }, 60);
