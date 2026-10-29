@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { ConfettiBurst } from "./ConfettiBurst";
 import type { DaysClimb } from "../game/daysClimb";
+import { daysMilestone, daysMilestoneReached } from "../game/daysMilestones";
 
 /** How long the card stays up if nobody closes it, as the streak climb's does. */
 const CELEBRATION_MS = 7000;
@@ -11,6 +12,9 @@ const CELEBRATION_MS = 7000;
  *
  * The streak climb's card, in blue and with a calendar: it lands a moment after
  * the word, floats over the puzzle, and goes by itself or on a tap of its ×.
+ * It wears the player's days milestone (see game/daysMilestones.ts) in place of
+ * the calendar once they have one, and on the day a milestone lands -- the
+ * hundredth day, say -- leads with it.
  */
 export function DaysClimbCelebration({
   climb,
@@ -26,6 +30,8 @@ export function DaysClimbCelebration({
 
   const { from, to, days } = climb;
   const places = from - to;
+  const milestone = daysMilestone(days);
+  const reached = daysMilestoneReached(days);
   return (
     <>
       <ConfettiBurst rising />
@@ -35,15 +41,21 @@ export function DaysClimbCelebration({
             ×
           </button>
           <span className="improvement__icon" aria-hidden="true">
-            📅
+            {milestone?.emoji ?? "📅"}
           </span>
           <span className="improvement__title">
-            {to === 1 ? "Most days played!" : "Up the days-played board!"}
+            {reached
+              ? `${days} days played!`
+              : to === 1
+                ? "Most days played!"
+                : "Up the days-played board!"}
           </span>
           <span className="improvement__body">
-            {days > 0
-              ? `${days} ${days === 1 ? "day" : "days"} played, and you've climbed `
-              : "You've climbed "}
+            {reached
+              ? "A new milestone, and you've climbed "
+              : days > 0
+                ? `${days} ${days === 1 ? "day" : "days"} played, and you've climbed `
+                : "You've climbed "}
             <span className="improvement__gain">
               {places} {places === 1 ? "place" : "places"}
             </span>{" "}

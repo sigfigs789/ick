@@ -1431,7 +1431,7 @@ describe("picking a board", () => {
       streak: [],
       streakSelf: null,
       total: [
-        { rank: 1, playerId: ALICE, puzzles: 40, firstPlayed: "2026-07-01", lastPlayed: "2026-08-27" },
+        { rank: 1, playerId: ALICE, puzzles: 100, firstPlayed: "2026-05-01", lastPlayed: "2026-08-27" },
         { rank: 2, playerId: BOB, puzzles: 12, firstPlayed: "2026-08-10", lastPlayed: "2026-08-28" },
       ],
       totalSelf: { rank: 1000, playerId: me, puzzles: 1, firstPlayed: "2026-08-28", lastPlayed: "2026-08-28" },
@@ -1446,9 +1446,14 @@ describe("picking a board", () => {
     expect(boardUrls(fetchMock).filter((url) => url.includes("total=1"))).toHaveLength(1);
     const rows = boardRows("Days played");
     expect(rows[0]).toHaveTextContent(handleFor(ALICE));
-    expect(rows[0]).toHaveTextContent("40");
+    // Each tally wears the highest milestone it has reached: 💯 at a hundred
+    // days, 🌱 past a week, and nothing under one.
+    expect(rows[0]).toHaveTextContent("💯 100");
+    expect(rows[0]).toHaveTextContent("100 days played milestone");
+    expect(rows[1]).toHaveTextContent("🌱 12");
     expect(rows[1]).toHaveTextContent("Since Aug 10");
     expect(rows[2]).toHaveTextContent("you");
+    expect(rows[2]).not.toHaveTextContent("milestone");
     expect(localStorage.getItem("ick:daysRank")).toBe("1000");
   });
 

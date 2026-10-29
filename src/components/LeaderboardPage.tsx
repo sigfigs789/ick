@@ -19,6 +19,7 @@ import { currentMode, type GameMode } from "../game/mode";
 import { pageCache } from "../game/pageCache";
 import { rememberStreakRank, streakRankIn } from "../game/streakClimb";
 import { daysRankIn, rememberDaysRank } from "../game/daysClimb";
+import { daysMilestone } from "../game/daysMilestones";
 import { useGameMode } from "../hooks/useGameMode";
 import {
   MONTH_BEST_DAYS,
@@ -1278,6 +1279,7 @@ function StreakRow({ entry, isYou }: { entry: StreakEntry; isYou: boolean }) {
  */
 function DaysRow({ entry, isYou }: { entry: TotalEntry; isYou: boolean }) {
   const isLeader = entry.rank === 1;
+  const milestone = daysMilestone(entry.puzzles);
   return (
     <li
       className={`leaderboard__row${isLeader ? " leaderboard__row--leader" : ""}${
@@ -1301,8 +1303,19 @@ function DaysRow({ entry, isYou }: { entry: TotalEntry; isYou: boolean }) {
         {isYou && <span className="leaderboard__you">you</span>}
       </span>
       <span className="leaderboard__score">
+        {/* The highest milestone the tally has reached (see
+            game/daysMilestones.ts); none under a week. */}
+        {milestone && (
+          <span aria-hidden="true" title={milestone.label}>
+            {milestone.emoji}{" "}
+          </span>
+        )}
         {entry.puzzles}
-        <span className="sr-only"> {entry.puzzles === 1 ? "day" : "days"} played</span>
+        <span className="sr-only">
+          {" "}
+          {entry.puzzles === 1 ? "day" : "days"} played
+          {milestone ? `, ${milestone.label.toLowerCase()} milestone` : ""}
+        </span>
       </span>
       <span className="leaderboard__detail">
         <span className="leaderboard__meta" />
