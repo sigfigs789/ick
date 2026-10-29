@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { fetchTotalBoard, type TotalBoard, type TotalEntry } from "../game/leaderboard";
 import { formatDateLabel } from "../game/date";
 import { loadPlayerId } from "../game/player";
+import { daysRankIn, rememberDaysRank } from "../game/daysClimb";
 import { navigate } from "../routes";
 
 type LoadState = "loading" | "ready" | "error";
@@ -22,6 +23,8 @@ export function TotalLeaderboardPage() {
       setState("loading");
       fetchTotalBoard(playerId, { fresh })
         .then((loaded) => {
+          // The rank the player has now seen themselves at (see game/daysClimb.ts).
+          rememberDaysRank(daysRankIn(loaded, playerId));
           setBoard(loaded);
           setState("ready");
         })

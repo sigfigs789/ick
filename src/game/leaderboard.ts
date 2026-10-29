@@ -707,14 +707,17 @@ function parseTotal(raw: unknown, fallbackRank: number): TotalEntry | null {
  * Read the puzzles-played board: every player, most puzzles played first.
  *
  * `player` is the reader, so their own row comes back from below the cut.
- * Rejects on failure; the caller turns that into the page's error state.
+ * `limit` cuts the board shorter than the whole of it, for a caller after
+ * nothing but that row. Rejects on failure; the caller turns that into the
+ * page's error state.
  */
 export async function fetchTotalBoard(
   player: string | null,
-  options: FetchOptions = {}
+  options: FetchOptions & { limit?: number } = {}
 ): Promise<TotalBoard> {
   const who = player ? `&player=${encodeURIComponent(player)}` : "";
-  const response = await fetch(`/api/leaderboard?total=1${who}${freshParam(options)}`, {
+  const limit = options.limit ? `&limit=${options.limit}` : "";
+  const response = await fetch(`/api/leaderboard?total=1${who}${limit}${freshParam(options)}`, {
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     cache: "no-store",
   });

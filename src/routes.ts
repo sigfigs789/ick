@@ -57,7 +57,8 @@ import { startTransition, useEffect, useState } from "react";
  *
  * `/leaderboard-total` ranks every player by how many puzzles they have
  * played, either mode. Unlinked from the header: the tabs are the daily round,
- * and this is a standing tally beside it, reached from /help.
+ * and this is a standing tally beside it, reached from /help. The same board
+ * is the leaderboard page's Days pill.
  * `/dead-streaks` ranks the players whose streak ended and who never came back,
  * longest streak first. Unlinked from the game: it is a page about the players
  * who left, not one for the players still here.

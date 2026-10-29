@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   fetchBoards,
+  fetchTotalBoard,
   dayFloor,
   monthFloor,
   weekFloor,
@@ -8,6 +9,8 @@ import {
   type BoardEntry,
   type Boards,
   type StreakEntry,
+  type TotalBoard,
+  type TotalEntry,
 } from "../game/leaderboard";
 import { loadPlayerId, selfName } from "../game/player";
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
@@ -15,6 +18,8 @@ import { dropForDate } from "../game/drop";
 import { currentMode, type GameMode } from "../game/mode";
 import { pageCache } from "../game/pageCache";
 import { rememberStreakRank, streakRankIn } from "../game/streakClimb";
+import { daysRankIn, rememberDaysRank } from "../game/daysClimb";
+import { daysMilestone } from "../game/daysMilestones";
 import { useGameMode } from "../hooks/useGameMode";
 import {
   MONTH_BEST_DAYS,
@@ -34,9 +39,9 @@ type LoadState = "loading" | "ready" | "error";
 
 /**
  * One of the boards the page shows, as the pills name them: the three windows,
- * and the streak board, which has none.
+ * and the streak and days-played boards, which have none.
  */
-type BoardWindow = "day" | "week" | "month" | "streak";
+type BoardWindow = "day" | "week" | "month" | "streak" | "days";
 
 /**
  * The three windows in the order they are shown, shortest first, with the word
@@ -53,6 +58,7 @@ const BOARD_WINDOWS: { window: BoardWindow; label: string }[] = [
   { window: "week", label: "Week" },
   { window: "month", label: "Month" },
   { window: "streak", label: "Streak" },
+  { window: "days", label: "Days" },
 ];
 
 /**
@@ -122,6 +128,17 @@ const boardCache = {
   // only true as of a date, and a page reopened tomorrow has to ask again.
   streak: pageCache<Pick<Boards, "streak" | "streakSelf">>(),
 };
+
+/**
+ * The days-played board, which is its own request (see fetchTotalBoard): it
+ * counts either mode and has no window, so it is keyed by the player and the
+ * day it was read on, as the streak board is.
+ */
+const daysCache = pageCache<TotalBoard>();
+
+function daysCacheKey(today: string): string {
+  return `${loadPlayerId() ?? ""}:days:${today}`;
+}
 
 function cacheKey(board: GameMode, window: string): string {
   return `${loadPlayerId() ?? ""}:${windowKey(board, window)}`;
@@ -201,8 +218,8 @@ function boardState(
  * modal can do none of those, and a board is exactly the thing people want to
  * send each other.
  *
- * One board at a time, picked from a row of pills -- Day, Week, Month, Streak --
- * on every screen size. It used to lay the windows side by side on a laptop, on
+ * One board at a time, picked from a row of pills -- Day, Week, Month, Streak,
+ * Days -- on every screen size. It used to lay the windows side by side on a laptop, on
  * the reasoning that comparing them was the point; four boards made that row
  * too crowded to read, and one picker everywhere means a laptop and a phone are
  * the same page. Today leads because it is the one anybody can still win from
@@ -342,6 +359,41 @@ export function LeaderboardPage() {
    * refresh of the same window is also correctly the newer of the two.
    */
   const boardsRequest = useRef(0);
+  /**
+   * The days-played board, read the first time its pill is picked rather than
+   * with the rest: it is the whole of every player's tally, and most visits
+   * never ask for it.
+   */
+  const [daysBoard, setDaysBoard] = useState<TotalBoard | null>(
+    () => daysCache.get(daysCacheKey(today)) ?? null,
+  );
+  const [daysState, setDaysState] = useState<LoadState>(
+    daysBoard ? "ready" : "loading",
+  );
+  const loadDays = useCallback(
+    (options: FetchOptions = {}) => {
+      setDaysState((was) => (was === "ready" ? was : "loading"));
+      fetchTotalBoard(loadPlayerId(), options)
+        .then((loaded) => {
+          // The rank the player has now seen themselves at, so the game only
+          // celebrates a climb past it (see game/daysClimb.ts).
+          rememberDaysRank(daysRankIn(loaded, loadPlayerId()));
+          daysCache.set(daysCacheKey(today), loaded);
+          setDaysBoard(loaded);
+          setDaysState("ready");
+        })
+        .catch(() => setDaysState((was) => (was === "ready" ? was : "error")));
+    },
+    [today],
+  );
+  const daysWanted = visibleBoard === "days";
+  const daysRead = useRef(false);
+  useEffect(() => {
+    if (!daysWanted || daysRead.current) return;
+    daysRead.current = true;
+    // A remembered board goes straight up and is checked underneath.
+    loadDays();
+  }, [daysWanted, loadDays]);
 
   /**
    * Fetch all three boards.
@@ -475,12 +527,13 @@ export function LeaderboardPage() {
   const refreshAll = useCallback(() => {
     setRefreshing(true);
     refreshBoards({ fresh: true });
+    if (daysRead.current) loadDays({ fresh: true });
     // Long enough to read as a response to the tap, and it ends on its own
     // rather than on the request: it does not reject in a way this cares about,
     // and a button that stayed disabled because a fetch hung would be worse than
     // one that came back a moment early.
     window.setTimeout(() => setRefreshing(false), 600);
-  }, [refreshBoards]);
+  }, [refreshBoards, loadDays]);
 
   return (
     <main>
@@ -575,7 +628,8 @@ export function LeaderboardPage() {
               choice about the section and not four controls: a reader picks a
               window here and then reads a whole board.
               No Streak pill where the server sent no streak board (the Reddit
-              build), so there is never a pill for a board that is not there.
+              build), so there is never a pill for a board that is not there --
+              and no Days pill either, as that server has no days board.
               Buttons rather than tabs: what they switch is a section of the page
               that keeps its own heading and its own back/forward nav, and a
               tablist would promise arrow-key navigation between panels that are
@@ -587,7 +641,8 @@ export function LeaderboardPage() {
               aria-label="Which board to show"
             >
               {BOARD_WINDOWS.filter(
-                ({ window: boardWindow }) => boardWindow !== "streak" || boards.streak,
+                ({ window: boardWindow }) =>
+                  (boardWindow !== "streak" && boardWindow !== "days") || boards.streak,
               ).map(({ window: boardWindow, label }) => (
                 <button
                   key={boardWindow}
@@ -734,6 +789,23 @@ export function LeaderboardPage() {
                   renderRow={streakRow}
                 />
               )}
+              {boards.streak && showsBoard("days") && (
+                <Board
+                  heading="Days played"
+                  // Not a window either: every day ever played on the day it
+                  // dropped, counted once.
+                  headingDetail="All time"
+                  entries={daysBoard?.entries ?? []}
+                  self={daysBoard?.self ?? null}
+                  emptyMessage="Nobody has played yet. Play today to be first."
+                  playerId={playerId}
+                  state={daysState}
+                  onRetry={() => loadDays({ fresh: true })}
+                  unit="days board"
+                  columns={DAYS_COLUMNS}
+                  renderRow={daysRow}
+                />
+              )}
             </div>
           </div>
         </>
@@ -806,12 +878,22 @@ const SCORE_COLUMNS = ["Total score", "Best find"] as const;
  */
 const STREAK_COLUMNS = ["Streak", "Longest streak"] as const;
 
+/**
+ * The figures on the days-played board: the days, which is what ranks them, and
+ * the first of them.
+ */
+const DAYS_COLUMNS = ["Days played", "Since"] as const;
+
 function scoreRow(entry: BoardEntry, isYou: boolean): ReactNode {
   return <Row key={entry.playerId} entry={entry} isYou={isYou} />;
 }
 
 function streakRow(entry: StreakEntry, isYou: boolean): ReactNode {
   return <StreakRow key={entry.playerId} entry={entry} isYou={isYou} />;
+}
+
+function daysRow(entry: TotalEntry, isYou: boolean): ReactNode {
+  return <DaysRow key={entry.playerId} entry={entry} isYou={isYou} />;
 }
 
 /**
@@ -1186,6 +1268,60 @@ function StreakRow({ entry, isYou }: { entry: StreakEntry; isYou: boolean }) {
         >
           Longest {entry.best}
         </span>
+      </span>
+    </li>
+  );
+}
+
+/**
+ * One row of the days-played board: who, how many days they have played, and
+ * since when -- the streak row's shape, with the days where the run goes.
+ */
+function DaysRow({ entry, isYou }: { entry: TotalEntry; isYou: boolean }) {
+  const isLeader = entry.rank === 1;
+  const milestone = daysMilestone(entry.puzzles);
+  return (
+    <li
+      className={`leaderboard__row${isLeader ? " leaderboard__row--leader" : ""}${
+        isYou ? " leaderboard__row--you" : ""
+      }`}
+    >
+      <span className="leaderboard__rank">
+        {isLeader ? (
+          <>
+            <span className="leaderboard__rank-trophy" aria-hidden="true">
+              🏆
+            </span>
+            <span className="sr-only">{entry.rank}</span>
+          </>
+        ) : (
+          entry.rank
+        )}
+      </span>
+      <span className="leaderboard__name">
+        {entry.name}
+        {isYou && <span className="leaderboard__you">you</span>}
+      </span>
+      <span className="leaderboard__score">
+        {/* The highest milestone the tally has reached (see
+            game/daysMilestones.ts); none under a week. */}
+        {milestone && (
+          <span aria-hidden="true" title={milestone.label}>
+            {milestone.emoji}{" "}
+          </span>
+        )}
+        {entry.puzzles}
+        <span className="sr-only">
+          {" "}
+          {entry.puzzles === 1 ? "day" : "days"} played
+          {milestone ? `, ${milestone.label.toLowerCase()} milestone` : ""}
+        </span>
+      </span>
+      <span className="leaderboard__detail">
+        <span className="leaderboard__meta" />
+        {entry.firstPlayed && (
+          <span className="leaderboard__best">Since {formatDateLabel(entry.firstPlayed)}</span>
+        )}
       </span>
     </li>
   );

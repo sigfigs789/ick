@@ -15,6 +15,7 @@ import { JackpotStamp } from "./components/JackpotStamp";
 import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
 import { ImprovementCelebration } from "./components/ImprovementCelebration";
 import { StreakClimbCelebration } from "./components/StreakClimbCelebration";
+import { DaysClimbCelebration } from "./components/DaysClimbCelebration";
 import { TopRankCelebration } from "./components/TopRankCelebration";
 import { NewBestCelebration } from "./components/NewBestCelebration";
 import { AchievementCelebration } from "./components/AchievementCelebration";
@@ -69,6 +70,7 @@ import {
 } from "./game/improvement";
 import { checkTopRank } from "./game/topRank";
 import { checkStreakClimb, type StreakClimb } from "./game/streakClimb";
+import { checkDaysClimb, type DaysClimb } from "./game/daysClimb";
 import { totalRarityScore } from "./game/dictionary";
 import { addDays } from "./game/date";
 import { loadPlayerId } from "./game/player";
@@ -179,6 +181,8 @@ export default function App() {
   const endImprovement = useCallback(() => setImprovement(null), []);
   const [climb, setClimb] = useState<StreakClimb | null>(null);
   const endClimb = useCallback(() => setClimb(null), []);
+  const [daysClimb, setDaysClimb] = useState<DaysClimb | null>(null);
+  const endDaysClimb = useCallback(() => setDaysClimb(null), []);
   const [topRank, setTopRank] = useState<number | null>(null);
   const endTopRank = useCallback(() => setTopRank(null), []);
   const [unlocked, setUnlocked] = useState<{
@@ -441,6 +445,12 @@ export default function App() {
   // after a moment so that word's write has landed. A longest streak yet comes
   // on the same word and claims the streak header celebration first, so it
   // keeps the climb away; the climb waits its turn behind any other card.
+  //
+  // A climb up the days-played board (see game/daysClimb.ts) comes on the same
+  // word, as that word is what adds the day, and is read alongside it. It is
+  // last in the streak group: it shows only when neither a new longest streak
+  // nor a streak climb has the day. Its rank is remembered either way, so a
+  // day it gives way does not save its climb up for tomorrow.
   const streakUpToday = isToday && streak.lastCompletedDate === date;
   const wasStreakUp = useRef({ date, up: streakUpToday });
   useEffect(() => {
@@ -449,8 +459,13 @@ export default function App() {
     if (!streakUpToday || before.date !== date || before.up) return;
     let cancelled = false;
     const check = window.setTimeout(() => {
-      void checkStreakClimb(date).then((found) => {
-        if (found && !cancelled && showHeaderCelebration("streak", date)) setClimb(found);
+      void Promise.all([checkStreakClimb(date), checkDaysClimb()]).then(([found, days]) => {
+        if (cancelled) return;
+        if (found) {
+          if (showHeaderCelebration("streak", date)) setClimb(found);
+        } else if (days && showHeaderCelebration("streak", date)) {
+          setDaysClimb(days);
+        }
       });
     }, STREAK_CHECK_DELAY_MS);
     return () => {
@@ -464,6 +479,12 @@ export default function App() {
     if (climbShown) sound.rising();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [climbShown]);
+  const daysClimbShown =
+    !showPerfectMonth && !newBest && !improvement && !climb && daysClimb !== null;
+  useEffect(() => {
+    if (daysClimbShown) sound.rising();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [daysClimbShown]);
 
   // A place in the top three of today's board (see game/topRank.ts), looked
   // for a moment after today's puzzle is finished, so the last word's write has
@@ -481,6 +502,7 @@ export default function App() {
     !newBest &&
     !improvement &&
     !climb &&
+    !daysClimb &&
     !bestNews;
   const quietRef = useRef(quiet);
   quietRef.current = quiet;
@@ -534,7 +556,8 @@ export default function App() {
       bestWordNewsEverShown(),
     );
     if (!kind) return;
-    const busy = showPerfectMonth || improvement || climb || topRank || burst || unlocked || welcome;
+    const busy =
+      showPerfectMonth || improvement || climb || daysClimb || topRank || burst || unlocked || welcome;
     if (kind === "other" && busy) return;
     if (!showHeaderCelebration("news", date)) return;
     markBestWordNewsShown(yesterdaysBest.day);
@@ -549,6 +572,7 @@ export default function App() {
     !newBest &&
     !improvement &&
     !climb &&
+    !daysClimb &&
     !bestNews &&
     !topRank &&
     !burst &&
@@ -612,6 +636,8 @@ export default function App() {
         <ImprovementCelebration improvement={improvement} onDone={endImprovement} />
       ) : climb ? (
         <StreakClimbCelebration climb={climb} onDone={endClimb} />
+      ) : daysClimb ? (
+        <DaysClimbCelebration climb={daysClimb} onDone={endDaysClimb} />
       ) : bestNews ? (
         <BestWordNewsCard
           kind={bestNews.kind}
