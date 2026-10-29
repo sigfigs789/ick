@@ -35,13 +35,16 @@ interface Props {
   children?: ReactNode;
   /** A muted line under the body ("It's on your Stats page."). */
   footnote?: string;
+  /** A way on from the card, under everything else ("See the leaderboard"), in `link.color`. */
+  link?: { label: string; color: string; onPress: () => void };
   onDone: () => void;
 }
 
 /**
  * The card the website floats over the puzzle for its header celebrations --
  * a perfect month, a longest streak yet, an improving average, a climb up the
- * streak board, yesterday's best word and an achievement unlocked
+ * streak board, yesterday's best word, a top-three place on today's board and
+ * an achievement unlocked
  * (`.perfect-month` and `.improvement` in index.css): a ringed card near the
  * top of the screen, which goes by itself after seven seconds or on a tap
  * of its ×.
@@ -61,6 +64,7 @@ export function CelebrationCard({
   title,
   children,
   footnote,
+  link,
   onDone,
 }: Props) {
   const theme = useTheme();
@@ -168,6 +172,16 @@ export function CelebrationCard({
           {footnote !== undefined && (
             <Text style={[styles.footnote, { color: theme.fgMuted }]}>{footnote}</Text>
           )}
+          {link && (
+            <Pressable
+              onPress={link.onPress}
+              accessibilityRole="link"
+              hitSlop={8}
+              style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+            >
+              <Text style={[styles.link, { color: link.color }]}>{link.label}</Text>
+            </Pressable>
+          )}
         </View>
       </Animated.View>
     </View>
@@ -233,6 +247,13 @@ const styles = StyleSheet.create({
     marginTop: 3.2,
     fontSize: 12.8,
     textAlign: 'center',
+  },
+  /* .improvement__link */
+  link: {
+    marginTop: 4,
+    fontSize: 15.2,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
   highlight: {
     fontWeight: '800',

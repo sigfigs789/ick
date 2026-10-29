@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { totalRarityScore } from '../../../src/game/dictionary';
 import { isWinningRarity } from '../../../src/game/rank';
+import { shareFlameTier } from '../../../src/game/shareFlames';
 import { celebrationFor } from '../../../src/game/celebration';
 import { completedWholeMonth } from '../../../src/game/perfectMonth';
 import { welcomeBack } from '../../../src/game/streakFreeze';
@@ -21,7 +22,12 @@ import {
 } from '../../../src/game/improvement';
 import { checkStreakClimb, type StreakClimb } from '../../../src/game/streakClimb';
 import { beatBestToday } from '../../../src/game/newBest';
-import { claimHeaderCelebration, headerCelebrationsHeld } from '../../../src/game/headerCelebrations';
+import {
+  claimHeaderCelebration,
+  headerCelebrationShown,
+  headerCelebrationsHeld,
+} from '../../../src/game/headerCelebrations';
+import { checkTopRank } from '../../../src/game/topRank';
 import {
   achievementsToCatchUp,
   announcedAchievements,
@@ -50,7 +56,7 @@ import { useAcceptedSuggestions } from '../../../src/hooks/useAcceptedSuggestion
 import { useYesterdaysBest, type ResolvedBest } from '../../../src/hooks/useYesterdaysBest';
 import { AchievementCelebration } from '../components/AchievementCelebration';
 import { BestWordNewsCard } from '../components/BestWordNewsCard';
-import { ComeBackCard } from '../components/ComeBackCard';
+import { ComeBackCard, useComeBackGoal } from '../components/ComeBackCard';
 import { ConfettiBurst, CONFETTI_MS, GRAND_CONFETTI_MS } from '../components/ConfettiBurst';
 import { DropDisplay } from '../components/DropDisplay';
 import { FeedbackRegion } from '../components/FeedbackRegion';
@@ -66,6 +72,7 @@ import { StreakClimbCelebration } from '../components/StreakClimbCelebration';
 import { StreakDisplay } from '../components/StreakDisplay';
 import { SubmitForm } from '../components/SubmitForm';
 import { SuggestionAcceptedNotice } from '../components/SuggestionAcceptedNotice';
+import { TopRankCelebration } from '../components/TopRankCelebration';
 import { WelcomeBackCard } from '../components/WelcomeBackCard';
 import { WordRulesSheet } from '../components/WordRulesSheet';
 import { YesterdaysBest } from '../components/YesterdaysBest';
@@ -84,6 +91,8 @@ import { useTheme } from '../theme/useTheme';
 interface Props {
   /** Whether a sheet over the whole app (How to play) is up, which pauses the idle hint. */
   covered?: boolean;
+  /** Opens the Leaderboards tab, from the top-three card. */
+  onSeeLeaderboard?: () => void;
 }
 
 /**
@@ -114,10 +123,10 @@ function showHeaderCelebration(group: 'streak' | 'news', date: string): boolean 
  * and the leaderboard write are all decided there. This file is the arrangement
  * of it on a phone and nothing else, and the arrangement is the website's v2
  * play screen (src/App.tsx), in the same order: the drop between the arrows,
- * the input under it, the guesses, the streak, tomorrow's goal, the share panel
- * on request, and yesterday's best as a footnote.
+ * the input under it, the guesses, the streak, the share panel on request, and
+ * the footnotes: tomorrow's goal and yesterday's best.
  */
-export function PlayScreen({ covered = false }: Props) {
+export function PlayScreen({ covered = false, onSeeLeaderboard }: Props) {
   const theme = useTheme();
   const {
     date,
@@ -155,6 +164,8 @@ export function PlayScreen({ covered = false }: Props) {
   const endClimb = useCallback(() => setClimb(null), []);
   const [newBest, setNewBest] = useState<{ days: number; best: number } | null>(null);
   const endNewBest = useCallback(() => setNewBest(null), []);
+  const [topRank, setTopRank] = useState<number | null>(null);
+  const endTopRank = useCallback(() => setTopRank(null), []);
   const [unlocked, setUnlocked] = useState<{
     key: number;
     achievements: EarnedAchievement[];
@@ -180,6 +191,12 @@ export function PlayScreen({ covered = false }: Props) {
     dismissWelcomeBack(date);
     setWelcomeDismissedOn(date);
   };
+  // What coming back tomorrow is worth (see game/comeBack.ts), once today's
+  // word is banked -- which is when the streak counts the day.
+  const comeBack = useComeBackGoal(streak, date, isToday && progress.acceptedWords.length > 0);
+  // The tier both Share buttons burn in once the words average Elusive or
+  // better (see game/shareFlames.ts).
+  const shareFlames = shareFlameTier(progress.acceptedWords, date);
   // Words the player suggested that have since been accepted, thanked for once
   // and only on a day nothing else has shown: the header celebration cards keep
   // it away themselves, and so do the welcome back and the burst of a Rare word.
@@ -407,7 +424,7 @@ export function PlayScreen({ covered = false }: Props) {
       bestWordNewsEverShown(),
     );
     if (!kind) return;
-    const busy = showPerfectMonth || improvement || climb || burst || unlocked || welcome;
+    const busy = showPerfectMonth || improvement || climb || topRank || burst || unlocked || welcome;
     if (kind === 'other' && busy) return;
     if (!showHeaderCelebration('news', date)) return;
     markBestWordNewsShown(yesterdaysBest.day);
@@ -417,6 +434,52 @@ export function PlayScreen({ covered = false }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- decided on arrival only
   }, [yesterdaysBest]);
 
+  // A place in the top three of today's board (see game/topRank.ts), looked
+  // for a moment after today's puzzle is finished, so the last word's write has
+  // landed -- only on the finish itself, as the rising average is, so a puzzle
+  // that mounts finished looks for none. A retry re-opens the puzzle, so its
+  // replacement word's finish looks again. The last header celebration in
+  // priority: it shows only on a day no other header celebration has had or
+  // has up, in either group, read up front and again when the answer comes
+  // back, as one may have landed meanwhile. It waits behind a word's burst, and
+  // an achievement card waits behind it.
+  const quiet = () =>
+    !headerCelebrationShown('news', date) &&
+    !headerCelebrationShown('streak', date) &&
+    !showPerfectMonth &&
+    !newBest &&
+    !improvement &&
+    !climb &&
+    !bestNews;
+  const quietRef = useRef(quiet);
+  useEffect(() => {
+    quietRef.current = quiet;
+  });
+  const wasFinishedForRank = useRef({ date, finished: finishedToday });
+  useEffect(() => {
+    const before = wasFinishedForRank.current;
+    wasFinishedForRank.current = { date, finished: finishedToday };
+    if (!finishedToday || before.date !== date || before.finished) return;
+    let cancelled = false;
+    const check = setTimeout(() => {
+      if (!quietRef.current()) return;
+      void checkTopRank(date).then((rank) => {
+        if (rank === null || cancelled || !quietRef.current()) return;
+        if (!showHeaderCelebration('news', date)) return;
+        setTopRank(rank);
+      });
+    }, STREAK_CHECK_DELAY_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(check);
+    };
+  }, [finishedToday, date]);
+  // Its signal when the card actually shows, which is after the word's burst.
+  const topRankShown = !burst && topRank !== null;
+  useEffect(() => {
+    if (topRankShown) signalRising();
+  }, [topRankShown]);
+
   // The achievement card's signal when the card actually shows, which is after
   // any card ahead of it and after the word's own burst.
   const unlockedShown =
@@ -425,6 +488,7 @@ export function PlayScreen({ covered = false }: Props) {
     !improvement &&
     !climb &&
     !bestNews &&
+    !topRank &&
     !burst &&
     unlocked !== null;
   useEffect(() => {
@@ -521,6 +585,7 @@ export function PlayScreen({ covered = false }: Props) {
                 isToday={isToday}
                 mode={progress.mode}
                 onShared={() => setShareAsked({ date, count: shareRequests + 1 })}
+                flames={shareFlames}
               />
             ) : undefined
           }
@@ -543,9 +608,6 @@ export function PlayScreen({ covered = false }: Props) {
           />
         )}
 
-        {/* What coming back tomorrow is worth, once today's word is banked. */}
-        {isToday && progress.acceptedWords.length > 0 && <ComeBackCard streak={streak} date={date} />}
-
         {progress.acceptedWords.length > 0 && shareRequests > 0 && (
           <ResultsPanel
             date={date}
@@ -557,11 +619,19 @@ export function PlayScreen({ covered = false }: Props) {
             collapsible
             scrollSignal={shareRequests}
             onScrollTo={(y) => scrollRef.current?.scrollTo({ y, animated: true })}
+            flames={shareFlames}
           />
         )}
 
-        {/* Last, as a footnote: it is about other players' yesterday. */}
-        <YesterdaysBest date={date} isToday={isToday} />
+        {/* The footnotes, under one divider: what coming back tomorrow is
+            worth, once today's word is banked, then yesterday's best -- a look
+            ahead read with the footnotes rather than between the player and
+            the guesses they have left. The divider goes with whichever comes
+            first, so it is gone when neither has anything to say. */}
+        <View style={comeBack && [styles.footnotes, { borderTopColor: theme.border }]}>
+          {comeBack && <ComeBackCard goal={comeBack} />}
+          <YesterdaysBest date={date} isToday={isToday} divided={!comeBack} />
+        </View>
       </ScrollView>
 
       {/* Over the scroll view rather than inside it, so the pieces fall across
@@ -584,6 +654,12 @@ export function PlayScreen({ covered = false }: Props) {
             <ConfettiBurst grand={burst.grand} />
             {burst.grand && <JackpotStamp rarity={burst.rarity} date={date} />}
           </Fragment>
+        ) : topRank ? (
+          <TopRankCelebration
+            rank={topRank}
+            onSeeBoard={() => onSeeLeaderboard?.()}
+            onDone={endTopRank}
+          />
         ) : (
           unlocked && (
             <AchievementCelebration
@@ -608,6 +684,14 @@ const styles = StyleSheet.create({
   content: {
     padding: space.lg,
     paddingBottom: space.xxl * 2,
+  },
+  /* .page-footnotes, with the come-back line in it. */
+  footnotes: {
+    gap: 12,
+    marginTop: 20,
+    marginBottom: 16,
+    paddingTop: 14.4,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   archiveNote: {
     fontSize: 13,

@@ -1,14 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ACHIEVEMENTS } from '../../../src/game/achievements';
 import { recordSuggestion } from '../../../src/game/suggestions';
 import { sendFeedback, sendWordSuggestion } from '../host/submissions';
 import { radius, space } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
+import { AchievementCelebration } from './AchievementCelebration';
 import { Sheet } from './Sheet';
 
 /** What the review queue accepts as a word (see the suggested_words migration). */
 const SUGGESTION_RE = /^[a-z]{2,30}$/;
+
+/** The badge a first suggestion earns, celebrated with the achievement card. */
+export const WORD_SCOUT = ACHIEVEMENTS.find((achievement) => achievement.id === 'word-suggested');
 
 /** The sheets the header's "?" menu opens besides How to play. */
 export type MenuSheetKind = 'feedback' | 'suggest-word';
@@ -33,14 +38,26 @@ export function MenuSheet({ sheet, onClose }: { sheet: MenuSheetKind | null; onC
   // box do not vanish mid-animation.
   const [shown, setShown] = useState<MenuSheetKind>('feedback');
   if (sheet && sheet !== shown) setShown(sheet);
+  // Word scout gets the same card a word's badge does, over the sheet.
+  const [scouted, setScouted] = useState(false);
+  const endScouted = useCallback(() => setScouted(false), []);
 
   return (
-    <Sheet open={sheet !== null} title={TITLES[shown]} onClose={onClose} compact>
+    <Sheet
+      open={sheet !== null}
+      title={TITLES[shown]}
+      onClose={onClose}
+      compact
+      overlay={
+        scouted &&
+        WORD_SCOUT && <AchievementCelebration achievements={[WORD_SCOUT]} onDone={endScouted} />
+      }
+    >
       {/* Keyed so a fresh opening starts with an empty box and no thanks. */}
       {shown === 'feedback' ? (
         <FeedbackForm key={`feedback-${sheet !== null}`} />
       ) : (
-        <SuggestionForm key={`suggest-${sheet !== null}`} />
+        <SuggestionForm key={`suggest-${sheet !== null}`} onWordScout={() => setScouted(true)} />
       )}
       <KeyboardSpacer />
     </Sheet>
@@ -116,11 +133,10 @@ function FeedbackForm() {
   );
 }
 
-function SuggestionForm() {
+function SuggestionForm({ onWordScout }: { onWordScout: () => void }) {
   const theme = useTheme();
   const [suggestion, setSuggestion] = useState('');
   const [sent, setSent] = useState(false);
-  const [firstSuggestion, setFirstSuggestion] = useState(false);
 
   function submit() {
     const word = suggestion.trim().toLowerCase();
@@ -128,8 +144,11 @@ function SuggestionForm() {
     sendWordSuggestion(word);
     // Kept on the device for the Word scout badge and the accepted-word
     // thank-you (see game/suggestions.ts). Only a word the queue would take:
-    // anything else never comes back with a verdict.
-    setFirstSuggestion(SUGGESTION_RE.test(word) && recordSuggestion(word));
+    // anything else never comes back with a verdict. The first earns Word
+    // scout, announced with the achievement card: the website names it in the
+    // thank-you only for the hidden arm of its header celebrations test, and
+    // this build always takes the shown arm.
+    if (SUGGESTION_RE.test(word) && recordSuggestion(word)) onWordScout();
     setSuggestion('');
     setSent(true);
   }
@@ -164,11 +183,7 @@ function SuggestionForm() {
       </View>
       {/* The website also links the queue, which this build has no page for. */}
       {sent && (
-        <Thanks
-          text={`Thanks for the suggestion! We'll let you know if it gets in.${
-            firstSuggestion ? ' Achievement unlocked: 💡 Word scout.' : ''
-          }`}
-        />
+        <Thanks text="Thanks for the suggestion! We'll let you know if it gets in." />
       )}
     </View>
   );

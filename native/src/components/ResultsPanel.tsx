@@ -4,12 +4,14 @@ import type { GameMode } from '../../../src/game/mode';
 import { loadPlayerId, selfName } from '../../../src/game/player';
 import { loadReveal, saveReveal } from '../../../src/game/reveal';
 import { buildShareText, type RevealMode } from '../../../src/game/share';
+import type { FlameTier } from '../../../src/game/shareFlames';
 import { loadShowName, saveShowName } from '../../../src/game/shareName';
 import type { AcceptedWord, StreakState } from '../../../src/game/types';
 import { signalTap } from '../host/feedback';
 import { shareText as openShareSheet } from '../host/share';
 import { font } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
+import { ShareFlames, shareFlamesStyle } from './ShareFlames';
 
 interface Props {
   date: string;
@@ -44,6 +46,8 @@ interface Props {
    * stops 1rem clear of the top edge; that margin is already taken off.
    */
   onScrollTo?: (y: number) => void;
+  /** The tier the Share button burns in, or none (see src/game/shareFlames.ts). */
+  flames?: FlameTier | null;
 }
 
 // Naming answers is opt-in so a shared result stays spoiler-free by default;
@@ -80,8 +84,10 @@ export function ResultsPanel({
   collapsible = false,
   scrollSignal = 0,
   onScrollTo,
+  flames = null,
 }: Props) {
   const theme = useTheme();
+  const fire = flames ? shareFlamesStyle(theme, flames) : null;
 
   // Starts from the player's last choice, "Top" until they make one (see
   // src/game/reveal.ts).
@@ -165,9 +171,11 @@ export function ResultsPanel({
         styles.share,
         collapsible && styles.shareWide,
         { backgroundColor: theme.accent, transform: [{ scale: pressed ? 0.97 : 1 }] },
+        fire?.button,
       ]}
     >
-      <Text style={[styles.shareText, { color: theme.accentFg }]}>
+      {flames && <ShareFlames tier={flames} />}
+      <Text style={[styles.shareText, { color: theme.accentFg }, fire?.text]}>
         {shared ? 'Shared!' : 'Share'}
       </Text>
     </Pressable>

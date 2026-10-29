@@ -72,9 +72,10 @@ const DROPS = [
  * It moves, and that is the point: a notice pinned to the bottom of the screen
  * is furniture, and furniture is read once and then looked past. Something
  * drifting over the board is asking to be tapped -- and this game is called
- * WordInk, so what a tap leaves behind is ink. It asks for the closed window
- * itself and answers nothing if that fails; the board underneath never waits
- * on it.
+ * WordInk, so what a tap leaves behind is ink. The × on its corner does the
+ * same thing -- it is there for the reader who would not guess a floating
+ * notice can be dismissed at all. It asks for the closed window itself and
+ * answers nothing if that fails; the board underneath never waits on it.
  *
  * Each window has a Standard and a Freeform winner, both named whichever mode
  * the reader is playing. When more than one is owed they all float at once,
@@ -373,6 +374,26 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
                 <Text style={[styles.text, { color: theme.fg }]}>{message}</Text>
               )}
             </Pressable>
+            {/* The × on its top-right shoulder, for the reader who would not
+                guess a floating notice can be dismissed at all. A sibling
+                rather than inside the bubble, so it hangs off the edge, and
+                it pops the bubble like any other tap. */}
+            <Pressable
+              onPress={hit}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+              hitSlop={10}
+              style={({ pressed }) => [
+                styles.close,
+                {
+                  backgroundColor: theme.bestWordBg,
+                  borderColor: `${theme.bestWordAccent}99`,
+                  opacity: pressed ? 0.7 : 1,
+                },
+              ]}
+            >
+              <Text style={[styles.closeGlyph, { color: theme.fgMuted }]}>×</Text>
+            </Pressable>
           </Animated.View>
         )}
       </Animated.View>
@@ -550,6 +571,25 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 0 },
     elevation: 8,
+  },
+  /* .congrats-bubble__close: hung half off the bubble's top-right shoulder. */
+  close: {
+    position: 'absolute',
+    top: 0,
+    right: 5.6,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderRadius: radius.pill,
+    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.18)',
+    transform: [{ translateX: 8.4 }, { translateY: -8.4 }],
+  },
+  closeGlyph: {
+    fontSize: 16,
+    lineHeight: 18,
+    fontWeight: '700',
   },
   emoji: {
     fontSize: 16,

@@ -3,8 +3,10 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   ACHIEVEMENT_GROUPS,
   earnedShareLabel,
+  fellowHolder,
   fetchAchievementRates,
   recentAchievements,
+  soleHolder,
   subscribeToAchievementRates,
   syncAchievements,
   type AchievementStatus,
@@ -288,7 +290,12 @@ function AchievementCard({ status }: { status: AchievementStatus }) {
     : progress
       ? `${progress.current} / ${progress.target}`
       : 'Locked';
-  const share = earnedShareLabel(achievement.id, undefined, Boolean(earnedOn));
+  const held = Boolean(earnedOn);
+  const share = earnedShareLabel(achievement.id, undefined, held);
+  // "Only earned by you!" (or by another player and you) reads in green.
+  const onlyYou =
+    (soleHolder(achievement.id, undefined, held)?.self ?? false) ||
+    fellowHolder(achievement.id, undefined, held) !== null;
   return (
     <View
       style={[
@@ -333,7 +340,16 @@ function AchievementCard({ status }: { status: AchievementStatus }) {
             {meta}
           </Text>
         </View>
-        {share && <Text style={[styles.achievementShare, { color: theme.fgFaint }]}>{share}</Text>}
+        {share && (
+          <Text
+            style={[
+              styles.achievementShare,
+              onlyYou ? { color: theme.successFg, fontWeight: '700' } : { color: theme.fgFaint },
+            ]}
+          >
+            {share}
+          </Text>
+        )}
       </View>
     </View>
   );
