@@ -416,9 +416,9 @@ describe("AnalyticsPage", () => {
     await screen.findByRole("heading", { name: "Muse AI" });
 
     const muse = section("Muse AI");
-    const first = within(muse).getByRole("row", { name: /^AncientMesa11/ });
+    const first = within(muse).getByRole("row", { name: /^BoldCinder11/ });
     expect(first).toHaveTextContent(/Oct 16.*36\.50.*Yes, 2 sent$/);
-    expect(within(muse).getByRole("row", { name: /^DuskyFawn15/ })).toHaveTextContent(/34\.36.*No$/);
+    expect(within(muse).getByRole("row", { name: /^IdleOsprey15/ })).toHaveTextContent(/34\.36.*No$/);
   });
 
   it("says Muse AI has not played when the report has no sign of it", async () => {
