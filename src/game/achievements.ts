@@ -1399,6 +1399,17 @@ const snapshot: AchievementRates = achievementRates;
 /** The live counts from /api/achievements, once this session has them. */
 let liveRates: AchievementRates | null = null;
 let ratesRequest: Promise<AchievementRates | null> | null = null;
+/** Numbers each ask, so an answer overtaken by a later one is dropped. */
+let ratesAsked = 0;
+let ratesAnswered = 0;
+/**
+ * The badges this device held when the counts were first asked for, and every
+ * one reported since. Null until the counts are asked for.
+ */
+let ratesReported: Set<string> | null = null;
+/** Badges reported after the first ask: the counts since may include this player. */
+let reportedSince = new Set<string>();
+const ratesListeners = new Set<() => void>();
 
 function isRates(body: unknown): body is AchievementRates {
   if (!body || typeof body !== "object") return false;
@@ -1407,29 +1418,75 @@ function isRates(body: unknown): body is AchievementRates {
 }
 
 /**
- * Ask the server how many players hold each badge, once a session (a failed
- * ask is tried again by the next caller). Never needed: until it answers, and
- * if it never does, the bundled snapshot stands in.
+ * Ask for the counts. Whatever is shown stays until the answer lands, and
+ * stays for good if it never does: a failed ask is tried again by the next
+ * caller of `fetchAchievementRates`.
  */
-export function fetchAchievementRates(): Promise<AchievementRates | null> {
-  ratesRequest ??= fetch("/api/achievements")
+function askForRates(url: string): Promise<AchievementRates | null> {
+  const asked = ++ratesAsked;
+  const request: Promise<AchievementRates | null> = fetch(url)
     .then((response) => (response.ok ? response.json() : null))
     .then((body: unknown) => {
       if (!isRates(body)) throw new Error("no rates");
-      liveRates = body;
+      if (asked > ratesAnswered) {
+        ratesAnswered = asked;
+        liveRates = body;
+        for (const listener of ratesListeners) listener();
+      }
       return liveRates;
     })
     .catch(() => {
-      ratesRequest = null;
+      if (ratesRequest === request) ratesRequest = null;
       return null;
     });
-  return ratesRequest;
+  ratesRequest = request;
+  return request;
+}
+
+/**
+ * Ask the server how many players hold each badge, once a session (a failed
+ * ask is tried again by the next caller), and again whenever this player
+ * reports a badge (see `achievementsReported`). Never needed: until it
+ * answers, and if it never does, the bundled snapshot stands in.
+ */
+export function fetchAchievementRates(): Promise<AchievementRates | null> {
+  ratesReported ??= new Set(Object.keys(countedAchievements()));
+  return ratesRequest ?? askForRates("/api/achievements");
+}
+
+/**
+ * The server has taken a report carrying these badges (see game/leaderboard.ts).
+ * When one is new since the counts were asked for, ask again, past the edge
+ * cache, which would otherwise serve counts from before the report for a few
+ * minutes. Nothing to do before anything has asked for the counts.
+ */
+export function achievementsReported(ids: readonly string[]): void {
+  if (!ratesReported) return;
+  const fresh = ids.filter((id) => !ratesReported!.has(id));
+  if (fresh.length === 0) return;
+  for (const id of fresh) {
+    ratesReported.add(id);
+    reportedSince.add(id);
+  }
+  void askForRates(`/api/achievements?after=${Date.now()}`);
+}
+
+/** Call `listener` each time new live counts land. Returns the unsubscribe. */
+export function subscribeToAchievementRates(listener: () => void): () => void {
+  ratesListeners.add(listener);
+  return () => {
+    ratesListeners.delete(listener);
+  };
 }
 
 /** For tests: forget the live counts. */
 export function resetAchievementRates(live: AchievementRates | null = null): void {
   liveRates = live;
   ratesRequest = null;
+  ratesAsked = 0;
+  ratesAnswered = 0;
+  ratesReported = null;
+  reportedSince = new Set();
 }
 
 /**
@@ -1535,10 +1592,17 @@ export function earnedShareLabel(id: string, rates: AchievementRates = ratesNow(
  * Whether nobody else held `id` when this session asked. Only the live count
  * can say so: the snapshot is a day's guess, and a zero there may be stale.
  * Read when the badge is earned, before this player's own report is counted --
- * the counts are fetched as the page opens.
+ * the counts are fetched as the page opens. Counts asked for after this player
+ * reported it may hold them already, so there one holder is still nobody else.
  */
 export function firstToEarn(id: string): boolean {
-  return liveRates !== null && !ratesNow().earned[id];
+  if (liveRates === null) return false;
+  const rates = ratesNow();
+  const count = rates.earned[id] ?? 0;
+  if (count === 0) return true;
+  if (count > 1 || !reportedSince.has(id)) return false;
+  const named = rates.sole?.[id];
+  return !named || named === ownHandle();
 }
 
 /** Below this share a badge is rare enough to say "only". */

@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ACHIEVEMENTS,
+  achievementsReported,
   achievementStatuses,
   achievementsToCatchUp,
   announcedAchievements,
@@ -8,12 +9,16 @@ import {
   countedRecord,
   earnedIds,
   earnedShareLabel,
+  fetchAchievementRates,
   firstToEarn,
+  holdersOf,
   markAchievementsAnnounced,
   newlyEarned,
   resetAchievementRates,
   soleHolder,
+  subscribeToAchievementRates,
   syncAchievements,
+  type AchievementRates,
   type AchievementRecord,
 } from "./achievements";
 import { addDays } from "./date";
@@ -409,6 +414,59 @@ describe("the card for a lone badge", () => {
     expect(celebrationShareLine("pantheon", rates)).toBe("Earned by only 4.3% of players.");
     expect(celebrationShareLine("streak-30", rates)).toBe("Earned by fewer than 1% of players.");
     expect(celebrationShareLine("days-10", rates)).toBe("Earned by 8.2% of players.");
+  });
+});
+
+describe("refreshing the live counts", () => {
+  let answers: AchievementRates[];
+  let fetchMock: ReturnType<typeof vi.fn>;
+  beforeEach(() => {
+    resetAchievementRates();
+    answers = [];
+    fetchMock = vi.fn(async () => Response.json(answers.shift()));
+    vi.stubGlobal("fetch", fetchMock);
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("asks again, past the edge cache, once a new badge is reported", async () => {
+    answers.push({ players: 700, earned: {} }, { players: 701, earned: { "days-365": 1 } });
+    await fetchAchievementRates();
+    const redraws = vi.fn();
+    const stop = subscribeToAchievementRates(redraws);
+    achievementsReported(["days-365"]);
+    // The first counts stay up until the new ones land.
+    expect(holdersOf("days-365")).toBe(0);
+    await vi.waitFor(() => expect(redraws).toHaveBeenCalledOnce());
+    stop();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[1][0])).toMatch(/^\/api\/achievements\?after=\d+$/);
+    expect(holdersOf("days-365")).toBe(1);
+    // The one holder is this player, so they were still the first.
+    expect(firstToEarn("days-365")).toBe(true);
+  });
+
+  it("does not ask again for a badge already reported", async () => {
+    answers.push({ players: 700, earned: {} }, { players: 701, earned: { "days-365": 1 } });
+    await fetchAchievementRates();
+    achievementsReported(["days-365"]);
+    achievementsReported(["days-365"]);
+    await vi.waitFor(() => expect(holdersOf("days-365")).toBe(1));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("asks nothing before anything has asked for the counts", () => {
+    achievementsReported(["days-365"]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps the counts shown when the new ask fails", async () => {
+    answers.push({ players: 700, earned: { "days-365": 4 } });
+    await fetchAchievementRates();
+    fetchMock.mockImplementationOnce(async () => new Response(null, { status: 503 }));
+    achievementsReported(["days-365"]);
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    await Promise.resolve();
+    expect(holdersOf("days-365")).toBe(4);
   });
 });
 

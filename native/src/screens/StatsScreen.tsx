@@ -4,6 +4,7 @@ import {
   ACHIEVEMENT_GROUPS,
   earnedShareLabel,
   fetchAchievementRates,
+  subscribeToAchievementRates,
   syncAchievements,
   type AchievementStatus,
 } from '../../../src/game/achievements';
@@ -40,10 +41,13 @@ export function StatsScreen({ onPlay }: { onPlay?: () => void } = {}) {
     return { stats: loadStats(streak), achievements: syncAchievements(streak) };
   });
   // The share under each badge starts from the bundled snapshot and redraws
-  // once the live counts arrive (see fetchAchievementRates).
-  const [, setLiveRates] = useState(false);
+  // each time live counts arrive: on open, and again after a report carrying
+  // a newly earned badge (see fetchAchievementRates).
+  const [, setRatesSeen] = useState(0);
   useEffect(() => {
-    void fetchAchievementRates().then((rates) => rates && setLiveRates(true));
+    const stop = subscribeToAchievementRates(() => setRatesSeen((seen) => seen + 1));
+    void fetchAchievementRates();
+    return stop;
   }, []);
 
   if (stats.wordsFound === 0) {

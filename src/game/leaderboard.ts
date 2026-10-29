@@ -10,7 +10,7 @@
  * here can keep anyone from playing a puzzle.
  */
 
-import { countedAchievements } from "./achievements";
+import { achievementsReported, countedAchievements } from "./achievements";
 import { maxGuessesFor } from "./constants";
 import {
   rarityFor,
@@ -1102,12 +1102,20 @@ function send(playerId: string, scores: ScorePayload[]): Promise<Response> | nul
     ...(Object.keys(achievements).length > 0 ? { achievements } : {}),
   });
   try {
-    return Promise.resolve(fetch("/api/leaderboard", {
+    const request = Promise.resolve(fetch("/api/leaderboard", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body,
       keepalive: true,
     }));
+    // A badge new to the server gets the Stats page fresh counts with it in.
+    void request.then(
+      (response) => {
+        if (response?.ok) achievementsReported(Object.keys(achievements));
+      },
+      () => {}
+    );
+    return request;
   } catch {
     // Recording a score must never be able to break the move that earned it.
     return null;
