@@ -25,6 +25,7 @@ import {
   type AchievementStatus,
 } from "./achievements";
 import { addDays } from "./date";
+import { totalRarityScore } from "./dictionary";
 import { handleFor } from "./handle";
 import { PLAYER_KEY } from "./player";
 import { setPlayerMessages } from "./playerMessages";
@@ -631,6 +632,36 @@ describe("the harder badges", () => {
   });
 });
 
+describe("the total badges", () => {
+  const TOTALS = ["total-32", "total-36", "total-38", "total-40"];
+  const earned = (history: DailyProgress[]) =>
+    TOTALS.filter((id) => statusOf(id, { history }).earnedOn !== null);
+  const scored = (zipfs: number[]) =>
+    zipfs.map((zipf, i): AcceptedWord => ({ word: `w${i}`, rarity: "Legend", zipf }));
+
+  it("earns each rung the puzzle's total reaches", () => {
+    const perfect = scored([-1.57, -1.57, -1.57, -1.57]);
+    expect(totalRarityScore(perfect, TODAY)).toBe(40);
+    expect(earned([day(TODAY, perfect)])).toEqual(TOTALS);
+    expect(statusOf("total-40", { history: [day(TODAY, perfect)] }).earnedOn).toBe(TODAY);
+  });
+
+  it("goes by the total shown, so 39.95 is not 40", () => {
+    const words = scored([-1.57, -1.57, 0.53, -1.57]);
+    expect(totalRarityScore(words, TODAY)).toBeLessThan(40);
+    expect(earned([day(TODAY, words)])).toEqual(["total-32", "total-36", "total-38"]);
+  });
+
+  it("leaves a low total with none", () => {
+    expect(earned([day(TODAY, [word("Common"), word("Common"), word("Common"), word("Common")])])).toEqual([]);
+  });
+
+  it("does not count a six-guess day's extra words", () => {
+    const six = scored([-1.57, -1.57, -1.57, -1.57, -1.57, -1.57]);
+    expect(earned([day("2026-08-01", six)])).toEqual([]);
+  });
+});
+
 describe("the easier rungs", () => {
   it("needs two Legends less than a week apart for Twice in a week", () => {
     const legendOn = (d: string) => day(d, [word("Legend")]);
@@ -656,6 +687,15 @@ describe("the easier rungs", () => {
     expect(statusOf("four-of-a-kind", { history: [elusive] }).earnedOn).toBeNull();
     const mixed = day("2026-10-10", [word("Legend"), word("Legend"), word("Mythic"), word("Mythic")]);
     expect(statusOf("four-of-a-kind", { history: [mixed] }).earnedOn).toBeNull();
+  });
+
+  it("needs every guess Elusive, no better and no worse, for Stay gold, Ponyboy", () => {
+    const gold = day("2026-10-10", [word("Elusive"), word("Elusive"), word("Elusive"), word("Elusive")]);
+    expect(statusOf("all-elusive", { history: [gold] }).earnedOn).toBe("2026-10-10");
+    const better = day("2026-10-10", [word("Elusive"), word("Elusive"), word("Elusive"), word("Mythic")]);
+    expect(statusOf("all-elusive", { history: [better] }).earnedOn).toBeNull();
+    const short = day("2026-10-10", [word("Elusive"), word("Elusive"), word("Elusive")]);
+    expect(statusOf("all-elusive", { history: [short] }).earnedOn).toBeNull();
   });
 
   it("needs a Mythic word starting with the drop for Head start", () => {
