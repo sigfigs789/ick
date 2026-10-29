@@ -18,6 +18,7 @@ import {
   type AchievementStatus,
 } from "./achievements";
 import { addDays } from "./date";
+import { totalRarityScore } from "./dictionary";
 import { handleFor } from "./handle";
 import { PLAYER_KEY } from "./player";
 import { setPlayerMessages } from "./playerMessages";
@@ -530,6 +531,36 @@ describe("the harder badges", () => {
     expect(statusOf("elusive-average", { history, onItsDay: dates }).earnedOn).toBe("2026-10-10");
     const weak = dates.map((d) => day(d, [word("Common")]));
     expect(statusOf("elusive-average", { history: weak, onItsDay: dates }).earnedOn).toBeNull();
+  });
+});
+
+describe("the total badges", () => {
+  const TOTALS = ["total-32", "total-36", "total-38", "total-40"];
+  const earned = (history: DailyProgress[]) =>
+    TOTALS.filter((id) => statusOf(id, { history }).earnedOn !== null);
+  const scored = (zipfs: number[]) =>
+    zipfs.map((zipf, i): AcceptedWord => ({ word: `w${i}`, rarity: "Legend", zipf }));
+
+  it("earns each rung the puzzle's total reaches", () => {
+    const perfect = scored([-1.57, -1.57, -1.57, -1.57]);
+    expect(totalRarityScore(perfect, TODAY)).toBe(40);
+    expect(earned([day(TODAY, perfect)])).toEqual(TOTALS);
+    expect(statusOf("total-40", { history: [day(TODAY, perfect)] }).earnedOn).toBe(TODAY);
+  });
+
+  it("goes by the total shown, so 39.95 is not 40", () => {
+    const words = scored([-1.57, -1.57, 0.53, -1.57]);
+    expect(totalRarityScore(words, TODAY)).toBeLessThan(40);
+    expect(earned([day(TODAY, words)])).toEqual(["total-32", "total-36", "total-38"]);
+  });
+
+  it("leaves a low total with none", () => {
+    expect(earned([day(TODAY, [word("Common"), word("Common"), word("Common"), word("Common")])])).toEqual([]);
+  });
+
+  it("does not count a six-guess day's extra words", () => {
+    const six = scored([-1.57, -1.57, -1.57, -1.57, -1.57, -1.57]);
+    expect(earned([day("2026-08-01", six)])).toEqual([]);
   });
 });
 

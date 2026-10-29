@@ -15,9 +15,9 @@
 
 import achievementRates from "../data/achievement-rates.json";
 import { addDays, dayOfWeek, todayDateString } from "./date";
-import { maxGuessesFor } from "./constants";
+import { MAX_GUESSES, maxGuessesFor } from "./constants";
 import { handleFor } from "./handle";
-import { isUnattestedZipf, rarityForZipf, rarityScore } from "./dictionary";
+import { isUnattestedZipf, rarityForZipf, rarityScore, totalRarityScore } from "./dictionary";
 import { dropForDate } from "./drop";
 import { modeIsChosen } from "./mode";
 import { nextMonthStart } from "./month";
@@ -500,6 +500,20 @@ function averageOf(days: number, tier: Rarity): Achievement["check"] {
   };
 }
 
+/**
+ * A puzzle totalling `target` or more, as the total is shown (see
+ * `totalRarityScore`): 39.95 is not 40. Only a puzzle on today's guess limit
+ * counts -- an old six-guess day had two more words to add up, and 40 should
+ * mean four perfect finds.
+ */
+function totalOf(target: number): Achievement["check"] {
+  return firstPuzzle(
+    (progress) =>
+      maxGuessesFor(progress.date) <= MAX_GUESSES &&
+      totalRarityScore(progress.acceptedWords, progress.date) >= target
+  );
+}
+
 /** Two Mythic or better words in one puzzle, one starting with the drop, one ending with it. */
 function bookends(progress: DailyProgress): boolean {
   const drop = (progress.drop || dropForDate(progress.date)).toLowerCase();
@@ -838,6 +852,38 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     description: "Find the day's best word.",
     // The tally says how many days, not which, so the day it is first seen.
     check: ({ bestWordWins = 0 }, today) => ({ earnedOn: bestWordWins > 0 ? today : null }),
+  },
+  {
+    id: "total-32",
+    group: "Rarity",
+    icon: "🖋️",
+    title: "Big Ink Energy",
+    description: "Score a total of 32 or more in one puzzle.",
+    check: totalOf(32),
+  },
+  {
+    id: "total-36",
+    group: "Rarity",
+    icon: "🤯",
+    title: "Ink-credible",
+    description: "Score a total of 36 or more in one puzzle.",
+    check: totalOf(36),
+  },
+  {
+    id: "total-38",
+    group: "Rarity",
+    icon: "🌋",
+    title: "Off the Charts",
+    description: "Score a total of 38 or more in one puzzle.",
+    check: totalOf(38),
+  },
+  {
+    id: "total-40",
+    group: "Rarity",
+    icon: "💍",
+    title: "Forty Carat",
+    description: "Score a perfect total of 40 in one puzzle.",
+    check: totalOf(40),
   },
   {
     id: "streak-3",
