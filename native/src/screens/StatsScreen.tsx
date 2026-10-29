@@ -325,7 +325,7 @@ function AchievementCard({ status }: { status: AchievementStatus }) {
     : progress
       ? `${progress.current} / ${progress.target}`
       : 'Locked';
-  const share = earnedShareLabel(achievement.id);
+  const share = earnedShareLabel(achievement.id, undefined, Boolean(earnedOn));
   return (
     <View
       style={[

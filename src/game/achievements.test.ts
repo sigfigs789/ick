@@ -12,6 +12,7 @@ import {
   markAchievementsAnnounced,
   newlyEarned,
   resetAchievementRates,
+  soleHolder,
   syncAchievements,
   type AchievementRecord,
 } from "./achievements";
@@ -357,6 +358,19 @@ describe("earnedShareLabel", () => {
   it("names nobody once a second player holds it", () => {
     const stale = { ...rates, earned: { ...rates.earned, one: 2 }, sole: { one: "StormyFox47" } };
     expect(earnedShareLabel("one", stale)).toBe("1% of players");
+  });
+
+  it("counts this player in a badge they hold", () => {
+    // The counts have nobody yet: the player is the one.
+    expect(earnedShareLabel("none", rates, true)).toBe("Under 1% of players");
+    localStorage.setItem(PLAYER_KEY, JSON.stringify({ id: "me" }));
+    expect(earnedShareLabel("none", rates, true)).toBe("Only earned by you!");
+    expect(soleHolder("none", rates, true)).toEqual({ name: handleFor("me"), self: true });
+    // The one the counts name is someone else, so this player is a second.
+    expect(earnedShareLabel("one", { ...rates, sole: { one: "StormyFox47" } }, true)).toBe("1% of players");
+    expect(earnedShareLabel("one", { ...rates, sole: { one: handleFor("me") } }, true)).toBe("Only earned by you!");
+    localStorage.removeItem(PLAYER_KEY);
+    expect(earnedShareLabel("some", rates, true)).toBe("46% of players");
   });
 
   it("says nothing for a badge the snapshot predates", () => {

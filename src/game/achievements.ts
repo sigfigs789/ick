@@ -1456,14 +1456,43 @@ export function holdersOf(id: string): number {
 }
 
 /**
+ * The counts with this player in them when they hold `id`. The snapshot is a
+ * day old and the live count may not have heard this player's report yet, so
+ * a badge they hold can still read 0 -- "No player yet" under a badge they
+ * have just earned. Holding it makes them one of its holders: the only one
+ * where the counts have nobody, and a second where the one they name is
+ * someone else.
+ */
+function countingSelf(id: string, rates: AchievementRates, held: boolean): AchievementRates {
+  if (!held) return rates;
+  const count = rates.earned[id] ?? 0;
+  const named = rates.sole?.[id];
+  const self = ownHandle();
+  let earned = Math.max(count, 1);
+  let sole = rates.sole;
+  if (count === 0) {
+    sole = self ? { ...rates.sole, [id]: self } : rates.sole;
+  } else if (count === 1 && named && named !== self) {
+    earned = 2;
+  }
+  return {
+    players: Math.max(rates.players, earned),
+    earned: { ...rates.earned, [id]: earned },
+    sole,
+  };
+}
+
+/**
  * The one player holding `id`, when only one does and the counts name them:
- * `self` when that is this browser.
+ * `self` when that is this browser. `held` says this player holds it.
  */
 export function soleHolder(
   id: string,
-  rates: AchievementRates = ratesNow()
+  rates: AchievementRates = ratesNow(),
+  held = false
 ): { name: string; self: boolean } | null {
-  const name = rates.earned[id] === 1 ? rates.sole?.[id] : undefined;
+  const counted = countingSelf(id, rates, held);
+  const name = counted.earned[id] === 1 ? counted.sole?.[id] : undefined;
   return name ? { name, self: name === ownHandle() } : null;
 }
 
@@ -1489,12 +1518,13 @@ function formatShare(share: number): string {
  * How many of the players who have ever guessed hold `id`, as the Stats page
  * shows under each badge: "46% of players", or for a badge only one player
  * holds, their name -- "Only earned by StormyFox47!" -- or "Only earned by
- * you!" to that player. Null for a badge nobody has counted yet.
+ * you!" to that player. Null for a badge nobody has counted yet. `held` says
+ * this player holds it, so it is never "No player yet" to them.
  */
-export function earnedShareLabel(id: string, rates: AchievementRates = ratesNow()): string | null {
-  const holder = soleHolder(id, rates);
+export function earnedShareLabel(id: string, rates: AchievementRates = ratesNow(), held = false): string | null {
+  const holder = soleHolder(id, rates, held);
   if (holder) return holder.self ? "Only earned by you!" : `Only earned by ${holder.name}!`;
-  const share = shareOf(id, rates);
+  const share = shareOf(id, countingSelf(id, rates, held));
   if (share === null) return null;
   if (share === 0) return "No player yet";
   if (share < 1) return "Under 1% of players";

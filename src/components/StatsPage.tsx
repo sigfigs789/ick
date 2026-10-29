@@ -308,8 +308,9 @@ function Achievements({ statuses }: { statuses: AchievementStatus[] }) {
 
 function AchievementCard({ status }: { status: AchievementStatus }) {
   const { achievement, earnedOn, progress } = status;
-  const share = earnedShareLabel(achievement.id);
-  const onlyYou = soleHolder(achievement.id)?.self ?? false;
+  const held = Boolean(earnedOn);
+  const share = earnedShareLabel(achievement.id, undefined, held);
+  const onlyYou = soleHolder(achievement.id, undefined, held)?.self ?? false;
   return (
     <li className={`stats__achievement${earnedOn ? " stats__achievement--earned" : ""}`}>
       <span className="stats__achievement-icon" aria-hidden="true">
