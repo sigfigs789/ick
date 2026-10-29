@@ -1,13 +1,13 @@
--- `public.player_handle` follows handleFor in src/game/handle.ts back to the
--- names every player already had. The previous migration grew the word lists to
--- 256 each and renamed everybody with them, which a name should never do.
+-- `public.player_handle` gets the 256-word lists back, this time without
+-- renaming anybody. 20261119000000_player_handle_longer_lists grew the lists
+-- and renamed every player with them; 20261120000000_player_handle_back_to_128_lists
+-- undid that. This one follows handleFor in src/game/handle.ts again.
 --
--- Now the 128-word lists, with their old slices (bits 0-6 and 8-14), name
--- every id as they did before, and the 256-word lists name only ids the
--- browser mints from now on: v8 UUIDs, where every id minted before was a v4
--- (see newPlayerId in src/game/player.ts). The board, the analytics and the
--- achievement-rate reports all go back to the handles players knew, and the
--- notes on `analytics_excluded_players` are right again.
+-- The 128-word lists, with their old slices (bits 0-6 and 8-14), still name
+-- every id they named before, so nobody's handle changes. The 256-word lists
+-- name only ids the browser mints from now on: v8 UUIDs, where every id minted
+-- before was a v4 (see newPlayerId in src/game/player.ts). The notes on
+-- `analytics_excluded_players` stay right.
 
 create or replace function public.player_handle(p_player_id text)
 returns text
