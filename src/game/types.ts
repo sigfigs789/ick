@@ -85,8 +85,8 @@ export interface DailyProgress {
   retryUsed?: boolean;
   /**
    * The word the retry gave up, and where in `acceptedWords` its replacement
-   * lands -- the next word banked after the retry. Read by the two retry badges,
-   * which compare the replacement's score with the word it replaced.
+   * lands -- the next word banked after the retry. Second chance reads that a
+   * word moved; Buyer's remorse compares the replacement's score with it.
    *
    * Absent on a retry spent before this field existed, and on one forfeited to
    * the reveal (see storage.forfeitRetry), where no word moved.

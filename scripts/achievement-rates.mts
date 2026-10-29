@@ -192,6 +192,10 @@ function recordFor(pid: string): AchievementRecord {
       rejectedAttempts: rejectionsKnown ? Array<string>(ev.rej).fill("") : [""],
       completed: p.words.length >= maxGuessesFor(p.date) || Boolean(ev?.comp),
       retryUsed: Boolean(p.ranked?.retried),
+      // The board says a word was retried but not which, or what it scored:
+      // enough for Second chance, and pointed past the words so the score
+      // comparisons (Buyer's remorse) never see a replacement.
+      ...(p.ranked?.retried ? { retried: { word: { word: "", zipf: 8, rarity: "Quotidian" }, replacedAt: p.words.length } } : {}),
       firstWordAt: p.date,
     } as DailyProgress;
   });

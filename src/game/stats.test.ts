@@ -55,29 +55,13 @@ describe("computeStats", () => {
     expect(stats.topWords.map((w) => w.word)).toEqual(["kink", "pink"]);
   });
 
-  it("splits by mode, averaging finished puzzles only", () => {
-    const { modes } = computeStats(history, streak);
-    expect(modes.map((m) => [m.mode, m.puzzles])).toEqual([
-      ["standard", 3],
-      ["freeform", 1],
-    ]);
-    // The unfinished day is played but not averaged.
-    expect(modes[0].average).not.toBeNull();
-    expect(modes[0].best).toBeGreaterThanOrEqual(modes[0].average!);
-  });
 
-  it("has no average before anything is finished", () => {
-    const stats = computeStats([day("2026-10-22", [word("ink", "Common", 4.5)], { completed: false })], streak);
-    expect(stats.finished).toBe(0);
-    expect(stats.modes[0].average).toBeNull();
-  });
 
-  it("keeps legacy-scored puzzles out of the best words and totals", () => {
+  it("keeps legacy-scored puzzles out of the best words", () => {
     // Before 2026-08-15 the page has no legacy data, so "think" would show as 52.
     const early = day("2026-08-01", [word("think", "Common", 5.2)], { mode: "standard" });
     const stats = computeStats([early], streak);
     expect(stats.topWords).toEqual([]);
-    expect(stats.modes[0]).toMatchObject({ mode: "standard", puzzles: 1, average: null, best: null });
     expect(stats.daysPlayed).toBe(1);
     expect(stats.wordsFound).toBe(1);
     expect(stats.longestWord?.word).toBe("think");

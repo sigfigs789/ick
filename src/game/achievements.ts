@@ -1167,8 +1167,10 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     group: "Style",
     icon: "🔁",
     title: "Second chance",
-    description: "Retry a word and score higher than the one you gave up.",
-    check: firstPuzzle(retryScored((replacement, retried) => replacement > retried)),
+    description: "Retry a word.",
+    // A word given up, whatever replaced it. Not `retryUsed`, which a reveal
+    // also sets when it forfeits the retry without moving a word.
+    check: firstPuzzle((progress) => Boolean(progress.retried)),
   },
   {
     id: "buyers-remorse",
