@@ -48,6 +48,7 @@ discourages another platform's chrome in screenshots.
 - **App or game:** Game
 - **Category:** Word
 - **Website:** `https://www.wordink.app/`
+- **Contact email:** `sigfigs789@gmail.com` (already public on the privacy page)
 - **Privacy policy:** `https://www.wordink.app/privacy.html`
 
 ## App content
@@ -56,7 +57,7 @@ discourages another platform's chrome in screenshots.
 | --- | --- |
 | App access | All functionality available without special access (no account) |
 | Ads | No ads |
-| Content rating (IARC) | Game; users can interact (chat), no purchases, no location sharing |
+| Content rating (IARC) | Game, no objectionable content of its own; users interact (chat) with block, report and moderation. Result: ESRB Everyone, PEGI 3, IARC 3+, all with "Users Interact". Contact sigfigs789@gmail.com |
 | Target audience | 13 and over, so the chat is not offered to children |
 | News app | No |
 | Government app | No |
