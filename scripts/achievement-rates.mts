@@ -37,10 +37,11 @@ import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const { ACHIEVEMENTS, countedRecord } = await import("../src/game/achievements.ts");
-const { rarityFor, rarityForZipf, scoringReady } = await import("../src/game/dictionary.ts");
+const { rarityFor, rarityForZipf, scoringReady, totalRarityScore } = await import("../src/game/dictionary.ts");
 const { maxGuessesFor } = await import("../src/game/constants.ts");
 const { dropForDate } = await import("../src/game/drop.ts");
 const { handleFor } = await import("../src/game/handle.ts");
+const { modeForDate } = await import("../src/game/mode.ts");
 type AchievementRecord = import("../src/game/achievements.ts").AchievementRecord;
 type DailyProgress = import("../src/game/types.ts").DailyProgress;
 type Rarity = import("../src/game/types.ts").Rarity;
@@ -100,7 +101,7 @@ const guessersFromEvents = query(`
   (r) => r.pid as string
 );
 const scores = query(
-  "select player_id, puzzle_date, mode, words, retried, top_word, top_zipf from leaderboard_scores"
+  "select player_id, puzzle_date, mode, words, total_score, retried, top_word, top_zipf from leaderboard_scores"
 );
 const finds = query(
   "select player_id, puzzle_date, mode, word, zipf from leaderboard_finds order by found_at"
@@ -171,11 +172,48 @@ for (const f of finds) {
   p.words.push({ word: f.word, ...scored(f.word, f.zipf, f.puzzle_date, p.mode) });
 }
 for (const s of scores) {
-  const p = puzzle(s.player_id, s.puzzle_date, s.mode);
+  // Before the mode switch (2026-09-27) the board kept one "shared" row a day;
+  // the finds of that day carry the mode the calendar played it in.
+  const mode = s.mode === "shared" ? modeForDate(s.puzzle_date) : s.mode;
+  const p = puzzle(s.player_id, s.puzzle_date, mode);
   p.ranked = s;
   if (p.words.length > 0) continue;
   p.words.push({ word: s.top_word, ...scored(s.top_word, s.top_zipf, s.puzzle_date, p.mode) });
   for (let i = 1; i < s.words; i++) p.words.push({ word: "", rarity: "Common", zipf: 7 });
+}
+
+// The finds are every word ever found, so a puzzle can hold more than were
+// banked: the word a retry gave up, and words found again on a replay or a
+// second device. Keep the board's count of words, choosing the ones whose total
+// comes closest to the total the board kept -- without this a retried four-word
+// puzzle sums five words, and Forty Carat counted 76 players where the board
+// has five.
+for (const mine of puzzles.values()) {
+  for (const p of mine.values()) {
+    // A puzzle the board never ranked (a replay) has no total to match: keep
+    // the first words found, as many as the puzzle allowed.
+    if (!p.ranked) {
+      p.words = p.words.slice(0, maxGuessesFor(p.date));
+      continue;
+    }
+    const keep = Number(p.ranked.words);
+    if (!keep || p.words.length <= keep) continue;
+    const target = Number(p.ranked.total_score);
+    const unique = [...new Map(p.words.map((w) => [w.word.toLowerCase(), w])).values()];
+    let best = unique.slice(0, keep);
+    let gap = Infinity;
+    const pick = (from: number, chosen: typeof unique) => {
+      if (chosen.length === keep) {
+        const off = Math.abs(totalRarityScore(chosen, p.date) - target);
+        if (off < gap) [gap, best] = [off, chosen];
+        return;
+      }
+      for (let i = from; i < unique.length && gap > 0; i++) pick(i + 1, [...chosen, unique[i]]);
+    };
+    pick(0, []);
+    // Back in found order, which the opener and order badges read.
+    p.words = unique.filter((w) => best.includes(w));
+  }
 }
 
 function recordFor(pid: string): AchievementRecord {
