@@ -69,6 +69,19 @@ describe("scorecard", () => {
     expect(rows[5]).toMatchObject({ metric: "Back within a month", value: "56%", standing: "great" });
   });
 
+  it("judges D7 through back within a month from 20 new players, and D1 from 30", () => {
+    const at = (cohort: number) => {
+      const rate = { players: { cohort, returned: 2 } };
+      return scorecard(report(() => 10, { retention: { d1: rate, d7: rate, week: rate, d30: rate, month: rate } })).slice(1, 6);
+    };
+    const [d1, ...later] = at(20);
+    expect(d1).toMatchObject({ value: null, detail: "needs 30 new players in the window whose day 1 is over" });
+    for (const row of later) expect(row).toMatchObject({ value: "10%", detail: "2 of 20 new players" });
+    expect(at(19)[1]).toMatchObject({ value: null, detail: "needs 20 new players in the window whose day 7 is over" });
+    expect(at(19)[4]).toMatchObject({ value: null, detail: "needs 20 new players in the window whose day 30 is over" });
+    expect(at(30)[0]).toMatchObject({ value: "7%" });
+  });
+
   it("reads the DAU trend from the last four full weeks against the four before, as a monthly rate", () => {
     const end = lastSunday(TODAY);
     const growing = report((date) => (date > addDays(end, -28) ? 12 : 10));
