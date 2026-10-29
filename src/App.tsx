@@ -43,7 +43,7 @@ import {
   fetchAchievementRates,
   fetchWordOfTheDayWins,
   syncAchievements,
-  type Achievement,
+  type EarnedAchievement,
 } from "./game/achievements";
 import type { Rarity } from "./game/types";
 import { completedWholeMonth } from "./game/perfectMonth";
@@ -183,7 +183,7 @@ export default function App() {
   const endTopRank = useCallback(() => setTopRank(null), []);
   const [unlocked, setUnlocked] = useState<{
     key: number;
-    achievements: Achievement[];
+    achievements: EarnedAchievement[];
     /** How many there are in all, when the card names only a few. */
     total?: number;
   } | null>(null);

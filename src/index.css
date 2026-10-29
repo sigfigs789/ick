@@ -2876,6 +2876,10 @@ button.app__menu-item + button.app__menu-item {
   font-size: 0.9rem;
   font-weight: 700;
 }
+.achievement-unlocked__word {
+  overflow-wrap: anywhere;
+  font-size: 0.9rem;
+}
 .achievement-unlocked__footnote {
   margin-top: 0.2rem;
   color: var(--fg-muted);
@@ -7393,6 +7397,14 @@ button.app__menu-item + button.app__menu-item {
 /* The badge only this player holds. */
 .stats__achievement-share--you {
   color: var(--success-fg);
+  font-weight: 700;
+}
+.stats__achievement-word {
+  min-width: 0;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+.stats__achievement-word-text {
   font-weight: 700;
 }
 .stats__achievement--earned .stats__achievement-meta {

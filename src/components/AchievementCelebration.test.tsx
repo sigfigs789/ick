@@ -15,6 +15,13 @@ describe("AchievementCelebration", () => {
     expect(screen.getByText("Find a Legend.")).toBeInTheDocument();
   });
 
+  it("names the word that earned a lone badge", () => {
+    render(
+      <AchievementCelebration achievements={[{ ...byId("first-legend"), word: "inkhornism" }]} onDone={() => {}} />
+    );
+    expect(screen.getByText("inkhornism")).toBeInTheDocument();
+  });
+
   it("lists several at once", () => {
     render(
       <AchievementCelebration
