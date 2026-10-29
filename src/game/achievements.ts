@@ -1419,6 +1419,22 @@ const snapshot: AchievementRates = achievementRates;
 /** The live counts from /api/achievements, once this session has them. */
 let liveRates: AchievementRates | null = null;
 let ratesRequest: Promise<AchievementRates | null> | null = null;
+/** Numbers each ask, so an answer overtaken by a later one is dropped. */
+let ratesAsked = 0;
+let ratesAnswered = 0;
+/**
+ * The badges this device held when the counts were first asked for, and every
+ * one reported since. Null until the counts are asked for.
+ */
+let ratesReported: Set<string> | null = null;
+/** Badges reported after the first ask: the counts since may include this player. */
+let reportedSince = new Set<string>();
+/**
+ * Every handle the counts have named as a badge's one holder. A badge is kept
+ * for good, so a player named once still holds it after others join them.
+ */
+let namedHolders: Record<string, string> = { ...snapshot.sole };
+const ratesListeners = new Set<() => void>();
 
 function isRates(body: unknown): body is AchievementRates {
   if (!body || typeof body !== "object") return false;
@@ -1427,29 +1443,77 @@ function isRates(body: unknown): body is AchievementRates {
 }
 
 /**
- * Ask the server how many players hold each badge, once a session (a failed
- * ask is tried again by the next caller). Never needed: until it answers, and
- * if it never does, the bundled snapshot stands in.
+ * Ask for the counts. Whatever is shown stays until the answer lands, and
+ * stays for good if it never does: a failed ask is tried again by the next
+ * caller of `fetchAchievementRates`.
  */
-export function fetchAchievementRates(): Promise<AchievementRates | null> {
-  ratesRequest ??= fetch("/api/achievements")
+function askForRates(url: string): Promise<AchievementRates | null> {
+  const asked = ++ratesAsked;
+  const request: Promise<AchievementRates | null> = fetch(url)
     .then((response) => (response.ok ? response.json() : null))
     .then((body: unknown) => {
       if (!isRates(body)) throw new Error("no rates");
-      liveRates = body;
+      if (asked > ratesAnswered) {
+        ratesAnswered = asked;
+        liveRates = body;
+        Object.assign(namedHolders, body.sole);
+        for (const listener of ratesListeners) listener();
+      }
       return liveRates;
     })
     .catch(() => {
-      ratesRequest = null;
+      if (ratesRequest === request) ratesRequest = null;
       return null;
     });
-  return ratesRequest;
+  ratesRequest = request;
+  return request;
+}
+
+/**
+ * Ask the server how many players hold each badge, once a session (a failed
+ * ask is tried again by the next caller), and again whenever this player
+ * reports a badge (see `achievementsReported`). Never needed: until it
+ * answers, and if it never does, the bundled snapshot stands in.
+ */
+export function fetchAchievementRates(): Promise<AchievementRates | null> {
+  ratesReported ??= new Set(Object.keys(countedAchievements()));
+  return ratesRequest ?? askForRates("/api/achievements");
+}
+
+/**
+ * The server has taken a report carrying these badges (see game/leaderboard.ts).
+ * When one is new since the counts were asked for, ask again, past the edge
+ * cache, which would otherwise serve counts from before the report for a few
+ * minutes. Nothing to do before anything has asked for the counts.
+ */
+export function achievementsReported(ids: readonly string[]): void {
+  if (!ratesReported) return;
+  const fresh = ids.filter((id) => !ratesReported!.has(id));
+  if (fresh.length === 0) return;
+  for (const id of fresh) {
+    ratesReported.add(id);
+    reportedSince.add(id);
+  }
+  void askForRates(`/api/achievements?after=${Date.now()}`);
+}
+
+/** Call `listener` each time new live counts land. Returns the unsubscribe. */
+export function subscribeToAchievementRates(listener: () => void): () => void {
+  ratesListeners.add(listener);
+  return () => {
+    ratesListeners.delete(listener);
+  };
 }
 
 /** For tests: forget the live counts. */
 export function resetAchievementRates(live: AchievementRates | null = null): void {
   liveRates = live;
   ratesRequest = null;
+  ratesAsked = 0;
+  ratesAnswered = 0;
+  ratesReported = null;
+  reportedSince = new Set();
+  namedHolders = { ...snapshot.sole, ...live?.sole };
 }
 
 /**
@@ -1476,15 +1540,59 @@ export function holdersOf(id: string): number {
 }
 
 /**
+ * The counts with this player in them when they hold `id`. The snapshot is a
+ * day old and the live count may not have heard this player's report yet, so
+ * a badge they hold can still read 0 -- "No player yet" under a badge they
+ * have just earned. Holding it makes them one of its holders: the only one
+ * where the counts have nobody, and a second where the one they name is
+ * someone else.
+ */
+function countingSelf(id: string, rates: AchievementRates, held: boolean): AchievementRates {
+  if (!held) return rates;
+  const count = rates.earned[id] ?? 0;
+  const named = rates.sole?.[id];
+  const self = ownHandle();
+  let earned = Math.max(count, 1);
+  let sole = rates.sole;
+  if (count === 0) {
+    sole = self ? { ...rates.sole, [id]: self } : rates.sole;
+  } else if (count === 1 && named && named !== self) {
+    earned = 2;
+  }
+  return {
+    players: Math.max(rates.players, earned),
+    earned: { ...rates.earned, [id]: earned },
+    sole,
+  };
+}
+
+/**
  * The one player holding `id`, when only one does and the counts name them:
- * `self` when that is this browser.
+ * `self` when that is this browser. `held` says this player holds it.
  */
 export function soleHolder(
   id: string,
-  rates: AchievementRates = ratesNow()
+  rates: AchievementRates = ratesNow(),
+  held = false
 ): { name: string; self: boolean } | null {
-  const name = rates.earned[id] === 1 ? rates.sole?.[id] : undefined;
+  const counted = countingSelf(id, rates, held);
+  const name = counted.earned[id] === 1 ? counted.sole?.[id] : undefined;
   return name ? { name, self: name === ownHandle() } : null;
+}
+
+/**
+ * The other player holding `id` when this one makes two: "Only earned by
+ * StormyFox47 and you!". Either the counts name one holder who is someone else
+ * and have not heard this player's report yet, or they have -- they were asked
+ * after it -- and read two, one of them a player they named before.
+ */
+export function fellowHolder(id: string, rates: AchievementRates = ratesNow(), held = false): string | null {
+  if (!held) return null;
+  const count = rates.earned[id] ?? 0;
+  let named: string | undefined;
+  if (count === 1) named = rates.sole?.[id];
+  else if (count === 2 && reportedSince.has(id)) named = rates.sole?.[id] ?? namedHolders[id];
+  return named && named !== ownHandle() ? named : null;
 }
 
 /** This browser's handle on the board, if it has joined. */
@@ -1509,12 +1617,16 @@ function formatShare(share: number): string {
  * How many of the players who have ever guessed hold `id`, as the Stats page
  * shows under each badge: "46% of players", or for a badge only one player
  * holds, their name -- "Only earned by StormyFox47!" -- or "Only earned by
- * you!" to that player. Null for a badge nobody has counted yet.
+ * you!" to that player, or "Only earned by StormyFox47 and you!" to the one
+ * who joins them. Null for a badge nobody has counted yet. `held` says this
+ * player holds it, so it is never "No player yet" to them.
  */
-export function earnedShareLabel(id: string, rates: AchievementRates = ratesNow()): string | null {
-  const holder = soleHolder(id, rates);
+export function earnedShareLabel(id: string, rates: AchievementRates = ratesNow(), held = false): string | null {
+  const holder = soleHolder(id, rates, held);
   if (holder) return holder.self ? "Only earned by you!" : `Only earned by ${holder.name}!`;
-  const share = shareOf(id, rates);
+  const fellow = fellowHolder(id, rates, held);
+  if (fellow) return `Only earned by ${fellow} and you!`;
+  const share = shareOf(id, countingSelf(id, rates, held));
   if (share === null) return null;
   if (share === 0) return "No player yet";
   if (share < 1) return "Under 1% of players";
@@ -1525,10 +1637,17 @@ export function earnedShareLabel(id: string, rates: AchievementRates = ratesNow(
  * Whether nobody else held `id` when this session asked. Only the live count
  * can say so: the snapshot is a day's guess, and a zero there may be stale.
  * Read when the badge is earned, before this player's own report is counted --
- * the counts are fetched as the page opens.
+ * the counts are fetched as the page opens. Counts asked for after this player
+ * reported it may hold them already, so there one holder is still nobody else.
  */
 export function firstToEarn(id: string): boolean {
-  return liveRates !== null && !ratesNow().earned[id];
+  if (liveRates === null) return false;
+  const rates = ratesNow();
+  const count = rates.earned[id] ?? 0;
+  if (count === 0) return true;
+  if (count > 1 || !reportedSince.has(id)) return false;
+  const named = rates.sole?.[id];
+  return !named || named === ownHandle();
 }
 
 /** Below this share a badge is rare enough to say "only". */

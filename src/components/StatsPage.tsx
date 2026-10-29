@@ -2,9 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ACHIEVEMENT_GROUPS,
   earnedShareLabel,
+  fellowHolder,
   fetchAchievementRates,
   recentAchievements,
   soleHolder,
+  subscribeToAchievementRates,
   syncAchievements,
   type AchievementStatus,
 } from "../game/achievements";
@@ -32,10 +34,13 @@ export function StatsPage() {
     return { stats: loadStats(streak), achievements: syncAchievements(streak) };
   });
   // The share under each badge starts from the bundled snapshot and redraws
-  // once the live counts arrive (see fetchAchievementRates).
-  const [, setLiveRates] = useState(false);
+  // each time live counts arrive: on open, and again after a report carrying
+  // a newly earned badge (see fetchAchievementRates).
+  const [, setRatesSeen] = useState(0);
   useEffect(() => {
-    void fetchAchievementRates().then((rates) => rates && setLiveRates(true));
+    const stop = subscribeToAchievementRates(() => setRatesSeen((seen) => seen + 1));
+    void fetchAchievementRates();
+    return stop;
   }, []);
 
   if (stats.wordsFound === 0) {
@@ -321,8 +326,10 @@ function Achievements({ statuses }: { statuses: AchievementStatus[] }) {
 
 function AchievementCard({ status }: { status: AchievementStatus }) {
   const { achievement, earnedOn, progress, word } = status;
-  const share = earnedShareLabel(achievement.id);
-  const onlyYou = soleHolder(achievement.id)?.self ?? false;
+  const held = Boolean(earnedOn);
+  const share = earnedShareLabel(achievement.id, undefined, held);
+  const onlyYou =
+    (soleHolder(achievement.id, undefined, held)?.self ?? false) || fellowHolder(achievement.id, undefined, held) !== null;
   return (
     <li className={`stats__achievement${earnedOn ? " stats__achievement--earned" : ""}`}>
       <span className="stats__achievement-icon" aria-hidden="true">

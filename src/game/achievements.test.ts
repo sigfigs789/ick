@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ACHIEVEMENTS,
+  achievementsReported,
   achievementStatuses,
   achievementsToCatchUp,
   announcedAchievements,
@@ -8,12 +9,18 @@ import {
   countedRecord,
   earnedIds,
   earnedShareLabel,
+  fellowHolder,
+  fetchAchievementRates,
   firstToEarn,
+  holdersOf,
   markAchievementsAnnounced,
   newlyEarned,
   recentAchievements,
   resetAchievementRates,
+  soleHolder,
+  subscribeToAchievementRates,
   syncAchievements,
+  type AchievementRates,
   type AchievementRecord,
   type AchievementStatus,
 } from "./achievements";
@@ -431,6 +438,23 @@ describe("earnedShareLabel", () => {
     expect(earnedShareLabel("one", stale)).toBe("1% of players");
   });
 
+  it("counts this player in a badge they hold", () => {
+    // The counts have nobody yet: the player is the one.
+    expect(earnedShareLabel("none", rates, true)).toBe("Under 1% of players");
+    localStorage.setItem(PLAYER_KEY, JSON.stringify({ id: "me" }));
+    expect(earnedShareLabel("none", rates, true)).toBe("Only earned by you!");
+    expect(soleHolder("none", rates, true)).toEqual({ name: handleFor("me"), self: true });
+    // The one the counts name is someone else, so this player is a second.
+    expect(earnedShareLabel("one", { ...rates, sole: { one: "StormyFox47" } }, true)).toBe(
+      "Only earned by StormyFox47 and you!"
+    );
+    expect(fellowHolder("one", { ...rates, sole: { one: "StormyFox47" } }, true)).toBe("StormyFox47");
+    expect(fellowHolder("one", { ...rates, sole: { one: "StormyFox47" } })).toBeNull();
+    expect(earnedShareLabel("one", { ...rates, sole: { one: handleFor("me") } }, true)).toBe("Only earned by you!");
+    localStorage.removeItem(PLAYER_KEY);
+    expect(earnedShareLabel("some", rates, true)).toBe("46% of players");
+  });
+
   it("says nothing for a badge the snapshot predates", () => {
     expect(earnedShareLabel("new-badge", rates)).toBeNull();
   });
@@ -467,6 +491,80 @@ describe("the card for a lone badge", () => {
     expect(celebrationShareLine("pantheon", rates)).toBe("Earned by only 4.3% of players.");
     expect(celebrationShareLine("streak-30", rates)).toBe("Earned by fewer than 1% of players.");
     expect(celebrationShareLine("days-10", rates)).toBe("Earned by 8.2% of players.");
+  });
+});
+
+describe("refreshing the live counts", () => {
+  let answers: AchievementRates[];
+  let fetchMock: ReturnType<typeof vi.fn>;
+  beforeEach(() => {
+    resetAchievementRates();
+    answers = [];
+    fetchMock = vi.fn(async () => Response.json(answers.shift()));
+    vi.stubGlobal("fetch", fetchMock);
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("asks again, past the edge cache, once a new badge is reported", async () => {
+    answers.push({ players: 700, earned: {} }, { players: 701, earned: { "days-365": 1 } });
+    await fetchAchievementRates();
+    const redraws = vi.fn();
+    const stop = subscribeToAchievementRates(redraws);
+    achievementsReported(["days-365"]);
+    // The first counts stay up until the new ones land.
+    expect(holdersOf("days-365")).toBe(0);
+    await vi.waitFor(() => expect(redraws).toHaveBeenCalledOnce());
+    stop();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[1][0])).toMatch(/^\/api\/achievements\?after=\d+$/);
+    expect(holdersOf("days-365")).toBe(1);
+    // The one holder is this player, so they were still the first.
+    expect(firstToEarn("days-365")).toBe(true);
+  });
+
+  it("keeps naming the one other holder once the counts include this player", async () => {
+    localStorage.setItem(PLAYER_KEY, JSON.stringify({ id: "me" }));
+    answers.push(
+      { players: 700, earned: { "days-365": 1 }, sole: { "days-365": "StormyFox47" } },
+      { players: 701, earned: { "days-365": 2 }, sole: {} }
+    );
+    await fetchAchievementRates();
+    expect(earnedShareLabel("days-365", undefined, true)).toBe("Only earned by StormyFox47 and you!");
+    // Two holders, but nothing says this player is one of them.
+    expect(earnedShareLabel("days-365", { players: 701, earned: { "days-365": 2 } }, true)).toBe(
+      "Under 1% of players"
+    );
+    achievementsReported(["days-365"]);
+    await vi.waitFor(() => expect(holdersOf("days-365")).toBe(2));
+    expect(earnedShareLabel("days-365", undefined, true)).toBe("Only earned by StormyFox47 and you!");
+    // A third makes it a share again.
+    resetAchievementRates({ players: 702, earned: { "days-365": 3 } });
+    expect(earnedShareLabel("days-365", undefined, true)).toBe("Under 1% of players");
+    localStorage.removeItem(PLAYER_KEY);
+  });
+
+  it("does not ask again for a badge already reported", async () => {
+    answers.push({ players: 700, earned: {} }, { players: 701, earned: { "days-365": 1 } });
+    await fetchAchievementRates();
+    achievementsReported(["days-365"]);
+    achievementsReported(["days-365"]);
+    await vi.waitFor(() => expect(holdersOf("days-365")).toBe(1));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("asks nothing before anything has asked for the counts", () => {
+    achievementsReported(["days-365"]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps the counts shown when the new ask fails", async () => {
+    answers.push({ players: 700, earned: { "days-365": 4 } });
+    await fetchAchievementRates();
+    fetchMock.mockImplementationOnce(async () => new Response(null, { status: 503 }));
+    achievementsReported(["days-365"]);
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    await Promise.resolve();
+    expect(holdersOf("days-365")).toBe(4);
   });
 });
 
