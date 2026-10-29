@@ -3,11 +3,11 @@
   "rulesDate": "2027-01-07",
   "measured": 506215,
   "estimated": {
-    "playable": 415889,
+    "playable": 415890,
     "notPlayable": 0
   },
   "unattested": {
-    "playable": 289875,
+    "playable": 289874,
     "notPlayable": 5301
   },
   "batches": [
@@ -70,6 +70,10 @@
     {
       "since": "2026-11-20",
       "estimates": 5
+    },
+    {
+      "since": "2026-11-21",
+      "estimates": 1
     },
     {
       "since": "2026-11-22",
@@ -397,8 +401,8 @@
     {
       "date": "2026-11-21",
       "drop": "EE",
-      "estimated": 14166,
-      "unattested": 1,
+      "estimated": 14167,
+      "unattested": 0,
       "swept": "100.0%"
     },
     {
