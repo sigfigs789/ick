@@ -200,7 +200,7 @@ needs an account rather than a commit:
   with the bundle identifier `app.wordink`. EAS can create the signing
   credentials.
 - **A Google Play Developer account** ($25 once) and an app with the package name
-  `app.wordink`. `eas submit` wants a service-account key JSON.
+  `com.wordink.app` (iOS keeps `app.wordink`). `eas submit` wants a service-account key JSON.
 - **Store listing copy, and screenshots.** The first section of this file is
   written to be the listing description. Screenshots have to come from a real
   run — take them on the largest iPhone and a tablet, since Apple asks for both.

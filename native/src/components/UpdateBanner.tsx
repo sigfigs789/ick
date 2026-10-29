@@ -17,8 +17,8 @@ const STORE = Platform.select({
     web: 'https://apps.apple.com/app/id6812644489',
   },
   default: {
-    app: 'market://details?id=app.wordink',
-    web: 'https://play.google.com/store/apps/details?id=app.wordink',
+    app: 'market://details?id=com.wordink.app',
+    web: 'https://play.google.com/store/apps/details?id=com.wordink.app',
   },
 });
 

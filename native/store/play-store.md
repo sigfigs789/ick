@@ -4,7 +4,7 @@ What Play Console asks for, kept beside [app-store.md](app-store.md) rather than
 merged into it. Where a field is the same text as the App Store's, this file
 says so instead of copying it.
 
-Package: `app.wordink`. Built with the `production` profile in `eas.json`
+Package: `com.wordink.app` (iOS keeps `app.wordink`). Built with the `production` profile in `eas.json`
 (an Android App Bundle).
 
 ## App name — 30 characters max
