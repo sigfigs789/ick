@@ -11,7 +11,6 @@ import {
   type AchievementStatus,
 } from "../game/achievements";
 import { formatDateLabel, todayDateString } from "../game/date";
-import { formatTotal } from "../game/dictionary";
 import { MODE_LABELS } from "../game/mode";
 import { CURRENT_TIERS, loadStats, TOP_WORDS, type PlayerStats, type StatWord } from "../game/stats";
 import { loadStreak } from "../game/storage";
@@ -72,7 +71,6 @@ export function StatsPage() {
       <Headline stats={stats} />
       <RarityBars byRarity={stats.byRarity} />
       <BestWords stats={stats} />
-      <ByMode stats={stats} />
       <Achievements statuses={achievements} />
     </main>
   );
@@ -247,37 +245,6 @@ function AllBestWords({ words, onClose }: { words: StatWord[]; onClose: () => vo
         {shown < words.length && <div ref={sentinelRef} className="stats__sentinel" aria-hidden="true" />}
       </div>
     </div>
-  );
-}
-
-function ByMode({ stats }: { stats: PlayerStats }) {
-  return (
-    <section className="stats__section" aria-labelledby="stats-modes">
-      <h2 className="stats__heading" id="stats-modes">
-        By mode
-      </h2>
-      <table className="stats__table">
-        <thead>
-          <tr>
-            <th scope="col">Mode</th>
-            <th scope="col">Puzzles</th>
-            <th scope="col">Average</th>
-            <th scope="col">Best</th>
-          </tr>
-        </thead>
-        <tbody>
-          {stats.modes.map((row) => (
-            <tr key={row.mode}>
-              <th scope="row">{MODE_LABELS[row.mode]}</th>
-              <td>{row.puzzles}</td>
-              <td>{row.average === null ? "–" : formatTotal(row.average)}</td>
-              <td>{row.best === null ? "–" : formatTotal(row.best)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <p className="stats__footnote">Average and best are daily totals of finished puzzles.</p>
-    </section>
   );
 }
 

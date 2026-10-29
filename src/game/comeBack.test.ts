@@ -179,8 +179,8 @@ describe("streakGoal", () => {
     });
 
     it("draws a locked achievement at random each day, the easier ones more often", () => {
-      // clean-sweep is held by far more players than pantheon or both-ways.
-      const locked = [lockedOne("pantheon"), lockedOne("clean-sweep"), lockedOne("both-ways")];
+      // clean-sweep is held by far more players than pantheon or dawn-wall.
+      const locked = [lockedOne("pantheon"), lockedOne("clean-sweep"), lockedOne("dawn-wall")];
       const counts = new Map<string, number>();
       let day = "2026-11-01";
       for (let i = 0; i < 365; i++, day = addDays(day, 1)) {
@@ -197,7 +197,7 @@ describe("streakGoal", () => {
     });
 
     it("changes from one day to the next", () => {
-      const locked = ["clean-sweep", "pantheon", "both-ways", "streak-100", "days-50"].map((id) => lockedOne(id));
+      const locked = ["clean-sweep", "pantheon", "dawn-wall", "streak-100", "days-50"].map((id) => lockedOne(id));
       const week = Array.from({ length: 7 }, (_, i) => streakGoal(maxed, addDays(FRIDAY, i), locked));
       expect(new Set(week).size).toBeGreaterThan(1);
     });

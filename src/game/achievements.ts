@@ -25,7 +25,7 @@ import {
   totalRarityScore,
 } from "./dictionary";
 import { dropForDate } from "./drop";
-import { modeForDate, modeIsChosen } from "./mode";
+import { modeForDate } from "./mode";
 import { nextMonthStart } from "./month";
 import { loadPlayerId } from "./player";
 import { isWinningRarity } from "./rank";
@@ -320,20 +320,6 @@ function downToTheWire(progress: DailyProgress): boolean {
     isWinningRarity(words[words.length - 1].rarity) &&
     words.slice(0, -1).every((word) => !isWinningRarity(word.rarity))
   );
-}
-
-/** The same day's puzzle won in Standard and in Freeform. */
-function bothWays({ history }: AchievementRecord): Check {
-  const wonBy = new Map<string, Set<string>>();
-  for (const progress of history) {
-    if (!modeIsChosen(progress.date) || !progress.mode) continue;
-    if (!hasWin(progress)) continue;
-    const modes = wonBy.get(progress.date) ?? new Set();
-    modes.add(progress.mode);
-    wonBy.set(progress.date, modes);
-    if (modes.size === 2) return { earnedOn: progress.date };
-  }
-  return { earnedOn: null };
 }
 
 /**
@@ -1167,8 +1153,10 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     group: "Style",
     icon: "🔁",
     title: "Second chance",
-    description: "Retry a word and score higher than the one you gave up.",
-    check: firstPuzzle(retryScored((replacement, retried) => replacement > retried)),
+    description: "Retry a word.",
+    // A word given up, whatever replaced it. Not `retryUsed`, which a reveal
+    // also sets when it forfeits the retry without moving a word.
+    check: firstPuzzle((progress) => Boolean(progress.retried)),
   },
   {
     id: "buyers-remorse",
@@ -1185,14 +1173,6 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Sesquipedalian",
     description: `Bank a word of ${LONG_WORD} letters or more, as long as "sesquipedalian".`,
     check: firstWordWhere((word) => word.word.length >= LONG_WORD),
-  },
-  {
-    id: "both-ways",
-    group: "Style",
-    icon: "🔀",
-    title: "Both ways",
-    description: "Find a Rare or better word in the same puzzle in Standard and Freeform.",
-    check: bothWays,
   },
   {
     id: "no-misses",

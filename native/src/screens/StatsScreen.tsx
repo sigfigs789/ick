@@ -10,7 +10,6 @@ import {
   type AchievementStatus,
 } from '../../../src/game/achievements';
 import { formatDateLabel, todayDateString } from '../../../src/game/date';
-import { formatTotal } from '../../../src/game/dictionary';
 import { MODE_LABELS } from '../../../src/game/mode';
 import { CURRENT_TIERS, loadStats, TOP_WORDS, type PlayerStats, type StatWord } from '../../../src/game/stats';
 import { loadStreak } from '../../../src/game/storage';
@@ -87,7 +86,6 @@ export function StatsScreen({ onPlay }: { onPlay?: () => void } = {}) {
       <Headline stats={stats} />
       <RarityBars byRarity={stats.byRarity} />
       <BestWords stats={stats} />
-      <ByMode stats={stats} />
       <Achievements statuses={achievements} />
     </ScrollView>
   );
@@ -241,52 +239,6 @@ function BestWordList({ words }: { words: StatWord[] }) {
           <RarityBadge rarity={word.rarity} zipf={word.zipf} date={word.date} />
         </View>
       ))}
-    </View>
-  );
-}
-
-/** Each mode's finished puzzles, their average daily total and their best. */
-function ByMode({ stats }: { stats: PlayerStats }) {
-  const theme = useTheme();
-  const cell = (text: string, first = false, head = false) => (
-    <Text
-      style={[
-        styles.cell,
-        first ? styles.cellFirst : styles.cellNumber,
-        head ? [styles.cellHead, { color: theme.fgMuted }] : { color: theme.fg },
-        first && !head && styles.cellRowHead,
-      ]}
-    >
-      {text}
-    </Text>
-  );
-  return (
-    <View style={styles.section}>
-      <Heading>By mode</Heading>
-      <View style={[styles.tableRow, { borderBottomColor: theme.border }]}>
-        {cell('Mode', true, true)}
-        {cell('Puzzles', false, true)}
-        {cell('Average', false, true)}
-        {cell('Best', false, true)}
-      </View>
-      {stats.modes.map((row) => (
-        <View
-          key={row.mode}
-          style={[styles.tableRow, { borderBottomColor: theme.border }]}
-          accessible
-          accessibilityLabel={`${MODE_LABELS[row.mode]}: ${row.puzzles} puzzles, average ${
-            row.average === null ? 'none' : formatTotal(row.average)
-          }, best ${row.best === null ? 'none' : formatTotal(row.best)}`}
-        >
-          {cell(MODE_LABELS[row.mode], true)}
-          {cell(String(row.puzzles))}
-          {cell(row.average === null ? '–' : formatTotal(row.average))}
-          {cell(row.best === null ? '–' : formatTotal(row.best))}
-        </View>
-      ))}
-      <Text style={[styles.footnote, { color: theme.fgFaint }]}>
-        Average and best are daily totals of finished puzzles.
-      </Text>
     </View>
   );
 }
@@ -511,36 +463,6 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',
     fontSize: 12,
     fontVariant: ['tabular-nums'],
-  },
-  tableRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-  },
-  cell: {
-    paddingVertical: 7.2,
-    paddingHorizontal: 4,
-    fontSize: 13.6,
-    fontVariant: ['tabular-nums'],
-  },
-  cellFirst: {
-    flex: 1.3,
-    textAlign: 'left',
-  },
-  cellNumber: {
-    flex: 1,
-    textAlign: 'right',
-  },
-  cellHead: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  /* A row's mode is its `th`, which a browser sets bold. */
-  cellRowHead: {
-    fontWeight: '700',
-  },
-  footnote: {
-    marginTop: 8,
-    fontSize: 12,
   },
   groupGap: {
     marginTop: 16,

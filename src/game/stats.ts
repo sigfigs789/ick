@@ -14,7 +14,7 @@
  * and totals stay out of the best words and the per-mode scores.
  */
 
-import { rarityScore, totalRarityScore, usesLegacyRarity } from "./dictionary";
+import { rarityScore, usesLegacyRarity } from "./dictionary";
 import { type GameMode } from "./mode";
 import { playedHistory } from "./storage";
 import type { DailyProgress, Rarity, StreakState } from "./types";
@@ -43,16 +43,6 @@ export interface StatWord {
   score: number;
 }
 
-export interface ModeStats {
-  mode: GameMode;
-  /** Puzzles with a banked word in this mode. */
-  puzzles: number;
-  /** Average total over the finished puzzles, to the hundredth; null with none. */
-  average: number | null;
-  /** The best finished puzzle's total; null with none. */
-  best: number | null;
-}
-
 export interface PlayerStats {
   /** Distinct days with a banked word, either mode. */
   daysPlayed: number;
@@ -67,8 +57,6 @@ export interface PlayerStats {
   topWords: StatWord[];
   /** The longest word banked, earliest first on a tie. */
   longestWord: StatWord | null;
-  /** One row per mode played, Standard first. */
-  modes: ModeStats[];
 }
 
 function statWord(progress: DailyProgress, word: DailyProgress["acceptedWords"][number]): StatWord {
@@ -82,10 +70,6 @@ function statWord(progress: DailyProgress, word: DailyProgress["acceptedWords"][
   };
 }
 
-function round(value: number): number {
-  return Math.round(value * 100) / 100;
-}
-
 /** The numbers for `history` (by date, as storage.playedHistory returns it). */
 export function computeStats(
   history: readonly DailyProgress[],
@@ -97,20 +81,12 @@ export function computeStats(
   let longestWord: StatWord | null = null;
   let wordsFound = 0;
   let finished = 0;
-  const modeTotals = new Map<GameMode, { puzzles: number; totals: number[] }>();
 
   for (const progress of history) {
     if (progress.acceptedWords.length === 0) continue;
     days.add(progress.date);
-    const mode = progress.mode ?? "standard";
     const scored = !usesLegacyRarity(progress.date);
-    const forMode = modeTotals.get(mode) ?? { puzzles: 0, totals: [] };
-    forMode.puzzles++;
-    if (progress.completed) {
-      finished++;
-      if (scored) forMode.totals.push(totalRarityScore(progress.acceptedWords, progress.date));
-    }
-    modeTotals.set(mode, forMode);
+    if (progress.completed) finished++;
 
     for (const accepted of progress.acceptedWords) {
       wordsFound++;
@@ -127,17 +103,6 @@ export function computeStats(
     (a, b) => b.score - a.score || b.date.localeCompare(a.date) || a.zipf - b.zipf
   );
 
-  const modes: ModeStats[] = (["standard", "freeform"] as const)
-    .filter((mode) => modeTotals.has(mode))
-    .map((mode) => {
-      const { puzzles, totals } = modeTotals.get(mode)!;
-      return {
-        mode,
-        puzzles,
-        average: totals.length ? round(totals.reduce((sum, t) => sum + t, 0) / totals.length) : null,
-        best: totals.length ? Math.max(...totals) : null,
-      };
-    });
 
   return {
     daysPlayed: days.size,
@@ -148,7 +113,6 @@ export function computeStats(
     byRarity,
     topWords,
     longestWord,
-    modes,
   };
 }
 

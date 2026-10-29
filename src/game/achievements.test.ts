@@ -121,15 +121,6 @@ describe("achievements", () => {
     expect(statusOf("down-to-the-wire", { history: [sweep, wire] }).earnedOn).toBe("2026-10-11");
   });
 
-  it("needs a win in both modes on one day for Both ways", () => {
-    const history = [
-      day("2026-10-10", [word("Rare")], { mode: "standard" }),
-      day("2026-10-10", [word("Common")], { mode: "freeform" }),
-      day("2026-10-11", [word("Rare")], { mode: "standard" }),
-      day("2026-10-11", [word("Elusive")], { mode: "freeform" }),
-    ];
-    expect(statusOf("both-ways", { history }).earnedOn).toBe("2026-10-11");
-  });
 
   it("counts every current tier for Full spectrum", () => {
     const tiers: Rarity[] = ["Common", "Uncommon", "Rare", "Extremely Rare", "Elusive", "Mythic"];
@@ -210,7 +201,7 @@ describe("achievements", () => {
     expect(statusOf("clean-copy", { history }).earnedOn).toBe("2026-10-04");
   });
 
-  it("compares the retry's replacement with the word it gave up", () => {
+  it("counts any retried word, and compares the replacement for Buyer's remorse", () => {
     const at = (zipf: number): AcceptedWord => ({ word: `z${zipf}`, rarity: "Common", zipf });
     const retried = (gaveUp: number, words: AcceptedWord[]) =>
       ({ retryUsed: true, retried: { word: at(gaveUp), replacedAt: 1 }, acceptedWords: words });
@@ -223,7 +214,9 @@ describe("achievements", () => {
       day("2026-10-04", [], retried(4, [at(5), at(2)])),
       day("2026-10-05", [], retried(2, [at(5), at(4)])),
     ];
-    expect(statusOf("second-chance", { history }).earnedOn).toBe("2026-10-04");
+    // Any word given up earns Second chance, replaced or not; a retry with no
+    // word moved (10-01, as a reveal forfeits it) does not.
+    expect(statusOf("second-chance", { history }).earnedOn).toBe("2026-10-02");
     expect(statusOf("buyers-remorse", { history }).earnedOn).toBe("2026-10-05");
   });
 
