@@ -591,6 +591,15 @@ describe("the easier rungs", () => {
     expect(statusOf("four-of-a-kind", { history: [mixed] }).earnedOn).toBeNull();
   });
 
+  it("needs every guess Elusive, no better and no worse, for Stay gold, Ponyboy", () => {
+    const gold = day("2026-10-10", [word("Elusive"), word("Elusive"), word("Elusive"), word("Elusive")]);
+    expect(statusOf("all-elusive", { history: [gold] }).earnedOn).toBe("2026-10-10");
+    const better = day("2026-10-10", [word("Elusive"), word("Elusive"), word("Elusive"), word("Mythic")]);
+    expect(statusOf("all-elusive", { history: [better] }).earnedOn).toBeNull();
+    const short = day("2026-10-10", [word("Elusive"), word("Elusive"), word("Elusive")]);
+    expect(statusOf("all-elusive", { history: [short] }).earnedOn).toBeNull();
+  });
+
   it("needs a Mythic word starting with the drop for Head start", () => {
     const start = day("2026-10-10", [{ word: "inkhorn", rarity: "Mythic", zipf: 1.2 }]);
     expect(statusOf("head-start", { history: [start] }).earnedOn).toBe("2026-10-10");
