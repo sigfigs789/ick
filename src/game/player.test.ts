@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { namedFromLongLists } from "./handle";
 import {
   accountName,
   adoptPlayerFromUrl,
@@ -9,7 +10,7 @@ import {
   setAccount,
 } from "./player";
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-8[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 beforeEach(() => {
   localStorage.clear();
@@ -21,9 +22,11 @@ describe("the player on this browser", () => {
     expect(hasJoined()).toBe(false);
   });
 
-  it("mints a v4 uuid on joining", () => {
+  it("mints a v8 uuid on joining, named from the longer handle lists", () => {
     const id = joinBoard();
     expect(id).toMatch(UUID_RE);
+    // The 8 is what keeps players who joined with a v4 under their old names.
+    expect(namedFromLongLists(id ?? "")).toBe(true);
     expect(loadPlayerId()).toBe(id);
     expect(hasJoined()).toBe(true);
   });

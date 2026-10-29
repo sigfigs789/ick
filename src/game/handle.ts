@@ -19,12 +19,62 @@
  */
 
 /**
- * 256 adjectives x 256 nouns x 100 = 6.5M handles. See `handleFor` on why.
+ * The lists every player had before the handles grew: 128 adjectives x 128
+ * nouns x 100 = 1.6M handles. See `handleFor` on why.
+ *
+ * Frozen. Every player id minted before the longer lists below is named from
+ * these, and always will be -- adding, removing or reordering a word here
+ * renames players who already have a name. `public.player_handle` in the
+ * Supabase migrations is a port of these lists too.
+ */
+export const LEGACY_ADJECTIVES = [
+  "Amber", "Ancient", "Arctic", "Autumn", "Balmy", "Bold", "Brave", "Brisk",
+  "Bronze", "Calm", "Candid", "Cheery", "Civic", "Clever", "Cloudy", "Coastal",
+  "Cobalt", "Copper", "Cosmic", "Crimson", "Crisp", "Curious", "Daring", "Dawn",
+  "Deft", "Distant", "Dusty", "Eager", "Early", "Earnest", "Eastern", "Electric",
+  "Elder", "Emerald", "Endless", "Fabled", "Fearless", "Fleet", "Fond", "Forest",
+  "Frosted", "Gentle", "Gilded", "Glad", "Golden", "Graceful", "Grand", "Granite",
+  "Hallowed", "Hardy", "Hazel", "Hidden", "Honest", "Humble", "Idle", "Indigo",
+  "Ivory", "Jolly", "Keen", "Kindly", "Lively", "Lofty", "Lucent", "Lucky",
+  "Lunar", "Marble", "Merry", "Mighty", "Mild", "Misty", "Modest", "Mossy",
+  "Nimble", "Noble", "Northern", "Olive", "Onyx", "Opal", "Patient", "Pebble",
+  "Placid", "Plucky", "Polar", "Prairie", "Prompt", "Proper", "Quiet", "Quirky",
+  "Rapid", "Restless", "Rosy", "Royal", "Rugged", "Rustic", "Sable", "Sage",
+  "Sandy", "Scarlet", "Serene", "Sharp", "Silent", "Silver", "Sleepy", "Snowy",
+  "Solar", "Solemn", "Sonic", "Southern", "Sparkling", "Spry", "Steady", "Stellar",
+  "Stormy", "Sturdy", "Sunny", "Swift", "Tidal", "Timber", "Tranquil", "Trusty",
+  "Twilight", "Umber", "Upland", "Urban", "Valiant", "Velvet", "Verdant", "Vivid",
+];
+
+export const LEGACY_NOUNS = [
+  "Acorn", "Alder", "Anchor", "Antler", "Arbor", "Arrow", "Ash", "Aspen",
+  "Badger", "Basin", "Beacon", "Bear", "Beetle", "Birch", "Bison", "Bramble",
+  "Breeze", "Brook", "Canyon", "Cedar", "Chime", "Cinder", "Clover", "Comet",
+  "Compass", "Coral", "Cove", "Crane", "Creek", "Crest", "Dahlia", "Delta",
+  "Dune", "Eagle", "Ember", "Falcon", "Fathom", "Fawn", "Fennel", "Fern",
+  "Finch", "Flint", "Fox", "Gale", "Garnet", "Glade", "Glen", "Grove",
+  "Harbor", "Hawk", "Heather", "Hedge", "Heron", "Hollow", "Ibis", "Isle",
+  "Ivy", "Jasper", "Juniper", "Kestrel", "Lantern", "Lark", "Laurel", "Ledge",
+  "Lichen", "Lily", "Linden", "Lynx", "Magpie", "Maple", "Marsh", "Meadow",
+  "Mesa", "Moss", "Nectar", "Nettle", "Oak", "Oriole", "Osprey", "Otter",
+  "Owl", "Pine", "Pinion", "Plover", "Pollen", "Poppy", "Prairie", "Quail",
+  "Quarry", "Quill", "Rapids", "Raven", "Reef", "Ridge", "Rill", "River",
+  "Robin", "Rook", "Sable", "Sage", "Sequoia", "Shale", "Shore", "Sparrow",
+  "Spruce", "Starling", "Stone", "Stream", "Summit", "Swallow", "Sycamore", "Talon",
+  "Tamarind", "Teal", "Thicket", "Thistle", "Thorn", "Tide", "Timber", "Torrent",
+  "Trail", "Tundra", "Vale", "Vine", "Violet", "Warbler", "Willow", "Wren",
+];
+
+/**
+ * The longer lists new players are named from: 256 adjectives x 256 nouns x
+ * 100 = 6.5M handles.
  *
  * Each list is exactly 256 long so the adjective and the noun each take one
- * whole byte of the hash. Adding, removing or reordering a word renames
- * players, and `public.player_handle` in the Supabase migrations is a port of
- * these lists that has to change with them.
+ * whole byte of the hash. Only ids that `newPlayerId` mints (see
+ * game/player.ts, and `namedFromLongLists` below) are named from these, so
+ * growing the lists never renames anyone already playing. Changing a word
+ * here still renames the newer players, and `public.player_handle` has to
+ * change with it.
  */
 export const ADJECTIVES = [
   "Agile", "Airy", "Alpine", "Amber", "Amiable", "Ancient", "Arctic", "Ardent",
@@ -97,6 +147,21 @@ export const NOUNS = [
 ];
 
 /**
+ * The shape of an id named from the longer lists: a UUID whose version nibble
+ * is 8, RFC 9562's version for a custom layout. Every id minted before the
+ * lists grew is a v4 UUID (`crypto.randomUUID`, or `newId` by hand), so the
+ * version is what tells a new player from one who already has a name. Case
+ * folded because the server lowercases ids; the hash still sees the id as it
+ * is given.
+ */
+const LONG_LIST_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-8[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/** Whether an id is named from the longer lists rather than the legacy ones. */
+export function namedFromLongLists(playerId: string) {
+  return LONG_LIST_ID.test(playerId);
+}
+
+/**
  * A stable 32-bit hash of a string (FNV-1a).
  *
  * Chosen for being short, dependency-free and *fixed*: a player's handle must be
@@ -126,12 +191,20 @@ function hash(value: string): number {
  * players before it is likely at all.
  *
  * The lists were 128 long until they started to feel repetitive: with a few
- * hundred players, every adjective was on the board a few times over.
+ * hundred players, every adjective was on the board a few times over. Growing
+ * them for everybody renamed every player at once, which a name should never
+ * do, so the 128-word lists still name every id minted before the change, with
+ * their old slices -- bits 0-6 and 8-14 -- and only newer ids get the longer
+ * lists. The collision arithmetic above is for the newer ids; the older ones
+ * keep the 1.6M they always had.
  */
 export function handleFor(playerId: string): string {
   const h = hash(playerId);
-  const adjective = ADJECTIVES[h % ADJECTIVES.length];
-  const noun = NOUNS[(h >>> 8) % NOUNS.length];
+  const long = namedFromLongLists(playerId);
+  const adjectives = long ? ADJECTIVES : LEGACY_ADJECTIVES;
+  const nouns = long ? NOUNS : LEGACY_NOUNS;
+  const adjective = adjectives[h % adjectives.length];
+  const noun = nouns[(h >>> 8) % nouns.length];
   const number = (h >>> 16) % 100;
   return `${adjective}${noun}${number}`;
 }

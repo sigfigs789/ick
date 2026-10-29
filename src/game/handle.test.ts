@@ -1,7 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { ADJECTIVES, NOUNS, handleFor } from "./handle";
+import {
+  ADJECTIVES,
+  LEGACY_ADJECTIVES,
+  LEGACY_NOUNS,
+  NOUNS,
+  handleFor,
+  namedFromLongLists,
+} from "./handle";
 
 const ID = "3f1a2b4c-5d6e-4f70-8901-23456789abcd";
+
+/** The i-th of a run of UUIDs with the given version nibble. */
+const uuid = (version: number, i: number) =>
+  `${i.toString(16).padStart(8, "0")}-5d6e-${version}f70-8901-23456789abcd`;
+
+/** The adjective and noun of a handle. */
+const words = (handle: string) => handle.match(/^([A-Z][a-z]+)([A-Z][a-z]+)\d{1,2}$/);
 
 describe("player handles", () => {
   it("is keyed off the player, not randomised", () => {
@@ -37,27 +51,64 @@ describe("player handles", () => {
     expect(handleFor("a".repeat(5000))).toMatch(/^[A-Z]/);
   });
 
-  it("spreads across the whole list rather than clustering", () => {
-    const adjectives = new Set<string>();
-    const nouns = new Set<string>();
-    for (let i = 0; i < 4000; i += 1) {
-      const parts = handleFor(`p${i}`).match(/^([A-Z][a-z]+)([A-Z][a-z]+)\d{1,2}$/);
-      if (!parts) continue;
-      adjectives.add(parts[1]);
-      nouns.add(parts[2]);
+  it("keeps the name every existing player already had", () => {
+    // Every id minted before the lists grew is a v4 UUID (or, for the testers
+    // and Muse AI, not a UUID at all), and its handle must never change: these
+    // are the names those ids had on the board before the longer lists.
+    expect(handleFor(ID)).toBe("SonicQuail13");
+    expect(handleFor(ID.toUpperCase())).toBe("NorthernAnchor23");
+    expect(handleFor("tester-3185178")).toBe("NorthernBear87");
+    for (const id of [ID, "tester-3185178", "player-1", ""]) {
+      expect(namedFromLongLists(id)).toBe(false);
     }
-    // Both lists hold 256 entries; a hash that fed only a corner of either would
-    // make duplicates far likelier than the arithmetic in handleFor claims.
-    expect(adjectives.size).toBeGreaterThan(245);
-    expect(nouns.size).toBeGreaterThan(245);
+    for (let i = 0; i < 500; i += 1) {
+      const parts = words(handleFor(uuid(4, i)));
+      expect(LEGACY_ADJECTIVES).toContain(parts?.[1]);
+      expect(LEGACY_NOUNS).toContain(parts?.[2]);
+    }
   });
 
-  it("keeps each list one byte of the hash, with no word in it twice", () => {
+  it("names only v8 ids, the ones newPlayerId mints, from the longer lists", () => {
+    expect(namedFromLongLists(uuid(8, 0))).toBe(true);
+    expect(namedFromLongLists(uuid(8, 0).toUpperCase())).toBe(true);
+    // A v8 shape with the wrong variant, or with junk around it, is not one.
+    expect(namedFromLongLists(uuid(8, 0).replace("-8901-", "-c901-"))).toBe(false);
+    expect(namedFromLongLists(`x${uuid(8, 0)}`)).toBe(false);
+  });
+
+  it("spreads across the whole list rather than clustering", () => {
+    for (const [version, size, adjectiveList, nounList] of [
+      [4, 128, LEGACY_ADJECTIVES, LEGACY_NOUNS],
+      [8, 256, ADJECTIVES, NOUNS],
+    ] as const) {
+      const adjectives = new Set<string>();
+      const nouns = new Set<string>();
+      for (let i = 0; i < 4000; i += 1) {
+        const parts = words(handleFor(uuid(version, i)));
+        if (!parts) continue;
+        adjectives.add(parts[1]);
+        nouns.add(parts[2]);
+      }
+      // A hash that fed only a corner of either list would make duplicates far
+      // likelier than the arithmetic in handleFor claims.
+      expect(adjectives.size).toBeGreaterThan(size - 10);
+      expect(nouns.size).toBeGreaterThan(size - 10);
+      for (const word of adjectives) expect(adjectiveList).toContain(word);
+      for (const word of nouns) expect(nounList).toContain(word);
+    }
+  });
+
+  it("keeps each list a power of two long, with no word in it twice", () => {
     // handleFor slices the hash a byte per word; a list of any other length
     // would let the adjective and the noun share bits and move together.
-    for (const list of [ADJECTIVES, NOUNS]) {
-      expect(list).toHaveLength(256);
-      expect(new Set(list).size).toBe(256);
+    for (const [list, size] of [
+      [ADJECTIVES, 256],
+      [NOUNS, 256],
+      [LEGACY_ADJECTIVES, 128],
+      [LEGACY_NOUNS, 128],
+    ] as const) {
+      expect(list).toHaveLength(size);
+      expect(new Set(list).size).toBe(size);
       for (const word of list) expect(word).toMatch(/^[A-Z][a-z]+$/);
     }
   });
@@ -76,12 +127,19 @@ describe("player handles", () => {
       .filter((sql) => /function public\.player_handle\(/.test(sql))
       .pop() ?? "";
     const list = (name: string) =>
-      [...(latest.match(new RegExp(`${name} constant text\\[\\] := array\\[([^\\]]*)\\]`))?.[1] ?? "")
+      [...(latest.match(new RegExp(`\\b${name} constant text\\[\\] := array\\[([^\\]]*)\\]`))?.[1] ?? "")
         .matchAll(/'([^']+)'/g)].map((m) => m[1]);
 
+    expect(list("legacy_adjectives")).toEqual(LEGACY_ADJECTIVES);
+    expect(list("legacy_nouns")).toEqual(LEGACY_NOUNS);
     expect(list("adjectives")).toEqual(ADJECTIVES);
     expect(list("nouns")).toEqual(NOUNS);
-    expect(latest).toContain("adjectives[h % 256 + 1]");
-    expect(latest).toContain("nouns[(h >> 8) % 256 + 1]");
+    expect(latest).toContain("legacy_adjectives[h % 128 + 1]");
+    expect(latest).toContain("legacy_nouns[(h >> 8) % 128 + 1]");
+    expect(latest).toContain(" adjectives[h % 256 + 1]");
+    expect(latest).toContain(" nouns[(h >> 8) % 256 + 1]");
+    expect(latest).toContain(
+      "'^[0-9a-f]{8}-[0-9a-f]{4}-8[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'",
+    );
   });
 });

@@ -56,9 +56,9 @@ describe("forcedShareTintVariant", () => {
     expect(forcedShareTintVariant("?share-tint=maybe")).toBeNull();
   });
 
-  it("forces FleetAspen87 to shown unless the query string says otherwise", () => {
-    // An id whose handle is FleetAspen87 (see game/handle.ts).
-    localStorage.setItem("ick:player", JSON.stringify({ id: "tester-10338031" }));
+  it("forces NorthernBear87 to shown unless the query string says otherwise", () => {
+    // An id whose handle is NorthernBear87 (see game/handle.ts).
+    localStorage.setItem("ick:player", JSON.stringify({ id: "tester-3185178" }));
     expect(forcedShareTintVariant("")).toBe("shown");
     expect(forcedShareTintVariant("?share-tint=hidden")).toBe("hidden");
     localStorage.setItem("ick:player", JSON.stringify({ id: "someone-else" }));
