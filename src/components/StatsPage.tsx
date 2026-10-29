@@ -3,11 +3,12 @@ import {
   ACHIEVEMENT_GROUPS,
   earnedShareLabel,
   fetchAchievementRates,
+  recentAchievements,
   soleHolder,
   syncAchievements,
   type AchievementStatus,
 } from "../game/achievements";
-import { formatDateLabel } from "../game/date";
+import { formatDateLabel, todayDateString } from "../game/date";
 import { formatTotal } from "../game/dictionary";
 import { MODE_LABELS } from "../game/mode";
 import { CURRENT_TIERS, loadStats, TOP_WORDS, type PlayerStats, type StatWord } from "../game/stats";
@@ -278,6 +279,8 @@ function ByMode({ stats }: { stats: PlayerStats }) {
 function Achievements({ statuses }: { statuses: AchievementStatus[] }) {
   const earned = statuses.filter((status) => status.earnedOn).length;
   const completed = Math.round((100 * earned) / statuses.length);
+  // Repeated in its group below: Recent is a way in, not a move.
+  const recent = recentAchievements(statuses, todayDateString());
   return (
     <section className="stats__section" aria-labelledby="stats-achievements">
       <h2 className="stats__heading" id="stats-achievements">
@@ -286,6 +289,16 @@ function Achievements({ statuses }: { statuses: AchievementStatus[] }) {
           {earned} of {statuses.length} · {completed}% completed
         </span>
       </h2>
+      {recent.length > 0 && (
+        <div className="stats__group">
+          <h3 className="stats__group-heading">Recent</h3>
+          <ul className="stats__achievements">
+            {recent.map((status) => (
+              <AchievementCard status={status} key={status.achievement.id} />
+            ))}
+          </ul>
+        </div>
+      )}
       {ACHIEVEMENT_GROUPS.map((group) => {
         const inGroup = statuses.filter((status) => status.achievement.group === group);
         // A group can be empty on a host that leaves its badges off (see

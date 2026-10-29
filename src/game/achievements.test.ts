@@ -11,9 +11,11 @@ import {
   firstToEarn,
   markAchievementsAnnounced,
   newlyEarned,
+  recentAchievements,
   resetAchievementRates,
   syncAchievements,
   type AchievementRecord,
+  type AchievementStatus,
 } from "./achievements";
 import { addDays } from "./date";
 import { handleFor } from "./handle";
@@ -295,6 +297,36 @@ describe("newlyEarned", () => {
   it("lists nothing when nothing changed", () => {
     const statuses = achievementStatuses(record, {}, TODAY);
     expect(newlyEarned(earnedIds(statuses), statuses)).toEqual([]);
+  });
+});
+
+describe("recentAchievements", () => {
+  function statuses(dates: (string | null)[]): AchievementStatus[] {
+    return dates.map((earnedOn, i) => ({ achievement: ACHIEVEMENTS[i], earnedOn }));
+  }
+  const ids = (list: AchievementStatus[]) => list.map((s) => s.achievement.id);
+
+  it("lists every badge from the last three days, newest first", () => {
+    const list = statuses([
+      addDays(TODAY, -2),
+      TODAY,
+      null,
+      addDays(TODAY, -1),
+      TODAY,
+      addDays(TODAY, -3),
+    ]);
+    expect(ids(recentAchievements(list, TODAY))).toEqual(ids([list[1], list[4], list[3], list[0]]));
+  });
+
+  it("reaches further back for at least three", () => {
+    const list = statuses([addDays(TODAY, -40), addDays(TODAY, -9), TODAY, null, addDays(TODAY, -20)]);
+    expect(ids(recentAchievements(list, TODAY))).toEqual(ids([list[2], list[1], list[4]]));
+  });
+
+  it("shows what there is when fewer than three are earned", () => {
+    const list = statuses([null, addDays(TODAY, -9), null]);
+    expect(ids(recentAchievements(list, TODAY))).toEqual(ids([list[1]]));
+    expect(recentAchievements(statuses([null, null]), TODAY)).toEqual([]);
   });
 });
 
