@@ -17,9 +17,15 @@ import achievementRates from "../data/achievement-rates.json";
 import { addDays, dayOfWeek, todayDateString } from "./date";
 import { MAX_GUESSES, maxGuessesFor } from "./constants";
 import { handleFor } from "./handle";
-import { isUnattestedZipf, rarityForZipf, rarityScore, totalRarityScore } from "./dictionary";
+import {
+  estimatedZipfEntry,
+  isUnattestedZipf,
+  rarityForZipf,
+  rarityScore,
+  totalRarityScore,
+} from "./dictionary";
 import { dropForDate } from "./drop";
-import { modeIsChosen } from "./mode";
+import { modeForDate, modeIsChosen } from "./mode";
 import { nextMonthStart } from "./month";
 import { loadPlayerId } from "./player";
 import { isWinningRarity } from "./rank";
@@ -125,6 +131,12 @@ const ROYAL_FLUSH: readonly Rarity[] = ["Legend", "Mythic", "Elusive", "Extremel
  * badges from those words -- this only keeps them out of the "12% of players"
  * under each badge, so the share says how hard the badge is to earn on words
  * the data says are rare.
+ *
+ * A word Claude has estimated is attested for this purpose, and counts at the
+ * tier its estimate gives. Two kinds of estimated word still carry the
+ * sentinel on the record: one whose estimate is below the rarest measured word
+ * (floored to the sentinel, see `withEstimate`), and one banked before its
+ * estimate's `since`. Both count from the estimate, whatever the date.
  */
 export function countedRecord(record: AchievementRecord): AchievementRecord {
   return {
@@ -134,12 +146,20 @@ export function countedRecord(record: AchievementRecord): AchievementRecord {
         ? {
             ...progress,
             acceptedWords: progress.acceptedWords.map((word) =>
-              isUnattestedLegend(word) ? { ...word, ...NO_TIER } : word
+              isUnattestedLegend(word) ? countedUnattested(word, progress) : word
             ),
           }
         : progress
     ),
   };
+}
+
+/** An unattested Legend as the count sees it: at its estimate, or no tier. */
+function countedUnattested(word: AcceptedWord, progress: DailyProgress): AcceptedWord {
+  const estimate = estimatedZipfEntry(word.word);
+  if (!estimate) return { ...word, ...NO_TIER };
+  const zipf = Math.max(estimate.zipf, word.zipf);
+  return { ...word, zipf, rarity: rarityForZipf(zipf, progress.date, modeForDate(progress.date, progress.mode)) };
 }
 
 /**
@@ -1734,7 +1754,7 @@ export function celebrationShareLine(id: string, rates: AchievementRates = rates
  * `{ id: earnedOn }` -- sent with every score (see game/leaderboard.ts) so the
  * server can count them. Worked out from `countedRecord`, not read from the kept
  * badges: a badge held only through an unattested Legend stays the player's,
- * and stays out of the count. Empty when the record cannot be read: a count is
+ * and stays out of the count unless Claude has estimated the word. Empty when the record cannot be read: a count is
  * never worth a failed post.
  */
 export function countedAchievements(): Record<string, string> {
