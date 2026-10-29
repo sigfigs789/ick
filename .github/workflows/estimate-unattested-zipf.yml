@@ -34,7 +34,8 @@ name: Estimate unattested Zipf
 # 2026-11-09, so re-running three days out found nothing -- but never sooner
 # than three days ahead, like the daily fold check, so the PR has two days to
 # merge: the batch applies from its puzzle's date on. The ledger only moves when
-# an estimate PR merges, so an unmerged PR is redone by the next day's run. Two days out by UTC is the soonest a run may target -- that puzzle has
+# an estimate PR merges, so an unmerged PR is redone by the next day's run. The
+# run merges its own PR once it opens; if that merge fails, merge it by hand. Two days out by UTC is the soonest a run may target -- that puzzle has
 # not started anywhere yet. Merge it before that date, or it re-prices a puzzle
 # being played.
 #
@@ -310,6 +311,15 @@ jobs:
           add-paths: |
             src/data/estimated-zipf/
             src/data/zipf-coverage.json
+
+      - name: Merge the pull request
+        # The estimates already passed "Verify the estimates load and score",
+        # and main has no required checks to wait on, so merge right away; the
+        # squash is authored github-actions[bot], which Vercel deploys.
+        if: steps.pr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr merge "${{ steps.pr.outputs.pull-request-number }}" --squash --repo "${{ github.repository }}"
 
       - name: Report the result
         env:
