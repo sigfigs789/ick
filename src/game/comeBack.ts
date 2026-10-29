@@ -174,22 +174,52 @@ function daysToEarn({ achievement, progress }: AchievementStatus, streak: Streak
 }
 
 /**
+ * A number in [0, 1) fixed for `today`: FNV-1a, then murmur3's finalizer so
+ * that dates a day apart land far apart rather than next to each other.
+ */
+function dailyDraw(today: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < today.length; i++) {
+    h ^= today.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x85ebca6b);
+  h ^= h >>> 13;
+  h = Math.imul(h, 0xc2b2ae35);
+  h ^= h >>> 16;
+  return (h >>> 0) / 2 ** 32;
+}
+
+/**
  * An achievement still locked, to shoot for: the one coming back earns
- * soonest, if that is within `NEAR_DAYS`; otherwise the easiest, the one the
- * most players hold. A tie goes to the easier, then to the earlier listed.
+ * soonest, if that is within `NEAR_DAYS` (a tie going to the easier, then to
+ * the earlier listed);
+ * otherwise one drawn at random for the day, weighted by how many players hold
+ * it, so the easier ones come up more often without any one being named every
+ * day. Each counts as held by one more than it is, so a badge nobody holds yet
+ * can still come up. The draw is fixed per day, so the line does not change
+ * between visits.
  */
 function achievementGoal(
   locked: readonly AchievementStatus[],
   streak: StreakState,
   today: string
 ): { line: string; explainer: GoalExplainer } {
-  const ranked = locked
-    .map((status, order) => ({ status, order, days: daysToEarn(status, streak, today), held: holdersOf(status.achievement.id) }))
-    .sort((x, y) => y.held - x.held || x.order - y.order);
-  const near = ranked
+  const candidates = locked.map((status) => ({
+    status,
+    days: daysToEarn(status, streak, today),
+    weight: holdersOf(status.achievement.id) + 1,
+  }));
+  const near = candidates
     .filter(({ days }) => days !== null && days <= NEAR_DAYS)
-    .sort((x, y) => x.days! - y.days!)[0];
-  const { achievement, progress } = (near ?? ranked[0]).status;
+    .sort((x, y) => x.days! - y.days! || y.weight - x.weight)[0];
+  let pick = near;
+  if (!pick) {
+    let left = dailyDraw(today) * candidates.reduce((sum, { weight }) => sum + weight, 0);
+    pick = candidates.find(({ weight }) => (left -= weight) < 0) ?? candidates[candidates.length - 1];
+  }
+  const { achievement, progress } = pick.status;
   const along = progress && progress.current > 0 ? ` (${progress.current}/${progress.target} so far)` : "";
   return {
     line: `Shoot for ${achievement.icon} "${achievement.title}" Achievement!`,
