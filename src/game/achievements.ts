@@ -1691,6 +1691,29 @@ export function earnedIds(statuses: readonly AchievementStatus[]): Set<string> {
   return new Set(statuses.flatMap(({ achievement, earnedOn }) => (earnedOn ? [achievement.id] : [])));
 }
 
+/** How many days back, counting today, the stats page's Recent row reaches. */
+export const RECENT_DAYS = 3;
+/** The fewest badges the Recent row shows, reaching further back to fill it. */
+export const RECENT_AT_LEAST = 3;
+
+/**
+ * The earned achievements in `statuses` for the stats page's Recent row,
+ * newest first: every one earned in the last `RECENT_DAYS` days (today
+ * included), and older ones after them until there are `RECENT_AT_LEAST`.
+ * Badges earned the same day keep their order in `statuses`.
+ */
+export function recentAchievements(
+  statuses: readonly AchievementStatus[],
+  today: string
+): AchievementStatus[] {
+  const since = addDays(today, 1 - RECENT_DAYS);
+  const earned = statuses
+    .filter((status): status is AchievementStatus & { earnedOn: string } => status.earnedOn !== null)
+    .sort((a, b) => (a.earnedOn < b.earnedOn ? 1 : a.earnedOn > b.earnedOn ? -1 : 0));
+  const inWindow = earned.filter((status) => status.earnedOn >= since).length;
+  return earned.slice(0, Math.max(inWindow, RECENT_AT_LEAST));
+}
+
 /**
  * The achievements in `statuses` earned since `before` (see earnedIds), for
  * the card that celebrates them (see components/AchievementCelebration.tsx).

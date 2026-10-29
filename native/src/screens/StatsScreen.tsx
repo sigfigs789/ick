@@ -4,10 +4,11 @@ import {
   ACHIEVEMENT_GROUPS,
   earnedShareLabel,
   fetchAchievementRates,
+  recentAchievements,
   syncAchievements,
   type AchievementStatus,
 } from '../../../src/game/achievements';
-import { formatDateLabel } from '../../../src/game/date';
+import { formatDateLabel, todayDateString } from '../../../src/game/date';
 import { formatTotal } from '../../../src/game/dictionary';
 import { MODE_LABELS } from '../../../src/game/mode';
 import { CURRENT_TIERS, loadStats, TOP_WORDS, type PlayerStats, type StatWord } from '../../../src/game/stats';
@@ -286,7 +287,10 @@ function ByMode({ stats }: { stats: PlayerStats }) {
   );
 }
 
-/** Every achievement, by group: earned ones raised, the rest dashed and grey. */
+/**
+ * Every achievement, by group: earned ones raised, the rest dashed and grey.
+ * The latest earned come first under Recent, and again in their own group.
+ */
 function Achievements({ statuses }: { statuses: AchievementStatus[] }) {
   const theme = useTheme();
   const earned = statuses.filter((status) => status.earnedOn).length;
@@ -294,10 +298,13 @@ function Achievements({ statuses }: { statuses: AchievementStatus[] }) {
   return (
     <View style={styles.section}>
       <Heading note={`${earned} of ${statuses.length} · ${completed}% completed`}>Achievements</Heading>
-      {ACHIEVEMENT_GROUPS.map((group) => ({
-        group,
-        inGroup: statuses.filter((status) => status.achievement.group === group),
-      }))
+      {[
+        { group: 'Recent', inGroup: recentAchievements(statuses, todayDateString()) },
+        ...ACHIEVEMENT_GROUPS.map((group) => ({
+          group,
+          inGroup: statuses.filter((status) => status.achievement.group === group),
+        })),
+      ]
         // A group can be empty on a host that leaves its badges off (see
         // `viaSuggestions` in game/achievements.ts).
         .filter(({ inGroup }) => inGroup.length > 0)
