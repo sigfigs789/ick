@@ -14,6 +14,12 @@ interface Props {
   compact?: boolean;
   /** Called as the reader scrolls near the bottom, for a sheet that loads more as it goes. */
   onNearEnd?: () => void;
+  /**
+   * Drawn over the whole screen, sheet included -- a celebration card the
+   * sheet's own box earned (Word scout). Inside the modal, as nothing outside
+   * it can draw over it.
+   */
+  overlay?: ReactNode;
 }
 
 /**
@@ -28,7 +34,7 @@ interface Props {
  * do reach for that, and `onRequestClose` wires up Android's back gesture,
  * which is the one a dialog on that platform must answer.
  */
-export function Sheet({ open, title, onClose, children, compact = false, onNearEnd }: Props) {
+export function Sheet({ open, title, onClose, children, compact = false, onNearEnd, overlay }: Props) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -93,6 +99,12 @@ export function Sheet({ open, title, onClose, children, compact = false, onNearE
           )}
         </Pressable>
       </Pressable>
+      {overlay && (
+        // Below the status bar, which the modal draws under.
+        <View style={[StyleSheet.absoluteFill, { top: insets.top }]} pointerEvents="box-none">
+          {overlay}
+        </View>
+      )}
     </Modal>
   );
 }

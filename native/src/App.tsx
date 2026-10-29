@@ -276,7 +276,10 @@ function Shell() {
         ) : route === 'stats' ? (
           <StatsScreen onPlay={backToPlay} />
         ) : (
-          <PlayScreen covered={showInstructions || showChat || menuOpen || menuSheet !== null} />
+          <PlayScreen
+            covered={showInstructions || showChat || menuOpen || menuSheet !== null}
+            onSeeLeaderboard={() => setRoute('leaderboard')}
+          />
         )}
       </View>
 

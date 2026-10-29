@@ -9,42 +9,48 @@ import { BadgePopup } from './RestDayBadge';
 /** The website's --ease-standard, cubic-bezier(0.2, 0.8, 0.2, 1). */
 const EASE_STANDARD = Easing.bezier(0.2, 0.8, 0.2, 1);
 
-interface Props {
-  streak: StreakState;
-  /** The puzzle on screen. */
-  date: string;
+type Goal = NonNullable<ReturnType<typeof comeBackGoal>>;
+
+/**
+ * What coming back tomorrow is worth, for the puzzle on screen, or null when
+ * there is nothing to say -- or when `shown` is false (not today's puzzle, or
+ * no word banked yet). Read by the play screen rather than inside the line, so
+ * the footnotes can tell whether it has anything to say before they draw their
+ * divider.
+ */
+export function useComeBackGoal(streak: StreakState, date: string, shown: boolean): Goal | null {
+  // The achievements still locked, for when nothing nearer is ahead. Memoized:
+  // reading them walks the stored history. The suggestion badges are left out:
+  // they are not won by coming back to play.
+  return useMemo(
+    () =>
+      shown
+        ? comeBackGoal(
+            streak,
+            date,
+            syncAchievements(streak).filter(
+              (status) => !status.earnedOn && !status.achievement.viaSuggestions,
+            ),
+          )
+        : null,
+    [streak, date, shown],
+  );
 }
 
 /**
- * Under the streak strip once today's word is banked: what playing tomorrow
- * is worth, in one line (see game/comeBack.ts for why it is here). No 🔥 of its
- * own -- the strip right above it already wears one -- and no box: a card there
- * restated the streak and the 🧊 a second time.
+ * Under the footnotes divider, just above yesterday's best, once today's word
+ * is banked: what playing tomorrow is worth, in one line (see game/comeBack.ts).
+ * No box: a card restated the streak and the 🧊 a second time.
  *
- * The website draws this for half its players as an experiment. There is no
- * one here to measure a draw (reporting is off in the app), so, like the
- * Reddit post, it always shows the line.
+ * The website draws this for two in three of its players as an experiment.
+ * There is no one here to measure a draw (reporting is off in the app), so,
+ * like the Reddit post, it always shows the line.
  *
  * A line naming a 🧊 freeze or a lazy weekend can be pressed for a popup
  * saying what that is (see `comeBackGoal`), as the badges above it open theirs.
  */
-export function ComeBackCard({ streak, date }: Props) {
+export function ComeBackCard({ goal }: { goal: Goal }) {
   const theme = useTheme();
-  // The achievements still locked, for when nothing nearer is ahead. Memoized:
-  // reading them walks the stored history. The suggestion badges are left out:
-  // they are not won by coming back to play.
-  const goal = useMemo(
-    () =>
-      comeBackGoal(
-        streak,
-        date,
-        syncAchievements(streak).filter(
-          (status) => !status.earnedOn && !status.achievement.viaSuggestions,
-        ),
-      ),
-    [streak, date],
-  );
-
   const [open, setOpen] = useState(false);
   const [enter] = useState(() => new Animated.Value(0));
   useEffect(() => {
@@ -58,7 +64,6 @@ export function ComeBackCard({ streak, date }: Props) {
     return () => run.stop();
   }, [enter]);
 
-  if (goal === null) return null;
   const { line, explainer } = goal;
   const label = `Tomorrow's drop: ${line}`;
   return (
@@ -96,8 +101,6 @@ export function ComeBackCard({ streak, date }: Props) {
 const styles = StyleSheet.create({
   wrap: {
     alignItems: 'center',
-    marginTop: 2.4,
-    marginBottom: 16,
   },
   wrapOpen: {
     zIndex: 20,

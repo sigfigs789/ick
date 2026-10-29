@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { usesFreeformRules } from '../../../src/game/dictionary';
 import { modeIsChosen, type GameMode } from '../../../src/game/mode';
@@ -8,6 +8,8 @@ import { useGameMode } from '../../../src/hooks/useGameMode';
 import { sendWordSuggestion } from '../host/submissions';
 import { radius, space } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
+import { AchievementCelebration } from './AchievementCelebration';
+import { WORD_SCOUT } from './MenuSheet';
 import { Sheet } from './Sheet';
 
 interface Props {
@@ -52,7 +54,9 @@ export function WordRulesSheet({ open, date, mode, onClose }: Props) {
   const takesSuggestions = takesPlayerMessages();
   const [suggestion, setSuggestion] = useState('');
   const [sent, setSent] = useState(false);
-  const [firstSuggestion, setFirstSuggestion] = useState(false);
+  // Word scout gets the same card a word's badge does, over the sheet.
+  const [scouted, setScouted] = useState(false);
+  const endScouted = useCallback(() => setScouted(false), []);
 
   function submit() {
     const word = suggestion.trim().toLowerCase();
@@ -60,14 +64,23 @@ export function WordRulesSheet({ open, date, mode, onClose }: Props) {
     sendWordSuggestion(word);
     // Kept on the device for the suggesting achievement (see
     // game/suggestions.ts). Only a word the queue would take: anything else
-    // never comes back with a verdict.
-    setFirstSuggestion(SUGGESTION_RE.test(word) && recordSuggestion(word));
+    // never comes back with a verdict. The first earns Word scout, announced
+    // with the achievement card (see MenuSheet's SuggestionForm).
+    if (SUGGESTION_RE.test(word) && recordSuggestion(word)) setScouted(true);
     setSuggestion('');
     setSent(true);
   }
 
   return (
-    <Sheet open={open} title="Word rules" onClose={onClose}>
+    <Sheet
+      open={open}
+      title="Word rules"
+      onClose={onClose}
+      overlay={
+        scouted &&
+        WORD_SCOUT && <AchievementCelebration achievements={[WORD_SCOUT]} onDone={endScouted} />
+      }
+    >
       <Text style={[styles.copy, { color: theme.fg }]}>
         {rulesCopy(date, mode ?? storedMode)}
         {takesSuggestions &&
@@ -118,7 +131,6 @@ export function WordRulesSheet({ open, date, mode, onClose }: Props) {
               accessibilityLiveRegion="polite"
             >
               Thanks for the suggestion! We'll let you know if it gets in.
-              {firstSuggestion && ' Achievement unlocked: 💡 Word scout.'}
             </Text>
           )}
         </View>

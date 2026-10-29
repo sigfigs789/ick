@@ -4,11 +4,13 @@ import type { GameMode } from '../../../src/game/mode';
 import { loadPlayerId, selfName } from '../../../src/game/player';
 import { loadReveal } from '../../../src/game/reveal';
 import { buildShareText } from '../../../src/game/share';
+import type { FlameTier } from '../../../src/game/shareFlames';
 import { loadShowName } from '../../../src/game/shareName';
 import type { AcceptedWord, StreakState } from '../../../src/game/types';
 import { signalTap } from '../host/feedback';
 import { shareText } from '../host/share';
 import { useTheme } from '../theme/useTheme';
+import { ShareFlames, shareFlamesStyle } from './ShareFlames';
 
 interface Props {
   date: string;
@@ -19,6 +21,8 @@ interface Props {
   mode?: GameMode;
   /** On the press: the play screen opens the share panel and scrolls to it. */
   onShared?: () => void;
+  /** The tier the button burns in, or none (see src/game/shareFlames.ts). */
+  flames?: FlameTier | null;
 }
 
 /**
@@ -33,8 +37,9 @@ interface Props {
  * moment of the press from the same saved choices the panel reads and writes
  * (answers shown, username on or off), so the two can never disagree.
  */
-export function QuickShareButton({ date, drop, words, streak, isToday, mode, onShared }: Props) {
+export function QuickShareButton({ date, drop, words, streak, isToday, mode, onShared, flames = null }: Props) {
   const theme = useTheme();
+  const fire = flames ? shareFlamesStyle(theme, flames) : null;
   const [shared, setShared] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => {
@@ -69,9 +74,11 @@ export function QuickShareButton({ date, drop, words, streak, isToday, mode, onS
       style={({ pressed }) => [
         styles.button,
         { backgroundColor: theme.accent, opacity: pressed ? 0.8 : 1 },
+        fire?.button,
       ]}
     >
-      <Text style={[styles.text, { color: theme.accentFg }]}>{shared ? 'Shared!' : 'Share'}</Text>
+      {flames && <ShareFlames tier={flames} />}
+      <Text style={[styles.text, { color: theme.accentFg }, fire?.text]}>{shared ? 'Shared!' : 'Share'}</Text>
     </Pressable>
   );
 }

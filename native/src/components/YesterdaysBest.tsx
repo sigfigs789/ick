@@ -21,6 +21,12 @@ interface Props {
    * archived puzzle the day before is named by its date instead.
    */
   isToday: boolean;
+  /**
+   * Whether the line draws the footnotes' divider over itself. False when the
+   * come-back line sits above it, which then wears the divider for both (see
+   * PlayScreen's footnotes).
+   */
+  divided?: boolean;
 }
 
 /**
@@ -46,7 +52,7 @@ interface Props {
  * in once, whole, rather than gaining its "Found by" a beat later and
  * reflowing.
  */
-export function YesterdaysBest({ date, isToday }: Props) {
+export function YesterdaysBest({ date, isToday, divided = true }: Props) {
   const theme = useTheme();
   const yesterday = addDays(date, -1);
   // Which word, ties and all, and its finders: the website's own hook, which
@@ -102,7 +108,10 @@ export function YesterdaysBest({ date, isToday }: Props) {
   const palette = rarityPalette(theme, best.rarity, scoreDate);
   return (
     // Keyed by day, so stepping to another puzzle fades the new line in afresh.
-    <FadeIn key={yesterday} style={[styles.line, { borderTopColor: theme.border }]}>
+    <FadeIn
+      key={yesterday}
+      style={[styles.line, divided && [styles.divided, { borderTopColor: theme.border }]]}
+    >
       <Text style={[styles.text, { color: theme.fgMuted }]}>
         {isToday ? 'Yesterday' : formatDateLabel(yesterday)}'s best for “{dropForDate(yesterday)}”{'  '}
         <Text style={[styles.word, { color: theme.fg }]}>{best.word.toLowerCase()}</Text>
@@ -175,11 +184,14 @@ function FadeIn({
 
 const styles = StyleSheet.create({
   line: {
+    alignItems: 'center',
+  },
+  /* .page-footnotes, when this line is the only footnote. */
+  divided: {
     marginTop: 20,
     marginBottom: 16,
     paddingTop: 14.4,
     borderTopWidth: StyleSheet.hairlineWidth,
-    alignItems: 'center',
   },
   text: {
     fontSize: 13.1,

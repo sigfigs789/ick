@@ -25,7 +25,7 @@
     },
     "ios": {
       "bundleIdentifier": "app.wordink",
-      "buildNumber": "17",
+      "buildNumber": "18",
       "supportsTablet": true,
       "config": {
         "usesNonExemptEncryption": false
@@ -35,8 +35,8 @@
       }
     },
     "android": {
-      "package": "app.wordink",
-      "versionCode": 1,
+      "package": "com.wordink.app",
+      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#fafafa"
