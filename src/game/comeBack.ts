@@ -197,20 +197,20 @@ function dailyDraw(today: string): number {
 export const ACHIEVEMENT_VERBS = [
   "Shoot for",
   "Go for",
-  "Aim for",
   "Chase",
   "Hunt down",
   "Unlock",
-  "Earn",
-  "Reach for",
   "Grab",
   "Claim",
   "Snag",
-  "Take on",
-  "Go after",
-  "Set your sights on",
-  "Work toward",
-  "Make a run at",
+  "Nab",
+  "Score",
+  "Bag",
+  "Crush",
+  "Conquer",
+  "Snatch",
+  "Seize",
+  "Pounce on",
 ] as const;
 
 /**
