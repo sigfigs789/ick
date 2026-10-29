@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ACHIEVEMENTS } from "./achievements";
 import { comeBackGoal, streakGoal } from "./comeBack";
+import { addDays } from "./date";
 import type { StreakState } from "./types";
 
 const streak = (over: Partial<StreakState>): StreakState => ({
@@ -177,10 +178,28 @@ describe("streakGoal", () => {
       progress,
     });
 
-    it("names the easiest locked achievement, by how many players hold it", () => {
+    it("draws a locked achievement at random each day, the easier ones more often", () => {
       // clean-sweep is held by far more players than pantheon or both-ways.
       const locked = [lockedOne("pantheon"), lockedOne("clean-sweep"), lockedOne("both-ways")];
-      expect(streakGoal(maxed, FRIDAY, locked)).toBe('Shoot for 🧹 "Clean sweep" Achievement!');
+      const counts = new Map<string, number>();
+      let day = "2026-11-01";
+      for (let i = 0; i < 365; i++, day = addDays(day, 1)) {
+        const line = streakGoal(maxed, day, locked)!;
+        counts.set(line, (counts.get(line) ?? 0) + 1);
+        // The same all day long.
+        expect(streakGoal(maxed, day, locked)).toBe(line);
+      }
+      const sweep = counts.get('Shoot for 🧹 "Clean sweep" Achievement!') ?? 0;
+      // Not the same one every day, but the easiest most often.
+      expect(sweep).toBeLessThan(365);
+      expect(counts.size).toBeGreaterThan(1);
+      for (const [line, count] of counts) if (!line.includes("Clean sweep")) expect(count).toBeLessThan(sweep);
+    });
+
+    it("changes from one day to the next", () => {
+      const locked = ["clean-sweep", "pantheon", "both-ways", "streak-100", "days-50"].map((id) => lockedOne(id));
+      const week = Array.from({ length: 7 }, (_, i) => streakGoal(maxed, addDays(FRIDAY, i), locked));
+      expect(new Set(week).size).toBeGreaterThan(1);
     });
 
     it("names the one coming back earns soonest, within 3 days", () => {
@@ -201,9 +220,14 @@ describe("streakGoal", () => {
       expect(streakGoal(run, FRIDAY, locked)).toBe('Shoot for 🌕 "One month" Achievement!');
     });
 
-    it("falls back to the easiest past 3 days", () => {
+    it("falls back to a draw past 3 days", () => {
       const locked = [lockedOne("days-50", { current: 46, target: 50 }), lockedOne("clean-sweep")];
-      expect(streakGoal(maxed, FRIDAY, locked)).toBe('Shoot for 🧹 "Clean sweep" Achievement!');
+      let day = FRIDAY;
+      const lines = new Set<string | null>();
+      for (let i = 0; i < 60; i++, day = addDays(day, 1)) lines.add(streakGoal(maxed, day, locked));
+      expect(lines).toEqual(
+        new Set(['Shoot for 🧹 "Clean sweep" Achievement!', 'Shoot for 🗓️ "Devotee" Achievement!'])
+      );
     });
 
     it("explains the achievement, with how far along a count is", () => {
