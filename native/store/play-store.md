@@ -71,6 +71,8 @@ Matches the App Store privacy label in [app-store.md](app-store.md).
 | --- | --- | --- | --- |
 | Device or other IDs (the app's own random UUID) | Yes | No | App functionality |
 | App interactions (scores and words played) | Yes | No | App functionality |
-| Other user-generated content (chat, reports, suggestions, feedback) | Yes | No | App functionality |
+| Other in-app messages (chat) | Yes, optional | No | App functionality |
+| Other user-generated content (reports, suggestions, feedback) | Yes, optional | No | App functionality |
 
-Encrypted in transit: yes. Deletion: players can ask through the feedback box.
+Encrypted in transit: yes. No accounts. Deletion: yes, by email, as
+`https://www.wordink.app/privacy.html` explains; that page is the deletion URL.
