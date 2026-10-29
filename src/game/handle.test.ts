@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { handleFor } from "./handle";
+import { ADJECTIVES, NOUNS, handleFor } from "./handle";
 
 const ID = "3f1a2b4c-5d6e-4f70-8901-23456789abcd";
 
@@ -46,9 +46,42 @@ describe("player handles", () => {
       adjectives.add(parts[1]);
       nouns.add(parts[2]);
     }
-    // Both lists hold 128 entries; a hash that fed only a corner of either would
+    // Both lists hold 256 entries; a hash that fed only a corner of either would
     // make duplicates far likelier than the arithmetic in handleFor claims.
-    expect(adjectives.size).toBeGreaterThan(120);
-    expect(nouns.size).toBeGreaterThan(120);
+    expect(adjectives.size).toBeGreaterThan(245);
+    expect(nouns.size).toBeGreaterThan(245);
+  });
+
+  it("keeps each list one byte of the hash, with no word in it twice", () => {
+    // handleFor slices the hash a byte per word; a list of any other length
+    // would let the adjective and the noun share bits and move together.
+    for (const list of [ADJECTIVES, NOUNS]) {
+      expect(list).toHaveLength(256);
+      expect(new Set(list).size).toBe(256);
+      for (const word of list) expect(word).toMatch(/^[A-Z][a-z]+$/);
+    }
+  });
+
+  it("matches its Postgres port, the newest migration defining player_handle", () => {
+    // The analytics and achievement-rate reports name players by computing the
+    // handle in SQL; if its lists drift from these, they name the wrong people.
+    const migrations = import.meta.glob<string>("../../supabase/migrations/*.sql", {
+      query: "?raw",
+      import: "default",
+      eager: true,
+    });
+    const latest = Object.keys(migrations)
+      .sort()
+      .map((name) => migrations[name])
+      .filter((sql) => /function public\.player_handle\(/.test(sql))
+      .pop() ?? "";
+    const list = (name: string) =>
+      [...(latest.match(new RegExp(`${name} constant text\\[\\] := array\\[([^\\]]*)\\]`))?.[1] ?? "")
+        .matchAll(/'([^']+)'/g)].map((m) => m[1]);
+
+    expect(list("adjectives")).toEqual(ADJECTIVES);
+    expect(list("nouns")).toEqual(NOUNS);
+    expect(latest).toContain("adjectives[h % 256 + 1]");
+    expect(latest).toContain("nouns[(h >> 8) % 256 + 1]");
   });
 });

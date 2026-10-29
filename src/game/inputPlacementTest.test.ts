@@ -28,9 +28,9 @@ describe("forcedInputPlacementVariant", () => {
     expect(forcedInputPlacementVariant("?input-placement=middle")).toBeNull();
   });
 
-  it("forces NorthernBear87 above unless the query string says otherwise", () => {
-    // An id whose handle is NorthernBear87 (see game/handle.ts).
-    localStorage.setItem("ick:player", JSON.stringify({ id: "tester-3185178" }));
+  it("forces FleetAspen87 above unless the query string says otherwise", () => {
+    // An id whose handle is FleetAspen87 (see game/handle.ts).
+    localStorage.setItem("ick:player", JSON.stringify({ id: "tester-10338031" }));
     expect(forcedInputPlacementVariant("")).toBe("above");
     expect(forcedInputPlacementVariant("?input-placement=below")).toBe("below");
     localStorage.setItem("ick:player", JSON.stringify({ id: "someone-else" }));

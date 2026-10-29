@@ -121,9 +121,9 @@ describe("idleHintWords", () => {
     expect(forcedIdleHintVariant("")).toBeNull();
   });
 
-  it("forces NorthernBear87 into treatment unless the query string says otherwise", () => {
-    // An id whose handle is NorthernBear87 (see game/handle.ts).
-    localStorage.setItem("ick:player", JSON.stringify({ id: "tester-3185178" }));
+  it("forces FleetAspen87 into treatment unless the query string says otherwise", () => {
+    // An id whose handle is FleetAspen87 (see game/handle.ts).
+    localStorage.setItem("ick:player", JSON.stringify({ id: "tester-10338031" }));
     expect(forcedIdleHintVariant("")).toBe("treatment");
     expect(forcedIdleHintVariant("?idle-hint=control")).toBe("control");
     localStorage.setItem("ick:player", JSON.stringify({ id: "someone-else" }));
