@@ -740,6 +740,29 @@ describe("countedRecord", () => {
     const counted = countedRecord({ history, onItsDay: [], streak: noStreak });
     expect(statusOf("first-legend", counted).earnedOn).toBe("2026-10-10");
   });
+
+  it("keeps a 40 built on unattested words out of Forty Carat's count", () => {
+    // 2026-10-28's board-topping 40: two flat 10.00s no corpus measures, two
+    // measured at -1.5. The player holds the badge; the share does not count it.
+    const words = [-1.57, -1.57, -1.5, -1.5].map(
+      (zipf, i): AcceptedWord => ({ word: `w${i}`, rarity: "Legend", zipf })
+    );
+    const history = [day("2026-10-28", words)];
+    expect(totalRarityScore(words, "2026-10-28")).toBe(40);
+    expect(statusOf("total-40", { history }).earnedOn).toBe("2026-10-28");
+    const counted = countedRecord({ history, onItsDay: [], streak: noStreak });
+    expect(statusOf("total-40", counted).earnedOn).toBeNull();
+    expect(statusOf("total-32", counted).earnedOn).toBeNull();
+  });
+
+  it("still counts a 40 of measured words", () => {
+    const words = [-1.5, -1.5, -1.5, -1.5].map(
+      (zipf, i): AcceptedWord => ({ word: `w${i}`, rarity: "Legend", zipf })
+    );
+    const history = [day("2026-10-28", words)];
+    const counted = countedRecord({ history, onItsDay: [], streak: noStreak });
+    expect(statusOf("total-40", counted).earnedOn).toBe("2026-10-28");
+  });
 });
 
 describe("the fun badges", () => {
