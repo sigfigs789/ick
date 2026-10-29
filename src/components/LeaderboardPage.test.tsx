@@ -1424,43 +1424,11 @@ describe("picking a board", () => {
     expect(screen.queryByRole("button", { name: "Streak" })).toBeNull();
   });
 
-  it("reads the days-played board when its pill is picked, and remembers the player's rank", async () => {
-    const me = joinBoard()!;
-    const fetchMock = stubFetch({
-      ...OPEN,
-      streak: [],
-      streakSelf: null,
-      total: [
-        { rank: 1, playerId: ALICE, puzzles: 100, firstPlayed: "2026-05-01", lastPlayed: "2026-08-27" },
-        { rank: 2, playerId: BOB, puzzles: 12, firstPlayed: "2026-08-10", lastPlayed: "2026-08-28" },
-      ],
-      totalSelf: { rank: 1000, playerId: me, puzzles: 1, firstPlayed: "2026-08-28", lastPlayed: "2026-08-28" },
-    });
+  it("has no Days pill: the days-played board is its own page", async () => {
+    stubFetch({ ...OPEN, streak: [], streakSelf: null });
     render(<LeaderboardPage />);
     await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
-    // Not read until somebody asks for it.
-    expect(boardUrls(fetchMock).some((url) => url.includes("total=1"))).toBe(false);
-
-    await userEvent.click(screen.getByRole("button", { name: "Days" }));
-    await waitFor(() => expect(boardRows("Days played")).toHaveLength(3));
-    expect(boardUrls(fetchMock).filter((url) => url.includes("total=1"))).toHaveLength(1);
-    const rows = boardRows("Days played");
-    expect(rows[0]).toHaveTextContent(handleFor(ALICE));
-    // Each tally wears the highest milestone it has reached: 💯 at a hundred
-    // days, 🌱 past a week, and nothing under one.
-    expect(rows[0]).toHaveTextContent("💯 100");
-    expect(rows[0]).toHaveTextContent("100 days played milestone");
-    expect(rows[1]).toHaveTextContent("🌱 12");
-    expect(rows[1]).toHaveTextContent("Since Aug 10");
-    expect(rows[2]).toHaveTextContent("you");
-    expect(rows[2]).not.toHaveTextContent("milestone");
-    expect(localStorage.getItem("ick:daysRank")).toBe("1000");
-  });
-
-  it("offers a Days pill only where there is a streak board", async () => {
-    stubFetch();
-    render(<LeaderboardPage />);
-    await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
+    expect(screen.getByRole("button", { name: "Streak" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Days" })).toBeNull();
   });
 });

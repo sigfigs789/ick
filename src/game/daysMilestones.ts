@@ -1,7 +1,6 @@
 /**
  * Milestones on the days-played board: the emoji a player's tally of days earns
- * them, worn beside the count on the board (see LeaderboardPage.tsx) and on the
- * climb card (see DaysClimbCelebration.tsx).
+ * them, worn beside the count on the board (see PlayerDaysPage.tsx).
  *
  * Spaced to land often early and rarely late: a week, a month, fifty, then the
  * hundred -- the first players are closing on it -- and on past it to two
@@ -34,9 +33,4 @@ export function daysMilestone(days: number): DaysMilestone | null {
     if (days >= milestone.days) reached = milestone;
   }
   return reached;
-}
-
-/** The milestone a tally has just reached, on the very day it lands. */
-export function daysMilestoneReached(days: number): DaysMilestone | null {
-  return DAYS_MILESTONES.find((milestone) => milestone.days === days) ?? null;
 }

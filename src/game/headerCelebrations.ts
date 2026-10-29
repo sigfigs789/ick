@@ -5,8 +5,7 @@
  * most one card a day:
  *
  * - **streak**: the longest streak yet (NewBestCelebration), then a climb up
- *   the streak board (StreakClimbCelebration), then a climb up the
- *   days-played board (DaysClimbCelebration).
+ *   the streak board (StreakClimbCelebration).
  * - **news**: yesterday's best word (BestWordNewsCard), then a perfect month
  *   (PerfectMonthCelebration), then an improving average
  *   (ImprovementCelebration), then a top-three place on today's board
@@ -17,11 +16,9 @@
  *
  * Each group's cards come due in that order through the day -- the best word
  * as the site opens, a perfect month and a new best on the first word, the
- * climbs a moment after that word (the streak board's ahead of the days-played
- * board's, as both are read together), the average on the finish, the top three a
- * moment after the finish -- so the first
- * card to claim its group's day is the one with priority. The claim is kept in storage, so a
- * reload between the first word and the finish does not let a second card in.
+ * climb a moment after that word, the average on the finish, the top three a
+ * moment after the finish -- so the first card to claim its group's day is the
+ * one with priority. The claim is kept in storage, so a reload between the first word and the finish does not let a second card in.
  *
  * A new player sees none of them until they have banked their fourth word:
  * the first three are for finding their feet, not for cards over the puzzle.

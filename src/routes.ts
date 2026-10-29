@@ -57,8 +57,10 @@ import { startTransition, useEffect, useState } from "react";
  *
  * `/leaderboard-total` ranks every player by how many puzzles they have
  * played, either mode. Unlinked from the header: the tabs are the daily round,
- * and this is a standing tally beside it, reached from /help. The same board
- * is the leaderboard page's Days pill.
+ * and this is a standing tally beside it, reached from /help.
+ * `/player-days` is the same tally as days played, with the milestone each
+ * player's count has reached. Unlinked from the header and from the leaderboard
+ * for the same reason, and reached from /help.
  * `/dead-streaks` ranks the players whose streak ended and who never came back,
  * longest streak first. Unlinked from the game: it is a page about the players
  * who left, not one for the players still here.
@@ -94,6 +96,7 @@ export type Route =
   | "help"
   | "leaderboard-total"
   | "dead-streaks"
+  | "player-days"
   | "stats";
 
 export const LEADERBOARD_PATH = "/leaderboard";
@@ -110,6 +113,7 @@ export const TRANSFER_PATH = "/transfer";
 export const HELP_PATH = "/help";
 export const LEADERBOARD_TOTAL_PATH = "/leaderboard-total";
 export const DEAD_STREAKS_PATH = "/dead-streaks";
+export const PLAYER_DAYS_PATH = "/player-days";
 export const STATS_PATH = "/stats";
 
 /**
@@ -166,6 +170,7 @@ export function routeFor(pathname: string): Route {
   if (path === HELP_PATH) return "help";
   if (path === LEADERBOARD_TOTAL_PATH) return "leaderboard-total";
   if (path === DEAD_STREAKS_PATH) return "dead-streaks";
+  if (path === PLAYER_DAYS_PATH) return "player-days";
   if (path === STATS_PATH) return "stats";
   return "game";
 }
@@ -186,6 +191,7 @@ export function pathFor(route: Route): string {
   if (route === "help") return HELP_PATH;
   if (route === "leaderboard-total") return LEADERBOARD_TOTAL_PATH;
   if (route === "dead-streaks") return DEAD_STREAKS_PATH;
+  if (route === "player-days") return PLAYER_DAYS_PATH;
   if (route === "stats") return STATS_PATH;
   return "/";
 }

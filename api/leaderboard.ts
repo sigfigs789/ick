@@ -1076,8 +1076,7 @@ interface TotalEntry {
  * Its own request: it has no window, so none of the boards' dates apply. It
  * carries `player`, so the asking player's row comes back from below the cut
  * the same way it does on the other boards. `limit` cuts the board shorter,
- * for the game's days-played climb (see src/game/daysClimb.ts), which wants
- * nothing but that row.
+ * for a caller that wants nothing but that row.
  */
 async function handleTotalGet(params: URLSearchParams): Promise<Response> {
   const claimedPlayer = params.get("player") ?? "";
