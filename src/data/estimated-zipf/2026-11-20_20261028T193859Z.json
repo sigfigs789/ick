@@ -1,0 +1,15 @@
+{
+  "since": "2026-11-20",
+  "drop": "ERV",
+  "model": "claude-opus-5-5",
+  "source": "claude",
+  "run": "https://github.com/sigfigs789/ick/actions/runs/40756092005",
+  "estimatedAt": "2026-10-28T19:38:59Z",
+  "zipf": {
+    "hypervascularizations": -1.2,
+    "hysterocervicography": -0.4,
+    "noninterventionalism": -0.3,
+    "noninterventionistic": -0.5,
+    "postinterventionally": -0.7
+  }
+}
