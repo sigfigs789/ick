@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ConfettiBurst } from "./ConfettiBurst";
-import { celebrationShareLine, type Achievement } from "../game/achievements";
+import { celebrationShareLine, type EarnedAchievement } from "../game/achievements";
 
 /** How long the card stays up if nobody closes it, as the other cards do. */
 const CELEBRATION_MS = 7000;
@@ -21,6 +21,8 @@ const MOST_SHOWN = 3;
  * `achievements` is the few worth naming, and the rest are left to the Stats
  * page. No card names more than three, however many a word earns.
  *
+ * A lone badge one word earned names that word.
+ *
  * A lone badge also says how many players hold it, or that this player is the
  * first -- read as the card opens, so this player's own report, landing a
  * moment later, never changes it.
@@ -30,7 +32,7 @@ export function AchievementCelebration({
   total: given = earned.length,
   onDone,
 }: {
-  achievements: readonly Achievement[];
+  achievements: readonly EarnedAchievement[];
   total?: number;
   onDone: () => void;
 }) {
@@ -78,6 +80,11 @@ export function AchievementCelebration({
               </span>
               <span className="improvement__title">{only.title}</span>
               <span className="improvement__body">{only.description}</span>
+              {only.word && (
+                <span className="achievement-unlocked__word">
+                  With <strong>{only.word}</strong>
+                </span>
+              )}
               {share && <span className="achievement-unlocked__share">{share}</span>}
             </>
           )}

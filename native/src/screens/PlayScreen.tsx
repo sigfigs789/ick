@@ -31,7 +31,7 @@ import {
   fetchAchievementRates,
   fetchWordOfTheDayWins,
   syncAchievements,
-  type Achievement,
+  type EarnedAchievement,
 } from '../../../src/game/achievements';
 import { addDays } from '../../../src/game/date';
 import { loadPlayerId } from '../../../src/game/player';
@@ -157,7 +157,7 @@ export function PlayScreen({ covered = false }: Props) {
   const endNewBest = useCallback(() => setNewBest(null), []);
   const [unlocked, setUnlocked] = useState<{
     key: number;
-    achievements: Achievement[];
+    achievements: EarnedAchievement[];
     /** How many there are in all, when the card names only a few. */
     total?: number;
   } | null>(null);

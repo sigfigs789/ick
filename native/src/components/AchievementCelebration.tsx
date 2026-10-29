@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
-import { celebrationShareLine, type Achievement } from '../../../src/game/achievements';
+import { celebrationShareLine, type EarnedAchievement } from '../../../src/game/achievements';
 import { useTheme } from '../theme/useTheme';
 import { CelebrationCard, Highlight } from './CelebrationCard';
 import { ConfettiBurst, useReduceMotion } from './ConfettiBurst';
@@ -40,7 +40,7 @@ export function AchievementCelebration({
   total: given = earned.length,
   onDone,
 }: {
-  achievements: readonly Achievement[];
+  achievements: readonly EarnedAchievement[];
   total?: number;
   onDone: () => void;
 }) {
@@ -101,6 +101,7 @@ export function AchievementCelebration({
         {several ? undefined : (
           <>
             {only.description}
+            {only.word && `\nWith ${only.word}`}
             {share && (
               <>
                 {'\n'}

@@ -15,12 +15,14 @@ import {
   holdersOf,
   markAchievementsAnnounced,
   newlyEarned,
+  recentAchievements,
   resetAchievementRates,
   soleHolder,
   subscribeToAchievementRates,
   syncAchievements,
   type AchievementRates,
   type AchievementRecord,
+  type AchievementStatus,
 } from "./achievements";
 import { addDays } from "./date";
 import { handleFor } from "./handle";
@@ -54,6 +56,32 @@ describe("achievements", () => {
     const history = [day("2026-10-01", [word("Common")]), day("2026-10-03", [word("Mythic")])];
     expect(statusOf("first-mythic", { history }).earnedOn).toBe("2026-10-03");
     expect(statusOf("first-legend", { history }).earnedOn).toBeNull();
+  });
+
+  it("names the word that earned a one-word badge", () => {
+    const history = [
+      day("2026-10-01", [word("Common", "inkling")]),
+      day("2026-10-03", [word("Rare", "blink"), word("Mythic", "inkhornism")]),
+      day("2026-10-04", [word("Mythic", "inkwell")]),
+    ];
+    expect(statusOf("first-mythic", { history }).word).toBe("inkhornism");
+    expect(statusOf("first-word", { history }).word).toBe("inkling");
+    expect(statusOf("straight-in", { history }).word).toBe("blink");
+    expect(statusOf("head-start", { history }).word).toBe("inkhornism");
+    expect(statusOf("old-macdonald", { history }).word).toBeUndefined();
+    expect(statusOf("double-mythic", { history }).word).toBeUndefined();
+  });
+
+  it("names a kept badge's word only while that word still earns it that day", () => {
+    const history = [day("2026-10-03", [word("Mythic", "inkhornism")])];
+    expect(statusOf("first-mythic", { history }, { "first-mythic": "2026-10-03" }).word).toBe("inkhornism");
+    expect(statusOf("first-mythic", { history }, { "first-mythic": "2026-10-01" }).word).toBeUndefined();
+  });
+
+  it("carries the word to the card that announces the badge", () => {
+    const record = { history: [day("2026-10-03", [word("Mythic", "inkhornism")])], onItsDay: [], streak: noStreak };
+    const fresh = newlyEarned(new Set(), achievementStatuses(record, {}, TODAY));
+    expect(fresh.find((a) => a.id === "first-mythic")?.word).toBe("inkhornism");
   });
 
   it("shows how far along a count is, and dates the puzzle that reaches it", () => {
@@ -269,9 +297,23 @@ describe("syncAchievements", () => {
   });
 });
 
+describe("short-king", () => {
+  it("needs a short word to be Elusive or better", () => {
+    const common = day("2026-10-01", [word("Common", "stir"), word("Mythic", "strobile")]);
+    const rare = day("2026-10-02", [word("Extremely Rare", "stir")]);
+    expect(statusOf("short-king", { history: [common, rare] }).earnedOn).toBeNull();
+    const elusive = day("2026-10-03", [word("Elusive", "stir")]);
+    expect(statusOf("short-king", { history: [common, rare, elusive] }).earnedOn).toBe("2026-10-03");
+    const legend = day("2026-10-01", [word("Legend", "ziti")]);
+    expect(statusOf("short-king", { history: [legend] }).earnedOn).toBe("2026-10-01");
+    const long = day("2026-10-01", [word("Legend", "zitis")]);
+    expect(statusOf("short-king", { history: [long] }).earnedOn).toBeNull();
+  });
+});
+
 describe("newlyEarned", () => {
   const record: AchievementRecord = {
-    history: [day("2026-10-01", [word("Common", "stir")]), day("2026-10-03", [word("Mythic")])],
+    history: [day("2026-10-01", [word("Elusive", "stir")]), day("2026-10-03", [word("Mythic")])],
     onItsDay: [],
     streak: noStreak,
     suggestions: [{ word: "inkle", suggestedOn: "2026-10-02" }],
@@ -302,6 +344,36 @@ describe("newlyEarned", () => {
   it("lists nothing when nothing changed", () => {
     const statuses = achievementStatuses(record, {}, TODAY);
     expect(newlyEarned(earnedIds(statuses), statuses)).toEqual([]);
+  });
+});
+
+describe("recentAchievements", () => {
+  function statuses(dates: (string | null)[]): AchievementStatus[] {
+    return dates.map((earnedOn, i) => ({ achievement: ACHIEVEMENTS[i], earnedOn }));
+  }
+  const ids = (list: AchievementStatus[]) => list.map((s) => s.achievement.id);
+
+  it("lists every badge from the last three days, newest first", () => {
+    const list = statuses([
+      addDays(TODAY, -2),
+      TODAY,
+      null,
+      addDays(TODAY, -1),
+      TODAY,
+      addDays(TODAY, -3),
+    ]);
+    expect(ids(recentAchievements(list, TODAY))).toEqual(ids([list[1], list[4], list[3], list[0]]));
+  });
+
+  it("reaches further back for at least three", () => {
+    const list = statuses([addDays(TODAY, -40), addDays(TODAY, -9), TODAY, null, addDays(TODAY, -20)]);
+    expect(ids(recentAchievements(list, TODAY))).toEqual(ids([list[2], list[1], list[4]]));
+  });
+
+  it("shows what there is when fewer than three are earned", () => {
+    const list = statuses([null, addDays(TODAY, -9), null]);
+    expect(ids(recentAchievements(list, TODAY))).toEqual(ids([list[1]]));
+    expect(recentAchievements(statuses([null, null]), TODAY)).toEqual([]);
   });
 });
 

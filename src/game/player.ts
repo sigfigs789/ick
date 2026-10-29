@@ -160,7 +160,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
  *
  * Muse starts each run in a fresh browser, so without this every run mints a
  * new id and lands on the board as a new player. Passing the id it played under
- * before keeps it one row.
+ * before keeps it one row, and `src/main.tsx` then reads its streak back from
+ * the board (see game/streakRestore.ts), so the streak carries on too.
  *
  * Narrow on purpose, because an id is the whole identity (see game/transfer.ts
  * on why that link asks before it adopts anything):
