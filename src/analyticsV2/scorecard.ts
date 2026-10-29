@@ -122,6 +122,9 @@ export function windowOf(report: Report): Range {
 /** The least cohort a rate is judged over; under it the row says it is too early. */
 export const LEAST = 30;
 
+/** D7 through back within a month are judged sooner: their cohorts wait a week or a month to close, so they grow slowly. */
+export const LEAST_LATER_RETENTION = 20;
+
 /** Activation is judged sooner: a first visit is cheap to count, and the page wants the read early. */
 export const LEAST_FIRST_VISITS = 10;
 
@@ -129,7 +132,8 @@ export const LEAST_FIRST_VISITS = 10;
 export const LEAST_STREAKS = 5;
 
 function retentionRow(metric: string, n: number, rate: Rate, bands: Row["bands"], marks: Marks): Row {
-  const ok = rate.cohort >= LEAST;
+  const least = n === 1 ? LEAST : LEAST_LATER_RETENTION;
+  const ok = rate.cohort >= least;
   return {
     metric,
     bands,
@@ -138,7 +142,7 @@ function retentionRow(metric: string, n: number, rate: Rate, bands: Row["bands"]
     standing: ok ? stand(rate.returned / rate.cohort, marks) : null,
     detail: ok
       ? `${count(rate.returned)} of ${count(rate.cohort)} new players`
-      : `needs ${LEAST} new players in the window whose day ${n} is over`,
+      : `needs ${least} new players in the window whose day ${n} is over`,
     how: `Players whose first word was in the window, with day ${n} over, and who banked a word again exactly ${n} ${n === 1 ? "day" : "days"} later.`,
   };
 }
