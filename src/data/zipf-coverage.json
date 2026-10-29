@@ -1,5 +1,5 @@
 {
-  "words": 1217279,
+  "words": 1217280,
   "rulesDate": "2027-01-07",
   "measured": 506215,
   "estimated": {
@@ -7,7 +7,7 @@
     "notPlayable": 0
   },
   "unattested": {
-    "playable": 289874,
+    "playable": 289875,
     "notPlayable": 5301
   },
   "batches": [
@@ -461,7 +461,7 @@
       "date": "2026-11-30",
       "drop": "EL",
       "estimated": 37975,
-      "unattested": 35,
+      "unattested": 36,
       "swept": "99.9%"
     },
     {

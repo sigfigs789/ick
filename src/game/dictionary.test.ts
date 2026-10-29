@@ -95,6 +95,7 @@ const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
   ["fergalicious", "Mythic", 1.24],
   ["ferngully", "Mythic", 1.33],
   ["flatwound", "Elusive", 1.4],
+  ["foellinger", "Legend", -1.57],
   ["freestall", "Legend", 0.9],
   ["frutiger", "Elusive", 1.35],
   ["galactica", "Rare", 2.9],
@@ -177,8 +178,9 @@ const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scient
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    // 225,551 since the 2026-10-24 review-queue pass added 68 words.
-    expect(dictionaryWords).toHaveLength(225_551);
+    // 225,552 since foellinger, a proper noun the queue had rejected, was
+    // accepted on 2026-10-29.
+    expect(dictionaryWords).toHaveLength(225_552);
   });
 
   it("accepts a common real word", () => {
