@@ -10,6 +10,7 @@ import {
   FREEFORM_FEEDBACK_PATH,
   LEADERBOARD_PATH,
   LEADERBOARD_TOTAL_PATH,
+  PLAYER_DAYS_PATH,
   SUGGESTED_WORDS_PATH,
   TRANSFER_PATH,
 } from "../routes";
@@ -27,6 +28,7 @@ const PLAYER_PAGES: PageLink[] = [
   { path: "/", label: "Play", note: "Today’s puzzle." },
   { path: LEADERBOARD_PATH, label: "Leaderboards", note: "Today, the week and all time." },
   { path: LEADERBOARD_TOTAL_PATH, label: "Puzzles played", note: "Every player, most puzzles first." },
+  { path: PLAYER_DAYS_PATH, label: "Days played", note: "Every player, most days first, with milestones." },
   { path: FOUND_WORDS_PATH, label: "Words found", note: "The rarest words players have found." },
   { path: SUGGESTED_WORDS_PATH, label: "Suggested words", note: "The dictionary queue.", keyed: true },
   { path: TRANSFER_PATH, label: "Transfer", note: "Move this player to another browser." },

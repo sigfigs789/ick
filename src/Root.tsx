@@ -89,6 +89,10 @@ const SuggestedWordsPage = lazyPage(
   () => import("./components/SuggestedWordsPage"),
   (m) => m.SuggestedWordsPage,
 );
+const PlayerDaysPage = lazyPage(
+  () => import("./components/PlayerDaysPage"),
+  (m) => m.PlayerDaysPage,
+);
 const TotalLeaderboardPage = lazyPage(
   () => import("./components/TotalLeaderboardPage"),
   (m) => m.TotalLeaderboardPage,
@@ -454,6 +458,8 @@ export function Root() {
             <TransferPage />
           ) : route === "leaderboard-total" ? (
             <TotalLeaderboardPage />
+          ) : route === "player-days" ? (
+            <PlayerDaysPage />
           ) : route === "dead-streaks" ? (
             <DeadStreaksPage />
           ) : route === "help" ? (

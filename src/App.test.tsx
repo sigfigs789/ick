@@ -7,14 +7,12 @@ import { useSound } from "./hooks/useSound";
 import { markSeen } from "./game/whatsNew";
 import { addDays } from "./game/date";
 import { checkStreakClimb } from "./game/streakClimb";
-import { checkDaysClimb } from "./game/daysClimb";
 import { claimHeaderCelebration } from "./game/headerCelebrations";
 import { checkTopRank } from "./game/topRank";
 
 vi.mock("./hooks/useDailyPuzzle", () => ({ useDailyPuzzle: vi.fn() }));
 vi.mock("./hooks/useSound", () => ({ useSound: vi.fn() }));
 vi.mock("./game/streakClimb", () => ({ checkStreakClimb: vi.fn(async () => null) }));
-vi.mock("./game/daysClimb", () => ({ checkDaysClimb: vi.fn(async () => null) }));
 vi.mock("./game/topRank", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./game/topRank")>()),
   checkTopRank: vi.fn(async () => null),
@@ -97,7 +95,6 @@ describe("App", () => {
     markSeen("instructions");
     window.history.pushState(null, "", "/");
     vi.mocked(checkStreakClimb).mockResolvedValue(null);
-    vi.mocked(checkDaysClimb).mockResolvedValue(null);
     vi.mocked(checkTopRank).mockResolvedValue(null);
     vi.mocked(useSound).mockReturnValue({
       accept: vi.fn(),
@@ -351,53 +348,6 @@ describe("App", () => {
       expect(checkStreakClimb).toHaveBeenCalledWith(today);
       await act(() => vi.advanceTimersByTimeAsync(7000)); // the new best's card goes
       expect(screen.queryByText("Up the streak board!")).not.toBeInTheDocument();
-    });
-
-    it("celebrates a climb up the days-played board when the streak board has none", async () => {
-      vi.useFakeTimers();
-      vi.mocked(checkDaysClimb).mockResolvedValue({ from: 20, to: 14, days: 31 });
-      vi.mocked(useDailyPuzzle).mockReturnValue(day(before, 0));
-      const { rerender } = render(<App />);
-
-      vi.mocked(useDailyPuzzle).mockReturnValue(day(up));
-      rerender(<App />);
-      await act(() => vi.advanceTimersByTimeAsync(1500));
-      expect(checkDaysClimb).toHaveBeenCalledTimes(1);
-      expect(screen.getByText("Up the days-played board!")).toBeInTheDocument();
-      expect(vi.mocked(useSound).mock.results[0].value.rising).toHaveBeenCalledTimes(1);
-    });
-
-    it("keeps the days-played climb behind a streak climb on the same word", async () => {
-      vi.useFakeTimers();
-      vi.mocked(checkStreakClimb).mockResolvedValue({ from: 12, to: 9 });
-      vi.mocked(checkDaysClimb).mockResolvedValue({ from: 20, to: 14, days: 31 });
-      vi.mocked(useDailyPuzzle).mockReturnValue(day(before, 0));
-      const { rerender } = render(<App />);
-
-      vi.mocked(useDailyPuzzle).mockReturnValue(day(up));
-      rerender(<App />);
-      await act(() => vi.advanceTimersByTimeAsync(1500));
-      // Read all the same, so its rank is remembered.
-      expect(checkDaysClimb).toHaveBeenCalledTimes(1);
-      expect(screen.getByText("Up the streak board!")).toBeInTheDocument();
-      await act(() => vi.advanceTimersByTimeAsync(7000)); // the streak climb's card goes
-      expect(screen.queryByText("Up the days-played board!")).not.toBeInTheDocument();
-    });
-
-    it("keeps the days-played climb behind a longest streak yet", async () => {
-      vi.useFakeTimers();
-      vi.mocked(checkDaysClimb).mockResolvedValue({ from: 20, to: 14, days: 31 });
-      const tied = { ...base, currentStreak: 9, longestStreak: 9, bestToBeat: 9, lastCompletedDate: "2026-08-12" };
-      const passed = { ...tied, currentStreak: 10, longestStreak: 10, lastCompletedDate: today };
-      vi.mocked(useDailyPuzzle).mockReturnValue(day(tied, 0));
-      const { rerender } = render(<App />);
-
-      vi.mocked(useDailyPuzzle).mockReturnValue(day(passed));
-      rerender(<App />);
-      expect(screen.getByText("Your longest streak yet!")).toBeInTheDocument();
-      await act(() => vi.advanceTimersByTimeAsync(1500));
-      await act(() => vi.advanceTimersByTimeAsync(7000)); // the new best's card goes
-      expect(screen.queryByText("Up the days-played board!")).not.toBeInTheDocument();
     });
 
     it("is not looked for on a puzzle that mounts with the streak already up", async () => {

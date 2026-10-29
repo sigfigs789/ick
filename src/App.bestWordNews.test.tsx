@@ -14,7 +14,6 @@ vi.mock("./hooks/useDailyPuzzle", () => ({ useDailyPuzzle: vi.fn() }));
 vi.mock("./hooks/useSound", () => ({ useSound: vi.fn() }));
 vi.mock("./hooks/useYesterdaysBest", () => ({ useYesterdaysBest: vi.fn() }));
 vi.mock("./game/streakClimb", () => ({ checkStreakClimb: vi.fn(async () => null) }));
-vi.mock("./game/daysClimb", () => ({ checkDaysClimb: vi.fn(async () => null) }));
 
 const TODAY = "2026-10-25";
 const YESTERDAY = "2026-10-24";

@@ -46,6 +46,9 @@ describe("routes", () => {
     expect(routeFor("/dead-streaks")).toBe("dead-streaks");
     expect(routeFor("/dead-streaks/")).toBe("dead-streaks");
     expect(pathFor("dead-streaks")).toBe("/dead-streaks");
+    expect(routeFor("/player-days")).toBe("player-days");
+    expect(routeFor("/player-days/")).toBe("player-days");
+    expect(pathFor("player-days")).toBe("/player-days");
   });
 
   it("treats anything else as the game, rather than a client-rendered 404", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DAYS_MILESTONES, daysMilestone, daysMilestoneReached } from "./daysMilestones";
+import { DAYS_MILESTONES, daysMilestone } from "./daysMilestones";
 
 describe("daysMilestone", () => {
   it("has none under a week", () => {
@@ -24,13 +24,5 @@ describe("daysMilestone", () => {
   it("lists the milestones fewest days first", () => {
     const days = DAYS_MILESTONES.map((milestone) => milestone.days);
     expect(days).toEqual([...days].sort((a, b) => a - b));
-  });
-});
-
-describe("daysMilestoneReached", () => {
-  it("is the milestone on the day it lands, and nothing either side", () => {
-    expect(daysMilestoneReached(99)).toBeNull();
-    expect(daysMilestoneReached(100)?.label).toBe("100 days played");
-    expect(daysMilestoneReached(101)).toBeNull();
   });
 });
