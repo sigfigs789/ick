@@ -651,6 +651,54 @@ describe("api/leaderboard reads", () => {
     expect(response.status).toBe(502);
   });
 
+  it("returns one player's own streak for a restore, uncached", async () => {
+    withEnv();
+    const fetchMock = stubFetch([
+      [
+        {
+          current_streak: 6,
+          best_streak: 9,
+          saved_freezes: 1,
+          last_played: "2026-08-24",
+          played_dates: ["2026-08-20", "2026-08-24"],
+          days_played: 21,
+        },
+      ],
+    ]);
+    const response = await handler(get(`?restore=${PLAYER.toUpperCase()}`));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect((await response.json()).streak).toEqual({
+      current: 6,
+      best: 9,
+      saved: 1,
+      lastPlayed: "2026-08-24",
+      playedDates: ["2026-08-20", "2026-08-24"],
+      daysPlayed: 21,
+    });
+    expect(rpcCall(fetchMock)?.url).toBe(
+      "https://project.supabase.co/rest/v1/rpc/player_streak_restore"
+    );
+    expect(rpcCall(fetchMock)?.args).toEqual({ p_player: PLAYER });
+  });
+
+  it("restores no streak for a player with none on file", async () => {
+    withEnv();
+    stubFetch([[]]);
+    const response = await handler(get(`?restore=${PLAYER}`));
+    expect(response.status).toBe(200);
+    expect((await response.json()).streak).toBeNull();
+  });
+
+  it("refuses a restore for something that is not a player id", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    const response = await handler(get("?restore=muse"));
+    expect(response.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("runs no streak query for a caller that did not ask for one", async () => {
     withEnv();
     const fetchMock = stubFetch([OPEN]);

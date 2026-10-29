@@ -23,6 +23,10 @@
 //   `dead=1` returns only the dead-streaks board (`deadStreaks`): players with
 //   two or more days played whose streak ended and who never came back, longest
 //   streak first (see the 20261017000000 migration).
+//   `restore=UUID` returns only that player's own streak (`streak`), as their
+//   game last reported it plus the days played around it, or null -- for a
+//   fresh browser playing as them (see src/game/streakRestore.ts and the
+//   20261118000000 migration). Never cached.
 //   `day` is optional: a caller that omits it gets the two boards it always got,
 //   and no second query is run on its behalf. It is the one window that is a
 //   single date, so it is sent as one rather than as a pair. Neither has to be the window the caller is currently
@@ -1154,8 +1158,59 @@ async function handleDeadStreaksGet(params: URLSearchParams): Promise<Response> 
   }
 }
 
+/** A player's own streak, as `player_streak_restore` returns it. */
+interface RestoreRow {
+  current_streak: number;
+  best_streak: number;
+  saved_freezes: number;
+  last_played: string;
+  played_dates: string[] | null;
+  days_played: number;
+}
+
+/**
+ * One player's streak as their game last reported it, and the days played
+ * around it, for a fresh browser to carry on (see src/game/streakRestore.ts).
+ * `streak` is null for a player with no streak on file.
+ *
+ * Nothing here is not already public: the streak board lists every live run by
+ * player id, and the weekly board every day played. Never cached, so a run
+ * started straight after the last one sees what that one reported.
+ */
+async function handleRestoreGet(params: URLSearchParams): Promise<Response> {
+  const claimedPlayer = params.get("restore") ?? "";
+  if (!UUID_RE.test(claimedPlayer)) return reply(400, { ok: false, reason: "bad-player-id" });
+  if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
+
+  try {
+    const rows = await rpc<RestoreRow[]>("player_streak_restore", {
+      p_player: claimedPlayer.toLowerCase(),
+    });
+    const row = Array.isArray(rows) ? rows[0] : undefined;
+    const streak = row
+      ? {
+          current: Number(row.current_streak) || 0,
+          best: Number(row.best_streak) || 0,
+          saved: Number(row.saved_freezes) || 0,
+          lastPlayed: String(row.last_played),
+          playedDates: (Array.isArray(row.played_dates) ? row.played_dates : []).map(String),
+          daysPlayed: Number(row.days_played) || 0,
+        }
+      : null;
+    return reply(200, { streak });
+  } catch (error) {
+    console.error(
+      "[leaderboard] restore read failed:",
+      error instanceof Error ? error.message : error
+    );
+    return reply(502, { ok: false, reason: "unavailable" });
+  }
+}
+
 async function handleGet(request: Request): Promise<Response> {
   const params = new URL(request.url).searchParams;
+  // One player's streak, for a fresh browser playing as them.
+  if (params.has("restore")) return handleRestoreGet(params);
   // The finds feed, on its own. Checked before anything else is read, because
   // this request carries none of the rest -- no week, no limit, no player -- and
   // that is the whole point of it: a URL identical for every player is a URL the
