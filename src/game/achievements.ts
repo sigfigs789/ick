@@ -1226,8 +1226,12 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     group: "Style",
     icon: "🤴",
     title: "Short King",
-    description: "Bank a word of 4 letters or fewer.",
-    check: anyWord((word) => word.length <= 4),
+    description: "Find an Elusive or better word of 4 letters or fewer.",
+    check: firstPuzzle((progress) =>
+      progress.acceptedWords.some(
+        (word) => word.word.length <= 4 && atLeast("Elusive")(word.rarity)
+      )
+    ),
   },
   {
     id: "x-word",
