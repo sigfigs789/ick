@@ -517,7 +517,13 @@ lives in `supabase/migrations/`.
   just sees nothing). The "Idle hint test" section of `/analytics` shows the
   page's key numbers for the players who sat idle in each arm, by
   everyone, new and returning (`analytics_overview`, the 2026-10-21
-  migration; the older `idle_hint_report` is still in the database, unread). Key play events also carry `idle_hint_experiment`
+  migration; the older `idle_hint_report` is still in the database, unread).
+  `/experimentsV2` scores the same two experiments apart, "Idle hint, first
+  sessions" and "Idle hint, later sessions", on retention and the guardrails:
+  `analytics_v2_experiment` reads each off `idle_hint_triggered` with
+  `p_experiment` set to `new` or `returning`, a player's first trigger as their
+  draw and `treatment`/`control` as `shown`/`hidden` (the 2026-11-19
+  migration). Key play events also carry `idle_hint_experiment`
   and `idle_hint_variant` in the Supabase mirror.
 
 - **`suggested_words`** — the review queue, a view rather than a table. It pools

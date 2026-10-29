@@ -437,13 +437,25 @@ async function handleGet(request: Request): Promise<Response> {
         const report = await rpc<Record<string, unknown> | null>("analytics_v2", args, ANALYTICS_TIMEOUT_MS);
         return reply(200, { report: report ?? {} }, ANALYTICS_V2_CACHE);
       }
-      const experiment = (event: string) =>
+      // `which` picks one experiment of several reported on the same event,
+      // as the idle hint's `new` and `returning` are.
+      const experiment = (event: string, which?: string) =>
         rpc<Record<string, unknown> | null>(
           "analytics_v2_experiment",
-          { p_today: today, p_event: event, ...span },
+          { p_today: today, p_event: event, ...span, ...(which ? { p_experiment: which } : {}) },
           ANALYTICS_TIMEOUT_MS,
         );
-      const [wordOfDay, comeBack, headerCelebrations, shareName, inputPlacement, playTab, shareTint] = await Promise.all([
+      const [
+        wordOfDay,
+        comeBack,
+        headerCelebrations,
+        shareName,
+        inputPlacement,
+        playTab,
+        shareTint,
+        idleHintNew,
+        idleHintReturning,
+      ] = await Promise.all([
         experiment("word_of_day_assigned"),
         experiment("come_back_assigned"),
         experiment("header_celebrations_assigned"),
@@ -451,10 +463,24 @@ async function handleGet(request: Request): Promise<Response> {
         experiment("input_placement_assigned"),
         experiment("play_tab_assigned"),
         experiment("share_tint_assigned"),
+        // Off the trigger, not the draw: the players who sat idle long enough
+        // to be hinted, in either arm (see game/idleHint.ts).
+        experiment("idle_hint_triggered", "new"),
+        experiment("idle_hint_triggered", "returning"),
       ]);
       return reply(
         200,
-        { wordOfDay, comeBack, headerCelebrations, shareName, inputPlacement, playTab, shareTint },
+        {
+          wordOfDay,
+          comeBack,
+          headerCelebrations,
+          shareName,
+          inputPlacement,
+          playTab,
+          shareTint,
+          idleHintNew,
+          idleHintReturning,
+        },
         ANALYTICS_V2_CACHE,
       );
     }

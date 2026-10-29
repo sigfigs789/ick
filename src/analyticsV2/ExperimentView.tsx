@@ -9,17 +9,24 @@ import { count, percent, STANDING_NAMES, type Standing } from "./scorecard";
  * returning players apart. `subject` names the thing tested ("the word of the
  * day"); `about` says who is drawn when, and how to force an arm. `arms` heads
  * the two arm columns, Shown and Hidden unless an experiment names its own.
+ * `segments` leaves out the new and returning tables for an experiment that is
+ * already one kind of player; `activation` replaces the note's account of the
+ * Activation row for one whose players can be drawn before their first word.
  */
 export function ExperimentView({
   experiment,
   subject,
   about,
   arms = DEFAULT_ARMS,
+  segments = SEGMENTS,
+  activation = DRAWN_ACTIVATED,
 }: {
   experiment: Experiment;
   subject: string;
   about: ReactNode;
   arms?: ArmNames;
+  segments?: readonly Segment[];
+  activation?: string;
 }) {
   const call = verdict(experiment, subject);
   return (
@@ -28,7 +35,7 @@ export function ExperimentView({
         <strong className="av2__verdict-headline">{call.headline}</strong>
         <p className="av2__verdict-reason">{call.reason}</p>
       </div>
-      {SEGMENTS.map((segment) => (
+      {segments.map((segment) => (
         <ArmTable key={segment} experiment={experiment} segment={segment} subject={subject} arms={arms} />
       ))}
       <p className="review__meta av2__note">
@@ -38,8 +45,7 @@ export function ExperimentView({
         breaks a tie. Sharing and finishing later puzzles are guardrails: a big drop there is worth a look even when D1
         is level. Later puzzles finished counts the days after the draw day on which a player banked a word, and of
         those, the share where they went on to finish that day&rsquo;s puzzle; the draw day is left out, since the
-        player had already started it. Activation is n/a: a player is drawn only once they have banked a word, so everyone in either arm is
-        already activated and the arms cannot differ on it. A gap marked * is a real one (p &lt; 0.05).
+        player had already started it. {activation} A gap marked * is a real one (p &lt; 0.05).
       </p>
     </>
   );
@@ -49,6 +55,10 @@ export function ExperimentView({
 export type ArmNames = { shown: string; hidden: string };
 
 const DEFAULT_ARMS: ArmNames = { shown: "Shown", hidden: "Hidden" };
+
+const DRAWN_ACTIVATED =
+  "Activation is n/a: a player is drawn only once they have banked a word, so everyone in either arm is " +
+  "already activated and the arms cannot differ on it.";
 
 const SEGMENTS: readonly Segment[] = ["all", "new", "returning"];
 

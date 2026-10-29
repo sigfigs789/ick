@@ -239,6 +239,28 @@ describe("ExperimentsV2Page", () => {
     expect(screen.getAllByRole("table")).toHaveLength(3);
   });
 
+  it("draws the idle hint's two experiments, each in one table", async () => {
+    const idleHint = {
+      since: "2026-10-20",
+      arms: [
+        { variant: "shown", segment: "all", assigned: 40, d1: { cohort: 30, returned: 9 } },
+        { variant: "shown", segment: "new", assigned: 10, d1: { cohort: 8, returned: 2 } },
+        { variant: "hidden", segment: "all", assigned: 42, d1: { cohort: 31, returned: 8 } },
+      ],
+    };
+    const body = { wordOfDay: null, idleHintNew: idleHint, idleHintReturning: idleHint };
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(body), { status: 200 })));
+    render(<ExperimentsV2Page />);
+
+    expect(await screen.findByRole("heading", { name: "Idle hint, first sessions" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Idle hint, later sessions" })).toBeTruthy();
+    expect(screen.getAllByRole("table")).toHaveLength(2);
+    expect(screen.queryByRole("heading", { name: "New" })).toBeNull();
+    const table = screen.getAllByRole("table", { name: "Everyone drawn: with the idle hint against without." })[0];
+    expect(table.querySelector("thead")?.textContent).toBe("MeasureHintedNot hintedGap");
+    expect(screen.getAllByText(/Activation is n\/a here/)).toHaveLength(2);
+  });
+
   it("says so when the database sent no experiment", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ wordOfDay: null, comeBack: null }), { status: 200 })));
     render(<ExperimentsV2Page />);

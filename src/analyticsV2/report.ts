@@ -149,6 +149,13 @@ export interface Experiments {
   playTab: Experiment | null;
   /** Its `shown` arm is the Share buttons in the Extremely Rare colour (see game/shareTintTest.ts). */
   shareTint: Experiment | null;
+  /**
+   * The idle hint's two experiments, first-ever sessions and later ones, each
+   * over the players who sat idle long enough to be hinted; `shown` is the
+   * hint typed out, `hidden` the empty box (see game/idleHint.ts).
+   */
+  idleHintNew: Experiment | null;
+  idleHintReturning: Experiment | null;
   /** The draw days counted, both ends, or null for everyone drawn. */
   span: { from: string; to: string } | null;
 }
@@ -332,6 +339,8 @@ export async function fetchExperiments(today: string, span?: { from: string; to:
     inputPlacement: parseExperiment(body.inputPlacement),
     playTab: parseExperiment(body.playTab),
     shareTint: parseExperiment(body.shareTint),
+    idleHintNew: parseExperiment(body.idleHintNew),
+    idleHintReturning: parseExperiment(body.idleHintReturning),
     span: span ?? null,
   };
 }

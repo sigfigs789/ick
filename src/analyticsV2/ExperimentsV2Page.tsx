@@ -62,7 +62,9 @@ export function ExperimentsV2Page() {
           !experiments.shareName &&
           !experiments.inputPlacement &&
           !experiments.playTab &&
-          !experiments.shareTint)
+          !experiments.shareTint &&
+          !experiments.idleHintNew &&
+          !experiments.idleHintReturning)
       }
     >
       {picker}
@@ -218,9 +220,68 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
           />
         </Section>
       )}
+
+      {experiments.idleHintNew && (
+        <Section
+          title="Idle hint, first sessions"
+          note={`Whether typing a word into the empty box of a player sitting idle in their first session moves the scorecard. Over players who sat idle 7 seconds.${drawn}`}
+        >
+          <ExperimentView
+            experiment={experiments.idleHintNew}
+            subject="the idle hint"
+            arms={IDLE_HINT_ARMS}
+            segments={IDLE_HINT_SEGMENTS}
+            activation={IDLE_HINT_ACTIVATION}
+            about={
+              <>
+                Half of players get the hint in their first-ever session: once the word box has sat empty for 7
+                seconds, three Common words the puzzle would take are typed into it and erased. Each is drawn the
+                first time they reach the play page, but counted here from the first time the clock runs out, which
+                both arms report; most players type before it does. Every player here was new when drawn, so there
+                is one table. Try either arm with <code>?idle-hint=treatment</code> or <code>=control</code>; a
+                forced arm is not counted.
+              </>
+            }
+          />
+        </Section>
+      )}
+
+      {experiments.idleHintReturning && (
+        <Section
+          title="Idle hint, later sessions"
+          note={`Whether typing a word into the empty box of a returning player sitting idle moves the scorecard. Over players who sat idle 12 seconds.${drawn}`}
+        >
+          <ExperimentView
+            experiment={experiments.idleHintReturning}
+            subject="the idle hint"
+            arms={IDLE_HINT_ARMS}
+            segments={IDLE_HINT_SEGMENTS}
+            activation={IDLE_HINT_ACTIVATION}
+            about={
+              <>
+                Half of players get the hint in any session after their first, drawn again on their own: a
+                player&rsquo;s first-session arm says nothing about this one. The box has to sit empty for 12
+                seconds. Each is counted from the first time that clock runs out, in either arm. Every player here
+                was returning when drawn, so there is one table. Try either arm with{" "}
+                <code>?idle-hint=treatment</code> or <code>=control</code>; a forced arm is not counted.
+              </>
+            }
+          />
+        </Section>
+      )}
     </div>
   );
 }
+
+const IDLE_HINT_ARMS = { shown: "Hinted", hidden: "Not hinted" };
+
+// Each idle hint experiment is one kind of session already, so the new and
+// returning tables would only split it again by first word.
+const IDLE_HINT_SEGMENTS = ["all"] as const;
+
+const IDLE_HINT_ACTIVATION =
+  "Activation is n/a here: a player sitting idle may not have banked a word yet, but the tables count only days " +
+  "with one, so whether the hint gets a first word typed is on /analytics, in the idle hint section.";
 
 function Section({ title, note, children }: { title: string; note: string; children: ReactNode }) {
   return (
