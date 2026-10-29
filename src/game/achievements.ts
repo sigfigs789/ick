@@ -70,6 +70,8 @@ export interface AchievementRecord {
 interface Check {
   earnedOn: string | null;
   progress?: { current: number; target: number };
+  /** For a badge one word earns: that word, as the player banked it. */
+  word?: string;
 }
 
 export interface Achievement {
@@ -103,7 +105,12 @@ export interface AchievementStatus {
   earnedOn: string | null;
   /** For a count still locked: how far along. */
   progress?: { current: number; target: number };
+  /** For a badge one word earned: the word that earned it. */
+  word?: string;
 }
+
+/** An achievement to announce, with the word that earned it if one word did. */
+export type EarnedAchievement = Achievement & { word?: string };
 
 const MYTHIC_OR_BETTER: readonly Rarity[] = ["Mythic", "Legend"];
 
@@ -145,12 +152,27 @@ function isUnattestedLegend(word: AcceptedWord): boolean {
   return word.rarity === "Legend" && isUnattestedZipf(word.zipf);
 }
 
-/** The first puzzle with a word that passes `test`. */
-function firstWord(test: (rarity: Rarity) => boolean): Achievement["check"] {
+/** The first word banked that passes `test`, and the puzzle it was banked in. */
+function firstWordWhere(
+  test: (word: AcceptedWord, progress: DailyProgress) => boolean
+): Achievement["check"] {
   return ({ history }) => {
-    const hit = history.find((progress) => progress.acceptedWords.some((w) => test(w.rarity)));
-    return { earnedOn: hit?.date ?? null };
+    for (const progress of history) {
+      const hit = progress.acceptedWords.find((word) => test(word, progress));
+      if (hit) return { earnedOn: progress.date, word: hit.word || undefined };
+    }
+    return { earnedOn: null };
   };
+}
+
+/** The first word of a tier that passes `test`. */
+function firstWord(test: (rarity: Rarity) => boolean): Achievement["check"] {
+  return firstWordWhere((word) => test(word.rarity));
+}
+
+/** The first word to open a puzzle that passes `test`. */
+function firstOpener(test: (word: AcceptedWord) => boolean): Achievement["check"] {
+  return firstWordWhere((word, progress) => word === progress.acceptedWords[0] && test(word));
 }
 
 /** The first puzzle `passes` is true of. */
@@ -523,11 +545,9 @@ function twiceWithin(
 }
 
 /** A word starting with the drop, Mythic or better. */
-function headStart(progress: DailyProgress): boolean {
+function headStart(word: AcceptedWord, progress: DailyProgress): boolean {
   const drop = (progress.drop || dropForDate(progress.date)).toLowerCase();
-  return progress.acceptedWords.some(
-    (word) => word.word.toLowerCase().startsWith(drop) && atLeast("Mythic")(word.rarity)
-  );
+  return word.word.toLowerCase().startsWith(drop) && atLeast("Mythic")(word.rarity);
 }
 
 /** `count` words sharing one tier, `floor` or better. */
@@ -545,9 +565,12 @@ function wordsOf(progress: DailyProgress): string[] {
   return progress.acceptedWords.flatMap((word) => word.word.toLowerCase() || []);
 }
 
-/** The first puzzle with a word that passes `test`. */
+/** The first word banked that passes `test`, lowercased. */
 function anyWord(test: (word: string, progress: DailyProgress) => boolean): Achievement["check"] {
-  return firstPuzzle((progress) => wordsOf(progress).some((word) => test(word, progress)));
+  return firstWordWhere((word, progress) => {
+    const lower = word.word.toLowerCase();
+    return Boolean(lower) && test(lower, progress);
+  });
 }
 
 /** Every guess spent, the words taken together passing `test`. */
@@ -632,7 +655,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     icon: "✒️",
     title: "First ink",
     description: "Bank your first word.",
-    check: firstPuzzle((progress) => progress.acceptedWords.length > 0),
+    check: firstOpener(() => true),
     quiet: true,
   },
   {
@@ -1046,10 +1069,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     icon: "🏹",
     title: "Straight in",
     description: "Make the first word of a puzzle Rare or better.",
-    check: firstPuzzle(
-      (progress) =>
-        progress.acceptedWords.length > 0 && isWinningRarity(progress.acceptedWords[0].rarity)
-    ),
+    check: firstOpener((word) => isWinningRarity(word.rarity)),
     quiet: true,
   },
   {
@@ -1090,7 +1110,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     icon: "📏",
     title: "Sesquipedalian",
     description: `Bank a word of ${LONG_WORD} letters or more, as long as "sesquipedalian".`,
-    check: firstPuzzle((progress) => progress.acceptedWords.some((w) => w.word.length >= LONG_WORD)),
+    check: firstWordWhere((word) => word.word.length >= LONG_WORD),
   },
   {
     id: "both-ways",
@@ -1158,11 +1178,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     icon: "🐜",
     title: "Small but mighty",
     description: "Find a Mythic or better word of 6 letters or fewer.",
-    check: firstPuzzle((progress) =>
-      progress.acceptedWords.some(
-        (word) => word.word.length <= 6 && atLeast("Mythic")(word.rarity)
-      )
-    ),
+    check: firstWordWhere((word) => word.word.length <= 6 && atLeast("Mythic")(word.rarity)),
   },
   {
     id: "head-start",
@@ -1170,7 +1186,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     icon: "🏁",
     title: "Head start",
     description: "Find a Mythic or better word that starts with the drop.",
-    check: firstPuzzle(headStart),
+    check: firstWordWhere(headStart),
   },
   {
     id: "bookends",
@@ -1589,10 +1605,16 @@ export function achievementStatuses(
     (achievement) => !achievement.viaSuggestions || takesPlayerMessages()
   ).map((achievement) => {
     const keptOn = kept[achievement.id];
-    if (keptOn) return { achievement, earnedOn: keptOn };
-    const { earnedOn, progress } = achievement.check(record, today);
-    return earnedOn ? { achievement, earnedOn } : { achievement, earnedOn: null, progress };
+    const { earnedOn, progress, word } = achievement.check(record, today);
+    // A kept badge names its word only while the record still says that word
+    // earned it on that day: a word found later is not the one that did.
+    if (keptOn) return withWord({ achievement, earnedOn: keptOn }, earnedOn === keptOn ? word : undefined);
+    return earnedOn ? withWord({ achievement, earnedOn }, word) : { achievement, earnedOn: null, progress };
   });
+}
+
+function withWord(status: AchievementStatus, word: string | undefined): AchievementStatus {
+  return word ? { ...status, word } : status;
 }
 
 /** This browser's record, as the achievements read it. */
@@ -1679,10 +1701,10 @@ export function earnedIds(statuses: readonly AchievementStatus[]): Set<string> {
 export function newlyEarned(
   before: ReadonlySet<string>,
   statuses: readonly AchievementStatus[]
-): Achievement[] {
-  return statuses.flatMap(({ achievement, earnedOn }) =>
+): EarnedAchievement[] {
+  return statuses.flatMap(({ achievement, earnedOn, word }) =>
     earnedOn && !before.has(achievement.id) && !achievement.viaSuggestions && !achievement.quiet
-      ? [achievement]
+      ? [word ? { ...achievement, word } : achievement]
       : []
   );
 }
@@ -1736,9 +1758,9 @@ const CATCH_UP_ORDER: readonly AchievementGroup[] = [
 export function achievementsToCatchUp(
   announced: ReadonlySet<string>,
   statuses: readonly AchievementStatus[]
-): Achievement[] {
+): EarnedAchievement[] {
   const rank = (achievement: Achievement) =>
     CATCH_UP_ORDER.indexOf(achievement.group) * ACHIEVEMENTS.length -
-    ACHIEVEMENTS.indexOf(achievement);
+    ACHIEVEMENTS.findIndex(({ id }) => id === achievement.id);
   return newlyEarned(announced, statuses).sort((a, b) => rank(a) - rank(b));
 }

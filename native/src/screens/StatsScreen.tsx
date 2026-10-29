@@ -319,9 +319,9 @@ function Achievements({ statuses }: { statuses: AchievementStatus[] }) {
 
 function AchievementCard({ status }: { status: AchievementStatus }) {
   const theme = useTheme();
-  const { achievement, earnedOn, progress } = status;
+  const { achievement, earnedOn, progress, word } = status;
   const meta = earnedOn
-    ? `Earned ${formatDateLabel(earnedOn)}`
+    ? `Earned ${formatDateLabel(earnedOn)}${word ? ` with ${word}` : ''}`
     : progress
       ? `${progress.current} / ${progress.target}`
       : 'Locked';

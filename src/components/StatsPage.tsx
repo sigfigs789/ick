@@ -307,7 +307,7 @@ function Achievements({ statuses }: { statuses: AchievementStatus[] }) {
 }
 
 function AchievementCard({ status }: { status: AchievementStatus }) {
-  const { achievement, earnedOn, progress } = status;
+  const { achievement, earnedOn, progress, word } = status;
   const share = earnedShareLabel(achievement.id);
   const onlyYou = soleHolder(achievement.id)?.self ?? false;
   return (
@@ -319,7 +319,15 @@ function AchievementCard({ status }: { status: AchievementStatus }) {
         <span className="stats__achievement-title">{achievement.title}</span>
         <span className="stats__achievement-text">{achievement.description}</span>
         {earnedOn ? (
-          <span className="stats__achievement-meta">Earned {formatDateLabel(earnedOn)}</span>
+          <span className="stats__achievement-meta">
+            Earned {formatDateLabel(earnedOn)}
+            {/* One flex item, so the meta's gap is the space before "with". */}
+            {word && (
+              <span className="stats__achievement-word">
+                with <span className="stats__achievement-word-text">{word}</span>
+              </span>
+            )}
+          </span>
         ) : progress ? (
           <span className="stats__achievement-meta">
             <span className="stats__progress" aria-hidden="true">

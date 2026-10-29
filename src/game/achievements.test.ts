@@ -49,6 +49,32 @@ describe("achievements", () => {
     expect(statusOf("first-legend", { history }).earnedOn).toBeNull();
   });
 
+  it("names the word that earned a one-word badge", () => {
+    const history = [
+      day("2026-10-01", [word("Common", "inkling")]),
+      day("2026-10-03", [word("Rare", "blink"), word("Mythic", "inkhornism")]),
+      day("2026-10-04", [word("Mythic", "inkwell")]),
+    ];
+    expect(statusOf("first-mythic", { history }).word).toBe("inkhornism");
+    expect(statusOf("first-word", { history }).word).toBe("inkling");
+    expect(statusOf("straight-in", { history }).word).toBe("blink");
+    expect(statusOf("head-start", { history }).word).toBe("inkhornism");
+    expect(statusOf("old-macdonald", { history }).word).toBeUndefined();
+    expect(statusOf("double-mythic", { history }).word).toBeUndefined();
+  });
+
+  it("names a kept badge's word only while that word still earns it that day", () => {
+    const history = [day("2026-10-03", [word("Mythic", "inkhornism")])];
+    expect(statusOf("first-mythic", { history }, { "first-mythic": "2026-10-03" }).word).toBe("inkhornism");
+    expect(statusOf("first-mythic", { history }, { "first-mythic": "2026-10-01" }).word).toBeUndefined();
+  });
+
+  it("carries the word to the card that announces the badge", () => {
+    const record = { history: [day("2026-10-03", [word("Mythic", "inkhornism")])], onItsDay: [], streak: noStreak };
+    const fresh = newlyEarned(new Set(), achievementStatuses(record, {}, TODAY));
+    expect(fresh.find((a) => a.id === "first-mythic")?.word).toBe("inkhornism");
+  });
+
   it("shows how far along a count is, and dates the puzzle that reaches it", () => {
     const mythics = (date: string, n: number) =>
       day(date, Array.from({ length: n }, (_, i) => word("Mythic", `m${date}${i}`)));
