@@ -1,0 +1,242 @@
+{
+  "date": "2026-10-29",
+  "run": "https://github.com/sigfigs789/ick/actions/runs/40950562070",
+  "accepted": [
+    {
+      "word": "aliferous",
+      "reason": "A rare word for having wings, listed in Wiktionary; it already plays.",
+      "suggestions": 2,
+      "zipf": -0.8,
+      "zipfEstimated": true,
+      "alreadyPlayable": true,
+      "playsNow": true,
+      "score": "10.00 (unattested)",
+      "rarity": "Legend"
+    },
+    {
+      "word": "aponia",
+      "reason": "Epicurean term for freedom from bodily pain; it already plays.",
+      "suggestions": 1,
+      "zipf": -0.4,
+      "zipfEstimated": false,
+      "alreadyPlayable": true,
+      "playsNow": true,
+      "score": "9.95",
+      "rarity": "Legend"
+    },
+    {
+      "word": "cattywampus",
+      "reason": "American dialect word for askew or in disarray; it already plays.",
+      "suggestions": 1,
+      "zipf": -0.1,
+      "zipfEstimated": false,
+      "alreadyPlayable": true,
+      "playsNow": true,
+      "score": "9.94",
+      "rarity": "Legend"
+    },
+    {
+      "word": "diaphanous",
+      "reason": "Light and delicate enough to see through; a standard dictionary word that already plays.",
+      "suggestions": 1,
+      "zipf": 1.97,
+      "zipfEstimated": false,
+      "alreadyPlayable": true,
+      "playsNow": true,
+      "score": "8.9",
+      "rarity": "Extremely Rare"
+    },
+    {
+      "word": "ereyesterday",
+      "reason": "An archaic word for the day before yesterday; it already plays.",
+      "suggestions": 1,
+      "zipf": -1.1,
+      "zipfEstimated": false,
+      "alreadyPlayable": true,
+      "playsNow": true,
+      "score": "9.98",
+      "rarity": "Legend"
+    },
+    {
+      "word": "fremen",
+      "reason": "The desert people of Frank Herbert's Dune; a well-known proper noun, correctly spelled.",
+      "suggestions": 3,
+      "zipf": 1.91,
+      "zipfEstimated": false,
+      "alreadyPlayable": false,
+      "playsNow": true,
+      "score": "9.0",
+      "rarity": "Elusive"
+    },
+    {
+      "word": "hoddypeak",
+      "reason": "An obsolete insult meaning a fool or simpleton, used by Skelton and in Tudor plays.",
+      "suggestions": 1,
+      "zipf": -1.0,
+      "zipfEstimated": true,
+      "alreadyPlayable": false,
+      "playsNow": true,
+      "score": "10.00 (unattested)",
+      "rarity": "Legend"
+    },
+    {
+      "word": "mathom",
+      "reason": "Tolkien's hobbit word for a keepsake nobody uses but nobody will throw away; it already plays.",
+      "suggestions": 1,
+      "zipf": 0,
+      "zipfEstimated": false,
+      "alreadyPlayable": true,
+      "playsNow": true,
+      "score": "9.94",
+      "rarity": "Legend"
+    },
+    {
+      "word": "temerate",
+      "reason": "An obsolete verb meaning to violate or profane; the OED records it in the 1600s.",
+      "suggestions": 1,
+      "zipf": -1.3,
+      "zipfEstimated": true,
+      "alreadyPlayable": false,
+      "playsNow": true,
+      "score": "10.00 (unattested)",
+      "rarity": "Legend"
+    },
+    {
+      "word": "uhtceare",
+      "reason": "Old English for worry in the hours before dawn; Wiktionary lists it, and modern writers have revived it.",
+      "suggestions": 1,
+      "zipf": 0.2,
+      "zipfEstimated": true,
+      "alreadyPlayable": false,
+      "playsNow": true,
+      "score": "10.00 (unattested)",
+      "rarity": "Legend"
+    },
+    {
+      "word": "veteratorian",
+      "reason": "An obsolete adjective for crafty from long experience; the OED records it from 1656 to 1864.",
+      "suggestions": 1,
+      "zipf": -1.5,
+      "zipfEstimated": true,
+      "alreadyPlayable": false,
+      "playsNow": true,
+      "score": "10.00 (unattested)",
+      "rarity": "Legend"
+    }
+  ],
+  "rejected": [
+    {
+      "word": "asapiophobe",
+      "reason": "Not a word: no dictionary entry and no usage we could find.",
+      "suggestions": 1,
+      "zipf": -2.0,
+      "zipfEstimated": true
+    },
+    {
+      "word": "ashawaganda",
+      "reason": "Misspelling of ashwagandha.",
+      "suggestions": 1,
+      "zipf": -0.3,
+      "zipfEstimated": true
+    },
+    {
+      "word": "charmolypi",
+      "reason": "Not English: a romanization of the Greek word for joyful sadness, found only in lists of foreign words.",
+      "suggestions": 1,
+      "zipf": -0.8,
+      "zipfEstimated": true
+    },
+    {
+      "word": "deaflash",
+      "reason": "Not a word: no dictionary entry and no usage we could find.",
+      "suggestions": 1,
+      "zipf": -1.8,
+      "zipfEstimated": true
+    },
+    {
+      "word": "desiderum",
+      "reason": "Misspelling of desiderium.",
+      "suggestions": 1,
+      "zipf": -0.5,
+      "zipfEstimated": true
+    },
+    {
+      "word": "doomfire",
+      "reason": "Not a word: no dictionary has it, and its only use is as an obscure place or spell name in a few games, not a well-known proper noun.",
+      "suggestions": 2,
+      "zipf": 0.3,
+      "zipfEstimated": true
+    },
+    {
+      "word": "eremition",
+      "reason": "Not a word: no dictionary has it; the real word for a hermit is eremite.",
+      "suggestions": 1,
+      "zipf": -1.8,
+      "zipfEstimated": true
+    },
+    {
+      "word": "flippercanorious",
+      "reason": "Not a word: no dictionary entry and no usage we could find.",
+      "suggestions": 1,
+      "zipf": -2.0,
+      "zipfEstimated": true
+    },
+    {
+      "word": "flizzoms",
+      "reason": "Not a word: no dictionary entry and no usage we could find.",
+      "suggestions": 1,
+      "zipf": -2.0,
+      "zipfEstimated": true
+    },
+    {
+      "word": "futifaction",
+      "reason": "Not a word: no dictionary entry and no usage we could find.",
+      "suggestions": 1,
+      "zipf": -2.0,
+      "zipfEstimated": true
+    },
+    {
+      "word": "githerments",
+      "reason": "Not a word: no dictionary entry and no usage we could find.",
+      "suggestions": 1,
+      "zipf": -2.0,
+      "zipfEstimated": true
+    },
+    {
+      "word": "githermentz",
+      "reason": "Not a word: no dictionary entry and no usage we could find.",
+      "suggestions": 1,
+      "zipf": -2.0,
+      "zipfEstimated": true
+    },
+    {
+      "word": "matham",
+      "reason": "Misspelling of mathom.",
+      "suggestions": 1,
+      "zipf": -0.3,
+      "zipfEstimated": true
+    },
+    {
+      "word": "peredinate",
+      "reason": "Misspelling of perendinate.",
+      "suggestions": 1,
+      "zipf": -1.5,
+      "zipfEstimated": true
+    },
+    {
+      "word": "serathine",
+      "reason": "Not a word: no dictionary entry and no usage we could find.",
+      "suggestions": 1,
+      "zipf": -1.5,
+      "zipfEstimated": true
+    },
+    {
+      "word": "zzqlyx",
+      "reason": "Not a word: a keyboard mash with no dictionary entry or real usage.",
+      "suggestions": 1,
+      "zipf": -2.0,
+      "zipfEstimated": true
+    }
+  ],
+  "skipped": []
+}
