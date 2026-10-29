@@ -16,6 +16,13 @@
 -- Without p_experiment it is the function it was, for every other experiment.
 -- The old four-argument function is dropped so a call cannot be ambiguous
 -- between it and the defaulted overload, and the grants are given again.
+--
+-- First written as 20261119000000, the version
+-- 20261119000000_player_handle_longer_lists had already taken on production,
+-- so `db push` counted it applied and never ran it. The api asked for
+-- p_experiment anyway, the call failed, and /experimentsV2 would not load. It
+-- runs as 20261122000000 instead; nothing in it minds running after the
+-- player_handle migrations.
 
 drop function if exists public.analytics_v2_experiment(date, text, date, date);
 
