@@ -28,9 +28,9 @@ describe("forcedPlayTabVariant", () => {
     expect(forcedPlayTabVariant("?play-tab=maybe")).toBeNull();
   });
 
-  it("forces NorthernBear87 to hidden unless the query string says otherwise", () => {
-    // An id whose handle is NorthernBear87 (see game/handle.ts).
-    localStorage.setItem("ick:player", JSON.stringify({ id: "tester-3185178" }));
+  it("forces FleetAspen87 to hidden unless the query string says otherwise", () => {
+    // An id whose handle is FleetAspen87 (see game/handle.ts).
+    localStorage.setItem("ick:player", JSON.stringify({ id: "tester-10338031" }));
     expect(forcedPlayTabVariant("")).toBe("hidden");
     expect(forcedPlayTabVariant("?play-tab=shown")).toBe("shown");
     localStorage.setItem("ick:player", JSON.stringify({ id: "someone-else" }));

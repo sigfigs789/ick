@@ -861,9 +861,17 @@ sanitise and nothing to impersonate.
 The lists are hand-written rather than drawn from the game's dictionary: a
 dictionary pairing would eventually produce something unkind or absurd, and
 nobody gets to choose their handle, so the floor matters more than the ceiling.
-128 × 128 × 100 gives 1.6M handles — the number is what makes duplicates
+256 × 256 × 100 gives 6.5M handles — the number is what makes duplicates
 unlikely rather than merely uncommon, since two words alone would start colliding
-on the same board at a few hundred players.
+on the same board at several hundred players.
+
+The lists were 128 words each until the handles started to feel repetitive, and
+doubling them renamed every player once. Any change to either list does that,
+so it should be rare, and `public.player_handle` (the Postgres port the
+analytics and achievement-rate reports use) has to change in the same PR;
+`src/game/handle.test.ts` fails if the newest migration's lists drift from the
+TypeScript ones. `TESTER_HANDLES` in `src/game/testers.ts` is keyed by handle
+too, so it moves with them.
 
 **Each row names the player, then their find**, on both boards: `TranquilBison72`
 / `6 puzzles · asphyxiate 8.3`. The weekly board briefly led with the week's find
