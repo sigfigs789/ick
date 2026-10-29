@@ -110,6 +110,11 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
   streak counter live in `localStorage`, keyed by calendar date. Once the
   puzzle is marked complete it can't be re-completed, but players can
   still revisit their result afterward.
+  The board keeps each player's streak as their game reports it, and a
+  fresh browser that adopts Muse AI's id (`?visitor=…&player=<uuid>`, see
+  `src/game/player.ts`) reads it back before the first render
+  (`src/game/streakRestore.ts`, `GET /api/leaderboard?restore=<uuid>`), so
+  Muse's streak carries on from run to run instead of restarting at one.
 - **Sharing** (`src/game/share.ts`, `src/components/ShareImageButton.tsx`):
   two ways to share a result, both spoiler-free by default via the same
   toggle in `ResultsPanel`.

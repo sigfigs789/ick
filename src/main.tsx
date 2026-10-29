@@ -6,6 +6,7 @@ import { setReporting } from './analytics'
 import { installChunkRecovery } from './chunkRecovery'
 import { assignStartingMode } from './game/onboarding'
 import { adoptPlayerFromUrl } from './game/player'
+import { restoreStreak } from './game/streakRestore'
 import { excludeShareNameIfChosen } from './game/shareName'
 import { setPlayerMessages } from './game/playerMessages'
 import { visitorTag } from './game/visitor'
@@ -29,7 +30,7 @@ if (isVercelHost(window.location.hostname)) {
 // Muse AI's `?player=` id, stored before Root's `joinBoard` would mint a new
 // one (see game/player.ts). Taken out of the address bar once read, so it is
 // not carried into anything shared.
-adoptPlayerFromUrl(window.location.search)
+const adoptedPlayer = adoptPlayerFromUrl(window.location.search)
 {
   const url = new URL(window.location.href)
   if (url.searchParams.has('player')) {
@@ -50,8 +51,16 @@ excludeShareNameIfChosen()
 // (see game/visitor.ts).
 visitorTag(window.location.search)
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <Root />
-  </StrictMode>,
-)
+// A fresh browser that has just adopted Muse's id carries on its streak from
+// the board before the game reads it (see game/streakRestore.ts). Everyone
+// else renders straight away; a restore that fails or times out renders as if
+// it had never been tried.
+function render() {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <Root />
+    </StrictMode>,
+  )
+}
+if (adoptedPlayer) void restoreStreak(adoptedPlayer).then(render)
+else render()
