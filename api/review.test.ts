@@ -551,9 +551,13 @@ describe("api/review", () => {
       inputPlacement: body,
       playTab: body,
       shareTint: body,
+      idleHintNew: body,
+      idleHintReturning: body,
     });
     const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
     expect(calls.map((c) => String(c[0]).split("/").pop())).toEqual([
+      "analytics_v2_experiment",
+      "analytics_v2_experiment",
       "analytics_v2_experiment",
       "analytics_v2_experiment",
       "analytics_v2_experiment",
@@ -575,6 +579,16 @@ describe("api/review", () => {
     });
     expect(JSON.parse(String(calls[5][1].body))).toEqual({ p_today: "2026-10-22", p_event: "play_tab_assigned" });
     expect(JSON.parse(String(calls[6][1].body))).toEqual({ p_today: "2026-10-22", p_event: "share_tint_assigned" });
+    expect(JSON.parse(String(calls[7][1].body))).toEqual({
+      p_today: "2026-10-22",
+      p_event: "idle_hint_triggered",
+      p_experiment: "new",
+    });
+    expect(JSON.parse(String(calls[8][1].body))).toEqual({
+      p_today: "2026-10-22",
+      p_event: "idle_hint_triggered",
+      p_experiment: "returning",
+    });
     expect((await handler(get("?list=experiments-v2"))).status).toBe(400);
   });
 
@@ -594,6 +608,13 @@ describe("api/review", () => {
         p_to: "2026-10-22",
       });
     }
+    expect(JSON.parse(String(calls[8][1].body))).toEqual({
+      p_today: "2026-10-22",
+      p_event: "idle_hint_triggered",
+      p_from: "2026-10-15",
+      p_to: "2026-10-22",
+      p_experiment: "returning",
+    });
     for (const bad of ["&from=2026-10-15", "&from=2026-10-21&to=2026-10-15", "&from=2026-10-15&to=2026-10-23"]) {
       expect((await handler(get(`?list=experiments-v2&today=2026-10-22${bad}`))).status).toBe(400);
     }
