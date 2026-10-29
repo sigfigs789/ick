@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ACHIEVEMENT_GROUPS,
   earnedShareLabel,
+  fellowHolder,
   fetchAchievementRates,
   soleHolder,
   subscribeToAchievementRates,
@@ -314,7 +315,8 @@ function AchievementCard({ status }: { status: AchievementStatus }) {
   const { achievement, earnedOn, progress } = status;
   const held = Boolean(earnedOn);
   const share = earnedShareLabel(achievement.id, undefined, held);
-  const onlyYou = soleHolder(achievement.id, undefined, held)?.self ?? false;
+  const onlyYou =
+    (soleHolder(achievement.id, undefined, held)?.self ?? false) || fellowHolder(achievement.id, undefined, held) !== null;
   return (
     <li className={`stats__achievement${earnedOn ? " stats__achievement--earned" : ""}`}>
       <span className="stats__achievement-icon" aria-hidden="true">

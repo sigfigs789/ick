@@ -1409,6 +1409,11 @@ let ratesAnswered = 0;
 let ratesReported: Set<string> | null = null;
 /** Badges reported after the first ask: the counts since may include this player. */
 let reportedSince = new Set<string>();
+/**
+ * Every handle the counts have named as a badge's one holder. A badge is kept
+ * for good, so a player named once still holds it after others join them.
+ */
+let namedHolders: Record<string, string> = { ...snapshot.sole };
 const ratesListeners = new Set<() => void>();
 
 function isRates(body: unknown): body is AchievementRates {
@@ -1431,6 +1436,7 @@ function askForRates(url: string): Promise<AchievementRates | null> {
       if (asked > ratesAnswered) {
         ratesAnswered = asked;
         liveRates = body;
+        Object.assign(namedHolders, body.sole);
         for (const listener of ratesListeners) listener();
       }
       return liveRates;
@@ -1487,6 +1493,7 @@ export function resetAchievementRates(live: AchievementRates | null = null): voi
   ratesAnswered = 0;
   ratesReported = null;
   reportedSince = new Set();
+  namedHolders = { ...snapshot.sole, ...live?.sole };
 }
 
 /**
@@ -1553,6 +1560,21 @@ export function soleHolder(
   return name ? { name, self: name === ownHandle() } : null;
 }
 
+/**
+ * The other player holding `id` when this one makes two: "Only earned by
+ * StormyFox47 and you!". Either the counts name one holder who is someone else
+ * and have not heard this player's report yet, or they have -- they were asked
+ * after it -- and read two, one of them a player they named before.
+ */
+export function fellowHolder(id: string, rates: AchievementRates = ratesNow(), held = false): string | null {
+  if (!held) return null;
+  const count = rates.earned[id] ?? 0;
+  let named: string | undefined;
+  if (count === 1) named = rates.sole?.[id];
+  else if (count === 2 && reportedSince.has(id)) named = rates.sole?.[id] ?? namedHolders[id];
+  return named && named !== ownHandle() ? named : null;
+}
+
 /** This browser's handle on the board, if it has joined. */
 function ownHandle(): string | null {
   const playerId = loadPlayerId();
@@ -1575,12 +1597,15 @@ function formatShare(share: number): string {
  * How many of the players who have ever guessed hold `id`, as the Stats page
  * shows under each badge: "46% of players", or for a badge only one player
  * holds, their name -- "Only earned by StormyFox47!" -- or "Only earned by
- * you!" to that player. Null for a badge nobody has counted yet. `held` says
- * this player holds it, so it is never "No player yet" to them.
+ * you!" to that player, or "Only earned by StormyFox47 and you!" to the one
+ * who joins them. Null for a badge nobody has counted yet. `held` says this
+ * player holds it, so it is never "No player yet" to them.
  */
 export function earnedShareLabel(id: string, rates: AchievementRates = ratesNow(), held = false): string | null {
   const holder = soleHolder(id, rates, held);
   if (holder) return holder.self ? "Only earned by you!" : `Only earned by ${holder.name}!`;
+  const fellow = fellowHolder(id, rates, held);
+  if (fellow) return `Only earned by ${fellow} and you!`;
   const share = shareOf(id, countingSelf(id, rates, held));
   if (share === null) return null;
   if (share === 0) return "No player yet";
