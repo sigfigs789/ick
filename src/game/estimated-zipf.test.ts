@@ -5,8 +5,10 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   estimatedZipfEntry,
   indexEstimatedZipf,
+  isUnattestedZipf,
   rarityFor,
   rarityForUncurated,
+  rarityScore,
   scoredFromEstimate,
   setEstimatedZipfForTests,
   unattestedZipf,
@@ -66,9 +68,14 @@ describe("Claude's estimates in scoring", () => {
     expect(rarityFor("abandon", SINCE, "freeform")?.zipf).toBe(measured);
   });
 
-  it("floor at the sentinel, so a guess below it still scores 10.00", () => {
+  it("floor just above the sentinel, so a guess below it scores 10.00 without reading as unattested", () => {
     setEstimatedZipfForTests([batch(SINCE, { chatchke: -9 })]);
-    expect(rarityFor("chatchke", SINCE, "freeform")?.zipf).toBe(unattestedZipf());
+    const info = rarityFor("chatchke", SINCE, "freeform")!;
+    expect(info.zipf).toBeCloseTo(unattestedZipf() + 0.01, 10);
+    expect(isUnattestedZipf(info.zipf)).toBe(false);
+    expect(rarityScore(info.zipf, SINCE)).toBe(10);
+    expect(info.rarity).toBe("Legend");
+    expect(scoreSource(SINCE, { word: "chatchke", ...info })).toBe("estimated");
   });
 
   it("reach corpus words through the uncurated path", () => {

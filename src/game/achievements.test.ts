@@ -742,8 +742,9 @@ describe("countedRecord", () => {
   });
 
   it("keeps a 40 built on unattested words out of Forty Carat's count", () => {
-    // 2026-10-28's board-topping 40: two flat 10.00s no corpus measures, two
-    // measured at -1.5. The player holds the badge; the share does not count it.
+    // 2026-10-28's board-topping 40 as saved then: two estimates floored onto
+    // the sentinel itself, two estimated at -1.5. The player holds the badge;
+    // the share does not count it.
     const words = [-1.57, -1.57, -1.5, -1.5].map(
       (zipf, i): AcceptedWord => ({ word: `w${i}`, rarity: "Legend", zipf })
     );
@@ -753,6 +754,18 @@ describe("countedRecord", () => {
     const counted = countedRecord({ history, onItsDay: [], streak: noStreak });
     expect(statusOf("total-40", counted).earnedOn).toBeNull();
     expect(statusOf("total-32", counted).earnedOn).toBeNull();
+  });
+
+  it("counts a 40 built on estimates floored above the sentinel", () => {
+    // The same four words found now: an estimate below the rarest measured
+    // word floors a hundredth above the sentinel, still 10.00 but not unattested.
+    const words = [-1.56, -1.56, -1.5, -1.5].map(
+      (zipf, i): AcceptedWord => ({ word: `w${i}`, rarity: "Legend", zipf })
+    );
+    const history = [day("2026-10-28", words)];
+    expect(totalRarityScore(words, "2026-10-28")).toBe(40);
+    const counted = countedRecord({ history, onItsDay: [], streak: noStreak });
+    expect(statusOf("total-40", counted).earnedOn).toBe("2026-10-28");
   });
 
   it("still counts a 40 of measured words", () => {

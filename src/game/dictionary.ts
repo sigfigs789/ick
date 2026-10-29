@@ -903,15 +903,22 @@ export function estimatedZipfEntry(word: string): EstimatedZipf | undefined {
  * its base. It is not used to price a fold base for some other word (see
  * `zipfFor`), which keeps every estimate's reach to the one word it was made for.
  *
- * Floored at the sentinel, so a guess below the rarest measured word still
- * scores the 10.00 it would have scored without one.
+ * Floored one hundredth above the sentinel (ESTIMATE_FLOOR), so a guess below
+ * the rarest measured word still scores 10.00 but no longer reads as the
+ * sentinel: `isUnattestedZipf` is false for it, and the achievement share
+ * (`countedRecord`) counts it as the estimated find it is.
  */
 function withEstimate(word: string, ownZipf: number, date?: string): number {
   if (ownZipf !== MIN_ZIPF) return ownZipf;
   const estimate = ESTIMATED_ZIPF.get(word);
   if (!estimate || (date !== undefined && date < estimate.since)) return ownZipf;
-  return Math.max(estimate.zipf, MIN_ZIPF);
+  return Math.max(estimate.zipf, ESTIMATE_FLOOR);
 }
+
+// The lowest Zipf an estimate scores on: one hundredth above the sentinel, the
+// data's resolution. Still 10.00 on the spread tail (9.9996 rounds up), but
+// distinguishable from a word nothing measures or estimates.
+const ESTIMATE_FLOOR = (minZipfHundredths + 1) / 100;
 
 /**
  * Whether `word`'s score under `date` came from Claude's estimate rather than a
@@ -922,7 +929,7 @@ function withEstimate(word: string, ownZipf: number, date?: string): number {
 export function scoredFromEstimate(word: string, zipf: number, date?: string): boolean {
   const estimate = ESTIMATED_ZIPF.get(word.toLowerCase());
   if (!estimate || (date !== undefined && date < estimate.since)) return false;
-  return zipf === Math.max(estimate.zipf, MIN_ZIPF);
+  return zipf === Math.max(estimate.zipf, ESTIMATE_FLOOR);
 }
 
 // -- Curated fold exemptions (src/data/fold-exemptions.json) -----------------
@@ -2131,8 +2138,8 @@ const LIFTED_FREEFORM_SCORING: Scoring = lifted(CORPUS_FREEFORM_SCORING);
  * The old pin at 0 was there so new rarer words could not shift scores already
  * shown; the dated profiles do that job, provided the profile reads a fixed
  * number rather than the data's live minimum. So the floor is today's sentinel
- * as a constant (SPREAD_TAIL_FLOOR). Estimates are floored at the sentinel (see
- * withEstimate), which sits at or under it. Every score in the band is still
+ * as a constant (SPREAD_TAIL_FLOOR). Estimates are floored a hundredth above the
+ * sentinel (see withEstimate), which still rounds to 10.00. Every score in the band is still
  * >= 9.9, so no word changes rank -- only the hundredths move.
  */
 export const TAIL_SPREAD_START = "2026-10-10";
