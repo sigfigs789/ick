@@ -792,8 +792,8 @@ export function LeaderboardPage() {
                 <Board
                   heading="Days played"
                   // Not a window either: every day ever played on the day it
-                  // dropped, either mode, counted once.
-                  headingDetail="All time, either mode"
+                  // dropped, counted once.
+                  headingDetail="All time"
                   entries={daysBoard?.entries ?? []}
                   self={daysBoard?.self ?? null}
                   emptyMessage="Nobody has played yet. Play today to be first."
