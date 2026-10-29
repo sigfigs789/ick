@@ -290,9 +290,23 @@ describe("syncAchievements", () => {
   });
 });
 
+describe("short-king", () => {
+  it("needs a short word to be Elusive or better", () => {
+    const common = day("2026-10-01", [word("Common", "stir"), word("Mythic", "strobile")]);
+    const rare = day("2026-10-02", [word("Extremely Rare", "stir")]);
+    expect(statusOf("short-king", { history: [common, rare] }).earnedOn).toBeNull();
+    const elusive = day("2026-10-03", [word("Elusive", "stir")]);
+    expect(statusOf("short-king", { history: [common, rare, elusive] }).earnedOn).toBe("2026-10-03");
+    const legend = day("2026-10-01", [word("Legend", "ziti")]);
+    expect(statusOf("short-king", { history: [legend] }).earnedOn).toBe("2026-10-01");
+    const long = day("2026-10-01", [word("Legend", "zitis")]);
+    expect(statusOf("short-king", { history: [long] }).earnedOn).toBeNull();
+  });
+});
+
 describe("newlyEarned", () => {
   const record: AchievementRecord = {
-    history: [day("2026-10-01", [word("Common", "stir")]), day("2026-10-03", [word("Mythic")])],
+    history: [day("2026-10-01", [word("Elusive", "stir")]), day("2026-10-03", [word("Mythic")])],
     onItsDay: [],
     streak: noStreak,
     suggestions: [{ word: "inkle", suggestedOn: "2026-10-02" }],
