@@ -27,7 +27,6 @@ import type { InputPlacementVariant } from "./game/inputPlacementTest";
 import type { PlayTabVariant } from "./game/playTabTest";
 import type { ShareNameVariant } from "./game/shareNameTest";
 import type { ShareTintVariant } from "./game/shareTintTest";
-import type { DoOverVariant } from "./game/doOverTest";
 import type { WordOfDayVariant } from "./game/wordOfDay";
 import { APP_VERSION } from "./version";
 import { isBotUserAgent } from "./game/botUa";
@@ -962,22 +961,6 @@ export function trackPlayTabAssigned(variant: PlayTabVariant, date: string, retu
  */
 export function trackShareTintAssigned(variant: ShareTintVariant, date: string, returning: boolean) {
   send("share_tint_assigned", {
-    variant,
-    returning,
-    puzzle_date: date,
-    puzzle_number: puzzleNumber(date),
-    live_date: todayDateString(),
-    mode: modeOf(date),
-  });
-}
-
-/**
- * The do-over test's draw (see game/doOverTest.ts), once per player, the first
- * time the do-over pie would appear. Shaped like the share tint test's, for
- * `analytics_v2_experiment`: `shown` gets the do-over, `hidden` does not.
- */
-export function trackDoOverAssigned(variant: DoOverVariant, date: string, returning: boolean) {
-  send("do_over_assigned", {
     variant,
     returning,
     puzzle_date: date,

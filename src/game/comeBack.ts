@@ -58,10 +58,9 @@ const LAZY_SUNDAY_RULE =
 export function streakGoal(
   streak: StreakState,
   today: string,
-  locked: readonly AchievementStatus[] = [],
-  doOver = false
+  locked: readonly AchievementStatus[] = []
 ): string | null {
-  return comeBackGoal(streak, today, locked, doOver)?.line ?? null;
+  return comeBackGoal(streak, today, locked)?.line ?? null;
 }
 
 /** What a reward is, for a player who selects the line naming it. */
@@ -75,21 +74,19 @@ export interface GoalExplainer {
  * plain from the line itself: a 🧊 freeze, a lazy weekend, a do-over or an
  * achievement. Beating the best streak needs no explaining.
  *
- * `doOver`, for a player in the do-over's arm (see game/doOver.ts), adds the
- * do-over to the rewards, named only the day before it is earned. Unlike the
- * others it needs no streak, so a new player hears of it too.
+ * The do-over (see game/doOver.ts) is named only the day before it is
+ * earned. Unlike the others it needs no streak, so a new player hears of it too.
  */
 export function comeBackGoal(
   streak: StreakState,
   today: string,
-  locked: readonly AchievementStatus[] = [],
-  doOver = false
+  locked: readonly AchievementStatus[] = []
 ): { line: string; explainer?: GoalExplainer } | null {
   const days = streak.currentStreak;
   const next = days + 1;
   const best = Math.max(streak.longestStreak, days);
   const doOverGoal =
-    doOver && doOverTomorrow(streak, today)
+    doOverTomorrow(streak, today)
       ? {
           line: `Play tomorrow and unlock a do-over ${DO_OVER_EMOJI}`,
           explainer: { title: "Do-over", text: "An extra retry, for any day this week." },

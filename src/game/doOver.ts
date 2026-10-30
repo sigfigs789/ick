@@ -9,7 +9,10 @@
  * earns no other. Nor does it carry over: it is that week's or nothing, like
  * the lazy weekend. The week is the board's, Monday to Sunday (see game/week.ts).
  *
- * Only for the `shown` arm of the do-over test (see game/doOverTest.ts).
+ * Once the puzzle's word of the day is showing -- the puzzle finished with
+ * its own retry gone, spent on a word or on the reveal -- the do-over cannot
+ * be used on it: it would re-open a puzzle whose best word is known. The
+ * reveal itself never spends the do-over; the week keeps it for another day.
  */
 
 import { addDays, daysSinceEpoch } from "./date";

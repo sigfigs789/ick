@@ -239,24 +239,6 @@ describe("ExperimentsV2Page", () => {
     expect(screen.getAllByRole("table")).toHaveLength(3);
   });
 
-  it("draws the do-over test, new and returning players apart", async () => {
-    const doOver = {
-      since: "2026-11-02",
-      arms: [
-        { variant: "shown", segment: "all", assigned: 60, d1: { cohort: 50, returned: 20 } },
-        { variant: "shown", segment: "new", assigned: 25, d1: { cohort: 20, returned: 6 } },
-        { variant: "hidden", segment: "all", assigned: 58, d1: { cohort: 49, returned: 18 } },
-        { variant: "hidden", segment: "new", assigned: 24, d1: { cohort: 21, returned: 6 } },
-      ],
-    };
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ doOver }), { status: 200 })));
-    render(<ExperimentsV2Page />);
-
-    expect(await screen.findByRole("heading", { name: "Do-over" })).toBeTruthy();
-    expect(screen.getByRole("table", { name: "Everyone drawn: with the do-over against without." })).toBeTruthy();
-    expect(screen.getAllByRole("table")).toHaveLength(3);
-  });
-
   it("draws the idle hint's two experiments, each in one table", async () => {
     const idleHint = {
       since: "2026-10-20",

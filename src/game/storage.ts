@@ -751,19 +751,12 @@ export function rescoreAcceptedWords(
  * the reveal costs the retry, and this is the payment -- the same flag
  * `retryWord` sets, with none of the roll-back, because no word moved.
  *
- * `doOver` gives up the week's do-over on this puzzle too, when one is held:
- * otherwise it would re-open the puzzle with the word already seen. The week
- * keeps it for another puzzle.
- *
  * Returns `progress` unchanged when there was no retry left to give up, so
  * callers can compare by identity to tell whether it happened.
  */
-export function forfeitRetry(
-  progress: DailyProgress,
-  { doOver = false }: { doOver?: boolean } = {}
-): DailyProgress {
-  if (progress.retryUsed && (!doOver || progress.doOverUsed)) return progress;
-  const updated: DailyProgress = { ...progress, retryUsed: true, ...(doOver ? { doOverUsed: true } : {}) };
+export function forfeitRetry(progress: DailyProgress): DailyProgress {
+  if (progress.retryUsed) return progress;
+  const updated: DailyProgress = { ...progress, retryUsed: true };
   saveProgress(updated);
   return updated;
 }

@@ -84,9 +84,9 @@ export interface DailyProgress {
    */
   retryUsed?: boolean;
   /**
-   * Whether the week's do-over has been spent on this puzzle, or given up to
-   * the reveal (see game/doOver.ts and storage.retryWord). The week remembers
-   * its own do-over apart from this; this is for the puzzle's retry count.
+   * Whether the week's do-over has been spent on this puzzle (see
+   * game/doOver.ts and storage.retryWord). The week remembers its own do-over
+   * apart from this; this is for the puzzle's retry count.
    */
   doOverUsed?: boolean;
   /**

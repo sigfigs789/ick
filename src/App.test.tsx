@@ -68,6 +68,7 @@ function puzzle(overrides: Record<string, unknown> = {}) {
     retryOffered: false,
     retrySpent: false,
     retriesLeft: null,
+    ownRetryOffered: false,
     retryAnswer,
     revealAnswer: vi.fn(),
     resetAnswers: vi.fn(),

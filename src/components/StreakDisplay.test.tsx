@@ -373,20 +373,17 @@ describe("StreakDisplay", () => {
     expect(screen.queryByText("Elite")).not.toBeInTheDocument();
     expect(screen.queryByText("High score")).not.toBeInTheDocument();
   });
-  it("fills the do-over pie a quarter a day and turns 🔄 on the fourth, for its arm", () => {
+  it("fills the do-over pie a quarter a day and turns 🔄 on the fourth", () => {
     localStorage.clear();
     const played = (dates: string[]) => ({ ...streak, currentStreak: dates.length, longestStreak: dates.length, playedDates: dates });
     const week = ["2026-11-02", "2026-11-03", "2026-11-04"];
     const { rerender } = render(<StreakDisplay streak={played(week)} date="2026-11-04" isToday />);
-    expect(screen.queryByRole("button", { name: /Do-over/ })).toBeNull();
-
-    rerender(<StreakDisplay streak={played(week)} date="2026-11-04" isToday doOver />);
     fireEvent.click(screen.getByRole("button", { name: /Do-over/ }));
     expect(screen.getByRole("dialog", { name: "Do-over" })).toHaveTextContent(
       "Play 4 days this week to unlock a do-over 🔄. 3 of 4 so far."
     );
 
-    rerender(<StreakDisplay streak={played([...week, "2026-11-05"])} date="2026-11-05" isToday doOver />);
+    rerender(<StreakDisplay streak={played([...week, "2026-11-05"])} date="2026-11-05" isToday />);
     expect(screen.getByRole("button", { name: /Do-over/ })).toHaveTextContent("🔄");
   });
 });

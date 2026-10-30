@@ -63,7 +63,6 @@ export function ExperimentsV2Page() {
           !experiments.inputPlacement &&
           !experiments.playTab &&
           !experiments.shareTint &&
-          !experiments.doOver &&
           !experiments.idleHintNew &&
           !experiments.idleHintReturning)
       }
@@ -216,27 +215,6 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
                 drawn once, the first time their average is Extremely Rare. Watch the sharing guardrail here as closely
                 as D1. Try either arm with <code>?share-tint=shown</code> or <code>=hidden</code>; a forced arm, or a
                 tester (forced to shown), is not counted.
-              </>
-            }
-          />
-        </Section>
-      )}
-
-      {experiments.doOver && (
-        <Section
-          title="Do-over"
-          note={`Whether a second retry, unlocked by playing 4 days in a week, moves the scorecard. Over players, new and returning apart.${drawn}`}
-        >
-          <ExperimentView
-            experiment={experiments.doOver}
-            subject="the do-over"
-            about={
-              <>
-                Half of players get the do-over: a pie beside the streak fills a quarter for each day played this week
-                and turns 🔄 on the fourth, which is one extra retry on any puzzle that week. It does not stack. The
-                come-back line names it the day before. Each is drawn the first time the pie would show, on today&rsquo;s
-                puzzle once a day of the week is played. Try either arm with <code>?do-over=shown</code> or{" "}
-                <code>=hidden</code>; a forced arm, or a tester (forced to shown), is not counted.
               </>
             }
           />

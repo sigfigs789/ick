@@ -149,8 +149,6 @@ export interface Experiments {
   playTab: Experiment | null;
   /** Its `shown` arm is the Share buttons in the Extremely Rare colour (see game/shareTintTest.ts). */
   shareTint: Experiment | null;
-  /** Its `shown` arm gets the do-over, a second retry for 4 days played in a week (see game/doOverTest.ts). */
-  doOver: Experiment | null;
   /**
    * The idle hint's two experiments, first-ever sessions and later ones, each
    * over the players who sat idle long enough to be hinted; `shown` is the
@@ -341,7 +339,6 @@ export async function fetchExperiments(today: string, span?: { from: string; to:
     inputPlacement: parseExperiment(body.inputPlacement),
     playTab: parseExperiment(body.playTab),
     shareTint: parseExperiment(body.shareTint),
-    doOver: parseExperiment(body.doOver),
     idleHintNew: parseExperiment(body.idleHintNew),
     idleHintReturning: parseExperiment(body.idleHintReturning),
     span: span ?? null,

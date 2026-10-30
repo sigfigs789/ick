@@ -86,8 +86,6 @@ interface Props {
   hideEmpty?: boolean;
   /** Whether this puzzle has a banked word, for `hideEmpty`. */
   hasWords?: boolean;
-  /** Whether the player gets the do-over (see game/doOver.ts), whose pie sits beside the lazy weekend's. */
-  doOver?: boolean;
 }
 
 export function StreakDisplay({
@@ -97,7 +95,6 @@ export function StreakDisplay({
   isToday = false,
   hideEmpty = false,
   hasWords = true,
-  doOver = false,
 }: Props) {
   // One icon for how the streak stands, as the streak board marks it (see
   // components/LeaderboardPage.tsx): 😴 on an earned weekend day not
@@ -125,8 +122,8 @@ export function StreakDisplay({
   // what a lazy weekend keeps.
   const week =
     isToday && date !== undefined && streak.currentStreak > 0 ? weekdayRestProgress(streak, date) : null;
-  // The days played towards this week's do-over, once one is.
-  const doOverWeek = doOver && isToday && date !== undefined ? doOverProgress(streak, date) : null;
+  // The days played towards this week's do-over (see game/doOver.ts), once one is.
+  const doOverWeek = isToday && date !== undefined ? doOverProgress(streak, date) : null;
   const showDoOver = doOverWeek !== null && (doOverWeek.played > 0 || doOverWeek.spent);
   // A past puzzle shows the freezes held on its day; today's shows today's.
   const { banked, cap } = freezesOn(streak, isToday ? undefined : date);

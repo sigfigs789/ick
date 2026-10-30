@@ -32,8 +32,6 @@ import { useForceUpdate } from "./hooks/useForceUpdate";
 import { useInputPlacement } from "./hooks/useInputPlacement";
 import { shareFlameTier } from "./game/shareFlames";
 import { useShareTint } from "./hooks/useShareTint";
-import { useDoOver } from "./hooks/useDoOver";
-import { doOverPlays } from "./game/doOver";
 import { isWinningRarity } from "./game/rank";
 import { celebrationFor } from "./game/celebration";
 import {
@@ -152,6 +150,7 @@ export default function App() {
     retryOffered,
     retrySpent,
     retriesLeft,
+    ownRetryOffered,
     retryAnswer,
     otherMode,
     crossMode,
@@ -195,9 +194,6 @@ export default function App() {
   // Half of players never see the word of the day; the draw is the first
   // finished puzzle, where it would first appear (see game/wordOfDay.ts).
   const wordOfDayShown = useWordOfDay(progress.completed, date);
-  // Whether the player gets the do-over (see game/doOver.ts), drawn the first
-  // time its pie would show: on today's puzzle, once a day this week is played.
-  const doOver = useDoOver(isToday && doOverPlays(streak, date) > 0, date);
   // The share panel stays out of the way until the Share beside the guess
   // count is pressed, which opens it and scrolls to it. Each press bumps the
   // count, so a second press scrolls back to it again. A new puzzle starts
@@ -666,7 +662,7 @@ export default function App() {
             date={date}
             isToday={isToday}
             completed={progress.completed}
-            retryOffered={retryOffered}
+            retryOffered={ownRetryOffered}
             onReveal={revealAnswer}
             wordOfDay={wordOfDayShown}
           />
@@ -743,7 +739,6 @@ export default function App() {
             isToday={isToday}
             hideEmpty
             hasWords={progress.acceptedWords.length > 0}
-            doOver={doOver}
           />
         )}
 
@@ -790,7 +785,7 @@ export default function App() {
               divider, just above yesterday's best: a look ahead to tomorrow,
               read with the footnotes rather than between the player and the
               guesses they have left. */}
-          {isToday && progress.acceptedWords.length > 0 && <ComeBackCard streak={streak} date={date} doOver={doOver} />}
+          {isToday && progress.acceptedWords.length > 0 && <ComeBackCard streak={streak} date={date} />}
           <YesterdaysBest date={date} isToday={isToday} />
         </div>
       </main>
