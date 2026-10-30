@@ -46,6 +46,8 @@ interface Props {
   scrollSignal?: number;
   /** The tier the Share button burns in, or none (see game/shareFlames.ts). */
   flames?: FlameTier | null;
+  /** Called after the result has been copied, as well as counted. */
+  onShared?: () => void;
   /** Whether the Share button takes the Extremely Rare colour (see game/shareTintTest.ts). */
   tinted?: boolean;
 }
@@ -96,6 +98,7 @@ export function ResultsPanel({
   collapsible = false,
   scrollSignal = 0,
   flames = null,
+  onShared,
   tinted = false,
 }: Props) {
   const sectionRef = useRef<HTMLElement>(null);
@@ -147,7 +150,15 @@ export function ResultsPanel({
   // The mode the shares report, which is the one buildShareText tags the link with.
   const sharedMode = mode ?? modeForDate(date);
   const shareButton = (
-    <ShareButton text={copiedShareText} onShared={() => trackResultCopied(sharedMode)} flames={flames} tinted={tinted} />
+    <ShareButton
+      text={copiedShareText}
+      onShared={() => {
+        trackResultCopied(sharedMode);
+        onShared?.();
+      }}
+      flames={flames}
+      tinted={tinted}
+    />
   );
   const preview = (
     <pre className="results-panel__preview" aria-hidden="true">

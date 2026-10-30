@@ -739,6 +739,16 @@ describe("Word of the day", () => {
   });
 });
 
+describe("Flame shares", () => {
+  it("earns each colour's badge from the first share in that tier's fire", () => {
+    const flameShares = { Elusive: "2026-10-03", Legend: "2026-10-09" };
+    expect(statusOf("sun-warrior", { flameShares }).earnedOn).toBe("2026-10-03");
+    expect(statusOf("agni-kai", { flameShares }).earnedOn).toBeNull();
+    expect(statusOf("amaterasu", { flameShares }).earnedOn).toBe("2026-10-09");
+    expect(statusOf("sun-warrior", {}).earnedOn).toBeNull();
+  });
+});
+
 describe("countedRecord", () => {
   it("earns a badge from an unattested Legend but leaves it out of the count", () => {
     const unattested: AcceptedWord = { word: "zzyzx", rarity: "Legend", zipf: -1.57 };

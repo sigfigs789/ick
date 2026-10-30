@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { totalRarityScore } from '../../../src/game/dictionary';
 import { isWinningRarity } from '../../../src/game/rank';
-import { shareFlameTier } from '../../../src/game/shareFlames';
+import { recordFlameShare, shareFlameTier } from '../../../src/game/shareFlames';
 import { celebrationFor } from '../../../src/game/celebration';
 import { completedWholeMonth } from '../../../src/game/perfectMonth';
 import { welcomeBack } from '../../../src/game/streakFreeze';
@@ -197,6 +197,9 @@ export function PlayScreen({ covered = false, onSeeLeaderboard }: Props) {
   // The tier both Share buttons burn in once the words average Elusive or
   // better (see game/shareFlames.ts).
   const shareFlames = shareFlameTier(progress.acceptedWords, date);
+  const sharedInFlames = () => {
+    if (shareFlames && recordFlameShare(date, shareFlames)) setFlameShares((n) => n + 1);
+  };
   // Words the player suggested that have since been accepted, thanked for once
   // and only on a day nothing else has shown: the header celebration cards keep
   // it away themselves, and so do the welcome back and the burst of a Rare word.
@@ -278,9 +281,10 @@ export function PlayScreen({ covered = false, onSeeLeaderboard }: Props) {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the baseline, once
   }, []);
-  useEffect(() => {
+  // Announces what the record earns now that it did not before, under `key`.
+  function announceEarned(key: number) {
     const before = earnedAchievements.current;
-    if (!feedback || !before) return;
+    if (!before) return;
     const statuses = syncAchievements(streak);
     earnedAchievements.current = earnedIds(statuses);
     let fresh = newlyEarned(before, statuses);
@@ -293,11 +297,22 @@ export function PlayScreen({ covered = false, onSeeLeaderboard }: Props) {
     markAchievementsAnnounced(fresh.map((achievement) => achievement.id));
     // A welcome still up gives way: today's badge is the news.
     setUnlocked((current) => ({
-      key: feedback.key,
+      key,
       achievements: [...(current && !current.total ? current.achievements : []), ...fresh],
     }));
+  }
+  useEffect(() => {
+    if (feedback) announceEarned(feedback.key);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedback]);
+  // The first share in each colour of fire earns a badge (see
+  // src/game/shareFlames.ts), announced as the share is taken. Keyed below
+  // the welcome's, so no verdict's key repeats one.
+  const [flameShares, setFlameShares] = useState(0);
+  useEffect(() => {
+    if (flameShares) announceEarned(CATCH_UP_KEY - flameShares);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flameShares]);
 
   // Each burst clears itself once its pieces have fallen.
   useEffect(() => {
@@ -584,7 +599,10 @@ export function PlayScreen({ covered = false, onSeeLeaderboard }: Props) {
                 streak={streak}
                 isToday={isToday}
                 mode={progress.mode}
-                onShared={() => setShareAsked({ date, count: shareRequests + 1 })}
+                onShared={() => {
+                  setShareAsked({ date, count: shareRequests + 1 });
+                  sharedInFlames();
+                }}
                 flames={shareFlames}
               />
             ) : undefined
@@ -620,6 +638,7 @@ export function PlayScreen({ covered = false, onSeeLeaderboard }: Props) {
             scrollSignal={shareRequests}
             onScrollTo={(y) => scrollRef.current?.scrollTo({ y, animated: true })}
             flames={shareFlames}
+            onShared={sharedInFlames}
           />
         )}
 
