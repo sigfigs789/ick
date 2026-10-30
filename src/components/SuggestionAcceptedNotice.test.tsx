@@ -14,8 +14,8 @@ describe("SuggestionAcceptedNotice", () => {
     const onDismiss = vi.fn();
     render(<SuggestionAcceptedNotice words={["zibeline"]} firstAcceptance onDismiss={onDismiss} />);
     const notice = screen.getByRole("status");
-    expect(notice).toHaveTextContent("Your suggestion “zibeline” was accepted");
-    expect(notice).toHaveTextContent("Thank you");
+    expect(notice).toHaveTextContent("Your suggested word “zibeline” was added to the dictionary so everybody can play it now!");
+    expect(notice).toHaveTextContent("Thank you for helping grow the dictionary!");
     expect(notice).toHaveTextContent("Achievement unlocked: 📖 In the dictionary.");
     fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
     expect(onDismiss).toHaveBeenCalled();
@@ -31,7 +31,7 @@ describe("SuggestionAcceptedNotice", () => {
     );
     const notice = screen.getByRole("status");
     expect(notice).toHaveTextContent(
-      "Your suggestions “zibeline”, “quockerwodger” and “snollygoster” were accepted"
+      "Your suggested words “zibeline”, “quockerwodger” and “snollygoster” were added to the dictionary"
     );
     expect(notice).not.toHaveTextContent("Achievement unlocked");
   });

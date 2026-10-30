@@ -28,9 +28,9 @@ export function SuggestionAcceptedNotice({ words, firstAcceptance, onDismiss }: 
       </span>
       <div className="de-prefix-hint__copy">
         <p className="suggestion-accepted__line">
-          {several ? "Your suggestions " : "Your suggestion "}
-          <strong>{wordList(words)}</strong> {several ? "were" : "was"} accepted, so everybody can
-          play {several ? "them" : "it"} now. Thank you for helping the dictionary grow!
+          {several ? "Your suggested words " : "Your suggested word "}
+          <strong>{wordList(words)}</strong> {several ? "were" : "was"} added to the dictionary so
+          everybody can play {several ? "them" : "it"} now! Thank you for helping grow the dictionary!
         </p>
         {firstAcceptance && (
           <p className="suggestion-accepted__line suggestion-accepted__achievement">
