@@ -29,13 +29,6 @@ function flame(): string | undefined {
   return document.querySelector(".streak-display__flame")?.textContent ?? undefined;
 }
 
-/** What the streak popup says under "N day streak", opened by tapping the count. */
-function streakNote() {
-  fireEvent.click(screen.getByRole("button", { name: /day streak/ }));
-  const note = screen.getByRole("dialog", { name: "Streak" }).querySelector("span")?.textContent;
-  fireEvent.keyDown(document, { key: "Escape" });
-  return note;
-}
 
 describe("StreakDisplay", () => {
   it("leaves out the zeros on the new play screen", () => {
@@ -225,12 +218,10 @@ describe("StreakDisplay", () => {
     };
     const { rerender } = render(<StreakDisplay streak={missed} date="2026-10-04" isToday />);
     expect(flame()).toBe("🧊");
-    expect(streakNote()).toEqual("A saved freeze is covering your streak");
     expect(screen.queryByLabelText(/Play today/)).not.toBeInTheDocument();
 
     rerender(<StreakDisplay streak={{ ...missed, bankedFreezes: 0 }} date="2026-10-04" isToday />);
     expect(flame()).toBe("⏳");
-    expect(streakNote()).toEqual(expect.stringMatching(/none is left/));
 
     rerender(
       <StreakDisplay
@@ -253,7 +244,6 @@ describe("StreakDisplay", () => {
     const { rerender } = render(<StreakDisplay streak={covered} date="2026-10-04" isToday />);
     // No freeze left for today: the hourglass wins over the ice.
     expect(flame()).toBe("⏳");
-    expect(streakNote()).toEqual(expect.stringMatching(/none is left/));
     expect(screen.getByLabelText(/Play today to keep your streak/)).toBeInTheDocument();
 
     rerender(<StreakDisplay streak={{ ...covered, bankedFreezes: 1 }} date="2026-10-04" isToday />);
@@ -280,7 +270,6 @@ describe("StreakDisplay", () => {
     };
     const { rerender } = render(<StreakDisplay streak={kept} date="2026-10-03" />);
     expect(flame()).toBe("🧊");
-    expect(streakNote()).toEqual(expect.stringMatching(/freeze kept your streak alive on this day/));
 
     // A played day keeps the fire.
     rerender(<StreakDisplay streak={kept} date="2026-10-04" />);

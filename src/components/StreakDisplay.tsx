@@ -73,9 +73,9 @@ function FreezeBadge({ banked, cap, currentStreak }: { banked: number; cap: numb
 
 /**
  * The streak icon and count, with no "day streak" beside them: selecting (or
- * hovering) them opens a popup that says so, and what the ⏳ or 🧊 means.
+ * hovering) them opens a popup that says so.
  */
-function StreakBadge({ icon, count, note }: { icon: string | null; count: number; note?: string }) {
+function StreakBadge({ icon, count }: { icon: string | null; count: number }) {
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
   const wrapRef = useRef<HTMLSpanElement>(null);
@@ -113,7 +113,7 @@ function StreakBadge({ icon, count, note }: { icon: string | null; count: number
         className="rest-day__button streak-display__streak-button"
         aria-expanded={open || hovered}
         aria-controls={popupId}
-        aria-label={note ? `${label}. ${note}` : label}
+        aria-label={label}
         onClick={() => setOpen((was) => !was)}
       >
         {icon && (
@@ -126,7 +126,6 @@ function StreakBadge({ icon, count, note }: { icon: string | null; count: number
       {(open || hovered) && (
         <span className="rest-day__popup" id={popupId} ref={popupRef} role="dialog" aria-label="Streak">
           <strong>{label}</strong>
-          {note && <span>{note}</span>}
         </span>
       )}
     </span>
@@ -171,15 +170,6 @@ export function StreakDisplay({
   const risky = !restDay && isToday && date !== undefined && atRisk(streak, date);
   const coveredDay = !isToday && date !== undefined && wasFrozen(streak, date);
   const icon = risky ? "⏳" : frozen || coveredDay ? "🧊" : streak.currentStreak >= 2 ? "🔥" : null;
-  const streakNote = coveredDay
-    ? "A freeze kept your streak alive on this day"
-    : risky
-      ? frozen
-        ? "A saved freeze is covering your streak, and none is left: play today to keep it"
-        : "You missed yesterday: play today to keep your streak"
-      : frozen
-        ? "A saved freeze is covering your streak"
-        : undefined;
   // The days played towards the next lazy weekend (a pie, or
   // 😴 once unlocked), beside the freezes. Only for a live streak, which is
   // what a lazy weekend keeps.
@@ -213,7 +203,7 @@ export function StreakDisplay({
       {showStreak && (
         <div className="streak-display__row">
           {restDay && <RestDayBadge className="streak-display__flame" />}
-          <StreakBadge icon={restDay ? null : icon} count={streak.currentStreak} note={streakNote} />
+          <StreakBadge icon={restDay ? null : icon} count={streak.currentStreak} />
           {showFreezes && <FreezeBadge banked={banked} cap={cap} currentStreak={streak.currentStreak} />}
           {week && (
             <RestDayBadge
