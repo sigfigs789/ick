@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { DO_OVER_EMOJI, DO_OVER_PLAYS } from "../game/doOver";
+import { useKeepInViewport } from "../hooks/useKeepInViewport";
 import { WeekPie } from "./RestDayBadge";
 
 /** What the badge says, with `played` of the week's days played. */
@@ -31,7 +32,9 @@ export function DoOverBadge({
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
   const wrapRef = useRef<HTMLSpanElement>(null);
+  const popupRef = useRef<HTMLSpanElement>(null);
   const popupId = useId();
+  useKeepInViewport(popupRef, open || hovered);
 
   useEffect(() => {
     if (!open) return;
@@ -68,7 +71,7 @@ export function DoOverBadge({
         {unlocked ? DO_OVER_EMOJI : <WeekPie played={played} of={DO_OVER_PLAYS} />}
       </button>
       {(open || hovered) && (
-        <span className="rest-day__popup" id={popupId} role="dialog" aria-label="Do-over">
+        <span className="rest-day__popup" id={popupId} ref={popupRef} role="dialog" aria-label="Do-over">
           <strong>Do-over</strong>
           <span>{rule}</span>
         </span>

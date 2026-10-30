@@ -2333,6 +2333,11 @@ button.app__menu-item + button.app__menu-item {
   line-height: 1.4;
   text-align: left;
 }
+/* No room above (see hooks/useKeepInViewport.ts): open below instead. */
+.rest-day__popup--below {
+  top: calc(100% + 0.5rem);
+  bottom: auto;
+}
 .rest-day__popup strong {
   color: var(--fg);
 }
