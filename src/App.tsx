@@ -30,7 +30,7 @@ import { useYesterdaysBest, type ResolvedBest } from "./hooks/useYesterdaysBest"
 import { useAcceptedSuggestions } from "./hooks/useAcceptedSuggestions";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { useInputPlacement } from "./hooks/useInputPlacement";
-import { recordFlameShare, shareFlameTier } from "./game/shareFlames";
+import { recordFlameShare, shareFireTier, shareFlameTier } from "./game/shareFlames";
 import { useShareTint } from "./hooks/useShareTint";
 import { isWinningRarity } from "./game/rank";
 import { celebrationFor } from "./game/celebration";
@@ -354,7 +354,7 @@ export default function App() {
     // record are all written before the verdict is shown.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedback]);
-  // The first share in each colour of fire earns a badge (see
+  // The first share in the embers and each colour of fire earns a badge (see
   // game/shareFlames.ts), announced as the share is taken. Keyed below the
   // welcome's, so no verdict's key repeats one.
   const [flameShares, setFlameShares] = useState(0);
@@ -580,8 +580,11 @@ export default function App() {
   // The tier both Share buttons burn in once the words average Elusive or
   // better (see game/shareFlames.ts).
   const shareFlames = shareFlameTier(progress.acceptedWords, date);
+  // The badges go by the tier alone, embers included, whatever arm of the
+  // share tint test the player is in.
+  const shareFire = shareFireTier(progress.acceptedWords, date);
   const sharedInFlames = () => {
-    if (shareFlames && recordFlameShare(date, shareFlames)) setFlameShares((n) => n + 1);
+    if (shareFire && recordFlameShare(date, shareFire)) setFlameShares((n) => n + 1);
   };
   // Whether they take the Extremely Rare colour instead, by the share tint
   // test (see game/shareTintTest.ts), drawn the first time the words average

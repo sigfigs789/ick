@@ -29,7 +29,7 @@ import { modeForDate } from "./mode";
 import { nextMonthStart } from "./month";
 import { loadPlayerId } from "./player";
 import { isWinningRarity } from "./rank";
-import { flameSharesMade, type FlameShares, type FlameTier } from "./shareFlames";
+import { flameSharesMade, type FlameShares, type ShareFireTier } from "./shareFlames";
 import { CURRENT_TIERS } from "./stats";
 import { loadStreak, playedHistory, playedOnItsDay } from "./storage";
 import { takesPlayerMessages } from "./playerMessages";
@@ -662,8 +662,8 @@ function sameWordTwice({ history }: AchievementRecord): Check {
   return { earnedOn: null };
 }
 
-/** A share taken with the Share button burning in `tier`'s fire. */
-function sharedInFlames(tier: FlameTier): Achievement["check"] {
+/** A share taken with the words averaging `tier`: in its embers or its fire. */
+function sharedInFlames(tier: ShareFireTier): Achievement["check"] {
   return ({ flameShares }) => ({ earnedOn: flameShares?.[tier] ?? null });
 }
 
@@ -1470,6 +1470,14 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Eight Days a Week",
     description: "Play on every day of the week, each puzzle on its own day.",
     check: onItsDayOfWeek([0, 1, 2, 3, 4, 5, 6]),
+  },
+  {
+    id: "susanoo",
+    group: "Rarity",
+    icon: "🔮",
+    title: "Susanoo",
+    description: "Share a result while the Share button is coated in purple, your words averaging Extremely Rare.",
+    check: sharedInFlames("Extremely Rare"),
   },
   {
     id: "sun-warrior",

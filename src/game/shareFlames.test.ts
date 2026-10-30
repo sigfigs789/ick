@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { rarityScore } from "./dictionary";
-import { flameLevel, flameSharesMade, recordFlameShare, shareFlameTier } from "./shareFlames";
+import { flameLevel, flameSharesMade, recordFlameShare, shareFireTier, shareFlameTier } from "./shareFlames";
 
 const DATE = "2026-10-28";
 
@@ -39,6 +39,16 @@ describe("shareFlameTier", () => {
   });
 });
 
+describe("shareFireTier", () => {
+  it("names Extremely Rare as well as each tier that burns", () => {
+    expect(shareFireTier([scoring(8.2), scoring(8.6)], DATE)).toBe("Extremely Rare");
+    expect(shareFireTier([scoring(9.2), scoring(10)], DATE)).toBe("Mythic");
+    expect(shareFireTier([scoring(10), scoring(5)], DATE)).toBeNull();
+    expect(shareFireTier([], DATE)).toBeNull();
+    expect(shareFireTier([scoring(8.4)], "2026-08-01")).toBeNull();
+  });
+});
+
 describe("flameLevel", () => {
   it("burns larger each tier up", () => {
     expect(flameLevel("Elusive")).toBe(1);
@@ -55,7 +65,8 @@ describe("recordFlameShare", () => {
     expect(recordFlameShare("2026-10-03", "Mythic")).toBe(true);
     expect(recordFlameShare("2026-10-05", "Mythic")).toBe(false);
     expect(recordFlameShare("2026-10-05", "Legend")).toBe(true);
-    expect(flameSharesMade()).toEqual({ Mythic: "2026-10-03", Legend: "2026-10-05" });
+    expect(recordFlameShare("2026-10-06", "Extremely Rare")).toBe(true);
+    expect(flameSharesMade()).toEqual({ Mythic: "2026-10-03", Legend: "2026-10-05", "Extremely Rare": "2026-10-06" });
   });
 
   it("ignores a stored record it cannot read", () => {

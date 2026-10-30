@@ -45,8 +45,33 @@ export function shareFlamesClass(tier: FlameTier | null): string {
 
 const FLAME_SHARES_KEY = "ick:flame-shares";
 
-/** The first puzzle each burning tier was shared from, by tier. */
-export type FlameShares = Partial<Record<FlameTier, string>>;
+/**
+ * The tier just below the fire, Extremely Rare: its embers glow purple on the
+ * Share buttons for the share tint test's shown arm (see shareTintTest.ts).
+ * A share in it earns a badge too, for every player, so the badge never
+ * hangs on the arm drawn.
+ */
+export const EMBER_TIER = "Extremely Rare";
+
+/** The tiers whose first share earns a badge: the embers, then each fire. */
+export type ShareFireTier = typeof EMBER_TIER | FlameTier;
+
+function isShareFireTier(rarity: Rarity | null): rarity is ShareFireTier {
+  return rarity === EMBER_TIER || isFlameTier(rarity);
+}
+
+/**
+ * The tier the average score of `words` earns, when it is Extremely Rare or
+ * one that burns; null otherwise, as for `shareFlameTier`.
+ */
+export function shareFireTier(words: readonly Pick<AcceptedWord, "zipf">[], date: string): ShareFireTier | null {
+  if (words.length === 0) return null;
+  const tier = rarityForScore(rawTotalRarityScore(words, date) / words.length, date);
+  return isShareFireTier(tier) ? tier : null;
+}
+
+/** The first puzzle each badge-earning tier was shared from, by tier. */
+export type FlameShares = Partial<Record<ShareFireTier, string>>;
 
 /** The tiers this browser has shared burning, each with its first puzzle's date. */
 export function flameSharesMade(): FlameShares {
@@ -55,7 +80,7 @@ export function flameSharesMade(): FlameShares {
     if (!stored || typeof stored !== "object") return {};
     return Object.fromEntries(
       Object.entries(stored).filter(
-        ([tier, date]) => isFlameTier(tier as Rarity) && typeof date === "string"
+        ([tier, date]) => isShareFireTier(tier as Rarity) && typeof date === "string"
       )
     ) as FlameShares;
   } catch {
@@ -64,11 +89,11 @@ export function flameSharesMade(): FlameShares {
 }
 
 /**
- * Note a share taken while the button burned in `tier`, for the badges each
- * colour of fire earns (see game/achievements.ts). Only the first share of a
- * tier is kept; true when this was it.
+ * Note a share taken while the words averaged `tier`, for the badges the
+ * embers and each colour of fire earn (see game/achievements.ts). Only the
+ * first share of a tier is kept; true when this was it.
  */
-export function recordFlameShare(date: string, tier: FlameTier): boolean {
+export function recordFlameShare(date: string, tier: ShareFireTier): boolean {
   const made = flameSharesMade();
   if (made[tier]) return false;
   try {
