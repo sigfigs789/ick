@@ -452,7 +452,6 @@ async function handleGet(request: Request): Promise<Response> {
         shareName,
         inputPlacement,
         playTab,
-        shareTint,
         idleHintNew,
         idleHintReturning,
       ] = await Promise.all([
@@ -462,7 +461,6 @@ async function handleGet(request: Request): Promise<Response> {
         experiment("share_name_assigned"),
         experiment("input_placement_assigned"),
         experiment("play_tab_assigned"),
-        experiment("share_tint_assigned"),
         // Off the trigger, not the draw: the players who sat idle long enough
         // to be hinted, in either arm (see game/idleHint.ts).
         experiment("idle_hint_triggered", "new"),
@@ -477,7 +475,6 @@ async function handleGet(request: Request): Promise<Response> {
           shareName,
           inputPlacement,
           playTab,
-          shareTint,
           idleHintNew,
           idleHintReturning,
         },

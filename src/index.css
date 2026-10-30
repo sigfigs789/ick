@@ -6492,7 +6492,7 @@ button.app__menu-item + button.app__menu-item {
   background: var(--accent-hover);
 }
 
-/* The share tint test (see game/shareTintTest.ts): a Share button filled
+/* The embers (see EMBER_TIER in game/shareFlames.ts): a Share button filled
    with the Extremely Rare colour while the player's words average Extremely
    Rare. The flames' fill and glow without the tongues: a light core pulsing
    up from the bottom into the tier's purple, and a halo that breathes (the

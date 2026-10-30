@@ -47,9 +47,7 @@ const FLAME_SHARES_KEY = "ick:flame-shares";
 
 /**
  * The tier just below the fire, Extremely Rare: its embers glow purple on the
- * Share buttons for the share tint test's shown arm (see shareTintTest.ts).
- * A share in it earns a badge too, for every player, so the badge never
- * hangs on the arm drawn.
+ * Share buttons, without the flames, and a share in it earns a badge too.
  */
 export const EMBER_TIER = "Extremely Rare";
 

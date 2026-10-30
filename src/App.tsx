@@ -30,8 +30,7 @@ import { useYesterdaysBest, type ResolvedBest } from "./hooks/useYesterdaysBest"
 import { useAcceptedSuggestions } from "./hooks/useAcceptedSuggestions";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { useInputPlacement } from "./hooks/useInputPlacement";
-import { recordFlameShare, shareFireTier, shareFlameTier } from "./game/shareFlames";
-import { useShareTint } from "./hooks/useShareTint";
+import { EMBER_TIER, recordFlameShare, shareFireTier, shareFlameTier } from "./game/shareFlames";
 import { isWinningRarity } from "./game/rank";
 import { celebrationFor } from "./game/celebration";
 import {
@@ -580,16 +579,13 @@ export default function App() {
   // The tier both Share buttons burn in once the words average Elusive or
   // better (see game/shareFlames.ts).
   const shareFlames = shareFlameTier(progress.acceptedWords, date);
-  // The badges go by the tier alone, embers included, whatever arm of the
-  // share tint test the player is in.
+  // The badges go by the tier alone, embers included.
   const shareFire = shareFireTier(progress.acceptedWords, date);
   const sharedInFlames = () => {
     if (shareFire && recordFlameShare(date, shareFire)) setFlameShares((n) => n + 1);
   };
-  // Whether they take the Extremely Rare colour instead, by the share tint
-  // test (see game/shareTintTest.ts), drawn the first time the words average
-  // Extremely Rare -- always with the Share beside the log showing.
-  const shareTint = useShareTint(progress.acceptedWords, date);
+  // Just below the fire, Extremely Rare, they glow purple instead.
+  const shareTint = shareFire === EMBER_TIER;
   const guessEntry = (
     <>
       {!progress.completed && (
