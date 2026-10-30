@@ -84,6 +84,12 @@ export interface DailyProgress {
    */
   retryUsed?: boolean;
   /**
+   * Whether the week's do-over has been spent on this puzzle, or given up to
+   * the reveal (see game/doOver.ts and storage.retryWord). The week remembers
+   * its own do-over apart from this; this is for the puzzle's retry count.
+   */
+  doOverUsed?: boolean;
+  /**
    * The word the retry gave up, and where in `acceptedWords` its replacement
    * lands -- the next word banked after the retry. Second chance reads that a
    * word moved; Buyer's remorse compares the replacement's score with it.

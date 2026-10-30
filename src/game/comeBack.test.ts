@@ -121,6 +121,25 @@ describe("streakGoal", () => {
     }
   });
 
+  describe("Do-over", () => {
+    // The week of 2026-11-02, three days played by Wednesday.
+    const three = ["2026-11-02", "2026-11-03", "2026-11-04"];
+    const run = (playedDates: string[]) =>
+      streak({ currentStreak: 3, longestStreak: 20, bankedFreezes: 2, playedDates });
+
+    it("is named the day before it is earned, for its arm only", () => {
+      expect(streakGoal(run(three), "2026-11-04", [], true)).toBe("Play tomorrow and unlock a do-over 🔄");
+      expect(comeBackGoal(run(three), "2026-11-04", [], true)?.explainer?.title).toBe("Do-over");
+      expect(streakGoal(run(three), "2026-11-04", [], false)).not.toMatch(/do-over/);
+      expect(streakGoal(run(three.slice(0, 2)), "2026-11-03", [], true) ?? "").not.toMatch(/do-over/);
+    });
+
+    it("is named to a new player too", () => {
+      const fresh = streak({ currentStreak: 1, longestStreak: 1, playedDates: ["2026-11-02", "2026-11-03", "2026-11-05"] });
+      expect(streakGoal(fresh, "2026-11-05", [], true)).toBe("Play tomorrow and unlock a do-over 🔄");
+    });
+  });
+
   describe("Weekend off", () => {
     // 2026-10-31 is the first Saturday that can be earned; its week runs 10-26 to 11-01.
     const run = (playedDates: string[]) =>

@@ -52,6 +52,18 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
   remembered. 2026-09-14 to 2026-09-26 was the Freeform trial, when the calendar
   set the mode. Earlier puzzles are Standard only. Every rule is dated by
   puzzle, so an archived puzzle always plays under its original rules.
+- **Do-over** (`src/game/doOver.ts`, `src/game/doOverTest.ts`): a 50/50
+  test. For `shown`, playing 4 days of a week (Monday to Sunday, each on its
+  own day) earns one extra retry for that week, spent on today's puzzle once
+  its own retry is gone; it does not stack. A pie beside the lazy weekend's
+  fills a quarter a day and turns 🔄 on the fourth; the retry button reads
+  "2 retries" while both are held, and the come-back line names it the day
+  before. `hidden` gets none of it. A player is drawn the first time the pie
+  would show (today's puzzle, a day of the week played). The draw is a
+  `do_over_assigned` event (with `returning`), scored on `/experimentsV2`,
+  new players and returning players apart. Force either arm with
+  `?do-over=shown` or `=hidden`. Testers are forced to `shown`. A forced arm,
+  or a host that reports nothing (which gets no do-over), is never drawn.
 - **Word validation** (`src/game/submit.ts`): a submission must contain the
   drop as a contiguous, in-order substring, be a known word, and not be the
   same word (or an obvious inflection of the same word — see

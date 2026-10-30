@@ -12,6 +12,7 @@
 import { holdersOf, type AchievementStatus } from "./achievements";
 import { maxGuessesFor } from "./constants";
 import { addDays } from "./date";
+import { DO_OVER_EMOJI, doOverTomorrow } from "./doOver";
 import { freezeCap, freezeRules, LAZY_WEEKEND_RULE, restDayProgress } from "./streakFreeze";
 import type { StreakState } from "./types";
 
@@ -57,9 +58,10 @@ const LAZY_SUNDAY_RULE =
 export function streakGoal(
   streak: StreakState,
   today: string,
-  locked: readonly AchievementStatus[] = []
+  locked: readonly AchievementStatus[] = [],
+  doOver = false
 ): string | null {
-  return comeBackGoal(streak, today, locked)?.line ?? null;
+  return comeBackGoal(streak, today, locked, doOver)?.line ?? null;
 }
 
 /** What a reward is, for a player who selects the line naming it. */
@@ -70,18 +72,30 @@ export interface GoalExplainer {
 
 /**
  * `streakGoal`'s line, with what the reward it names is where that is not
- * plain from the line itself: a 🧊 freeze, a lazy weekend, or an achievement.
- * Beating the best streak needs no explaining.
+ * plain from the line itself: a 🧊 freeze, a lazy weekend, a do-over or an
+ * achievement. Beating the best streak needs no explaining.
+ *
+ * `doOver`, for a player in the do-over's arm (see game/doOver.ts), adds the
+ * do-over to the rewards, named only the day before it is earned. Unlike the
+ * others it needs no streak, so a new player hears of it too.
  */
 export function comeBackGoal(
   streak: StreakState,
   today: string,
-  locked: readonly AchievementStatus[] = []
+  locked: readonly AchievementStatus[] = [],
+  doOver = false
 ): { line: string; explainer?: GoalExplainer } | null {
   const days = streak.currentStreak;
   const next = days + 1;
   const best = Math.max(streak.longestStreak, days);
-  if (best <= NEW_PLAYER_BEST) return achievementGoal(locked, streak, today);
+  const doOverGoal =
+    doOver && doOverTomorrow(streak, today)
+      ? {
+          line: `Play tomorrow and unlock a do-over ${DO_OVER_EMOJI}`,
+          explainer: { title: "Do-over", text: "An extra retry, for any day this week." },
+        }
+      : null;
+  if (best <= NEW_PLAYER_BEST) return doOverGoal ?? achievementGoal(locked, streak, today);
   const banked = streak.bankedFreezes ?? 0;
   const keeps = (on: number) => earnsFreezeOn(on) && banked < freezeCap(Math.max(best, on));
 
@@ -128,6 +142,10 @@ export function comeBackGoal(
       : { title: "Lazy weekend", text: LAZY_WEEKEND_RULE };
     goals.push({ away: rest.needed, rank: 1, soon: SOON_DAYS.lazyWeekend, line, explainer });
   }
+
+  // After the lazy weekend in a tie: that one is earned on the third day, so
+  // the two are never a day away together.
+  if (doOverGoal) goals.push({ away: 1, rank: 1.5, soon: 1, ...doOverGoal });
 
   if (best > days) {
     goals.push({

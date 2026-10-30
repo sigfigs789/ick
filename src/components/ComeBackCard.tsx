@@ -9,6 +9,8 @@ interface Props {
   streak: StreakState;
   /** The puzzle on screen, which the draw is reported against. */
   date: string;
+  /** Whether the player gets the do-over, which the line can promise (see game/doOver.ts). */
+  doOver?: boolean;
 }
 
 /**
@@ -23,7 +25,7 @@ interface Props {
  * A line naming a 🧊 freeze or a lazy weekend can be selected for a popup
  * saying what that is (see `comeBackGoal`).
  */
-export function ComeBackCard({ streak, date }: Props) {
+export function ComeBackCard({ streak, date, doOver = false }: Props) {
   const [variant, setVariant] = useState<ComeBackVariant | null>(null);
 
   useEffect(() => {
@@ -51,9 +53,10 @@ export function ComeBackCard({ streak, date }: Props) {
         date,
         syncAchievements(streak).filter(
           (status) => !status.earnedOn && !status.achievement.viaSuggestions
-        )
+        ),
+        doOver
       ),
-    [streak, date]
+    [streak, date, doOver]
   );
 
   if (variant !== "shown" || goal === null) return null;

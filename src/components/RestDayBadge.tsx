@@ -22,10 +22,10 @@ function weekdayRule(played: number, reachable: boolean, sundayOnly: boolean): s
     : `${LAZY_WEEKEND_RULE} ${played} of 3 days played so far.`;
 }
 
-/** A pie a third full for each day played, drawn in the text colour. */
-function WeekPie({ played }: { played: number }) {
+/** A pie filling a slice for each day played of `of`, a third by default, drawn in the text colour. */
+export function WeekPie({ played, of = REST_DAY_PLAYS }: { played: number; of?: number }) {
   const r = 7;
-  const angle = (played / REST_DAY_PLAYS) * 2 * Math.PI;
+  const angle = (played / of) * 2 * Math.PI;
   const x = 8 + r * Math.sin(angle);
   const y = 8 - r * Math.cos(angle);
   return (

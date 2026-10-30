@@ -90,6 +90,8 @@ import {
   type CrossModePreview,
 } from "../game/crossMode";
 import { useGameMode } from "./useGameMode";
+import { doOverOn } from "./useDoOver";
+import { doOverHeld, spendDoOver } from "../game/doOver";
 import { useWordDataLoaded } from "./useWordDataLoaded";
 
 /** Shown when a deferred word-data file failed to arrive (see submitWord). */
@@ -603,12 +605,20 @@ export function useDailyPuzzle() {
    * shown -- greyed out -- from the moment the puzzle opens, instead of
    * appearing out of nowhere once the first word lands (see GuessLog).
    */
-  const retryOffered = retryAvailableFor(viewedDate) && !progress.retryUsed;
+  const ownRetryLeft = retryAvailableFor(viewedDate) && !progress.retryUsed;
+  /**
+   * The week's do-over (see game/doOver.ts), on today's puzzle only, for a
+   * player in its arm who has earned it and not spent it -- here or in the
+   * other mode's game. A second retry beside the puzzle's own, spent after it.
+   */
+  const doOverLeft =
+    isToday && retryAvailableFor(viewedDate) && !progress.doOverUsed && doOverOn() && doOverHeld(streak, viewedDate);
+  const retryOffered = ownRetryLeft || doOverLeft;
   const canRetry = retryOffered && progress.acceptedWords.length > 0;
   /** Spent, on a puzzle that was offering it -- so the UI can say so rather than
    * quietly withdrawing the control. Never true on a puzzle that dropped before
    * the feature, where the retry was never on offer in the first place. */
-  const retrySpent = retryAvailableFor(viewedDate) && progress.retryUsed === true;
+  const retrySpent = retryAvailableFor(viewedDate) && progress.retryUsed === true && !doOverLeft;
   /**
    * How many retries this puzzle has left, for the guess log's header counter.
    *
@@ -622,9 +632,7 @@ export function useDailyPuzzle() {
    * back. A player should see what they have before they have to spend it.
    */
   const retriesLeft: number | null = retryAvailableFor(viewedDate)
-    ? progress.retryUsed
-      ? 0
-      : 1
+    ? (ownRetryLeft ? 1 : 0) + (doOverLeft ? 1 : 0)
     : null;
 
   /**
@@ -639,8 +647,12 @@ export function useDailyPuzzle() {
       if (!retryAvailableFor(viewedDate)) return;
       const before = progressRef.current;
       const index = before.acceptedWords.findIndex((accepted) => accepted.word === word);
-      const updated = retryWord(before, word);
+      // The puzzle's own retry first; the week's do-over once that is gone.
+      const doOver = before.retryUsed === true;
+      if (doOver && !(isToday && doOverOn() && doOverHeld(loadStreak(), viewedDate))) return;
+      const updated = retryWord(before, word, { doOver });
       if (updated === before) return;
+      if (doOver) spendDoOver(viewedDate);
       progressRef.current = updated;
       setProgress(updated);
       setStreak(loadStreak());
@@ -669,7 +681,8 @@ export function useDailyPuzzle() {
         viewedDate,
         before.acceptedWords[index],
         index,
-        before.acceptedWords.length
+        before.acceptedWords.length,
+        doOver
       );
     },
     [isToday, viewedDate]
@@ -688,12 +701,14 @@ export function useDailyPuzzle() {
   const revealAnswer = useCallback(() => {
     if (!retryAvailableFor(viewedDate)) return;
     const before = progressRef.current;
-    const updated = forfeitRetry(before);
+    // A held do-over is given up on this puzzle too, or it would re-open the
+    // puzzle with the word already seen.
+    const updated = forfeitRetry(before, { doOver: isToday && doOverOn() && doOverHeld(loadStreak(), viewedDate) });
     if (updated === before) return;
     progressRef.current = updated;
     setProgress(updated);
     trackAnswerRevealed(viewedDate, before.acceptedWords.length);
-  }, [viewedDate]);
+  }, [isToday, viewedDate]);
 
   /**
    * What every banked word would be in the other mode, keyed by word, for the

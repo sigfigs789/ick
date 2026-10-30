@@ -250,6 +250,12 @@ describe("GuessLog retry", () => {
     expect(screen.queryByText(/retry used/i)).not.toBeInTheDocument();
   });
 
+  it("says 2 retries while the week's do-over is held beside the puzzle's own", () => {
+    render(<GuessLog acceptedWords={words} canRetry retryOffered retriesLeft={2} onRetry={vi.fn()} />);
+    const button = screen.getByRole("button", { name: "Retry 1 word, 2 retries left" });
+    expect(button).toHaveTextContent("2 retries");
+  });
+
   it("shows the button greyed out before there is anything to retry", () => {
     // retryOffered without canRetry: the puzzle carries a retry today, but
     // nothing has been banked yet to spend it on.

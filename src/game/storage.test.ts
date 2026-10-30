@@ -963,6 +963,32 @@ describe("retryWord", () => {
   });
 });
 
+describe("retryWord with the do-over", () => {
+  it("takes a second word back once the puzzle's own retry is spent", () => {
+    let progress = recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
+    progress = recordAcceptedWord(progress, word("strut"));
+    progress = retryWord(progress, "strange");
+    expect(retryWord(progress, "strut")).toBe(progress);
+
+    const again = retryWord(progress, "strut", { doOver: true });
+
+    expect(again.acceptedWords).toEqual([]);
+    expect(again.doOverUsed).toBe(true);
+    expect(retryWord(again, "strut", { doOver: true })).toBe(again);
+  });
+
+  it("is given up with the puzzle's own retry to the reveal", () => {
+    const progress = recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
+    const given = forfeitRetry(progress, { doOver: true });
+    expect(given).toMatchObject({ retryUsed: true, doOverUsed: true });
+    expect(retryWord(given, "strange", { doOver: true })).toBe(given);
+    // Already spent the puzzle's own: the reveal still costs the do-over.
+    const spent = retryWord(recordAcceptedWord(newProgress("2024-01-02", "str"), word("strange")), "strange");
+    expect(forfeitRetry(spent, { doOver: true }).doOverUsed).toBe(true);
+    expect(forfeitRetry(spent)).toBe(spent);
+  });
+});
+
 describe("forfeitRetry", () => {
   it("spends the retry without touching the words", () => {
     let progress = recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
