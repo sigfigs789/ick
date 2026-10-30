@@ -1476,7 +1476,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     group: "Rarity",
     icon: "🔮",
     title: "Susanoo",
-    description: "Share a result while your words average Extremely Rare.",
+    description: "Share a result while the Share button is coated in purple, your words averaging Extremely Rare.",
     check: sharedInFlames("Extremely Rare"),
   },
   {
