@@ -4,14 +4,15 @@ import { assignInputPlacementArm, drawnInputPlacementArm, forcedInputPlacementVa
 afterEach(() => localStorage.clear());
 
 describe("assignInputPlacementArm", () => {
-  it("puts a fifth below the guess log and keeps the rest above", () => {
-    expect(assignInputPlacementArm(() => 0.19)).toEqual({ variant: "below", fresh: true });
+  it("puts four in five below the guess log and keeps the rest above", () => {
+    expect(assignInputPlacementArm(() => 0.79)).toEqual({ variant: "below", fresh: true });
     localStorage.clear();
-    expect(assignInputPlacementArm(() => 0.2)).toEqual({ variant: "above", fresh: true });
+    expect(assignInputPlacementArm(() => 0.8)).toEqual({ variant: "above", fresh: true });
   });
 
   it("keeps the first draw for good", () => {
     assignInputPlacementArm(() => 0.9);
+    // A player drawn above keeps it even though most new draws now land below.
     expect(assignInputPlacementArm(() => 0)).toEqual({ variant: "above", fresh: false });
     expect(drawnInputPlacementArm()).toBe("above");
   });

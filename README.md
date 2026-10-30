@@ -95,9 +95,9 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
   `lockInResult`) once they've got at least one word.
 - **Input placement** (`src/game/inputPlacementTest.ts`,
   `src/hooks/useInputPlacement.ts`): the guess input, and the feedback line
-  under it, sits straight under the drop for 80% of players (`above`) and
-  below the guess log for the other 20% (`below`); players drawn while the
-  split was 50/50 keep their arm. A player is drawn the
+  under it, sits below the guess log for 80% of players (`below`) and
+  straight under the drop for the other 20% (`above`); players drawn while
+  the split was 50/50 or 20% below keep their arm. A player is drawn the
   first time the input shows on an unfinished puzzle and keeps that arm. The
   draw is an `input_placement_assigned` event (with `placement` and
   `returning`). `analytics_v2_experiment` knows two arms by the names
