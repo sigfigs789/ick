@@ -25,7 +25,20 @@ describe("word of the day experiment", () => {
     expect(parsed.arms[0].week).toEqual({ cohort: 2, returned: 1, days: 3 });
     expect(parsed.arms[0].month).toEqual({ cohort: 2, returned: 2 });
     expect(parsed.arms[0].d7).toEqual({ cohort: 0, returned: 0 });
+    // Sent by a database from before activation was counted: nothing, not an error.
+    expect(parsed.arms[0].activation).toEqual({ cohort: 0, returned: 0 });
     expect(parseExperiment(undefined)).toBeNull();
+  });
+
+  it("reads activation, and works it out for returning players too", () => {
+    const parsed = parseExperiment({
+      arms: [
+        { variant: "shown", segment: "all", assigned: 10, activation: { cohort: 6, returned: 4 } },
+        { variant: "shown", segment: "new", assigned: 4, activation: { cohort: 4, returned: 4 } },
+      ],
+    })!;
+    expect(arm(parsed, "shown", "all").activation).toEqual({ cohort: 6, returned: 4 });
+    expect(arm(parsed, "shown", "returning").activation).toEqual({ cohort: 2, returned: 0 });
   });
 
   it("works out returning players as everyone drawn less the new", () => {

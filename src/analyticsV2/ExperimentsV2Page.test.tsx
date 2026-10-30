@@ -155,14 +155,38 @@ describe("ExperimentsV2Page", () => {
     expect(screen.getAllByRole("table")).toHaveLength(3);
   });
 
-  it("draws the input placement test, new and returning players apart", async () => {
+  it("draws the input placement test, new and returning players apart, with activation for everyone", async () => {
     const inputPlacement = {
       since: "2026-10-26",
       arms: [
-        { variant: "shown", segment: "all", assigned: 200, d1: { cohort: 180, returned: 60 } },
-        { variant: "shown", segment: "new", assigned: 80, d1: { cohort: 70, returned: 20 } },
-        { variant: "hidden", segment: "all", assigned: 200, d1: { cohort: 180, returned: 55 } },
-        { variant: "hidden", segment: "new", assigned: 90, d1: { cohort: 80, returned: 20 } },
+        {
+          variant: "shown",
+          segment: "all",
+          assigned: 200,
+          activation: { cohort: 100, returned: 45 },
+          d1: { cohort: 180, returned: 60 },
+        },
+        {
+          variant: "shown",
+          segment: "new",
+          assigned: 80,
+          activation: { cohort: 45, returned: 45 },
+          d1: { cohort: 70, returned: 20 },
+        },
+        {
+          variant: "hidden",
+          segment: "all",
+          assigned: 200,
+          activation: { cohort: 400, returned: 140 },
+          d1: { cohort: 180, returned: 55 },
+        },
+        {
+          variant: "hidden",
+          segment: "new",
+          assigned: 90,
+          activation: { cohort: 140, returned: 140 },
+          d1: { cohort: 80, returned: 20 },
+        },
       ],
     };
     const body = { wordOfDay: null, comeBack: null, headerCelebrations: null, shareName: null, inputPlacement };
@@ -180,6 +204,22 @@ describe("ExperimentsV2Page", () => {
       "Gap",
     ]);
     expect(screen.getAllByRole("table")).toHaveLength(3);
+    // Drawn before a first word, so the arms are compared on activation: 45 of 100 first visits below, 140 of 400 above.
+    const activation = rowOf("Everyone drawn: with the input below the guess log against without.", "Activation");
+    expect(activation.textContent).toContain("45%");
+    expect(activation.textContent).toContain("45/100");
+    expect(activation.textContent).toContain("Promising");
+    expect(activation.textContent).toContain("35%");
+    expect(activation.textContent).toContain("+10 pts");
+    // New players are split off by their first word, so they cannot differ on it.
+    expect(
+      rowOf(
+        "New players alone: drawn on the day of their first word, who never saw the game with it before. " +
+          "They stay new for this experiment on every day they come back.",
+        "Activation",
+      ).textContent,
+    ).toBe("Activationn/an/a–");
+    expect(screen.getByText(/activation is counted over everyone drawn/)).toBeTruthy();
   });
 
   it("draws the play tab test, new and returning players apart", async () => {

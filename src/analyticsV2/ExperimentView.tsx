@@ -1,7 +1,15 @@
 import type { ReactNode } from "react";
 import { arm, compare, standings, verdict, type Arm, type Experiment, type Segment } from "./experiment";
 import type { Rate } from "./report";
-import { count, percent, STANDING_NAMES, type Standing } from "./scorecard";
+import {
+  ACTIVATION_MARKS,
+  count,
+  LEAST_FIRST_VISITS,
+  percent,
+  stand,
+  STANDING_NAMES,
+  type Standing,
+} from "./scorecard";
 
 /**
  * An experiment on /experimentsV2: the call first, then the two arms side by
@@ -10,8 +18,11 @@ import { count, percent, STANDING_NAMES, type Standing } from "./scorecard";
  * day"); `about` says who is drawn when, and how to force an arm. `arms` heads
  * the two arm columns, Shown and Hidden unless an experiment names its own.
  * `segments` leaves out the new and returning tables for an experiment that is
- * already one kind of player; `activation` replaces the note's account of the
- * Activation row for one whose players can be drawn before their first word.
+ * already one kind of player. `drawnBeforeFirstWord` is for one that draws a
+ * player before they have banked a word -- on their first load -- so the arms
+ * are compared on activation, over everyone drawn; otherwise everyone drawn is
+ * already activated and the row is n/a. `activation` replaces the note's
+ * account of an n/a Activation row for one where it is n/a for another reason.
  */
 export function ExperimentView({
   experiment,
@@ -19,13 +30,15 @@ export function ExperimentView({
   about,
   arms = DEFAULT_ARMS,
   segments = SEGMENTS,
-  activation = DRAWN_ACTIVATED,
+  drawnBeforeFirstWord = false,
+  activation = drawnBeforeFirstWord ? ACTIVATION_MEASURED : DRAWN_ACTIVATED,
 }: {
   experiment: Experiment;
   subject: string;
   about: ReactNode;
   arms?: ArmNames;
   segments?: readonly Segment[];
+  drawnBeforeFirstWord?: boolean;
   activation?: string;
 }) {
   const call = verdict(experiment, subject);
@@ -36,7 +49,14 @@ export function ExperimentView({
         <p className="av2__verdict-reason">{call.reason}</p>
       </div>
       {segments.map((segment) => (
-        <ArmTable key={segment} experiment={experiment} segment={segment} subject={subject} arms={arms} />
+        <ArmTable
+          key={segment}
+          experiment={experiment}
+          segment={segment}
+          subject={subject}
+          arms={arms}
+          activation={drawnBeforeFirstWord && segment === "all"}
+        />
       ))}
       <p className="review__meta av2__note">
         {about}
@@ -60,6 +80,11 @@ const DRAWN_ACTIVATED =
   "Activation is n/a: a player is drawn only once they have banked a word, so everyone in either arm is " +
   "already activated and the arms cannot differ on it.";
 
+const ACTIVATION_MEASURED =
+  "A player is drawn on their first load, before any word, so activation is counted over everyone drawn: of " +
+  "those drawn on the first day they were seen, the share who banked a word that day, as the scorecard counts " +
+  "it. It is n/a for new and returning players apart, who are split by their first word.";
+
 const SEGMENTS: readonly Segment[] = ["all", "new", "returning"];
 
 const SEGMENT_NAMES: Record<Segment, string> = { all: "Everyone", new: "New", returning: "Returning" };
@@ -78,11 +103,14 @@ function ArmTable({
   segment,
   subject,
   arms,
+  activation,
 }: {
   experiment: Experiment;
   segment: Segment;
   subject: string;
   arms: ArmNames;
+  /** Whether the arms can differ on activation, so the row compares them. */
+  activation: boolean;
 }) {
   const caption = captions(subject)[segment];
   const shown = arm(experiment, "shown", segment);
@@ -94,7 +122,15 @@ function ArmTable({
   const rows: [string, ReactNode, ReactNode, ReactNode][] = [
     ["Players drawn", count(shown.assigned), count(hidden.assigned), ""],
     // The scorecard's first row, kept so the measures line up with it; see the note.
-    ["Activation", "n/a", "n/a", "–"],
+    activation
+      ? rateRow(
+          "Activation",
+          shown.activation,
+          hidden.activation,
+          activationStanding(shown.activation),
+          activationStanding(hidden.activation),
+        )
+      : ["Activation", "n/a", "n/a", "–"],
     rateRow("D1 retention", shown.d1, hidden.d1, s.d1, h.d1),
     rateRow("D7 retention", shown.d7, hidden.d7, s.d7, h.d7),
     rateRow("Back within a week", shown.week, hidden.week, s.week, h.week),
@@ -131,6 +167,11 @@ function ArmTable({
     </div>
     </>
   );
+}
+
+/** Where an arm's activation lands against the scorecard's marks, judged as soon as the scorecard judges it. */
+function activationStanding(rate: Rate): Standing | null {
+  return rate.cohort >= LEAST_FIRST_VISITS ? stand(rate.returned / rate.cohort, ACTIVATION_MARKS) : null;
 }
 
 function rateRow(
