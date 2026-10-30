@@ -168,7 +168,7 @@ describe("GuessLog", () => {
     const words: AcceptedWord[] = [{ word: "strut", rarity: "Rare", zipf: 3.2 }];
     render(<GuessLog acceptedWords={words} completed streak={streak} />);
     expect(screen.queryByRole("heading", { name: /you won/i })).not.toBeInTheDocument();
-    expect(screen.getByText("day streak")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /day streak/ })).toBeInTheDocument();
     expect(screen.queryByText("Crushed it")).not.toBeInTheDocument();
     expect(screen.queryByText("Elite")).not.toBeInTheDocument();
     expect(screen.queryByText(/guess.*left/i)).not.toBeInTheDocument();

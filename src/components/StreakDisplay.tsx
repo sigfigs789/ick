@@ -12,6 +12,7 @@ import type { StreakState } from "../game/types";
 import { RestDayBadge } from "./RestDayBadge";
 import { DoOverBadge } from "./DoOverBadge";
 import { doOverProgress } from "../game/doOver";
+import { useKeepInViewport } from "../hooks/useKeepInViewport";
 
 function freezeSummary(banked: number, cap: number): string {
   if (banked === 0) return "No 🧊 acquired";
@@ -70,6 +71,68 @@ function FreezeBadge({ banked, cap, currentStreak }: { banked: number; cap: numb
   );
 }
 
+/**
+ * The streak icon and count, with no "day streak" beside them: selecting (or
+ * hovering) them opens a popup that says so, and what the ⏳ or 🧊 means.
+ */
+function StreakBadge({ icon, count, note }: { icon: string | null; count: number; note?: string }) {
+  const [open, setOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const wrapRef = useRef<HTMLSpanElement>(null);
+  const popupRef = useRef<HTMLSpanElement>(null);
+  const popupId = useId();
+  const label = `${count} day streak`;
+  useKeepInViewport(popupRef, open || hovered);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!wrapRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <span
+      className="rest-day streak-display__streak"
+      ref={wrapRef}
+      // Mouse only: a tap also fires pointerenter, and the click handles taps.
+      onPointerEnter={(event) => event.pointerType === "mouse" && setHovered(true)}
+      onPointerLeave={(event) => event.pointerType === "mouse" && setHovered(false)}
+    >
+      <button
+        type="button"
+        className="rest-day__button streak-display__streak-button"
+        aria-expanded={open || hovered}
+        aria-controls={popupId}
+        aria-label={note ? `${label}. ${note}` : label}
+        onClick={() => setOpen((was) => !was)}
+      >
+        {icon && (
+          <span className="streak-display__flame" aria-hidden="true">
+            {icon}
+          </span>
+        )}
+        <span className="streak-display__count">{count}</span>
+      </button>
+      {(open || hovered) && (
+        <span className="rest-day__popup" id={popupId} ref={popupRef} role="dialog" aria-label="Streak">
+          <strong>{label}</strong>
+          {note && <span>{note}</span>}
+        </span>
+      )}
+    </span>
+  );
+}
+
 interface Props {
   streak: StreakState;
   totalRarity?: number;
@@ -108,7 +171,7 @@ export function StreakDisplay({
   const risky = !restDay && isToday && date !== undefined && atRisk(streak, date);
   const coveredDay = !isToday && date !== undefined && wasFrozen(streak, date);
   const icon = risky ? "⏳" : frozen || coveredDay ? "🧊" : streak.currentStreak >= 2 ? "🔥" : null;
-  const iconTitle = coveredDay
+  const streakNote = coveredDay
     ? "A freeze kept your streak alive on this day"
     : risky
       ? frozen
@@ -149,15 +212,8 @@ export function StreakDisplay({
     >
       {showStreak && (
         <div className="streak-display__row">
-          {restDay ? (
-            <RestDayBadge className="streak-display__flame" />
-          ) : icon && (
-            <span className="streak-display__flame" aria-hidden="true" title={iconTitle}>
-              {icon}
-            </span>
-          )}
-          <span className="streak-display__count">{streak.currentStreak}</span>
-          <span className="streak-display__unit">day streak</span>
+          {restDay && <RestDayBadge className="streak-display__flame" />}
+          <StreakBadge icon={restDay ? null : icon} count={streak.currentStreak} note={streakNote} />
           {showFreezes && <FreezeBadge banked={banked} cap={cap} currentStreak={streak.currentStreak} />}
           {week && (
             <RestDayBadge
