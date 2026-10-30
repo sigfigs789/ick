@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { LAZY_WEEKEND_RULE, REST_DAY_PLAYS } from "../game/streakFreeze";
+import { useKeepInViewport } from "../hooks/useKeepInViewport";
 
 /** What the 😴 means on a day of the weekend itself, for its hover text and popup. */
 const REST_DAY_RULE = "3 days played, so the weekend's all yours: skipping today can't break the streak.";
@@ -68,7 +69,9 @@ export function RestDayBadge({
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
   const wrapRef = useRef<HTMLSpanElement>(null);
+  const popupRef = useRef<HTMLSpanElement>(null);
   const popupId = useId();
+  useKeepInViewport(popupRef, open || hovered);
 
   useEffect(() => {
     if (!open) return;
@@ -105,7 +108,7 @@ export function RestDayBadge({
         {unlocked ? "😴" : <WeekPie played={played} />}
       </button>
       {(open || hovered) && (
-        <span className="rest-day__popup" id={popupId} role="dialog" aria-label="Lazy weekend">
+        <span className="rest-day__popup" id={popupId} ref={popupRef} role="dialog" aria-label="Lazy weekend">
           <strong>Lazy weekend</strong>
           <span>{rule}</span>
         </span>
