@@ -2360,6 +2360,12 @@ button.app__menu-item + button.app__menu-item {
   right: 0;
   transform: none;
 }
+/* The icon and count that open the streak popup (StreakBadge). */
+.streak-display__streak-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 .streak-display__count {
   font-family: var(--font-display);
   font-weight: 800;

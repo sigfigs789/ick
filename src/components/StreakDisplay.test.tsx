@@ -29,6 +29,7 @@ function flame(): string | undefined {
   return document.querySelector(".streak-display__flame")?.textContent ?? undefined;
 }
 
+
 describe("StreakDisplay", () => {
   it("leaves out the zeros on the new play screen", () => {
     const { container, rerender } = render(
@@ -39,7 +40,7 @@ describe("StreakDisplay", () => {
 
     // A streak too short to hold a freeze and no word today: the streak alone.
     rerender(<StreakDisplay streak={{ ...streak, currentStreak: 2 }} hideEmpty hasWords={false} />);
-    expect(screen.getByText("day streak")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /day streak/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Streak freezes/ })).not.toBeInTheDocument();
     expect(screen.queryByText("Total")).not.toBeInTheDocument();
 
@@ -51,7 +52,7 @@ describe("StreakDisplay", () => {
 
     // A streak that has ended keeps the cap its longest streak set: 0 of 2.
     rerender(<StreakDisplay streak={{ ...streak, longestStreak: 28 }} hideEmpty hasWords={false} />);
-    expect(screen.getByText("day streak")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /day streak/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Streak freezes/ }).textContent).toBe("🧊0/2");
 
     // A freeze held and a word banked: both come back.
@@ -159,6 +160,18 @@ describe("StreakDisplay", () => {
     expect(screen.getByRole("button", { name: /Lazy weekend: Play any 3 days by Friday for a lazy weekend 😴/ })).toBeInTheDocument();
   });
 
+  it("shows the streak as icon and count, saying \"day streak\" only in its popup", () => {
+    render(<StreakDisplay streak={{ ...streak, currentStreak: 9 }} />);
+    expect(screen.queryByText("day streak")).not.toBeInTheDocument();
+    const badge = screen.getByRole("button", { name: "9 day streak" });
+    expect(badge.textContent).toBe("🔥9");
+
+    fireEvent.click(badge);
+    expect(screen.getByRole("dialog", { name: "Streak" }).textContent).toBe("9 day streak");
+    fireEvent.click(badge);
+    expect(screen.queryByRole("dialog", { name: "Streak" })).not.toBeInTheDocument();
+  });
+
   it("hides the flame until a streak reaches two days", () => {
     const { rerender } = render(<StreakDisplay streak={streak} />);
     expect(screen.queryByText("🔥")).not.toBeInTheDocument();
@@ -205,18 +218,10 @@ describe("StreakDisplay", () => {
     };
     const { rerender } = render(<StreakDisplay streak={missed} date="2026-10-04" isToday />);
     expect(flame()).toBe("🧊");
-    expect(document.querySelector(".streak-display__flame")).toHaveAttribute(
-      "title",
-      "A saved freeze is covering your streak"
-    );
     expect(screen.queryByLabelText(/Play today/)).not.toBeInTheDocument();
 
     rerender(<StreakDisplay streak={{ ...missed, bankedFreezes: 0 }} date="2026-10-04" isToday />);
     expect(flame()).toBe("⏳");
-    expect(document.querySelector(".streak-display__flame")).toHaveAttribute(
-      "title",
-      expect.stringMatching(/none is left/)
-    );
 
     rerender(
       <StreakDisplay
@@ -239,10 +244,6 @@ describe("StreakDisplay", () => {
     const { rerender } = render(<StreakDisplay streak={covered} date="2026-10-04" isToday />);
     // No freeze left for today: the hourglass wins over the ice.
     expect(flame()).toBe("⏳");
-    expect(document.querySelector(".streak-display__flame")).toHaveAttribute(
-      "title",
-      expect.stringMatching(/none is left/)
-    );
     expect(screen.getByLabelText(/Play today to keep your streak/)).toBeInTheDocument();
 
     rerender(<StreakDisplay streak={{ ...covered, bankedFreezes: 1 }} date="2026-10-04" isToday />);
@@ -269,10 +270,6 @@ describe("StreakDisplay", () => {
     };
     const { rerender } = render(<StreakDisplay streak={kept} date="2026-10-03" />);
     expect(flame()).toBe("🧊");
-    expect(document.querySelector(".streak-display__flame")).toHaveAttribute(
-      "title",
-      expect.stringMatching(/freeze kept your streak alive on this day/)
-    );
 
     // A played day keeps the fire.
     rerender(<StreakDisplay streak={kept} date="2026-10-04" />);
