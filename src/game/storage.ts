@@ -647,11 +647,19 @@ function updateHighScore(zipf: number, date: string): void {
  * word they dropped. That is the safe direction to be wrong in, and the
  * alternative is a retraction path built for a score nobody is disputing.
  *
+ * `doOver` spends the week's do-over instead of the puzzle's own retry (see
+ * game/doOver.ts): the same take-back, marked on `doOverUsed`. The caller
+ * checks the week still holds one and marks it spent.
+ *
  * Returns `progress` unchanged when the retry is already spent or the word
  * isn't banked, so callers can compare by identity to tell whether it happened.
  */
-export function retryWord(progress: DailyProgress, word: string): DailyProgress {
-  if (progress.retryUsed) return progress;
+export function retryWord(
+  progress: DailyProgress,
+  word: string,
+  { doOver = false }: { doOver?: boolean } = {}
+): DailyProgress {
+  if (doOver ? progress.doOverUsed : progress.retryUsed) return progress;
   const index = progress.acceptedWords.findIndex((accepted) => accepted.word === word);
   if (index === -1) return progress;
 
@@ -665,7 +673,7 @@ export function retryWord(progress: DailyProgress, word: string): DailyProgress 
   const updated: DailyProgress = {
     ...progress,
     acceptedWords,
-    retryUsed: true,
+    ...(doOver ? { doOverUsed: true } : { retryUsed: true }),
     retried: { word: removed, replacedAt: acceptedWords.length },
     completed,
     // Both are facts about a finished puzzle. A puzzle the retry re-opened has

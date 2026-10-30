@@ -1159,6 +1159,15 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     check: firstPuzzle((progress) => Boolean(progress.retried)),
   },
   {
+    id: "twice-in-one-day",
+    group: "Style",
+    icon: "😏",
+    title: "Twice in one day",
+    description: "Use 2 retries on one puzzle.",
+    // Only a word given up sets `doOverUsed`, and only after the puzzle's own retry.
+    check: firstPuzzle((progress) => progress.doOverUsed === true),
+  },
+  {
     id: "buyers-remorse",
     group: "Style",
     icon: "🫠",

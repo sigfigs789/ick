@@ -220,6 +220,14 @@ describe("achievements", () => {
     expect(statusOf("buyers-remorse", { history }).earnedOn).toBe("2026-10-05");
   });
 
+  it("needs both retries spent on one puzzle for Twice in one day", () => {
+    const history = [
+      day("2026-10-01", [], { retryUsed: true }),
+      day("2026-10-02", [], { retryUsed: true, doOverUsed: true }),
+    ];
+    expect(statusOf("twice-in-one-day", { history }).earnedOn).toBe("2026-10-02");
+  });
+
   it("needs a word of 14 letters or more for Sesquipedalian", () => {
     const history = [
       day("2026-10-01", [word("Rare", "inkhornisms")]),

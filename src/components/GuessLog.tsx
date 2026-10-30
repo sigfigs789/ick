@@ -35,6 +35,8 @@ interface Props {
   retryOffered?: boolean;
   /** It has been spent, on a puzzle where it was offered in the first place. */
   retrySpent?: boolean;
+  /** Retries left, 2 while the week's do-over is held beside the puzzle's own (see game/doOver.ts). */
+  retriesLeft?: number | null;
   /** Drop a banked word and hand its guess back (see storage.retryWord). */
   onRetry?: (word: string) => void;
   /** The mode the player is not in, which each word can be copied into. */
@@ -67,6 +69,7 @@ export function GuessLog({
   canRetry = false,
   retryOffered = false,
   retrySpent = false,
+  retriesLeft = null,
   onRetry,
   otherMode,
   crossMode,
@@ -344,8 +347,10 @@ export function GuessLog({
               disabled={!canRetry}
               title={canRetry ? undefined : "Guess a word first"}
               onClick={() => setArming(true)}
+              aria-label={retriesLeft !== null && retriesLeft > 1 ? `Retry 1 word, ${retriesLeft} retries left` : undefined}
             >
-              <span aria-hidden="true">↺</span> Retry 1 word
+              <span aria-hidden="true">↺</span>{" "}
+              {retriesLeft !== null && retriesLeft > 1 ? `${retriesLeft} retries` : "Retry 1 word"}
             </button>
           ) : (
             // Spent: the button is gone (there is nothing left to arm), but a

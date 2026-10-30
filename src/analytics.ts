@@ -161,7 +161,8 @@ export function trackAnswerRetried(
   date: string,
   word: AcceptedWord,
   guessIndex: number,
-  answerCount: number
+  answerCount: number,
+  doOver = false
 ) {
   send("answer_retried", {
     puzzle_date: date,
@@ -174,6 +175,8 @@ export function trackAnswerRetried(
     // How many words were banked at the moment the retry was spent, so an early
     // retry and a last-guess one are told apart.
     answer_count: answerCount,
+    // Whether this was the week's do-over (see game/doOver.ts), not the puzzle's own retry.
+    do_over: doOver,
   });
 }
 

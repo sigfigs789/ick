@@ -10,6 +10,8 @@ import {
 } from "../game/streakFreeze";
 import type { StreakState } from "../game/types";
 import { RestDayBadge } from "./RestDayBadge";
+import { DoOverBadge } from "./DoOverBadge";
+import { doOverProgress } from "../game/doOver";
 
 function freezeSummary(banked: number, cap: number): string {
   if (banked === 0) return "No 🧊 acquired";
@@ -120,6 +122,9 @@ export function StreakDisplay({
   // what a lazy weekend keeps.
   const week =
     isToday && date !== undefined && streak.currentStreak > 0 ? weekdayRestProgress(streak, date) : null;
+  // The days played towards this week's do-over (see game/doOver.ts), once one is.
+  const doOverWeek = isToday && date !== undefined ? doOverProgress(streak, date) : null;
+  const showDoOver = doOverWeek !== null && (doOverWeek.played > 0 || doOverWeek.spent);
   // A past puzzle shows the freezes held on its day; today's shows today's.
   const { banked, cap } = freezesOn(streak, isToday ? undefined : date);
   // Hidden only before the player can hold a freeze at all. The cap is set by
@@ -161,6 +166,9 @@ export function StreakDisplay({
               sundayOnly={week.sundayOnly}
               className="streak-display__week"
             />
+          )}
+          {showDoOver && (
+            <DoOverBadge played={doOverWeek.played} reachable={doOverWeek.reachable} spent={doOverWeek.spent} />
           )}
         </div>
       )}

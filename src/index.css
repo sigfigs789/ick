@@ -2345,6 +2345,10 @@ button.app__menu-item + button.app__menu-item {
   align-items: center;
   margin-left: 0.5rem;
 }
+/* The do-over (components/DoOverBadge.tsx), faded once spent. */
+.do-over--spent .rest-day__button {
+  opacity: 0.4;
+}
 /* On the board the dancer sits at the row's right edge: open leftwards. */
 .leaderboard__score .rest-day__popup {
   left: auto;
