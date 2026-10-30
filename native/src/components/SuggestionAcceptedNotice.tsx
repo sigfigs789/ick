@@ -69,9 +69,10 @@ function Notice({ words, firstAcceptance, onDismiss }: Props) {
       </Text>
       <View style={styles.copy}>
         <Text style={[styles.line, { color: theme.fg }]}>
-          {several ? 'Your suggestions ' : 'Your suggestion '}
-          <Text style={styles.strong}>{wordList(words)}</Text> {several ? 'were' : 'was'} accepted, so
-          everybody can play {several ? 'them' : 'it'} now. Thank you for helping the dictionary grow!
+          {several ? 'Your suggested words ' : 'Your suggested word '}
+          <Text style={styles.strong}>{wordList(words)}</Text> {several ? 'were' : 'was'} added to the
+          dictionary so everybody can play {several ? 'them' : 'it'} now! Thank you for helping grow the
+          dictionary!
         </Text>
         {firstAcceptance && (
           <Text style={[styles.line, styles.achievement, { color: theme.fg }]}>
