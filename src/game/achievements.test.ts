@@ -699,6 +699,19 @@ describe("the easier rungs", () => {
     expect(statusOf("all-elusive", { history: [short] }).earnedOn).toBeNull();
   });
 
+  it("needs every guess Legend or Elusive, with one of each, for Black and Yellow", () => {
+    const both = day("2026-10-10", [word("Legend"), word("Elusive"), word("Elusive"), word("Legend")]);
+    expect(statusOf("black-and-yellow", { history: [both] }).earnedOn).toBe("2026-10-10");
+    const allLegend = day("2026-10-10", [word("Legend"), word("Legend"), word("Legend"), word("Legend")]);
+    expect(statusOf("black-and-yellow", { history: [allLegend] }).earnedOn).toBeNull();
+    const allElusive = day("2026-10-10", [word("Elusive"), word("Elusive"), word("Elusive"), word("Elusive")]);
+    expect(statusOf("black-and-yellow", { history: [allElusive] }).earnedOn).toBeNull();
+    const mythic = day("2026-10-10", [word("Legend"), word("Elusive"), word("Elusive"), word("Mythic")]);
+    expect(statusOf("black-and-yellow", { history: [mythic] }).earnedOn).toBeNull();
+    const short = day("2026-10-10", [word("Legend"), word("Elusive"), word("Elusive")]);
+    expect(statusOf("black-and-yellow", { history: [short] }).earnedOn).toBeNull();
+  });
+
   it("needs a Mythic word starting with the drop for Head start", () => {
     const start = day("2026-10-10", [{ word: "inkhorn", rarity: "Mythic", zipf: 1.2 }]);
     expect(statusOf("head-start", { history: [start] }).earnedOn).toBe("2026-10-10");

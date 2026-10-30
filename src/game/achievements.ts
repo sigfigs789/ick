@@ -123,6 +123,9 @@ const MYTHIC_OR_BETTER: readonly Rarity[] = ["Mythic", "Legend"];
 /** The four top tiers, one word each, for Royal flush. */
 const ROYAL_FLUSH: readonly Rarity[] = ["Legend", "Mythic", "Elusive", "Extremely Rare"];
 
+/** Legend's black and Elusive's gold, the only tiers Black and Yellow allows. */
+const BLACK_AND_YELLOW: readonly Rarity[] = ["Legend", "Elusive"];
+
 /**
  * `record` as the share of players holding each badge counts it: with every
  * Legend no corpus measures counted as no tier at all. That 10.00 is the
@@ -831,6 +834,18 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Stay gold, Ponyboy",
     description: "Finish a puzzle with every guess Elusive.",
     check: firstPuzzle(everyGuess((rarity) => rarity === "Elusive")),
+  },
+  {
+    id: "black-and-yellow",
+    group: "Rarity",
+    icon: "🐝",
+    title: "Black and Yellow",
+    description: "Finish a puzzle with every guess Legend or Elusive, and at least one of each.",
+    check: firstPuzzle(
+      (progress) =>
+        everyGuess((rarity) => BLACK_AND_YELLOW.includes(rarity))(progress) &&
+        BLACK_AND_YELLOW.every((tier) => progress.acceptedWords.some((word) => word.rarity === tier))
+    ),
   },
   {
     id: "top-four",
