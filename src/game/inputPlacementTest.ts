@@ -65,7 +65,7 @@ export function drawnInputPlacementArm(): InputPlacementVariant | null {
 /**
  * An arm forced with `?input-placement=below` (or `=above`), for seeing either
  * without waiting on a draw; a hand-picked tester (see testers.ts) is forced
- * to above. A forced arm is never stored or reported, so it cannot leak into
+ * to below. A forced arm is never stored or reported, so it cannot leak into
  * the split.
  */
 export function forcedInputPlacementVariant(
@@ -73,5 +73,5 @@ export function forcedInputPlacementVariant(
 ): InputPlacementVariant | null {
   const value = new URLSearchParams(search).get("input-placement");
   if (isVariant(value)) return value;
-  return isTester() ? "above" : null;
+  return isTester() ? "below" : null;
 }

@@ -104,7 +104,7 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
   `shown` and `hidden`, so `below` is sent as `shown` and `above` as
   `hidden`. The arms are scored on `/experimentsV2`, new players and
   returning players apart. Force either arm with `?input-placement=below` or
-  `=above`. Testers are forced to `above`. A forced arm, or a host that
+  `=above`. Testers are forced to `below`. A forced arm, or a host that
   reports nothing (which keeps the input above), is never drawn.
 - **Play tab** (`src/game/playTabTest.ts`, `src/hooks/usePlayTab.ts`): 20%
   of players (`shown`) get a Play icon, the way back to the puzzle, first
