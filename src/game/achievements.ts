@@ -29,6 +29,7 @@ import { modeForDate } from "./mode";
 import { nextMonthStart } from "./month";
 import { loadPlayerId } from "./player";
 import { isWinningRarity } from "./rank";
+import { flameSharesMade, type FlameShares, type FlameTier } from "./shareFlames";
 import { CURRENT_TIERS } from "./stats";
 import { loadStreak, playedHistory, playedOnItsDay } from "./storage";
 import { takesPlayerMessages } from "./playerMessages";
@@ -67,6 +68,8 @@ export interface AchievementRecord {
    * `fetchWordOfTheDayWins`). Absent until the server has said.
    */
   bestWordWins?: number;
+  /** The first puzzle shared with the Share button burning in each tier (see game/shareFlames.ts). */
+  flameShares?: FlameShares;
 }
 
 /**
@@ -654,6 +657,11 @@ function sameWordTwice({ history }: AchievementRecord): Check {
     }
   }
   return { earnedOn: null };
+}
+
+/** A share taken with the Share button burning in `tier`'s fire. */
+function sharedInFlames(tier: FlameTier): Achievement["check"] {
+  return ({ flameShares }) => ({ earnedOn: flameShares?.[tier] ?? null });
 }
 
 /** Two words in one puzzle made of the same letters (a puzzle never banks one word twice). */
@@ -1449,6 +1457,30 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     check: onItsDayOfWeek([0, 1, 2, 3, 4, 5, 6]),
   },
   {
+    id: "sun-warrior",
+    group: "Rarity",
+    icon: "☀️",
+    title: "Sun Warrior",
+    description: "Share a result while the Share button burns gold, your words averaging Elusive.",
+    check: sharedInFlames("Elusive"),
+  },
+  {
+    id: "agni-kai",
+    group: "Rarity",
+    icon: "🤺",
+    title: "Agni Kai",
+    description: "Share a result while the Share button burns red, your words averaging Mythic.",
+    check: sharedInFlames("Mythic"),
+  },
+  {
+    id: "amaterasu",
+    group: "Rarity",
+    icon: "🌑",
+    title: "Amaterasu",
+    description: "Share a result while the Share button burns black, your words averaging Legend.",
+    check: sharedInFlames("Legend"),
+  },
+  {
     id: "word-suggested",
     group: "Word scouting",
     icon: "💡",
@@ -1811,6 +1843,7 @@ function deviceRecord(streak: StreakState): AchievementRecord {
     streak,
     suggestions: suggestedWords(),
     bestWordWins: readBestWordWins(),
+    flameShares: flameSharesMade(),
   };
 }
 

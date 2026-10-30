@@ -42,3 +42,40 @@ export function shareFlamesClass(tier: FlameTier | null): string {
   const slug = tier.toLowerCase().replace(" ", "-");
   return ` share-flames-host share-flames--${flameLevel(tier)} share-flames--${slug}`;
 }
+
+const FLAME_SHARES_KEY = "ick:flame-shares";
+
+/** The first puzzle each burning tier was shared from, by tier. */
+export type FlameShares = Partial<Record<FlameTier, string>>;
+
+/** The tiers this browser has shared burning, each with its first puzzle's date. */
+export function flameSharesMade(): FlameShares {
+  try {
+    const stored: unknown = JSON.parse(localStorage.getItem(FLAME_SHARES_KEY) ?? "{}");
+    if (!stored || typeof stored !== "object") return {};
+    return Object.fromEntries(
+      Object.entries(stored).filter(
+        ([tier, date]) => isFlameTier(tier as Rarity) && typeof date === "string"
+      )
+    ) as FlameShares;
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Note a share taken while the button burned in `tier`, for the badges each
+ * colour of fire earns (see game/achievements.ts). Only the first share of a
+ * tier is kept; true when this was it.
+ */
+export function recordFlameShare(date: string, tier: FlameTier): boolean {
+  const made = flameSharesMade();
+  if (made[tier]) return false;
+  try {
+    localStorage.setItem(FLAME_SHARES_KEY, JSON.stringify({ ...made, [tier]: date }));
+    return true;
+  } catch {
+    // Unwritable storage only means the badge waits for a share that sticks.
+    return false;
+  }
+}

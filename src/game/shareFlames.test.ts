@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { rarityScore } from "./dictionary";
-import { flameLevel, shareFlameTier } from "./shareFlames";
+import { flameLevel, flameSharesMade, recordFlameShare, shareFlameTier } from "./shareFlames";
 
 const DATE = "2026-10-28";
 
@@ -44,5 +44,24 @@ describe("flameLevel", () => {
     expect(flameLevel("Elusive")).toBe(1);
     expect(flameLevel("Mythic")).toBe(2);
     expect(flameLevel("Legend")).toBe(3);
+  });
+});
+
+describe("recordFlameShare", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("keeps the first share of each tier and only that one", () => {
+    expect(flameSharesMade()).toEqual({});
+    expect(recordFlameShare("2026-10-03", "Mythic")).toBe(true);
+    expect(recordFlameShare("2026-10-05", "Mythic")).toBe(false);
+    expect(recordFlameShare("2026-10-05", "Legend")).toBe(true);
+    expect(flameSharesMade()).toEqual({ Mythic: "2026-10-03", Legend: "2026-10-05" });
+  });
+
+  it("ignores a stored record it cannot read", () => {
+    localStorage.setItem("ick:flame-shares", '{"Mythic":3,"Rare":"2026-10-01","Legend":"2026-10-02"}');
+    expect(flameSharesMade()).toEqual({ Legend: "2026-10-02" });
+    localStorage.setItem("ick:flame-shares", "not json");
+    expect(flameSharesMade()).toEqual({});
   });
 });

@@ -48,6 +48,8 @@ interface Props {
   onScrollTo?: (y: number) => void;
   /** The tier the Share button burns in, or none (see src/game/shareFlames.ts). */
   flames?: FlameTier | null;
+  /** Called after the result has been shared. */
+  onShared?: () => void;
 }
 
 // Naming answers is opt-in so a shared result stays spoiler-free by default;
@@ -85,6 +87,7 @@ export function ResultsPanel({
   scrollSignal = 0,
   onScrollTo,
   flames = null,
+  onShared,
 }: Props) {
   const theme = useTheme();
   const fire = flames ? shareFlamesStyle(theme, flames) : null;
@@ -159,6 +162,7 @@ export function ResultsPanel({
     const done = await openShareSheet(outgoing);
     if (!done) return;
     setShared(true);
+    onShared?.();
     setTimeout(() => setShared(false), 2000);
   }
 

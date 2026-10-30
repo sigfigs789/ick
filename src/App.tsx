@@ -30,7 +30,7 @@ import { useYesterdaysBest, type ResolvedBest } from "./hooks/useYesterdaysBest"
 import { useAcceptedSuggestions } from "./hooks/useAcceptedSuggestions";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { useInputPlacement } from "./hooks/useInputPlacement";
-import { shareFlameTier } from "./game/shareFlames";
+import { recordFlameShare, shareFlameTier } from "./game/shareFlames";
 import { useShareTint } from "./hooks/useShareTint";
 import { isWinningRarity } from "./game/rank";
 import { celebrationFor } from "./game/celebration";
@@ -327,9 +327,10 @@ export default function App() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the baseline, once
   }, []);
-  useEffect(() => {
+  // Announces what the record earns now that it did not before, under `key`.
+  function announceEarned(key: number) {
     const before = earnedAchievements.current;
-    if (!feedback || !before) return;
+    if (!before) return;
     const statuses = syncAchievements(streak);
     earnedAchievements.current = earnedIds(statuses);
     let fresh = newlyEarned(before, statuses);
@@ -343,13 +344,24 @@ export default function App() {
     markAchievementsAnnounced(fresh.map((achievement) => achievement.id));
     // A welcome still up gives way: today's badge is the news.
     setUnlocked((current) => ({
-      key: feedback.key,
+      key,
       achievements: [...(current && !current.total ? current.achievements : []), ...fresh],
     }));
+  }
+  useEffect(() => {
+    if (feedback) announceEarned(feedback.key);
     // Read alongside the verdict that earned it: the word, the streak and the
     // record are all written before the verdict is shown.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedback]);
+  // The first share in each colour of fire earns a badge (see
+  // game/shareFlames.ts), announced as the share is taken. Keyed below the
+  // welcome's, so no verdict's key repeats one.
+  const [flameShares, setFlameShares] = useState(0);
+  useEffect(() => {
+    if (flameShares) announceEarned(CATCH_UP_KEY - flameShares);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flameShares]);
 
   // Each burst clears itself once its pieces have fallen.
   useEffect(() => {
@@ -568,6 +580,9 @@ export default function App() {
   // The tier both Share buttons burn in once the words average Elusive or
   // better (see game/shareFlames.ts).
   const shareFlames = shareFlameTier(progress.acceptedWords, date);
+  const sharedInFlames = () => {
+    if (shareFlames && recordFlameShare(date, shareFlames)) setFlameShares((n) => n + 1);
+  };
   // Whether they take the Extremely Rare colour instead, by the share tint
   // test (see game/shareTintTest.ts), drawn the first time the words average
   // Extremely Rare -- always with the Share beside the log showing.
@@ -715,7 +730,10 @@ export default function App() {
                 streak={streak}
                 isToday={isToday}
                 mode={progress.mode}
-                onShared={() => setShareRequests((n) => n + 1)}
+                onShared={() => {
+                  setShareRequests((n) => n + 1);
+                  sharedInFlames();
+                }}
                 flames={shareFlames}
                 tinted={shareTint}
               />
@@ -767,6 +785,7 @@ export default function App() {
             collapsible
             scrollSignal={shareRequests}
             flames={shareFlames}
+            onShared={sharedInFlames}
             tinted={shareTint}
           />
         )}
