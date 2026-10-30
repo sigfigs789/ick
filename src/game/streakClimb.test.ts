@@ -7,6 +7,7 @@ import {
 } from "./streakClimb";
 import { fetchBoards, type Boards, type StreakEntry } from "./leaderboard";
 import { PLAYER_KEY } from "./player";
+import { streakPlacings } from "./streakPlacings";
 
 vi.mock("./leaderboard", () => ({ fetchBoards: vi.fn() }));
 
@@ -55,16 +56,35 @@ describe("streakRankIn", () => {
 
 describe("streakClimb", () => {
   it("is a move to a smaller rank than the one last seen", () => {
-    rememberStreakRank(12);
+    rememberStreakRank(12, "2026-10-20");
     expect(streakClimb(9)).toEqual({ from: 12, to: 9 });
   });
 
   it("is nothing with no rank remembered, or no rise", () => {
     expect(streakClimb(3)).toBeNull();
-    rememberStreakRank(5);
+    rememberStreakRank(5, "2026-10-20");
     expect(streakClimb(5)).toBeNull();
     expect(streakClimb(7)).toBeNull();
     expect(streakClimb(null)).toBeNull();
+  });
+});
+
+describe("streakPlacings", () => {
+  it("keeps the first day of each top-three place, and every place below it", () => {
+    rememberStreakRank(4, "2026-10-20");
+    expect(streakPlacings()).toEqual({});
+    rememberStreakRank(2, "2026-10-21");
+    expect(streakPlacings()).toEqual({ 2: "2026-10-21", 3: "2026-10-21" });
+    rememberStreakRank(3, "2026-10-22");
+    rememberStreakRank(1, "2026-10-23");
+    expect(streakPlacings()).toEqual({ 1: "2026-10-23", 2: "2026-10-21", 3: "2026-10-21" });
+  });
+
+  it("is noted by the climb check too", async () => {
+    localStorage.setItem(PLAYER_KEY, JSON.stringify({ id: ME }));
+    vi.mocked(fetchBoards).mockResolvedValue(boards([row(ME, 3)]) as Boards);
+    await checkStreakClimb("2026-10-24");
+    expect(streakPlacings()).toEqual({ 3: "2026-10-24" });
   });
 });
 
@@ -76,7 +96,7 @@ describe("checkStreakClimb", () => {
 
   it("reads one fresh row, reports the climb, and remembers the new rank", async () => {
     localStorage.setItem(PLAYER_KEY, JSON.stringify({ id: ME }));
-    rememberStreakRank(12);
+    rememberStreakRank(12, "2026-10-20");
     vi.mocked(fetchBoards).mockResolvedValue(
       boards([row("a", 1)], row(ME, 9)) as Boards
     );
@@ -95,7 +115,7 @@ describe("checkStreakClimb", () => {
 
   it("swallows a failed read", async () => {
     localStorage.setItem(PLAYER_KEY, JSON.stringify({ id: ME }));
-    rememberStreakRank(12);
+    rememberStreakRank(12, "2026-10-20");
     vi.mocked(fetchBoards).mockRejectedValue(new Error("offline"));
     expect(await checkStreakClimb("2026-10-24")).toBeNull();
   });

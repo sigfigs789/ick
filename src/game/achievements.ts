@@ -32,6 +32,7 @@ import { isWinningRarity } from "./rank";
 import { flameSharesMade, type FlameShares, type ShareFireTier } from "./shareFlames";
 import { CURRENT_TIERS } from "./stats";
 import { loadStreak, playedHistory, playedOnItsDay } from "./storage";
+import { streakPlacings, type StreakPlace, type StreakPlacings } from "./streakPlacings";
 import { takesPlayerMessages } from "./playerMessages";
 import { suggestedWords, type SuggestedWordRecord } from "./suggestions";
 import type { AcceptedWord, DailyProgress, Rarity, StreakState } from "./types";
@@ -70,6 +71,8 @@ export interface AchievementRecord {
   bestWordWins?: number;
   /** The first puzzle shared with the Share button burning in each tier (see game/shareFlames.ts). */
   flameShares?: FlameShares;
+  /** The first day this player was seen at each top-three place on the streak board (see game/streakClimb.ts). */
+  streakPlacings?: StreakPlacings;
 }
 
 /**
@@ -667,6 +670,11 @@ function sharedInFlames(tier: ShareFireTier): Achievement["check"] {
   return ({ flameShares }) => ({ earnedOn: flameShares?.[tier] ?? null });
 }
 
+/** Seen at `place` on the streak board, or above it. */
+function streakPlace(place: StreakPlace): Achievement["check"] {
+  return ({ streakPlacings }) => ({ earnedOn: streakPlacings?.[place] ?? null });
+}
+
 /** Two words in one puzzle made of the same letters (a puzzle never banks one word twice). */
 function hasAnagrams(progress: DailyProgress): boolean {
   const keys = wordsOf(progress).map((word) => [...word].sort().join(""));
@@ -966,6 +974,30 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     description: "Reach a 365 day streak.",
     check: streakOf(365),
     byPlaying: "streak",
+  },
+  {
+    id: "streak-board-3",
+    group: "Streaks",
+    icon: "🥉",
+    title: "Podium",
+    description: "Reach the top 3 of the streak board.",
+    check: streakPlace(3),
+  },
+  {
+    id: "streak-board-2",
+    group: "Streaks",
+    icon: "🥈",
+    title: "Runner-up",
+    description: "Reach the top 2 of the streak board.",
+    check: streakPlace(2),
+  },
+  {
+    id: "streak-board-1",
+    group: "Streaks",
+    icon: "🥇",
+    title: "Top of the board",
+    description: "Reach first place on the streak board.",
+    check: streakPlace(1),
   },
   {
     id: "perfect-month",
@@ -1867,6 +1899,7 @@ function deviceRecord(streak: StreakState): AchievementRecord {
     suggestions: suggestedWords(),
     bestWordWins: readBestWordWins(),
     flameShares: flameSharesMade(),
+    streakPlacings: streakPlacings(),
   };
 }
 
