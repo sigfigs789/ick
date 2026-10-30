@@ -1161,7 +1161,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
   {
     id: "twice-in-one-day",
     group: "Style",
-    icon: "🔄",
+    icon: "😏",
     title: "Twice in one day",
     description: "Use 2 retries on one puzzle.",
     // Only a word given up sets `doOverUsed`, and only after the puzzle's own retry.
