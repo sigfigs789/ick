@@ -131,7 +131,7 @@ function remember(windows: Windows, loaded: Boards, today: string) {
   const { board } = windows;
   // The rank the player has now seen themselves at, so the game only
   // celebrates a climb past it (see game/streakClimb.ts).
-  rememberStreakRank(streakRankIn(loaded, loadPlayerId()));
+  rememberStreakRank(streakRankIn(loaded, loadPlayerId()), today);
   boardCache.streak.set(cacheKey(board, `streak:${today}`), {
     streak: loaded.streak,
     streakSelf: loaded.streakSelf,

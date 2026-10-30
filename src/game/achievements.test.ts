@@ -849,3 +849,13 @@ describe("the fun badges", () => {
     expect(statusOf("eight-days-a-week", { onItsDay: week.slice(1) }).progress).toEqual({ current: 6, target: 7 });
   });
 });
+
+describe("Streak board places", () => {
+  it("earns each top-three badge from the first day seen at that place", () => {
+    const streakPlacings = { 2: "2026-10-05", 3: "2026-10-01" };
+    expect(statusOf("streak-board-3", { streakPlacings }).earnedOn).toBe("2026-10-01");
+    expect(statusOf("streak-board-2", { streakPlacings }).earnedOn).toBe("2026-10-05");
+    expect(statusOf("streak-board-1", { streakPlacings }).earnedOn).toBeNull();
+    expect(statusOf("streak-board-3", {}).earnedOn).toBeNull();
+  });
+});

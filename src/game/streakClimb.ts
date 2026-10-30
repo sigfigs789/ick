@@ -19,6 +19,7 @@
 
 import { fetchBoards, type Boards } from "./leaderboard";
 import { loadPlayerId } from "./player";
+import { rememberPlacing } from "./streakPlacings";
 
 const RANK_KEY = "ick:streakRank";
 
@@ -45,14 +46,18 @@ export function streakRankIn(
   return row?.rank ?? null;
 }
 
-/** Remember the rank the player was just shown at. */
-export function rememberStreakRank(rank: number | null): void {
+/**
+ * Remember the rank the player was just shown at, on `date`'s board -- and,
+ * for a top-three place, that they held it, and every place below it, that day.
+ */
+export function rememberStreakRank(rank: number | null, date: string): void {
   if (rank === null) return;
   try {
     localStorage.setItem(RANK_KEY, String(rank));
   } catch {
     // Storage that cannot be written means no comparison next time, at worst.
   }
+  rememberPlacing(rank, date);
 }
 
 /** The climb from the remembered rank to `rank`, or null when it is not one. */
@@ -76,7 +81,7 @@ export async function checkStreakClimb(date: string): Promise<StreakClimb | null
     const boards = await fetchBoards(date, { limit: 1, fresh: true });
     const rank = streakRankIn(boards, playerId);
     const climb = streakClimb(rank);
-    rememberStreakRank(rank);
+    rememberStreakRank(rank, date);
     return climb;
   } catch {
     return null;
