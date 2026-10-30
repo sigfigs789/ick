@@ -22,7 +22,7 @@ interface Props {
   onShared?: () => void;
   /** The tier the button burns in, or none (see game/shareFlames.ts). */
   flames?: FlameTier | null;
-  /** Filled with the Extremely Rare colour (see game/shareTintTest.ts). */
+  /** Filled with the Extremely Rare colour, the embers (see game/shareFlames.ts). */
   tinted?: boolean;
 }
 

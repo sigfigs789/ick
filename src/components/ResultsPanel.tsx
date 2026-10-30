@@ -48,7 +48,7 @@ interface Props {
   flames?: FlameTier | null;
   /** Called after the result has been copied, as well as counted. */
   onShared?: () => void;
-  /** Whether the Share button takes the Extremely Rare colour (see game/shareTintTest.ts). */
+  /** Whether the Share button takes the Extremely Rare colour (the embers; see game/shareFlames.ts). */
   tinted?: boolean;
 }
 
