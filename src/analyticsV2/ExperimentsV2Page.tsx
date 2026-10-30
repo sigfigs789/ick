@@ -167,6 +167,7 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
         >
           <ExperimentView
             experiment={experiments.inputPlacement}
+            drawnBeforeFirstWord
             subject="the input below the guess log"
             arms={{ shown: "Below", hidden: "Above" }}
             about={
@@ -187,6 +188,7 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
         >
           <ExperimentView
             experiment={experiments.playTab}
+            drawnBeforeFirstWord
             subject="the Play icon in the header"
             about={
               <>

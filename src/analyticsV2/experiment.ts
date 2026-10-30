@@ -37,6 +37,12 @@ export interface Arm {
   variant: Variant;
   segment: Segment;
   assigned: number;
+  /**
+   * Of the players drawn on the first day they were seen, those who banked a
+   * word on it. Only telling for an experiment that draws before the first
+   * word; for the rest every first visit drawn is already activated.
+   */
+  activation: Rate;
   d1: Rate;
   d7: Rate;
   /** Banked a word on any of the 7 days after; `days` is how many of those days in all. */
@@ -81,6 +87,7 @@ export function parseExperiment(raw: unknown): Experiment | null {
       variant: a.variant as Variant,
       segment: a.segment as Segment,
       assigned: num(a.assigned),
+      activation: rate(a.activation),
       d1: rate(a.d1),
       d7: rate(a.d7),
       week: { ...rate(a.week), days: num(obj(a.week).days) },
@@ -106,6 +113,7 @@ function less(all: Arm, part: Arm): Arm {
     variant: all.variant,
     segment: "returning",
     assigned: all.assigned - part.assigned,
+    activation: minus(all.activation, part.activation),
     d1: minus(all.d1, part.d1),
     d7: minus(all.d7, part.d7),
     week: { ...minus(all.week, part.week), days: all.week.days - part.week.days },
@@ -124,6 +132,7 @@ export function emptyArm(variant: Variant, segment: Segment): Arm {
     variant,
     segment,
     assigned: 0,
+    activation: none,
     d1: none,
     d7: none,
     week: { ...none, days: 0 },
