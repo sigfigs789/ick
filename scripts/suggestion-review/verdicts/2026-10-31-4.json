@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-31",
+  "run": "https://github.com/sigfigs789/ick/actions/runs/41234723463",
+  "accepted": [
+    {
+      "word": "venturing",
+      "reason": "The present participle of venture, a common English word. It already plays.",
+      "suggestions": 1,
+      "zipf": 2.98,
+      "zipfEstimated": false,
+      "alreadyPlayable": true,
+      "playsNow": true,
+      "score": "5.8",
+      "rarity": "Common"
+    }
+  ],
+  "rejected": [],
+  "skipped": []
+}
