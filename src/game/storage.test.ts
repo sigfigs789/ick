@@ -11,6 +11,7 @@ import {
   recordRejectedAttempt,
   resetProgress,
   retryWord,
+  answerRevealed,
   forfeitRetry,
   STREAK_KEY,
 } from "./storage";
@@ -1006,6 +1007,23 @@ describe("forfeitRetry", () => {
       recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange")),
     );
     expect(forfeitRetry(progress)).toBe(progress);
+  });
+
+  it("marks the word revealed after a retry spent on a word, for the do-over", () => {
+    let progress = recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
+    progress = retryWord(progress, "strange");
+    expect(answerRevealed(progress)).toBe(false);
+
+    const given = forfeitRetry(progress);
+
+    expect(given.revealed).toBe(true);
+    expect(answerRevealed(given)).toBe(true);
+    expect(forfeitRetry(given)).toBe(given);
+  });
+
+  it("reads a reveal saved before the flag off the retry spent with no word moved", () => {
+    const progress = recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
+    expect(answerRevealed({ ...progress, retryUsed: true })).toBe(true);
   });
 });
 

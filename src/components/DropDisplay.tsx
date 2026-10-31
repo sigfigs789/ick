@@ -13,7 +13,8 @@ interface Props {
   /** Once the puzzle is done, the word itself drops in under the rarity badge. */
   completed?: boolean;
   /**
-   * The puzzle's retry is still unspent. While it is, the word stays behind a
+   * A retry is still unspent -- the puzzle's own, or the week's do-over (see
+   * game/doOver.ts). While one is, the word stays behind a
    * "Word of the day" button: a finished puzzle can be re-opened by retrying a
    * word (see storage.retryWord), so handing over the best word first would
    * turn the mulligan into a lookup. The retry follows a day into the archive,

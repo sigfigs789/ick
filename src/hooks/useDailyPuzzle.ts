@@ -11,6 +11,7 @@ import {
   recordRejectedAttempt,
   resetProgress,
   retryWord,
+  answerRevealed,
   forfeitRetry,
   playedOnItsDay,
   playedBothModesLately,
@@ -608,12 +609,19 @@ export function useDailyPuzzle() {
   /**
    * The week's do-over (see game/doOver.ts), on today's puzzle only, once
    * earned and not spent -- here or in the other mode's game. A second retry
-   * beside the puzzle's own, spent after it. Not once the word of the day is
-   * showing: a finished puzzle whose own retry is gone (see DropDisplay).
+   * beside the puzzle's own, spent after it -- including on a puzzle the
+   * player finished again after spending the first. Not once the word of the
+   * day has been revealed (see DropDisplay): it would re-open a puzzle whose
+   * best word is known. While it is held, the word stays hidden just as it
+   * does behind the puzzle's own retry, so finishing never reveals it.
    */
-  const wordShown = progress.completed && progress.retryUsed === true;
   const doOverLeft =
-    isToday && retryAvailableFor(viewedDate) && !progress.doOverUsed && !wordShown && doOverHeld(streak, viewedDate);
+    isToday &&
+    retryAvailableFor(viewedDate) &&
+    !progress.doOverUsed &&
+    !answerRevealed(progress) &&
+    doOverHeld(streak, viewedDate);
+  /** Any retry left, own or do-over -- also what keeps the word of the day hidden. */
   const retryOffered = ownRetryLeft || doOverLeft;
   const canRetry = retryOffered && progress.acceptedWords.length > 0;
   /** Spent, on a puzzle that was offering it -- so the UI can say so rather than
@@ -650,7 +658,7 @@ export function useDailyPuzzle() {
       const index = before.acceptedWords.findIndex((accepted) => accepted.word === word);
       // The puzzle's own retry first; the week's do-over once that is gone.
       const doOver = before.retryUsed === true;
-      if (doOver && (!isToday || before.completed || !doOverHeld(loadStreak(), viewedDate))) return;
+      if (doOver && (!isToday || answerRevealed(before) || !doOverHeld(loadStreak(), viewedDate))) return;
       const updated = retryWord(before, word, { doOver });
       if (updated === before) return;
       if (doOver) spendDoOver(viewedDate);
@@ -702,14 +710,18 @@ export function useDailyPuzzle() {
   const revealAnswer = useCallback(() => {
     if (!retryAvailableFor(viewedDate)) return;
     const before = progressRef.current;
-    // Only the puzzle's own retry: the do-over stays the week's, and the word
-    // now showing is what keeps it off this puzzle.
+    // Something to give up: the puzzle's own retry, or the do-over it is
+    // still holding. Only the own retry is spent -- the do-over stays the
+    // week's, and the word now showing is what keeps it off this puzzle.
+    const doOverHere =
+      isToday && !before.doOverUsed && !answerRevealed(before) && doOverHeld(loadStreak(), viewedDate);
+    if (before.retryUsed && !doOverHere) return;
     const updated = forfeitRetry(before);
     if (updated === before) return;
     progressRef.current = updated;
     setProgress(updated);
     trackAnswerRevealed(viewedDate, before.acceptedWords.length);
-  }, [viewedDate]);
+  }, [isToday, viewedDate]);
 
   /**
    * What every banked word would be in the other mode, keyed by word, for the
@@ -913,8 +925,6 @@ export function useDailyPuzzle() {
     retryOffered,
     retrySpent,
     retriesLeft,
-    /** The puzzle's own retry alone, which is what keeps the word of the day hidden. */
-    ownRetryOffered: ownRetryLeft,
     retryAnswer,
     revealAnswer,
     resetAnswers,

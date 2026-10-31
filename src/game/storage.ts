@@ -743,20 +743,37 @@ export function rescoreAcceptedWords(
 }
 
 /**
+ * Whether the player has paid to see this puzzle's word of the day.
+ *
+ * `revealed` says so outright. A reveal saved before that flag existed reads
+ * off the retry instead: spent with no word moved (`retried` absent) is the
+ * reveal's footprint. A retry spent before `retried` existed reads the same
+ * way, but those are archive puzzles, where the do-over -- the only thing
+ * this decides -- is never offered anyway.
+ */
+export function answerRevealed(progress: DailyProgress): boolean {
+  return progress.revealed === true || (progress.retryUsed === true && progress.retried === undefined);
+}
+
+/**
  * Give up this puzzle's retry without spending it on a word.
  *
  * The one caller is the reveal under the drop (see DropDisplay): a finished
- * puzzle still holding its retry is a puzzle the player may yet re-open, and
- * showing them the best word first would turn the mulligan into a lookup. So
- * the reveal costs the retry, and this is the payment -- the same flag
- * `retryWord` sets, with none of the roll-back, because no word moved.
+ * puzzle still holding a retry -- its own, or the week's do-over -- is a
+ * puzzle the player may yet re-open, and showing them the best word first
+ * would turn the mulligan into a lookup. So the reveal costs the retry, and
+ * this is the payment -- the same flag `retryWord` sets, with none of the
+ * roll-back, because no word moved -- plus `revealed`, which keeps the
+ * do-over off this puzzle without spending the week's (see game/doOver.ts).
  *
- * Returns `progress` unchanged when there was no retry left to give up, so
- * callers can compare by identity to tell whether it happened.
+ * Returns `progress` unchanged when the word is already revealed, so callers
+ * can compare by identity to tell whether it happened. Whether there is a
+ * retry left to give up is the caller's to check: the do-over lives outside
+ * the puzzle's record.
  */
 export function forfeitRetry(progress: DailyProgress): DailyProgress {
-  if (progress.retryUsed) return progress;
-  const updated: DailyProgress = { ...progress, retryUsed: true };
+  if (answerRevealed(progress)) return progress;
+  const updated: DailyProgress = { ...progress, retryUsed: true, revealed: true };
   saveProgress(updated);
   return updated;
 }

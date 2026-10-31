@@ -405,3 +405,80 @@ describe("useDailyPuzzle retry and the day's score", () => {
     expect(fetchMock.mock.calls.length).toBe(before);
   });
 });
+
+describe("useDailyPuzzle retry with the week's do-over", () => {
+  // A Friday, with Monday to Thursday already played: the do-over is held.
+  const FRIDAY = "2026-09-18";
+  const FRIDAY_DROP = dropForDate(FRIDAY).toLowerCase();
+  const words = playableWords(FRIDAY_DROP, 6);
+
+  beforeEach(() => {
+    vi.setSystemTime(new Date(`${FRIDAY}T12:00:00`));
+    localStorage.setItem(
+      "ick:streak",
+      JSON.stringify({
+        currentStreak: 4,
+        longestStreak: 4,
+        totalCompleted: 4,
+        crushedIt: 0,
+        elite: 0,
+        highScore: 0,
+        lastPlayed: addDays(FRIDAY, -1),
+        playedDates: [-4, -3, -2, -1].map((n) => addDays(FRIDAY, n)),
+      })
+    );
+  });
+
+  /** Bank words until the puzzle is finished. */
+  async function finish(result: { current: ReturnType<typeof useDailyPuzzle> }, pool: string[]) {
+    for (const word of pool) {
+      if (result.current.progress.completed) return;
+      await act(async () => {
+        await result.current.submitWord(word);
+      });
+    }
+    expect(result.current.progress.completed).toBe(true);
+  }
+
+  it("keeps the do-over after the puzzle is finished again on its own retry", async () => {
+    const { result } = renderHook(() => useDailyPuzzle());
+    expect(result.current.retriesLeft).toBe(2);
+
+    await finish(result, words);
+    const first = result.current.progress.acceptedWords[0].word;
+    act(() => result.current.retryAnswer(first));
+    expect(result.current.progress.completed).toBe(false);
+
+    await finish(result, words.filter((w) => w !== first));
+
+    // The bug: finishing again read as "word shown" and withdrew the do-over.
+    expect(result.current.retriesLeft).toBe(1);
+    expect(result.current.retryOffered).toBe(true);
+    expect(result.current.retrySpent).toBe(false);
+    expect(result.current.canRetry).toBe(true);
+
+    const second = result.current.progress.acceptedWords[0].word;
+    act(() => result.current.retryAnswer(second));
+    expect(result.current.progress.doOverUsed).toBe(true);
+    expect(result.current.progress.acceptedWords.map((w) => w.word)).not.toContain(second);
+    expect(result.current.retriesLeft).toBe(0);
+    expect(result.current.retrySpent).toBe(true);
+  });
+
+  it("lets the reveal close the do-over on this puzzle without spending the week's", async () => {
+    const { result } = renderHook(() => useDailyPuzzle());
+    await finish(result, words);
+    const first = result.current.progress.acceptedWords[0].word;
+    act(() => result.current.retryAnswer(first));
+    await finish(result, words.filter((w) => w !== first));
+    expect(result.current.retryOffered).toBe(true);
+
+    act(() => result.current.revealAnswer());
+
+    expect(result.current.progress.revealed).toBe(true);
+    expect(result.current.retryOffered).toBe(false);
+    expect(result.current.retrySpent).toBe(true);
+    expect(result.current.retriesLeft).toBe(0);
+    expect(localStorage.getItem("ick:do-over-spent")).toBeNull();
+  });
+});

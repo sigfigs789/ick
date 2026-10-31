@@ -90,6 +90,13 @@ export interface DailyProgress {
    */
   doOverUsed?: boolean;
   /**
+   * Whether the word of the day was revealed by giving up a retry (see
+   * storage.forfeitRetry). Keeps the week's do-over off this puzzle: it
+   * would re-open a puzzle whose best word is known. Absent on a reveal
+   * saved before this field existed (see storage.answerRevealed).
+   */
+  revealed?: boolean;
+  /**
    * The word the retry gave up, and where in `acceptedWords` its replacement
    * lands -- the next word banked after the retry. Second chance reads that a
    * word moved; Buyer's remorse compares the replacement's score with it.
