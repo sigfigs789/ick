@@ -115,10 +115,13 @@ describe("achievements", () => {
   it("knows a clean sweep from a win on the last guess", () => {
     const rare = word("Rare");
     const sweep = day("2026-10-10", [rare, rare, rare, rare]);
-    const wire = day("2026-10-11", [word("Common"), word("Common"), word("Uncommon"), rare]);
-    const short = day("2026-10-12", [rare], { completed: true });
+    const rareLast = day("2026-10-11", [word("Common"), word("Common"), word("Uncommon"), rare]);
+    const wire = day("2026-10-12", [rare, word("Extremely Rare"), word("Common"), word("Elusive")]);
+    const short = day("2026-10-13", [rare], { completed: true });
     expect(statusOf("clean-sweep", { history: [short, sweep] }).earnedOn).toBe("2026-10-10");
-    expect(statusOf("down-to-the-wire", { history: [sweep, wire] }).earnedOn).toBe("2026-10-11");
+    expect(statusOf("down-to-the-wire", { history: [sweep, rareLast, wire] }).earnedOn).toBe(
+      "2026-10-12"
+    );
   });
 
 

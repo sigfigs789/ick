@@ -321,13 +321,14 @@ function retryScored(compare: (replacement: number, retried: number) => boolean)
 /** A word as long as "sesquipedalian" or longer. */
 const LONG_WORD = "sesquipedalian".length;
 
-/** Every guess spent, and only the last one Rare or better. */
+/** Every guess spent, and only the last one Elusive or better. */
 function downToTheWire(progress: DailyProgress): boolean {
   const words = progress.acceptedWords;
   if (!progress.completed || words.length < maxGuessesFor(progress.date)) return false;
+  const elusive = atLeast("Elusive");
   return (
-    isWinningRarity(words[words.length - 1].rarity) &&
-    words.slice(0, -1).every((word) => !isWinningRarity(word.rarity))
+    elusive(words[words.length - 1].rarity) &&
+    words.slice(0, -1).every((word) => !elusive(word.rarity))
   );
 }
 
@@ -1200,7 +1201,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     group: "Style",
     icon: "⏱️",
     title: "Down to the wire",
-    description: "Find a Rare or better word with your last guess, after every other fell short.",
+    description: "Find an Elusive or better word with your last guess, after every other fell short.",
     check: firstPuzzle(downToTheWire),
   },
   {
