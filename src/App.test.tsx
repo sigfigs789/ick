@@ -240,6 +240,105 @@ describe("App", () => {
     });
   });
 
+  describe("a best day or week ever", () => {
+    const today = "2026-08-13";
+    const fourWords = (zipf: number) =>
+      ["str1", "str2", "str3", "str4"].map((word) => ({ word, rarity: "Common", zipf }));
+
+    function storeDay(date: string, zipf: number) {
+      localStorage.setItem(
+        `ick:progress:${date}`,
+        JSON.stringify({
+          date,
+          drop: "str",
+          acceptedWords: fourWords(zipf),
+          rejectedAttempts: [],
+          completed: true,
+          firstWordAt: `${date}T12:00:00`,
+        })
+      );
+    }
+
+    function day(completed: boolean) {
+      // At this date Zipf 2.5 four times is 31.20, past yesterday's 28.00 and
+      // over the minimum.
+      return puzzle({
+        progress: {
+          date: today,
+          drop: "str",
+          acceptedWords: fourWords(2.5),
+          rejectedAttempts: [],
+          completed,
+          firstWordAt: `${today}T12:00:00`,
+        },
+      }) as ReturnType<typeof useDailyPuzzle>;
+    }
+
+    /** Mount today unfinished, closing the badges the old day welcomes, then finish. */
+    function finish({ closeWelcome = true } = {}) {
+      vi.mocked(useDailyPuzzle).mockReturnValue(day(false));
+      const { rerender } = render(<App />);
+      if (closeWelcome) {
+        const dismiss = screen.queryByRole("button", { name: "Dismiss" });
+        if (dismiss) act(() => dismiss.click());
+      }
+      // The finished day is in storage when the verdict lands.
+      storeDay(today, 2.5);
+      vi.mocked(useDailyPuzzle).mockReturnValue(day(true));
+      rerender(<App />);
+    }
+
+    beforeEach(() => {
+      storeDay("2026-08-12", 3);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("is celebrated on the finish that sets it", () => {
+      finish();
+      expect(screen.getByText("Your best day ever!")).toBeInTheDocument();
+      expect(vi.mocked(useSound).mock.results[0].value.rising).toHaveBeenCalledTimes(1);
+    });
+
+    it("is not kept away by a news card earlier in the day", () => {
+      claimHeaderCelebration("news", today); // yesterday's best word, say
+      finish();
+      expect(screen.getByText("Your best day ever!")).toBeInTheDocument();
+    });
+
+    it("keeps the top three away", async () => {
+      vi.useFakeTimers();
+      vi.mocked(checkTopRank).mockResolvedValue(1);
+      finish();
+      await act(() => vi.advanceTimersByTimeAsync(1500));
+      expect(checkTopRank).not.toHaveBeenCalled();
+      expect(screen.queryByText("#1 today!")).not.toBeInTheDocument();
+    });
+
+    it("waits behind an achievement card, then shows", () => {
+      finish({ closeWelcome: false });
+      expect(screen.getByText(/achievements? unlocked/i)).toBeInTheDocument();
+      expect(screen.queryByText("Your best day ever!")).not.toBeInTheDocument();
+      act(() => screen.getByRole("button", { name: "Dismiss" }).click());
+      expect(screen.getByText("Your best day ever!")).toBeInTheDocument();
+    });
+
+    it("is hidden from the header celebrations test's hidden arm", () => {
+      window.history.pushState(null, "", "/?header-celebrations=hidden");
+      finish();
+      expect(screen.queryByText("Your best day ever!")).not.toBeInTheDocument();
+    });
+
+    it("is not celebrated on a puzzle that mounts already finished", () => {
+      storeDay(today, 2.5);
+      vi.mocked(useDailyPuzzle).mockReturnValue(day(true));
+      render(<App />);
+      expect(screen.queryByText("Your best day ever!")).not.toBeInTheDocument();
+    });
+  });
+
   describe("a longest streak yet", () => {
     const today = "2026-08-13";
     const base = { totalCompleted: 9, crushedIt: 0, elite: 0, highScore: 0, bestToBeat: 9 };

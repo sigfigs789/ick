@@ -2777,6 +2777,15 @@ button.app__menu-item + button.app__menu-item {
 .improvement--best .improvement__gain {
   color: hsl(38 92% 40%);
 }
+/* A best day or best week ever (see components/PersonalBestCelebration.tsx): the
+   same card, in sky blue. */
+.improvement--record .improvement__card {
+  border-color: hsl(205 85% 52%);
+  box-shadow: var(--card-shadow), 0 0 0 6px hsl(205 85% 52% / 0.2);
+}
+.improvement--record .improvement__gain {
+  color: hsl(205 85% 40%);
+}
 /* The top-three card's way to the board (see components/TopRankCelebration.tsx). */
 .improvement__link {
   margin-top: 0.25rem;
