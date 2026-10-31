@@ -14,6 +14,7 @@ import { ConfettiBurst } from "./components/ConfettiBurst";
 import { JackpotStamp } from "./components/JackpotStamp";
 import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
 import { ImprovementCelebration } from "./components/ImprovementCelebration";
+import { PersonalBestCelebration } from "./components/PersonalBestCelebration";
 import { StreakClimbCelebration } from "./components/StreakClimbCelebration";
 import { TopRankCelebration } from "./components/TopRankCelebration";
 import { NewBestCelebration } from "./components/NewBestCelebration";
@@ -67,6 +68,7 @@ import {
   type Improvement,
 } from "./game/improvement";
 import { checkTopRank } from "./game/topRank";
+import { markBestWeekCelebrated, personalBestOn, type PersonalBest } from "./game/personalBest";
 import { checkStreakClimb, type StreakClimb } from "./game/streakClimb";
 import { totalRarityScore } from "./game/dictionary";
 import { addDays } from "./game/date";
@@ -177,6 +179,8 @@ export default function App() {
   const endNewBest = useCallback(() => setNewBest(null), []);
   const [improvement, setImprovement] = useState<Improvement | null>(null);
   const endImprovement = useCallback(() => setImprovement(null), []);
+  const [personalBest, setPersonalBest] = useState<PersonalBest | null>(null);
+  const endPersonalBest = useCallback(() => setPersonalBest(null), []);
   const [climb, setClimb] = useState<StreakClimb | null>(null);
   const endClimb = useCallback(() => setClimb(null), []);
   const [topRank, setTopRank] = useState<number | null>(null);
@@ -419,7 +423,7 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [beatBest, date]);
   // Its chime when the card actually shows, which is after a perfect month's.
-  const newBestShown = !showPerfectMonth && newBest !== null;
+  const newBestShown = !personalBest && !showPerfectMonth && newBest !== null;
   useEffect(() => {
     if (newBestShown) sound.rising();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -432,12 +436,25 @@ export default function App() {
   // already finished, by reload or by stepping back from the archive, throws
   // none. The record of the last celebration keeps it to one a week, and it
   // shows only if no other news header celebration had today.
+  //
+  // The same finish is where a best week or best day ever is set (see
+  // game/personalBest.ts), and a record goes first: it has its own slot, so a
+  // card earlier in the day does not keep it away, and it claims the news
+  // group's day so the rising average and the top three stay away. A week that
+  // keeps climbing is celebrated once.
   const finishedToday = isToday && progress.completed;
   const wasFinished = useRef({ date, finished: finishedToday });
   useEffect(() => {
     const before = wasFinished.current;
     wasFinished.current = { date, finished: finishedToday };
     if (!finishedToday || before.date !== date || before.finished) return;
+    const record = personalBestOn(date, progress.mode);
+    if (record && showHeaderCelebration("record", date)) {
+      claimHeaderCelebration("news", date);
+      if (record.kind === "week") markBestWeekCelebrated(date);
+      setPersonalBest(record);
+      return;
+    }
     const rise = improvementCelebrationDue(date) && averageImprovement(date, progress.mode);
     if (rise && showHeaderCelebration("news", date)) {
       markImprovementCelebrated(date);
@@ -472,7 +489,8 @@ export default function App() {
     };
   }, [streakUpToday, date]);
   // Its chime when the card actually shows, which is after any card ahead of it.
-  const climbShown = !showPerfectMonth && !newBest && !improvement && climb !== null;
+  const climbShown =
+    !personalBest && !showPerfectMonth && !newBest && !improvement && climb !== null;
   useEffect(() => {
     if (climbShown) sound.rising();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -490,6 +508,8 @@ export default function App() {
   const quiet = () =>
     !headerCelebrationShown("news", date) &&
     !headerCelebrationShown("streak", date) &&
+    !headerCelebrationShown("record", date) &&
+    !personalBest &&
     !showPerfectMonth &&
     !newBest &&
     !improvement &&
@@ -548,7 +568,14 @@ export default function App() {
     );
     if (!kind) return;
     const busy =
-      showPerfectMonth || improvement || climb || topRank || burst || unlocked || welcome;
+      personalBest ||
+      showPerfectMonth ||
+      improvement ||
+      climb ||
+      topRank ||
+      burst ||
+      unlocked ||
+      welcome;
     if (kind === "other" && busy) return;
     if (!showHeaderCelebration("news", date)) return;
     markBestWordNewsShown(yesterdaysBest.day);
@@ -556,17 +583,32 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- decided on arrival only
   }, [yesterdaysBest]);
 
+  // A record's chime when its card actually shows: after the word's own burst,
+  // and after an achievement card, the one card that goes before a record.
+  const recordDue = personalBest !== null && !burst;
+  const personalBestShown = recordDue && unlocked === null;
+  useEffect(() => {
+    if (!personalBestShown) return;
+    if (personalBest.kind === "week") sound.applause("week");
+    else sound.rising();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [personalBestShown]);
+
   // The achievement card's fanfare when the card actually shows, which is after
-  // any card ahead of it and after the word's own burst.
+  // any card ahead of it and after the word's own burst -- except a record,
+  // which waits behind it.
+  const achievementFirst = recordDue && unlocked !== null;
   const unlockedShown =
-    !showPerfectMonth &&
-    !newBest &&
-    !improvement &&
-    !climb &&
-    !bestNews &&
-    !topRank &&
-    !burst &&
-    unlocked !== null;
+    achievementFirst ||
+    (!personalBest &&
+      !showPerfectMonth &&
+      !newBest &&
+      !improvement &&
+      !climb &&
+      !bestNews &&
+      !topRank &&
+      !burst &&
+      unlocked !== null);
   useEffect(() => {
     if (unlockedShown) sound.achievement();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -614,7 +656,18 @@ export default function App() {
 
   return (
     <>
-      {showPerfectMonth ? (
+      {achievementFirst && unlocked ? (
+        // The one card a record gives way to.
+        <AchievementCelebration
+          key={unlocked.key}
+          achievements={unlocked.achievements}
+          total={unlocked.total}
+          onDone={endUnlocked}
+        />
+      ) : recordDue && personalBest ? (
+        // Ahead of every other card, behind only the word's own burst.
+        <PersonalBestCelebration best={personalBest} onDone={endPersonalBest} />
+      ) : showPerfectMonth ? (
         <PerfectMonthCelebration
           date={date}
           days={Number(date.slice(8, 10))}

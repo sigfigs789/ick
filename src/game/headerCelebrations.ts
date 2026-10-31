@@ -11,6 +11,12 @@
  *   (ImprovementCelebration), then a top-three place on today's board
  *   (TopRankCelebration).
  *
+ * Ahead of both groups is a **record**: the best week ever, else the best day
+ * ever (PersonalBestCelebration), on the finish that sets it. It has a slot of
+ * its own, so no card that came earlier in the day keeps it away, and it claims
+ * the news group's day too, so the rising average and the top three -- due on
+ * that same finish -- stay away. Only an achievement card goes before it.
+ *
  * The top-three card is last of all: it shows only on a day neither group has
  * claimed, and claims the news group's day itself.
  *
@@ -26,7 +32,7 @@
 
 import { playedHistory } from "./storage";
 
-export type HeaderCelebrationGroup = "streak" | "news";
+export type HeaderCelebrationGroup = "streak" | "news" | "record";
 
 const KEY_PREFIX = "ick:headerCelebration:";
 

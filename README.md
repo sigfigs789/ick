@@ -1004,12 +1004,22 @@ month has its own). They tap away or go by themselves.
 
 | Group | Card | When it comes due |
 |---|---|---|
+| Record | `PersonalBestCelebration` — "Your best week ever!" | the finish that takes the week's total (its best four days, as the weekly board counts) to 120 or more and past every earlier week; once a week |
+| Record | `PersonalBestCelebration` — "Your best day ever!" | the finish that takes the day's total to 30 or more and past every earlier day; a finish that sets both shows the week |
 | Streak | `NewBestCelebration` — "Your longest streak yet!" | today's first word, when it takes the streak past the player's best |
 | Streak | `StreakClimbCelebration` — "Up the streak board!" | a moment after today's first word takes the streak up, if it passed somebody else's run |
 | News | `BestWordNewsCard` — yesterday's best word | as the site opens; every time the player found it, but only once ever when somebody else did (from their 4th day played) |
 | News | `PerfectMonthCelebration` — "Perfect {month}!" | the first word that completes a month without a missed day |
 | News | `ImprovementCelebration` — "You're on the rise!" | the finish, at most once a week |
 | News | `TopRankCelebration` — "Top 3 today!", with a link to the leaderboard | a moment after the finish (a retry's re-finish too), when the player is in the top 3 of today's board of 15+ players; last of all, so only on a day neither group has claimed |
+
+**A record goes first** (`src/game/personalBest.ts`). A best week or best day
+ever has a slot of its own, so a card that came earlier in the day (yesterday's
+best word, a perfect month) does not keep it away. It claims the news group's
+day too, so the rising average and the top three, which come due on the same
+finish, stay away. It shows ahead of every other card; only an achievement card
+(and the word's own confetti) goes before it. "Ever" needs an earlier day or
+week on the same board to beat, counted from days played on their own date.
 
 **One card per group per day** (`src/game/headerCelebrations.ts`). Each
 group's cards are listed in priority order, which is also the order they
