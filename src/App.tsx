@@ -149,7 +149,6 @@ export default function App() {
     retryOffered,
     retrySpent,
     retriesLeft,
-    ownRetryOffered,
     retryAnswer,
     otherMode,
     crossMode,
@@ -676,7 +675,7 @@ export default function App() {
             date={date}
             isToday={isToday}
             completed={progress.completed}
-            retryOffered={ownRetryOffered}
+            retryOffered={retryOffered}
             onReveal={revealAnswer}
             wordOfDay={wordOfDayShown}
           />

@@ -9,10 +9,12 @@
  * earns no other. Nor does it carry over: it is that week's or nothing, like
  * the lazy weekend. The week is the board's, Monday to Sunday (see game/week.ts).
  *
- * Once the puzzle's word of the day is showing -- the puzzle finished with
- * its own retry gone, spent on a word or on the reveal -- the do-over cannot
- * be used on it: it would re-open a puzzle whose best word is known. The
- * reveal itself never spends the do-over; the week keeps it for another day.
+ * While it is held, a finished puzzle keeps its word of the day hidden even
+ * once its own retry is gone, so a player who retries a word, finishes again,
+ * and still holds the do-over can spend it there too. Once the word has been
+ * revealed (see storage.forfeitRetry) the do-over cannot be used on that
+ * puzzle: it would re-open a puzzle whose best word is known. The reveal
+ * itself never spends the do-over; the week keeps it for another day.
  */
 
 import { addDays, daysSinceEpoch } from "./date";
