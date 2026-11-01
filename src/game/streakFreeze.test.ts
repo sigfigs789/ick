@@ -288,12 +288,12 @@ describe("weekdayRestProgress", () => {
         "2026-10-31"
       )
     ).toEqual({ played: 3, reachable: true, sundayOnly: true });
-    // An earned Sunday shows 😴 until it is played, when next week's count shows.
+    // An earned Sunday shows 😴 all day, played or not: next week's count waits for Monday.
     const sunday = streakOf({ lastCompletedDate: "2026-10-30", playedDates: WEEK_PLAYED });
     expect(weekdayRestProgress(sunday, "2026-11-01")).toBeNull();
     expect(
       weekdayRestProgress({ ...sunday, lastCompletedDate: "2026-11-01", playedDates: [...WEEK_PLAYED, "2026-11-01"] }, "2026-11-01")
-    ).toEqual({ played: 0, reachable: true, sundayOnly: false });
+    ).toBeNull();
   });
 });
 
