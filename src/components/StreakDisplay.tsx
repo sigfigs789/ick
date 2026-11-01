@@ -3,6 +3,8 @@ import {
   atRisk,
   freezeRules,
   freezesOn,
+  isRestDay,
+  REST_DAY_PLAYS,
   resting,
   savedFreezeCovering,
   wasFrozen,
@@ -12,6 +14,7 @@ import type { StreakState } from "../game/types";
 import { RestDayBadge } from "./RestDayBadge";
 import { DoOverBadge } from "./DoOverBadge";
 import { doOverProgress } from "../game/doOver";
+import { dayOfWeek } from "../game/date";
 import { useKeepInViewport } from "../hooks/useKeepInViewport";
 
 function freezeSummary(banked: number, cap: number): string {
@@ -173,6 +176,10 @@ export function StreakDisplay({
   // The days played towards the next lazy weekend (a pie, or
   // 😴 once unlocked), beside the freezes. Only for a live streak, which is
   // what a lazy weekend keeps.
+  // An earned weekend day already played keeps its 😴 until Monday starts the
+  // next week's count, rather than an empty pie that reads as play not counted.
+  const weekendEarned =
+    !restDay && isToday && date !== undefined && streak.currentStreak > 0 && isRestDay(streak, date);
   const week =
     isToday && date !== undefined && streak.currentStreak > 0 ? weekdayRestProgress(streak, date) : null;
   // The days played towards this week's do-over (see game/doOver.ts), once one is.
@@ -205,6 +212,9 @@ export function StreakDisplay({
           {restDay && <RestDayBadge className="streak-display__flame" />}
           <StreakBadge icon={restDay ? null : icon} count={streak.currentStreak} />
           {showFreezes && <FreezeBadge banked={banked} cap={cap} currentStreak={streak.currentStreak} />}
+          {weekendEarned && (
+            <RestDayBadge played={REST_DAY_PLAYS} sundayOnly={dayOfWeek(date) === 6} className="streak-display__week" />
+          )}
           {week && (
             <RestDayBadge
               played={week.played}

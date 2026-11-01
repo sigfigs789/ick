@@ -406,14 +406,15 @@ export function resting(streak: StreakState, today: string): boolean {
  * earn only the Sunday, Friday having passed or being out of reach. Shown
  * even when they cannot, so a player learns of it for next week. On a Sunday
  * it is the next week's, which has not begun. Null on an earned Saturday or
- * Sunday not played yet, which shows 😴 itself, and before rest days began.
+ * Sunday, played or not, which shows 😴 itself until the next week begins on
+ * Monday, and before rest days began.
  */
 export function weekdayRestProgress(
   streak: StreakState,
   today: string
 ): { played: number; reachable: boolean; sundayOnly: boolean } | null {
   const saturday = earningSaturday(today);
-  if (resting(streak, today) || saturday < REST_DAY_START) return null;
+  if (isRestDay(streak, today) || saturday < REST_DAY_START) return null;
   const played = weekPlays(streak, saturday);
   const playedToday = (streak.playedDates ?? []).includes(today);
   // The days still to play through `last`: from the week's first day when that
