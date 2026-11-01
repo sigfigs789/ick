@@ -61,7 +61,6 @@ export function ExperimentsV2Page() {
           !experiments.headerCelebrations &&
           !experiments.shareName &&
           !experiments.inputPlacement &&
-          !experiments.playTab &&
           !experiments.idleHintNew &&
           !experiments.idleHintReturning)
       }
@@ -174,27 +173,6 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
                 One in five new draws gets the input below the guess log; the rest keep it above. Each is drawn once,
                 the first time the input appears. Try either arm with <code>?input-placement=below</code> or{" "}
                 <code>=above</code>; a forced arm, or a tester, is not counted.
-              </>
-            }
-          />
-        </Section>
-      )}
-
-      {experiments.playTab && (
-        <Section
-          title="Play icon in the header"
-          note={`Whether a Play icon, first in the header, moves the scorecard. Over players, new and returning apart.${drawn}`}
-        >
-          <ExperimentView
-            experiment={experiments.playTab}
-            drawnBeforeFirstWord
-            subject="the Play icon in the header"
-            about={
-              <>
-                One player in five gets a Play icon, the way back to the puzzle, first among the header&rsquo;s page
-                icons; the rest have the wordmark alone, as before. Each is drawn once, on their first load. Try either
-                arm with <code>?play-tab=shown</code> or <code>=hidden</code>; a forced arm, or a tester (forced to
-                hidden), is not counted.
               </>
             }
           />
