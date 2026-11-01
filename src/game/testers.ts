@@ -6,9 +6,7 @@ import { accountName, loadPlayerId } from "./player";
  * treatment (see game/idleHint.ts), and the come-back line and the word of the
  * day shown (see game/comeBackTest.ts and game/wordOfDay.ts), the username
  * left out of shares by default (see game/shareNameTest.ts), and the
- * guess input below the guess log (see game/inputPlacementTest.ts). The
- * exception is the play tab test (see game/playTabTest.ts), where they are
- * kept in the hidden arm, with no Play icon in the header.
+ * guess input below the guess log (see game/inputPlacementTest.ts).
  *
  * Listed by handle, the name the board shows, since that is the name anyone
  * asking to be let in knows themselves by. Like an `?idle-hint=` force, a

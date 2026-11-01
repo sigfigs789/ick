@@ -222,34 +222,6 @@ describe("ExperimentsV2Page", () => {
     expect(screen.getByText(/activation is counted over everyone drawn/)).toBeTruthy();
   });
 
-  it("draws the play tab test, new and returning players apart", async () => {
-    const playTab = {
-      since: "2026-10-26",
-      arms: [
-        { variant: "shown", segment: "all", assigned: 50, d1: { cohort: 45, returned: 15 } },
-        { variant: "shown", segment: "new", assigned: 20, d1: { cohort: 18, returned: 5 } },
-        { variant: "hidden", segment: "all", assigned: 200, d1: { cohort: 180, returned: 55 } },
-        { variant: "hidden", segment: "new", assigned: 90, d1: { cohort: 80, returned: 20 } },
-      ],
-    };
-    const body = {
-      wordOfDay: null,
-      comeBack: null,
-      headerCelebrations: null,
-      shareName: null,
-      inputPlacement: null,
-      playTab,
-    };
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(body), { status: 200 })));
-    render(<ExperimentsV2Page />);
-
-    expect(await screen.findByRole("heading", { name: "Play icon in the header" })).toBeTruthy();
-    expect(
-      screen.getByRole("table", { name: "Everyone drawn: with the Play icon in the header against without." }),
-    ).toBeTruthy();
-    expect(screen.getAllByRole("table")).toHaveLength(3);
-  });
-
   it("draws the idle hint's two experiments, each in one table", async () => {
     const idleHint = {
       since: "2026-10-20",

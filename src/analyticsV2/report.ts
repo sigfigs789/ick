@@ -145,8 +145,6 @@ export interface Experiments {
   shareName: Experiment | null;
   /** Its `shown` arm is the input below the guess log, `hidden` above (see game/inputPlacementTest.ts). */
   inputPlacement: Experiment | null;
-  /** Its `shown` arm is the Play icon in the header (see game/playTabTest.ts). */
-  playTab: Experiment | null;
   /**
    * The idle hint's two experiments, first-ever sessions and later ones, each
    * over the players who sat idle long enough to be hinted; `shown` is the
@@ -335,7 +333,6 @@ export async function fetchExperiments(today: string, span?: { from: string; to:
     headerCelebrations: parseExperiment(body.headerCelebrations),
     shareName: parseExperiment(body.shareName),
     inputPlacement: parseExperiment(body.inputPlacement),
-    playTab: parseExperiment(body.playTab),
     idleHintNew: parseExperiment(body.idleHintNew),
     idleHintReturning: parseExperiment(body.idleHintReturning),
     span: span ?? null,
