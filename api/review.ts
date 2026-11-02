@@ -23,7 +23,7 @@
 //   the 2026-11-09 analytics_v2_windows migration; its retention and prior
 //   days, 2026-11-11).
 // GET /api/review?list=experiments-v2&today=YYYY-MM-DD[&from=YYYY-MM-DD&to=YYYY-MM-DD]
-//   -> { wordOfDay, comeBack, headerCelebrations }, for /experimentsV2: each experiment's arms
+//   -> { wordOfDay, shareName, inputPlacement, idleHintNew, idleHintReturning }, for /experimentsV2: each experiment's arms
 //   (see the 2026-11-01 analytics_v2_experiment migration), over the players
 //   drawn from `from` to `to` when both are given (2026-11-09).
 // GET /api/review?list=my-suggestions&player=<uuid>
@@ -447,16 +447,12 @@ async function handleGet(request: Request): Promise<Response> {
         );
       const [
         wordOfDay,
-        comeBack,
-        headerCelebrations,
         shareName,
         inputPlacement,
         idleHintNew,
         idleHintReturning,
       ] = await Promise.all([
         experiment("word_of_day_assigned"),
-        experiment("come_back_assigned"),
-        experiment("header_celebrations_assigned"),
         experiment("share_name_assigned"),
         experiment("input_placement_assigned"),
         // Off the trigger, not the draw: the players who sat idle long enough
@@ -468,8 +464,6 @@ async function handleGet(request: Request): Promise<Response> {
         200,
         {
           wordOfDay,
-          comeBack,
-          headerCelebrations,
           shareName,
           inputPlacement,
           idleHintNew,

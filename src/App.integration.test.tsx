@@ -140,8 +140,6 @@ beforeEach(() => {
   // Reporting is on here, so finishing a puzzle would draw the word of the day
   // experiment at random; these tests are about the word itself.
   localStorage.setItem("ick:word-of-day", "shown");
-  // And banking a word would draw the come-back test; keep its line on.
-  localStorage.setItem("ick:come-back-test", "shown");
   // And opening a puzzle would draw the input placement test; keep the input
   // where these tests expect it, under the drop.
   localStorage.setItem("ick:input-placement-test", "above");

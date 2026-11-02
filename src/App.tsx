@@ -54,11 +54,6 @@ import {
   headerCelebrationsHeld,
   type HeaderCelebrationGroup,
 } from "./game/headerCelebrations";
-import {
-  assignHeaderCelebrationsArm,
-  drawnHeaderCelebrationsArm,
-  forcedHeaderCelebrationsVariant,
-} from "./game/headerCelebrationsTest";
 import { dismissWelcomeBack, welcomeBackDismissedOn } from "./game/storage";
 import {
   averageImprovement,
@@ -81,8 +76,6 @@ import {
 } from "./game/bestWordNews";
 import {
   campaignSourceFromSearch,
-  isReporting,
-  trackHeaderCelebrationsAssigned,
   trackRedditArrival,
   trackShareArrival,
   trackTwitterArrival,
@@ -107,21 +100,12 @@ const STREAK_CHECK_DELAY_MS = 1500;
 /**
  * Whether a header celebration due now may show: the player is past their
  * first few words, its group has not had its card today (see
- * game/headerCelebrations.ts), and the player is in the arm of the test that
- * sees them (see game/headerCelebrationsTest.ts). A card held back from a new
- * player claims no day and draws no arm. The arm is drawn here, the first time
- * a card is due. A host that reports nothing has nobody to measure a draw, so
- * it always shows the cards and never draws.
+ * game/headerCelebrations.ts). A card held back from a new player claims no
+ * day.
  */
 function showHeaderCelebration(group: HeaderCelebrationGroup, date: string): boolean {
   if (headerCelebrationsHeld()) return false;
-  if (!claimHeaderCelebration(group, date)) return false;
-  const forced = forcedHeaderCelebrationsVariant();
-  if (forced || !isReporting()) return forced !== "hidden";
-  const drawn = assignHeaderCelebrationsArm();
-  if (!drawn) return true;
-  if (drawn.fresh) trackHeaderCelebrationsAssigned(drawn.variant, date);
-  return drawn.variant === "shown";
+  return claimHeaderCelebration(group, date);
 }
 
 /** The welcome's card key: no verdict's, as no verdict brought it. */
@@ -315,8 +299,7 @@ export default function App() {
     const statuses = syncAchievements(streak);
     earnedAchievements.current = earnedIds(statuses);
     const backlog = achievementsToCatchUp(announcedAchievements(), statuses);
-    const arm = forcedHeaderCelebrationsVariant() ?? drawnHeaderCelebrationsArm();
-    if (backlog.length === 0 || arm === "hidden" || achievementsHeld.current) return;
+    if (backlog.length === 0 || achievementsHeld.current) return;
     markAchievementsAnnounced(backlog.map((achievement) => achievement.id));
     setUnlocked({
       key: CATCH_UP_KEY,
@@ -337,8 +320,7 @@ export default function App() {
       achievementsHeld.current = false;
       fresh = achievementsToCatchUp(announcedAchievements(), statuses);
     }
-    const arm = forcedHeaderCelebrationsVariant() ?? drawnHeaderCelebrationsArm();
-    if (fresh.length === 0 || arm === "hidden") return;
+    if (fresh.length === 0) return;
     markAchievementsAnnounced(fresh.map((achievement) => achievement.id));
     // A welcome still up gives way: today's badge is the news.
     setUnlocked((current) => ({

@@ -21,8 +21,6 @@ import { markLook, markShare, type SessionTimeReport } from "./game/sessionTime"
 import { todayDateString } from "./game/date";
 import { parseSourceCode, type ModeAssignment } from "./game/onboarding";
 import { IDLE_HINT_DELAY_MS, currentIdleHintArm, type IdleHintArm } from "./game/idleHint";
-import type { ComeBackVariant } from "./game/comeBackTest";
-import type { HeaderCelebrationsVariant } from "./game/headerCelebrationsTest";
 import type { InputPlacementVariant } from "./game/inputPlacementTest";
 import type { ShareNameVariant } from "./game/shareNameTest";
 import type { WordOfDayVariant } from "./game/wordOfDay";
@@ -866,40 +864,9 @@ export function trackWordOfDayAssigned(variant: WordOfDayVariant, date: string) 
 }
 
 /**
- * The come-back test's draw (see game/comeBackTest.ts), once per player, on
- * the first puzzle they banked a word on with the line due. Shaped like the
- * word of the day's, for `analytics_v2_experiment`; the line only shows on
- * the live puzzle, so `live_date` is the puzzle's own.
- */
-export function trackComeBackAssigned(variant: ComeBackVariant, date: string) {
-  send("come_back_assigned", {
-    variant,
-    puzzle_date: date,
-    puzzle_number: puzzleNumber(date),
-    live_date: todayDateString(),
-    mode: modeOf(date),
-  });
-}
-
-/**
- * The header celebrations test's draw (see game/headerCelebrationsTest.ts),
- * once per player, on the first live puzzle a card would have shown on. Shaped
- * like the come-back test's, for `analytics_v2_experiment`.
- */
-export function trackHeaderCelebrationsAssigned(variant: HeaderCelebrationsVariant, date: string) {
-  send("header_celebrations_assigned", {
-    variant,
-    puzzle_date: date,
-    puzzle_number: puzzleNumber(date),
-    live_date: todayDateString(),
-    mode: modeOf(date),
-  });
-}
-
-/**
  * The share name test's draw (see game/shareNameTest.ts), once per player, on
  * the first share built with no "Show username" choice saved. Shaped like the
- * come-back test's, for `analytics_v2_experiment`, which splits new players
+ * word of the day's, for `analytics_v2_experiment`, which splits new players
  * from returning ones by their first word; `returning` is the browser's own
  * view of the same thing (a word banked on an earlier puzzle), kept so the two
  * can be checked against each other.
