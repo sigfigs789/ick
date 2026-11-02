@@ -88,8 +88,6 @@ describe("App", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
-    // In the header celebrations test's arm that sees them (see game/headerCelebrationsTest.ts).
-    localStorage.setItem("ick:header-celebrations-test", "shown");
     // Every test but the welcome one below is about the puzzle behind the
     // rules, so start them as a returning player who has already read them.
     markSeen("instructions");
@@ -209,17 +207,6 @@ describe("App", () => {
       rerender(<App />);
       expect(screen.getByText("You're on the rise!")).toBeInTheDocument();
       expect(vi.mocked(useSound).mock.results[0].value.rising).toHaveBeenCalledTimes(1);
-    });
-
-    it("is hidden from the header celebrations test's hidden arm", () => {
-      storeRisingWeek();
-      window.history.pushState(null, "", "/?header-celebrations=hidden");
-      vi.mocked(useDailyPuzzle).mockReturnValue(day(false));
-      const { rerender } = render(<App />);
-      vi.mocked(useDailyPuzzle).mockReturnValue(day(true));
-      rerender(<App />);
-      expect(screen.queryByText("You're on the rise!")).not.toBeInTheDocument();
-      expect(vi.mocked(useSound).mock.results[0].value.rising).not.toHaveBeenCalled();
     });
 
     it("gives way to a news card that already had today", () => {
@@ -645,7 +632,6 @@ describe("celebrating an achievement", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
-    localStorage.setItem("ick:header-celebrations-test", "shown");
     markSeen("instructions");
     vi.mocked(useSound).mockReturnValue({
       accept: vi.fn(),
@@ -748,34 +734,4 @@ describe("celebrating an achievement", () => {
     expect(screen.queryByText(/achievements? unlocked/i)).toBeNull();
   });
 
-  it("keeps the welcome from the players the header celebrations test hides the cards from", () => {
-    localStorage.setItem("ick:header-celebrations-test", "hidden");
-    bankWords("2026-08-12", ["strong", "strix", "street", "strap"]);
-    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
-    render(<App />);
-    expect(screen.queryByText("Achievement unlocked")).toBeNull();
-    expect(localStorage.getItem("ick:achievements-announced")).toBeNull();
-  });
-
-  it("stays away from the players the header celebrations test hides the cards from", () => {
-    localStorage.setItem("ick:header-celebrations-test", "hidden");
-    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
-    const { rerender } = render(<App />);
-    bankWords("2026-08-13", ["strix", "strong", "street", "strap"]);
-    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ feedback: accepted(1) }) as ReturnType<typeof useDailyPuzzle>);
-    rerender(<App />);
-    expect(screen.queryByText("Achievement unlocked")).toBeNull();
-    expect(achievement).not.toHaveBeenCalled();
-  });
-
-  it("shows to a player not yet drawn into that test, without drawing them", () => {
-    localStorage.removeItem("ick:header-celebrations-test");
-    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
-    const { rerender } = render(<App />);
-    bankWords("2026-08-13", ["strix", "strong", "street", "strap"]);
-    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle({ feedback: accepted(1) }) as ReturnType<typeof useDailyPuzzle>);
-    rerender(<App />);
-    expect(screen.getByText("X marks the spot")).toBeInTheDocument();
-    expect(localStorage.getItem("ick:header-celebrations-test")).toBeNull();
-  });
 });

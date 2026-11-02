@@ -1,13 +1,11 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { isReporting, trackComeBackAssigned } from "../analytics";
 import { syncAchievements } from "../game/achievements";
 import { comeBackGoal, type GoalExplainer } from "../game/comeBack";
-import { assignComeBackArm, forcedComeBackVariant, type ComeBackVariant } from "../game/comeBackTest";
 import type { StreakState } from "../game/types";
 
 interface Props {
   streak: StreakState;
-  /** The puzzle on screen, which the draw is reported against. */
+  /** The puzzle on screen. */
   date: string;
 }
 
@@ -15,32 +13,10 @@ interface Props {
  * Under the footnotes divider, just above yesterday's best, once today's word
  * is banked: what playing tomorrow is worth, in one line (see game/comeBack.ts).
  *
- * Shown to the `shown` arm of the come-back test (see game/comeBackTest.ts),
- * which is drawn here, the first time the line would appear. A host that
- * reports nothing (the Reddit post) has nobody to measure a draw, so it
- * always shows the line and never draws.
- *
  * A line naming a 🧊 freeze or a lazy weekend can be selected for a popup
  * saying what that is (see `comeBackGoal`).
  */
 export function ComeBackCard({ streak, date }: Props) {
-  const [variant, setVariant] = useState<ComeBackVariant | null>(null);
-
-  useEffect(() => {
-    const forced = forcedComeBackVariant();
-    if (forced || !isReporting()) {
-      setVariant(forced ?? "shown");
-      return;
-    }
-    const drawn = assignComeBackArm();
-    if (!drawn) {
-      setVariant("shown");
-      return;
-    }
-    if (drawn.fresh) trackComeBackAssigned(drawn.variant, date);
-    setVariant(drawn.variant);
-  }, [date]);
-
   // The achievements still locked, for when nothing nearer is ahead. Memoized:
   // reading them walks the stored history. The suggestion badges are left out:
   // they are not won by coming back to play.
@@ -56,7 +32,7 @@ export function ComeBackCard({ streak, date }: Props) {
     [streak, date]
   );
 
-  if (variant !== "shown" || goal === null) return null;
+  if (goal === null) return null;
   return (
     <section className="come-back" aria-label="Tomorrow's drop">
       {goal.explainer ? (

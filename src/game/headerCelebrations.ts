@@ -57,9 +57,7 @@ export function headerCelebrationShown(group: HeaderCelebrationGroup, date: stri
 
 /**
  * Claim `group`'s one card for `date`: true if the card may show, false when
- * another of the group's cards already has today. The 25% of players the
- * header celebrations test hides them from (see headerCelebrationsTest.ts) are
- * kept out by the caller, not here.
+ * another of the group's cards already has today.
  */
 export function claimHeaderCelebration(group: HeaderCelebrationGroup, date: string): boolean {
   if (headerCelebrationShown(group, date)) return false;

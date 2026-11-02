@@ -67,18 +67,6 @@ describe("WordRulesModal", () => {
     expect(suggestedWords()).toHaveLength(2);
   });
 
-  it("names Word scout in the thank-you where the header celebrations test hides cards", async () => {
-    localStorage.clear();
-    window.history.pushState(null, "", "/?header-celebrations=hidden");
-    render(<WordRulesModal open onClose={vi.fn()} />);
-
-    await userEvent.type(screen.getByLabelText(/suggest a word/i), "zibeline");
-    await userEvent.click(screen.getByRole("button", { name: /suggest word/i }));
-    expect(screen.getByRole("status")).toHaveTextContent("Achievement unlocked: 💡 Word scout.");
-    expect(screen.queryByRole("button", { name: "Dismiss" })).toBeNull();
-    window.history.pushState(null, "", "/");
-  });
-
   it("offers the queue once a word is suggested, and closes on the way there", async () => {
     const onClose = vi.fn();
     window.history.pushState(null, "", "/");

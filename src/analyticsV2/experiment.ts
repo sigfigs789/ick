@@ -14,7 +14,7 @@ import {
 } from "./scorecard";
 
 /**
- * An experiment on /experimentsV2 -- the word of the day, the come-back line --
+ * An experiment on /experimentsV2 -- the word of the day, the share name --
  * as `analytics_v2_experiment` returns it (see the 2026-11-01 migrations, where
  * every number is defined), and the call it points to: keep the thing tested,
  * or take it out.

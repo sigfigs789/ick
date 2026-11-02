@@ -57,8 +57,6 @@ export function ExperimentsV2Page() {
       isEmpty={
         !experiments ||
         (!experiments.wordOfDay &&
-          !experiments.comeBack &&
-          !experiments.headerCelebrations &&
           !experiments.shareName &&
           !experiments.inputPlacement &&
           !experiments.idleHintNew &&
@@ -90,45 +88,6 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
                 Half of players never see the word under a finished puzzle&rsquo;s drop. Each is drawn once, the first
                 time they finish a puzzle. Try either arm with <code>?word-of-day=hidden</code> or <code>=shown</code>;
                 a forced arm is not counted.
-              </>
-            }
-          />
-        </Section>
-      )}
-
-      {experiments.comeBack && (
-        <Section
-          title="Come-back tip"
-          note={`Whether the line under the streak saying what tomorrow is worth moves the scorecard. Over players.${drawn}`}
-        >
-          <ExperimentView
-            experiment={experiments.comeBack}
-            subject="the come-back tip"
-            about={
-              <>
-                One in three new draws never sees the line under the streak that says what tomorrow is worth (players
-                drawn while the split was 50/50 keep their arm). Each is drawn once, the first time it would appear: a word banked on today&rsquo;s puzzle. Try either arm with{" "}
-                <code>?come-back=hidden</code> or <code>=shown</code>; a forced arm, or a tester, is not counted.
-              </>
-            }
-          />
-        </Section>
-      )}
-
-      {experiments.headerCelebrations && (
-        <Section
-          title="Header celebrations"
-          note={`Whether the cards over the top of today's puzzle move the scorecard. Over players, new and returning apart.${drawn}`}
-        >
-          <ExperimentView
-            experiment={experiments.headerCelebrations}
-            subject="the header celebrations"
-            about={
-              <>
-                A quarter of players never see the header celebrations: no longest streak yet, climb up the streak
-                board, yesterday&rsquo;s best word, perfect month or rising average. Each is drawn once, the first time
-                one of those cards would show. Try either arm with <code>?header-celebrations=hidden</code> or{" "}
-                <code>=shown</code>; a forced arm, or a tester, is not counted.
               </>
             }
           />

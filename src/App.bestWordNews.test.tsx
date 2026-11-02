@@ -83,8 +83,6 @@ function playedDays(days: number) {
 beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
-  // In the header celebrations test's arm that sees them (see game/headerCelebrationsTest.ts).
-  localStorage.setItem("ick:header-celebrations-test", "shown");
   markSeen("instructions");
   localStorage.setItem(PLAYER_KEY, JSON.stringify({ id: SELF }));
   vi.mocked(useSound).mockReturnValue({
