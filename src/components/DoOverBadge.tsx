@@ -3,32 +3,26 @@ import { DO_OVER_EMOJI, DO_OVER_PLAYS } from "../game/doOver";
 import { useKeepInViewport } from "../hooks/useKeepInViewport";
 import { WeekPie } from "./RestDayBadge";
 
-/** What the badge says, with `played` of the week's days played. */
-function doOverRule(played: number, reachable: boolean, spent: boolean): string {
-  if (spent) return `Used this week. Play ${DO_OVER_PLAYS} days next week for another.`;
-  if (played >= DO_OVER_PLAYS) return `Unlocked: an extra retry ${DO_OVER_EMOJI} this week.`;
-  if (!reachable) return `Play ${DO_OVER_PLAYS} days in a week to unlock a do-over ${DO_OVER_EMOJI}.`;
-  return `Play ${DO_OVER_PLAYS} days this week to unlock a do-over ${DO_OVER_EMOJI}. ${played} of ${DO_OVER_PLAYS} so far.`;
+/** What the badge says, with `played` of the days played towards the next do-over. */
+function doOverRule(played: number): string {
+  if (played >= DO_OVER_PLAYS)
+    return `Ready: an extra retry ${DO_OVER_EMOJI}, kept until you use it. You can hold one at a time.`;
+  return `Play ${DO_OVER_PLAYS} days to earn a do-over ${DO_OVER_EMOJI}, an extra retry. ${played} of ${DO_OVER_PLAYS} so far.`;
 }
 
 /**
  * The do-over badge, beside the lazy weekend's (see game/doOver.ts): a pie
- * filling a quarter a day played this week that turns 🔄 on the fourth, and
- * stays, faded, once spent. Hover or select it for the rule, as the lazy
+ * filling a quarter a day played that turns 🔄 on the fourth, and starts
+ * over once it is spent. Hover or select it for the rule, as the lazy
  * weekend's pie does.
  */
 export function DoOverBadge({
   played,
-  reachable,
-  spent,
 }: {
   played: number;
-  /** Whether DO_OVER_PLAYS can still be played this week. */
-  reachable: boolean;
-  spent: boolean;
 }) {
-  const rule = doOverRule(played, reachable, spent);
-  const unlocked = spent || played >= DO_OVER_PLAYS;
+  const rule = doOverRule(played);
+  const unlocked = played >= DO_OVER_PLAYS;
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
   const wrapRef = useRef<HTMLSpanElement>(null);
@@ -54,7 +48,7 @@ export function DoOverBadge({
 
   return (
     <span
-      className={`rest-day streak-display__week do-over${spent ? " do-over--spent" : ""}`}
+      className="rest-day streak-display__week do-over"
       ref={wrapRef}
       // Mouse only: a tap also fires pointerenter, and the click handles taps.
       onPointerEnter={(event) => event.pointerType === "mouse" && setHovered(true)}

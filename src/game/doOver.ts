@@ -1,89 +1,79 @@
 /**
- * The do-over: a second retry, earned by playing DO_OVER_PLAYS of a week's
- * puzzles, each on its own day (the same days the lazy weekend counts, see
- * `weekPlays` in game/streakFreeze.ts). It is spent like the puzzle's own
- * retry, on today's puzzle only, once the puzzle's own retry is gone -- so a
- * puzzle played while it is held has two retries.
+ * The do-over: a second retry, earned by every DO_OVER_PLAYS days played
+ * (each on its own day, see `playedDates`). Only one is ever held, so days
+ * played while one is held earn nothing more; but it never expires, and
+ * spending it starts the count for the next. The count runs from the day
+ * after the last one was spent, or from COUNT_FROM, when this rule began
+ * (everyone started then at 0, with that week's days played counting).
  *
- * It does not stack: a week earns one, and a week whose do-over is spent
- * earns no other. Nor does it carry over: it is that week's or nothing, like
- * the lazy weekend. The week is the board's, Monday to Sunday (see game/week.ts).
+ * It is spent like the puzzle's own retry, on today's puzzle only, once the
+ * puzzle's own retry is gone -- so a puzzle played while it is held has two
+ * retries.
  *
  * While it is held, a finished puzzle keeps its word of the day hidden even
  * once its own retry is gone, so a player who retries a word, finishes again,
  * and still holds the do-over can spend it there too. Once the word has been
  * revealed (see storage.forfeitRetry) the do-over cannot be used on that
  * puzzle: it would re-open a puzzle whose best word is known. The reveal
- * itself never spends the do-over; the week keeps it for another day.
+ * itself never spends the do-over; the player keeps it for another day.
  */
 
-import { addDays, daysSinceEpoch } from "./date";
+import { addDays } from "./date";
 import type { StreakState } from "./types";
-import { weekEnd, weekStart } from "./week";
 
-/** Days played in a week, each on its own day, that earn its do-over. */
+/** Days played, each on its own day, that earn a do-over. */
 export const DO_OVER_PLAYS = 4;
 
 /** The do-over's emoji, wherever it is shown. */
 export const DO_OVER_EMOJI = "🔄";
 
-/** The first day of the week whose do-over is spent, kept apart from both modes' puzzles. */
-const SPENT_KEY = "ick:do-over-spent";
+/** The first day whose play counts: the Monday the do-over stopped being weekly. */
+export const COUNT_FROM = "2026-11-02";
 
-/** The days of `today`'s week, through `today`, played on their own day. */
+/** The day the last do-over was spent. (The weekly one used "ick:do-over-spent".) */
+const SPENT_KEY = "ick:do-over-spent-on";
+
+/** The first day counting towards the next do-over; `null` when storage can't be read. */
+function countFrom(): string | null {
+  try {
+    const spent = localStorage.getItem(SPENT_KEY);
+    return spent && spent >= COUNT_FROM ? addDays(spent, 1) : COUNT_FROM;
+  } catch {
+    // A do-over that cannot be marked spent is not offered.
+    return null;
+  }
+}
+
+/** Days played through `today` towards the next do-over. */
 export function doOverPlays(streak: StreakState, today: string): number {
-  const from = weekStart(today);
+  const from = countFrom();
+  if (from === null) return 0;
   return (streak.playedDates ?? []).filter((d) => d >= from && d <= today).length;
 }
 
-/** Whether `today`'s week's do-over is spent. */
-export function doOverSpent(today: string): boolean {
-  try {
-    return localStorage.getItem(SPENT_KEY) === weekStart(today);
-  } catch {
-    // A do-over that cannot be marked spent is not offered (see `doOverHeld`).
-    return true;
-  }
-}
-
-/** Mark `today`'s week's do-over spent. */
+/** Spend the do-over held on `today`. */
 export function spendDoOver(today: string): void {
   try {
-    localStorage.setItem(SPENT_KEY, weekStart(today));
+    localStorage.setItem(SPENT_KEY, today);
   } catch {
-    // Nothing to do: `doOverSpent` already reads unwritable storage as spent.
+    // Nothing to do: `countFrom` reads unreadable storage as nothing earned.
   }
 }
 
-/** Whether the do-over is earned this week and not yet spent. */
+/** Whether a do-over is held. */
 export function doOverHeld(streak: StreakState, today: string): boolean {
-  return doOverPlays(streak, today) >= DO_OVER_PLAYS && !doOverSpent(today);
+  return doOverPlays(streak, today) >= DO_OVER_PLAYS;
+}
+
+/** The days played towards the next do-over, at most DO_OVER_PLAYS, for the badge. */
+export function doOverProgress(streak: StreakState, today: string): { played: number } {
+  return { played: Math.min(DO_OVER_PLAYS, doOverPlays(streak, today)) };
 }
 
 /**
- * Where the week stands, for the pie (see components/DoOverBadge.tsx): the
- * days played, whether DO_OVER_PLAYS can still be reached by the week's end,
- * and whether its do-over is spent.
- */
-export function doOverProgress(
-  streak: StreakState,
-  today: string
-): { played: number; reachable: boolean; spent: boolean } {
-  const played = doOverPlays(streak, today);
-  const playedToday = (streak.playedDates ?? []).includes(today);
-  const left = daysSinceEpoch(weekEnd(weekStart(today)), today) + (playedToday ? 0 : 1);
-  return { played, reachable: played + left >= DO_OVER_PLAYS, spent: doOverSpent(today) };
-}
-
-/**
- * Whether playing tomorrow earns the do-over: today is played, it is the
- * last day short, and tomorrow is in the same week. For the come-back line.
+ * Whether playing tomorrow earns a do-over: today is played and it is the
+ * last day short. For the come-back line.
  */
 export function doOverTomorrow(streak: StreakState, today: string): boolean {
-  return (
-    (streak.playedDates ?? []).includes(today) &&
-    doOverPlays(streak, today) === DO_OVER_PLAYS - 1 &&
-    weekStart(addDays(today, 1)) === weekStart(today) &&
-    !doOverSpent(today)
-  );
+  return (streak.playedDates ?? []).includes(today) && doOverPlays(streak, today) === DO_OVER_PLAYS - 1;
 }

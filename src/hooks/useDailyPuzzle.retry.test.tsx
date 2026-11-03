@@ -406,9 +406,9 @@ describe("useDailyPuzzle retry and the day's score", () => {
   });
 });
 
-describe("useDailyPuzzle retry with the week's do-over", () => {
+describe("useDailyPuzzle retry with the do-over", () => {
   // A Friday, with Monday to Thursday already played: the do-over is held.
-  const FRIDAY = "2026-09-18";
+  const FRIDAY = "2026-11-06";
   const FRIDAY_DROP = dropForDate(FRIDAY).toLowerCase();
   const words = playableWords(FRIDAY_DROP, 6);
 
@@ -465,7 +465,7 @@ describe("useDailyPuzzle retry with the week's do-over", () => {
     expect(result.current.retrySpent).toBe(true);
   });
 
-  it("lets the reveal close the do-over on this puzzle without spending the week's", async () => {
+  it("lets the reveal close the do-over on this puzzle without spending it", async () => {
     const { result } = renderHook(() => useDailyPuzzle());
     await finish(result, words);
     const first = result.current.progress.acceptedWords[0].word;

@@ -84,14 +84,14 @@ export interface DailyProgress {
    */
   retryUsed?: boolean;
   /**
-   * Whether the week's do-over has been spent on this puzzle (see
+   * Whether the do-over has been spent on this puzzle (see
    * game/doOver.ts and storage.retryWord). The week remembers its own do-over
    * apart from this; this is for the puzzle's retry count.
    */
   doOverUsed?: boolean;
   /**
    * Whether the word of the day was revealed by giving up a retry (see
-   * storage.forfeitRetry). Keeps the week's do-over off this puzzle: it
+   * storage.forfeitRetry). Keeps the do-over off this puzzle: it
    * would re-open a puzzle whose best word is known. Absent on a reveal
    * saved before this field existed (see storage.answerRevealed).
    */

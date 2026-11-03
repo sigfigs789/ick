@@ -128,14 +128,14 @@ describe("streakGoal", () => {
       streak({ currentStreak: 3, longestStreak: 20, bankedFreezes: 2, playedDates });
 
     it("is named the day before it is earned", () => {
-      expect(streakGoal(run(three), "2026-11-04")).toBe("Play tomorrow and unlock a do-over 🔄");
+      expect(streakGoal(run(three), "2026-11-04")).toBe("Play tomorrow and earn a do-over 🔄");
       expect(comeBackGoal(run(three), "2026-11-04")?.explainer?.title).toBe("Do-over");
       expect(streakGoal(run(three.slice(0, 2)), "2026-11-03") ?? "").not.toMatch(/do-over/);
     });
 
     it("is named to a new player too", () => {
       const fresh = streak({ currentStreak: 1, longestStreak: 1, playedDates: ["2026-11-02", "2026-11-03", "2026-11-05"] });
-      expect(streakGoal(fresh, "2026-11-05")).toBe("Play tomorrow and unlock a do-over 🔄");
+      expect(streakGoal(fresh, "2026-11-05")).toBe("Play tomorrow and earn a do-over 🔄");
     });
   });
 
@@ -158,8 +158,8 @@ describe("streakGoal", () => {
 
     it("is not mentioned once unlocked", () => {
       // Cap full and the best streak 12 days off: the do-over, a day away, instead.
-      expect(streakGoal(run(["2026-10-26", "2026-10-27", "2026-10-28"]), "2026-10-28")).toBe(
-        "Play tomorrow and unlock a do-over 🔄"
+      expect(streakGoal(run(["2026-11-02", "2026-11-03", "2026-11-04"]), "2026-11-04")).toBe(
+        "Play tomorrow and earn a do-over 🔄"
       );
       expect(streakGoal(run(["2026-10-26", "2026-10-28", "2026-10-30"]), "2026-10-30")).not.toMatch(/lazy weekend/);
     });

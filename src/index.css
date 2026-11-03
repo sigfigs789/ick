@@ -2265,6 +2265,10 @@ button.app__menu-item + button.app__menu-item {
   font: inherit;
   cursor: pointer;
 }
+.streak-display__freezes .rest-day__pie {
+  display: block;
+  color: var(--fg-muted);
+}
 .streak-display__freeze-wrap {
   position: relative;
   display: inline-flex;
@@ -2343,10 +2347,6 @@ button.app__menu-item + button.app__menu-item {
   display: inline-flex;
   align-items: center;
   margin-left: 0.5rem;
-}
-/* The do-over (components/DoOverBadge.tsx), faded once spent. */
-.do-over--spent .rest-day__button {
-  opacity: 0.4;
 }
 /* On the board the dancer sits at the row's right edge: open leftwards. */
 .leaderboard__score .rest-day__popup {

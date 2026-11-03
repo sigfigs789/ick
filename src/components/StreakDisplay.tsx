@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import {
   atRisk,
+  freezeProgress,
   freezeRules,
   freezesOn,
   isRestDay,
@@ -11,24 +12,40 @@ import {
   weekdayRestProgress,
 } from "../game/streakFreeze";
 import type { StreakState } from "../game/types";
-import { RestDayBadge } from "./RestDayBadge";
+import { RestDayBadge, WeekPie } from "./RestDayBadge";
 import { DoOverBadge } from "./DoOverBadge";
 import { doOverProgress } from "../game/doOver";
 import { dayOfWeek } from "../game/date";
 import { useKeepInViewport } from "../hooks/useKeepInViewport";
 
-function freezeSummary(banked: number, cap: number): string {
-  if (banked === 0) return "No 🧊 acquired";
+function freezeSummary(banked: number, cap: number, earning?: { played: number; of: number }): string {
+  if (banked === 0) {
+    return earning ? `No 🧊 acquired: ${earning.played} of ${earning.of} days to the next` : "No 🧊 acquired";
+  }
   // Held from when the limit was three; kept, but no more are earned past it.
   if (banked > cap) return `${banked} 🧊 acquired, over the limit of ${cap}`;
   return `${banked} of ${cap} 🧊 acquired`;
 }
 
 /**
- * The 🧊 saved/max badge. Selecting it opens a popup with the count and the
- * rules; selecting it again, anywhere outside it, or Escape closes it.
+ * The 🧊 saved/max badge. With none saved, given `earning`, a pie of the days
+ * played towards the next stands in for the 🧊, as the do-over's does (see
+ * DoOverBadge.tsx), and the 🧊 comes back once one is earned. Selecting it
+ * opens a popup with the count and the rules; selecting it again, anywhere
+ * outside it, or Escape closes it.
  */
-function FreezeBadge({ banked, cap, currentStreak }: { banked: number; cap: number; currentStreak: number }) {
+function FreezeBadge({
+  banked,
+  cap,
+  currentStreak,
+  earning,
+}: {
+  banked: number;
+  cap: number;
+  currentStreak: number;
+  earning?: { played: number; of: number };
+}) {
+  const pie = banked === 0 ? earning : undefined;
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLSpanElement>(null);
   const popupId = useId();
@@ -59,14 +76,17 @@ function FreezeBadge({ banked, cap, currentStreak }: { banked: number; cap: numb
         aria-label={`Streak freezes: ${banked} of ${cap}`}
         onClick={() => setOpen((was) => !was)}
       >
-        <span aria-hidden="true">🧊</span>
-        <span className="streak-display__count">
-          {banked}/{cap}
-        </span>
+        {pie ? <WeekPie played={pie.played} of={pie.of} /> : <span aria-hidden="true">🧊</span>}
+        {/* Before any can be held, the pie alone: 0/0 says nothing. */}
+        {(cap > 0 || banked > 0) && (
+          <span className="streak-display__count">
+            {banked}/{cap}
+          </span>
+        )}
       </button>
       {open && (
         <span className="streak-display__freeze-popup" id={popupId} role="dialog" aria-label="Streak freezes">
-          <strong>{freezeSummary(banked, cap)}</strong>
+          <strong>{freezeSummary(banked, cap, pie)}</strong>
           <span>{freezeRules(currentStreak, cap)}</span>
         </span>
       )}
@@ -182,15 +202,19 @@ export function StreakDisplay({
     !restDay && isToday && date !== undefined && streak.currentStreak > 0 && isRestDay(streak, date);
   const week =
     isToday && date !== undefined && streak.currentStreak > 0 ? weekdayRestProgress(streak, date) : null;
-  // The days played towards this week's do-over (see game/doOver.ts), once one is.
+  // The days played towards the do-over (see game/doOver.ts), once one is, or it is held.
   const doOverWeek = isToday && date !== undefined ? doOverProgress(streak, date) : null;
-  const showDoOver = doOverWeek !== null && (doOverWeek.played > 0 || doOverWeek.spent);
+  const showDoOver = doOverWeek !== null && doOverWeek.played > 0;
   // A past puzzle shows the freezes held on its day; today's shows today's.
   const { banked, cap } = freezesOn(streak, isToday ? undefined : date);
-  // Hidden only before the player can hold a freeze at all. The cap is set by
-  // the longest streak ever, so a player whose streak has ended still has one
-  // to show, and the row stays for it.
-  const showFreezes = !hideEmpty || cap > 0;
+  // Shown once there is a streak, so its pie fills towards the first freeze
+  // even before one can be held, or once the player can hold one. The cap is
+  // set by the longest streak ever, so a player whose streak has ended still
+  // has one to show, and the row stays for it.
+  const showFreezes = !hideEmpty || cap > 0 || streak.currentStreak > 0;
+  // The days towards the next freeze, for its pie: only for the streak as it
+  // stands now, not a past puzzle's.
+  const freezeEarning = isToday || date === undefined ? freezeProgress(streak.currentStreak) : undefined;
   const showTotal = !hideEmpty || hasWords;
   const showStreak = !hideEmpty || streak.currentStreak > 0 || frozen || risky || cap > 0;
   if (!showStreak && !showTotal) return null;
@@ -211,7 +235,9 @@ export function StreakDisplay({
         <div className="streak-display__row">
           {restDay && <RestDayBadge className="streak-display__flame" />}
           <StreakBadge icon={restDay ? null : icon} count={streak.currentStreak} />
-          {showFreezes && <FreezeBadge banked={banked} cap={cap} currentStreak={streak.currentStreak} />}
+          {showFreezes && (
+            <FreezeBadge banked={banked} cap={cap} currentStreak={streak.currentStreak} earning={freezeEarning} />
+          )}
           {weekendEarned && (
             <RestDayBadge played={REST_DAY_PLAYS} sundayOnly={dayOfWeek(date) === 6} className="streak-display__week" />
           )}
@@ -224,7 +250,7 @@ export function StreakDisplay({
             />
           )}
           {showDoOver && (
-            <DoOverBadge played={doOverWeek.played} reachable={doOverWeek.reachable} spent={doOverWeek.spent} />
+            <DoOverBadge played={doOverWeek.played} />
           )}
         </div>
       )}

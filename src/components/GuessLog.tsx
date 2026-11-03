@@ -35,7 +35,7 @@ interface Props {
   retryOffered?: boolean;
   /** It has been spent, on a puzzle where it was offered in the first place. */
   retrySpent?: boolean;
-  /** Retries left, 2 while the week's do-over is held beside the puzzle's own (see game/doOver.ts). */
+  /** Retries left, 2 while the do-over is held beside the puzzle's own (see game/doOver.ts). */
   retriesLeft?: number | null;
   /** Drop a banked word and hand its guess back (see storage.retryWord). */
   onRetry?: (word: string) => void;

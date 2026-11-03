@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  freezeProgress,
   applyFreezes,
   atRisk,
   missedYesterday,
@@ -570,5 +571,17 @@ describe("startStreak", () => {
       bankedFreezes: 0,
       welcomeBackFreezeDate: "2026-10-01",
     });
+  });
+});
+
+describe("freezeProgress", () => {
+  it("counts the days from the last freeze earned to the next: day 3, then every seventh", () => {
+    expect(freezeProgress(0)).toEqual({ played: 0, of: 3 });
+    expect(freezeProgress(2)).toEqual({ played: 2, of: 3 });
+    expect(freezeProgress(3)).toEqual({ played: 0, of: 4 });
+    expect(freezeProgress(6)).toEqual({ played: 3, of: 4 });
+    expect(freezeProgress(7)).toEqual({ played: 0, of: 7 });
+    expect(freezeProgress(10)).toEqual({ played: 3, of: 7 });
+    expect(freezeProgress(14)).toEqual({ played: 0, of: 7 });
   });
 });

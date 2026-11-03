@@ -647,7 +647,7 @@ function updateHighScore(zipf: number, date: string): void {
  * word they dropped. That is the safe direction to be wrong in, and the
  * alternative is a retraction path built for a score nobody is disputing.
  *
- * `doOver` spends the week's do-over instead of the puzzle's own retry (see
+ * `doOver` spends the do-over instead of the puzzle's own retry (see
  * game/doOver.ts): the same take-back, marked on `doOverUsed`. The caller
  * checks the week still holds one and marks it spent.
  *
@@ -759,7 +759,7 @@ export function answerRevealed(progress: DailyProgress): boolean {
  * Give up this puzzle's retry without spending it on a word.
  *
  * The one caller is the reveal under the drop (see DropDisplay): a finished
- * puzzle still holding a retry -- its own, or the week's do-over -- is a
+ * puzzle still holding a retry -- its own, or the do-over -- is a
  * puzzle the player may yet re-open, and showing them the best word first
  * would turn the mulligan into a lookup. So the reveal costs the retry, and
  * this is the payment -- the same flag `retryWord` sets, with none of the
