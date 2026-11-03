@@ -802,8 +802,8 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
   {
     id: "quad-legend",
     group: "Rarity",
-    icon: "🌌",
-    title: "Pantheon",
+    icon: "🪐",
+    title: "Planetary Alignment",
     description: "Find four Legends in one puzzle.",
     check: firstPuzzle((progress) => countOf(["Legend"])(progress) >= 4),
   },
@@ -934,7 +934,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
   {
     id: "total-39",
     group: "Rarity",
-    icon: "🐉",
+    icon: "☄️",
     title: "Here Be Dragons",
     description: "Score a total of 39 or more in one puzzle. Off the edge of the map.",
     check: totalOf(39),

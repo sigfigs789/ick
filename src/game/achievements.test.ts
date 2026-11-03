@@ -175,7 +175,7 @@ describe("achievements", () => {
     expect(statusOf("pantheon", { history: [short, slip, all] }).earnedOn).toBe("2026-10-12");
   });
 
-  it("counts Legends for Legendarium and words for the bigger word counts", () => {
+  it("counts Legends for Planetary Alignment and words for the bigger word counts", () => {
     const legends = statusOf("legend-10", {
       history: [day("2026-10-01", [word("Legend"), word("Legend"), word("Mythic")])],
     });
@@ -693,7 +693,7 @@ describe("the easier rungs", () => {
     expect(statusOf("four-of-a-kind", { history: [mixed] }).earnedOn).toBeNull();
   });
 
-  it("needs four Legends in one puzzle for Pantheon", () => {
+  it("needs four Legends in one puzzle for Planetary Alignment", () => {
     const four = day("2026-10-10", [word("Legend"), word("Legend"), word("Legend"), word("Legend")]);
     expect(statusOf("quad-legend", { history: [four] }).earnedOn).toBe("2026-10-10");
     const three = day("2026-10-10", [word("Legend"), word("Legend"), word("Legend"), word("Mythic")]);
