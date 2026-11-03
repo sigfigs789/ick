@@ -924,6 +924,14 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     check: totalOf(38),
   },
   {
+    id: "total-39",
+    group: "Rarity",
+    icon: "🐉",
+    title: "Here Be Dragons",
+    description: "Score a total of 39 or more in one puzzle. Off the edge of the map.",
+    check: totalOf(39),
+  },
+  {
     id: "total-40",
     group: "Rarity",
     icon: "💍",

@@ -637,7 +637,7 @@ describe("the harder badges", () => {
 });
 
 describe("the total badges", () => {
-  const TOTALS = ["total-32", "total-36", "total-38", "total-40"];
+  const TOTALS = ["total-32", "total-36", "total-38", "total-39", "total-40"];
   const earned = (history: DailyProgress[]) =>
     TOTALS.filter((id) => statusOf(id, { history }).earnedOn !== null);
   const scored = (zipfs: number[]) =>
@@ -653,7 +653,7 @@ describe("the total badges", () => {
   it("goes by the total shown, so 39.95 is not 40", () => {
     const words = scored([-1.57, -1.57, 0.53, -1.57]);
     expect(totalRarityScore(words, TODAY)).toBeLessThan(40);
-    expect(earned([day(TODAY, words)])).toEqual(["total-32", "total-36", "total-38"]);
+    expect(earned([day(TODAY, words)])).toEqual(["total-32", "total-36", "total-38", "total-39"]);
   });
 
   it("leaves a low total with none", () => {
