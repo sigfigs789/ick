@@ -770,7 +770,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
   {
     id: "first-mythic",
     group: "Rarity",
-    icon: "🐉",
+    icon: "🧞",
     title: "Myth maker",
     description: "Find a Mythic word.",
     check: firstWord((rarity) => rarity === "Mythic"),
@@ -798,6 +798,14 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Lightning twice",
     description: "Find two Legends in one puzzle.",
     check: firstPuzzle((progress) => countOf(["Legend"])(progress) >= 2),
+  },
+  {
+    id: "quad-legend",
+    group: "Rarity",
+    icon: "⚜️",
+    title: "Hall of Legends",
+    description: "Find four Legends in one puzzle.",
+    check: firstPuzzle((progress) => countOf(["Legend"])(progress) >= 4),
   },
   {
     id: "full-spectrum",
@@ -922,6 +930,14 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     title: "Unicorn Calligraphy",
     description: "Score a total of 38 or more in one puzzle.",
     check: totalOf(38),
+  },
+  {
+    id: "total-39",
+    group: "Rarity",
+    icon: "🐉",
+    title: "Here Be Dragons",
+    description: "Score a total of 39 or more in one puzzle. Off the edge of the map.",
+    check: totalOf(39),
   },
   {
     id: "total-40",

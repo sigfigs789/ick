@@ -175,7 +175,7 @@ describe("achievements", () => {
     expect(statusOf("pantheon", { history: [short, slip, all] }).earnedOn).toBe("2026-10-12");
   });
 
-  it("counts Legends for Legendarium and words for the bigger word counts", () => {
+  it("counts Legends for Hall of Legends and words for the bigger word counts", () => {
     const legends = statusOf("legend-10", {
       history: [day("2026-10-01", [word("Legend"), word("Legend"), word("Mythic")])],
     });
@@ -637,7 +637,7 @@ describe("the harder badges", () => {
 });
 
 describe("the total badges", () => {
-  const TOTALS = ["total-32", "total-36", "total-38", "total-40"];
+  const TOTALS = ["total-32", "total-36", "total-38", "total-39", "total-40"];
   const earned = (history: DailyProgress[]) =>
     TOTALS.filter((id) => statusOf(id, { history }).earnedOn !== null);
   const scored = (zipfs: number[]) =>
@@ -653,7 +653,7 @@ describe("the total badges", () => {
   it("goes by the total shown, so 39.95 is not 40", () => {
     const words = scored([-1.57, -1.57, 0.53, -1.57]);
     expect(totalRarityScore(words, TODAY)).toBeLessThan(40);
-    expect(earned([day(TODAY, words)])).toEqual(["total-32", "total-36", "total-38"]);
+    expect(earned([day(TODAY, words)])).toEqual(["total-32", "total-36", "total-38", "total-39"]);
   });
 
   it("leaves a low total with none", () => {
@@ -691,6 +691,13 @@ describe("the easier rungs", () => {
     expect(statusOf("four-of-a-kind", { history: [elusive] }).earnedOn).toBeNull();
     const mixed = day("2026-10-10", [word("Legend"), word("Legend"), word("Mythic"), word("Mythic")]);
     expect(statusOf("four-of-a-kind", { history: [mixed] }).earnedOn).toBeNull();
+  });
+
+  it("needs four Legends in one puzzle for Hall of Legends", () => {
+    const four = day("2026-10-10", [word("Legend"), word("Legend"), word("Legend"), word("Legend")]);
+    expect(statusOf("quad-legend", { history: [four] }).earnedOn).toBe("2026-10-10");
+    const three = day("2026-10-10", [word("Legend"), word("Legend"), word("Legend"), word("Mythic")]);
+    expect(statusOf("quad-legend", { history: [three] }).earnedOn).toBeNull();
   });
 
   it("needs every guess Elusive, no better and no worse, for Stay gold, Ponyboy", () => {
