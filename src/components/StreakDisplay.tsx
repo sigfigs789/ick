@@ -77,9 +77,12 @@ function FreezeBadge({
         onClick={() => setOpen((was) => !was)}
       >
         {pie ? <WeekPie played={pie.played} of={pie.of} /> : <span aria-hidden="true">🧊</span>}
-        <span className="streak-display__count">
-          {banked}/{cap}
-        </span>
+        {/* Before any can be held, the pie alone: 0/0 says nothing. */}
+        {(cap > 0 || banked > 0) && (
+          <span className="streak-display__count">
+            {banked}/{cap}
+          </span>
+        )}
       </button>
       {open && (
         <span className="streak-display__freeze-popup" id={popupId} role="dialog" aria-label="Streak freezes">
@@ -204,10 +207,11 @@ export function StreakDisplay({
   const showDoOver = doOverWeek !== null && doOverWeek.played > 0;
   // A past puzzle shows the freezes held on its day; today's shows today's.
   const { banked, cap } = freezesOn(streak, isToday ? undefined : date);
-  // Hidden only before the player can hold a freeze at all. The cap is set by
-  // the longest streak ever, so a player whose streak has ended still has one
-  // to show, and the row stays for it.
-  const showFreezes = !hideEmpty || cap > 0;
+  // Shown once there is a streak, so its pie fills towards the first freeze
+  // even before one can be held, or once the player can hold one. The cap is
+  // set by the longest streak ever, so a player whose streak has ended still
+  // has one to show, and the row stays for it.
+  const showFreezes = !hideEmpty || cap > 0 || streak.currentStreak > 0;
   // The days towards the next freeze, for its pie: only for the streak as it
   // stands now, not a past puzzle's.
   const freezeEarning = isToday || date === undefined ? freezeProgress(streak.currentStreak) : undefined;

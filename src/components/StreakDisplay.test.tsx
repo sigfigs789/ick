@@ -38,10 +38,13 @@ describe("StreakDisplay", () => {
     // A new player with nothing yet: no strip at all.
     expect(container).toBeEmptyDOMElement();
 
-    // A streak too short to hold a freeze and no word today: the streak alone.
+    // A streak too short to hold a freeze and no word today: the streak, and the
+    // freeze pie filling towards the first, with no 0/0 count.
     rerender(<StreakDisplay streak={{ ...streak, currentStreak: 2 }} hideEmpty hasWords={false} />);
     expect(screen.getByRole("button", { name: /day streak/ })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Streak freezes/ })).not.toBeInTheDocument();
+    const freezes = screen.getByRole("button", { name: /Streak freezes/ });
+    expect(freezes.querySelector(".rest-day__pie")).not.toBeNull();
+    expect(freezes.textContent).toBe("");
     expect(screen.queryByText("Total")).not.toBeInTheDocument();
 
     // Long enough to hold a freeze, with none held: the badge shows 0 of the cap.
