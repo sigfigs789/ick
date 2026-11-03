@@ -1,0 +1,21 @@
+{
+  "since": "2026-11-27",
+  "drop": "TA",
+  "model": "claude-opus-5-5",
+  "source": "claude",
+  "run": "https://github.com/sigfigs789/ick/actions/runs/41713256020",
+  "estimatedAt": "2026-11-03T20:32:19Z",
+  "zipf": {
+    "deglutathionylations": -0.6,
+    "fasciomusculoskeletal": -1.0,
+    "hemihexakisoctahedron": -0.7,
+    "hidradenocarcinomata": -0.9,
+    "hydroxyphenylacetates": -0.5,
+    "magnetogravitational": -0.3,
+    "metatranscriptionally": -1.3,
+    "octadecatetraenoates": -0.9,
+    "pentafluorosulfanyls": -1.0,
+    "tetracontakaihexagon": -1.2,
+    "triacontakaitetragon": -1.2
+  }
+}
