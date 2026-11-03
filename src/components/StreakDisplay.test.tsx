@@ -48,12 +48,12 @@ describe("StreakDisplay", () => {
     rerender(
       <StreakDisplay streak={{ ...streak, currentStreak: 15, longestStreak: 15 }} hideEmpty hasWords={false} />
     );
-    expect(screen.getByRole("button", { name: /Streak freezes/ }).textContent).toBe("🧊0/2");
+    expect(screen.getByRole("button", { name: /Streak freezes/ }).textContent).toBe("0/2");
 
     // A streak that has ended keeps the cap its longest streak set: 0 of 2.
     rerender(<StreakDisplay streak={{ ...streak, longestStreak: 28 }} hideEmpty hasWords={false} />);
     expect(screen.getByRole("button", { name: /day streak/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Streak freezes/ }).textContent).toBe("🧊0/2");
+    expect(screen.getByRole("button", { name: /Streak freezes/ }).textContent).toBe("0/2");
 
     // A freeze held and a word banked: both come back.
     rerender(
@@ -342,12 +342,28 @@ describe("StreakDisplay", () => {
     expect(badge()).toBe("🧊0/2");
 
     rerender(<StreakDisplay streak={later} date="2026-10-10" isToday />);
-    expect(badge()).toBe("🧊0/2");
+    expect(badge()).toBe("0/2");
+  });
+
+  it("shows a pie of the days towards the next freeze while none is held, and 🧊 once one is", () => {
+    const pie = () => screen.getByRole("button", { name: /streak freezes/i }).querySelector(".rest-day__pie");
+    const { rerender } = render(
+      <StreakDisplay streak={{ ...streak, currentStreak: 10, longestStreak: 20, bankedFreezes: 0 }} />
+    );
+    expect(pie()).not.toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /streak freezes/i }));
+    expect(screen.getByRole("dialog", { name: "Streak freezes" }).querySelector("strong")?.textContent).toBe(
+      "No 🧊 acquired: 3 of 7 days to the next"
+    );
+
+    rerender(<StreakDisplay streak={{ ...streak, currentStreak: 10, longestStreak: 20, bankedFreezes: 1 }} />);
+    expect(pie()).toBeNull();
+    expect(screen.getByRole("button", { name: /streak freezes/i }).textContent).toBe("🧊1/2");
   });
 
   it("shows the cap the longest streak earned, even on a short current one", () => {
     render(<StreakDisplay streak={{ ...streak, currentStreak: 3, longestStreak: 45 }} />);
-    expect(screen.getByRole("button", { name: /streak freezes/i }).textContent).toBe("🧊0/2");
+    expect(screen.getByRole("button", { name: /streak freezes/i }).textContent).toBe("0/2");
   });
 
   it("shows three held from the old cap of three as over the cap of two", () => {

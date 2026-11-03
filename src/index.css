@@ -2265,6 +2265,10 @@ button.app__menu-item + button.app__menu-item {
   font: inherit;
   cursor: pointer;
 }
+.streak-display__freezes .rest-day__pie {
+  display: block;
+  color: var(--fg-muted);
+}
 .streak-display__freeze-wrap {
   position: relative;
   display: inline-flex;

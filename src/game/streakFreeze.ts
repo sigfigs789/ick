@@ -145,6 +145,21 @@ const FIRST_FREEZE_DAY = 3;
 /** After that, one is earned on every seventh day played in a streak. */
 const DAYS_PER_EARNED_FREEZE = 7;
 
+/**
+ * The days played towards the next saved freeze, for the freeze badge's pie:
+ * `played` of the `of` days from the last day that earned one (or the
+ * streak's start) to the next -- day 3, then every seventh day.
+ */
+export function freezeProgress(currentStreak: number): { played: number; of: number } {
+  if (currentStreak < FIRST_FREEZE_DAY) return { played: currentStreak, of: FIRST_FREEZE_DAY };
+  const last =
+    currentStreak < DAYS_PER_EARNED_FREEZE
+      ? FIRST_FREEZE_DAY
+      : currentStreak - (currentStreak % DAYS_PER_EARNED_FREEZE);
+  const next = (Math.floor(currentStreak / DAYS_PER_EARNED_FREEZE) + 1) * DAYS_PER_EARNED_FREEZE;
+  return { played: currentStreak - last, of: next - last };
+}
+
 /** The most saved freezes any player can hold, and the longest streak that raises the cap to it. */
 const MAX_FREEZE_CAP = 2;
 const MAX_CAP_STREAK = 14;
