@@ -182,9 +182,9 @@ export function StreakDisplay({
     !restDay && isToday && date !== undefined && streak.currentStreak > 0 && isRestDay(streak, date);
   const week =
     isToday && date !== undefined && streak.currentStreak > 0 ? weekdayRestProgress(streak, date) : null;
-  // The days played towards this week's do-over (see game/doOver.ts), once one is.
+  // The days played towards the do-over (see game/doOver.ts), once one is, or it is held.
   const doOverWeek = isToday && date !== undefined ? doOverProgress(streak, date) : null;
-  const showDoOver = doOverWeek !== null && (doOverWeek.played > 0 || doOverWeek.spent);
+  const showDoOver = doOverWeek !== null && doOverWeek.played > 0;
   // A past puzzle shows the freezes held on its day; today's shows today's.
   const { banked, cap } = freezesOn(streak, isToday ? undefined : date);
   // Hidden only before the player can hold a freeze at all. The cap is set by
@@ -224,7 +224,7 @@ export function StreakDisplay({
             />
           )}
           {showDoOver && (
-            <DoOverBadge played={doOverWeek.played} reachable={doOverWeek.reachable} spent={doOverWeek.spent} />
+            <DoOverBadge played={doOverWeek.played} />
           )}
         </div>
       )}

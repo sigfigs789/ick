@@ -377,7 +377,7 @@ describe("StreakDisplay", () => {
     const { rerender } = render(<StreakDisplay streak={played(week)} date="2026-11-04" isToday />);
     fireEvent.click(screen.getByRole("button", { name: /Do-over/ }));
     expect(screen.getByRole("dialog", { name: "Do-over" })).toHaveTextContent(
-      "Play 4 days this week to unlock a do-over 🔄. 3 of 4 so far."
+      "Play 4 days to earn a do-over 🔄, an extra retry. 3 of 4 so far."
     );
 
     rerender(<StreakDisplay streak={played([...week, "2026-11-05"])} date="2026-11-05" isToday />);

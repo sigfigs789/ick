@@ -607,7 +607,7 @@ export function useDailyPuzzle() {
    */
   const ownRetryLeft = retryAvailableFor(viewedDate) && !progress.retryUsed;
   /**
-   * The week's do-over (see game/doOver.ts), on today's puzzle only, once
+   * The do-over (see game/doOver.ts), on today's puzzle only, once
    * earned and not spent -- here or in the other mode's game. A second retry
    * beside the puzzle's own, spent after it -- including on a puzzle the
    * player finished again after spending the first. Not once the word of the
@@ -656,7 +656,7 @@ export function useDailyPuzzle() {
       if (!retryAvailableFor(viewedDate)) return;
       const before = progressRef.current;
       const index = before.acceptedWords.findIndex((accepted) => accepted.word === word);
-      // The puzzle's own retry first; the week's do-over once that is gone.
+      // The puzzle's own retry first; the do-over once that is gone.
       const doOver = before.retryUsed === true;
       if (doOver && (!isToday || answerRevealed(before) || !doOverHeld(loadStreak(), viewedDate))) return;
       const updated = retryWord(before, word, { doOver });

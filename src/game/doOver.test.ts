@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { doOverHeld, doOverPlays, doOverProgress, doOverSpent, doOverTomorrow, spendDoOver } from "./doOver";
+import { doOverHeld, doOverPlays, doOverProgress, doOverTomorrow, spendDoOver } from "./doOver";
 import type { StreakState } from "./types";
 
 const streak = (playedDates: string[]): StreakState => ({
@@ -12,45 +12,44 @@ const streak = (playedDates: string[]): StreakState => ({
   playedDates,
 });
 
-// The week of Monday 2026-11-02 to Sunday 2026-11-08.
+const SUN = "2026-11-01";
 const MON = "2026-11-02";
 const TUE = "2026-11-03";
 const WED = "2026-11-04";
 const THU = "2026-11-05";
+const FRI = "2026-11-06";
 const SAT = "2026-11-07";
-const SUN = "2026-11-08";
+const NEXT_MON = "2026-11-09";
 
 beforeEach(() => localStorage.clear());
 
 describe("do-over", () => {
-  it("counts only this week's days played", () => {
-    expect(doOverPlays(streak(["2026-11-01", MON, TUE]), TUE)).toBe(2);
+  it("counts days played from Monday 2026-11-02, so everyone starts at 0", () => {
+    expect(doOverPlays(streak(["2026-10-30", SUN, MON, TUE]), TUE)).toBe(2);
+    // The weekly do-over's spent mark is ignored.
+    localStorage.setItem("ick:do-over-spent", MON);
+    expect(doOverPlays(streak([MON, TUE]), TUE)).toBe(2);
   });
 
-  it("is held from the fourth day played until spent, once a week", () => {
+  it("is earned on the fourth day played and never expires", () => {
     expect(doOverHeld(streak([MON, TUE, WED]), WED)).toBe(false);
     expect(doOverHeld(streak([MON, TUE, WED, THU]), THU)).toBe(true);
+    expect(doOverHeld(streak([MON, TUE, WED, THU]), "2026-12-20")).toBe(true);
+    // Only one is held.
+    expect(doOverProgress(streak([MON, TUE, WED, THU, FRI, SAT]), SAT)).toEqual({ played: 4 });
+  });
+
+  it("counts again from the day after it is spent", () => {
+    const days = [MON, TUE, WED, THU, FRI, SAT, SUN.replace("01", "08")];
     spendDoOver(THU);
-    expect(doOverSpent(SUN)).toBe(true);
-    // A fifth day earns no second one.
-    expect(doOverHeld(streak([MON, TUE, WED, THU, SAT]), SAT)).toBe(false);
-    // Next week starts fresh.
-    expect(doOverSpent("2026-11-09")).toBe(false);
+    expect(doOverHeld(streak(days), SAT)).toBe(false);
+    expect(doOverProgress(streak(days), SAT)).toEqual({ played: 2 });
+    expect(doOverHeld(streak([...days, NEXT_MON]), NEXT_MON)).toBe(true);
   });
 
-  it("says whether 4 days can still be reached this week", () => {
-    expect(doOverProgress(streak([MON]), MON)).toEqual({ played: 1, reachable: true, spent: false });
-    // Saturday unplayed with one day played: Saturday and Sunday make three.
-    expect(doOverProgress(streak([MON]), SAT).reachable).toBe(false);
-    expect(doOverProgress(streak([MON, TUE]), SAT).reachable).toBe(true);
-  });
-
-  it("is a day away only on the third day played, with tomorrow in the week", () => {
+  it("is a day away only on the third day played", () => {
     expect(doOverTomorrow(streak([MON, TUE, WED]), WED)).toBe(true);
     expect(doOverTomorrow(streak([MON, TUE]), TUE)).toBe(false);
-    // Today not played yet.
     expect(doOverTomorrow(streak([MON, TUE, WED]), THU)).toBe(false);
-    // Sunday ends the week.
-    expect(doOverTomorrow(streak([MON, TUE, SUN]), SUN)).toBe(false);
   });
 });
