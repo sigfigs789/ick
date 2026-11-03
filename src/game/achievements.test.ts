@@ -693,6 +693,13 @@ describe("the easier rungs", () => {
     expect(statusOf("four-of-a-kind", { history: [mixed] }).earnedOn).toBeNull();
   });
 
+  it("needs four Legends in one puzzle for Pantheon", () => {
+    const four = day("2026-10-10", [word("Legend"), word("Legend"), word("Legend"), word("Legend")]);
+    expect(statusOf("quad-legend", { history: [four] }).earnedOn).toBe("2026-10-10");
+    const three = day("2026-10-10", [word("Legend"), word("Legend"), word("Legend"), word("Mythic")]);
+    expect(statusOf("quad-legend", { history: [three] }).earnedOn).toBeNull();
+  });
+
   it("needs every guess Elusive, no better and no worse, for Stay gold, Ponyboy", () => {
     const gold = day("2026-10-10", [word("Elusive"), word("Elusive"), word("Elusive"), word("Elusive")]);
     expect(statusOf("all-elusive", { history: [gold] }).earnedOn).toBe("2026-10-10");

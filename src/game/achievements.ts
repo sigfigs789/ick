@@ -800,6 +800,14 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     check: firstPuzzle((progress) => countOf(["Legend"])(progress) >= 2),
   },
   {
+    id: "quad-legend",
+    group: "Rarity",
+    icon: "🌌",
+    title: "Pantheon",
+    description: "Find four Legends in one puzzle.",
+    check: firstPuzzle((progress) => countOf(["Legend"])(progress) >= 4),
+  },
+  {
     id: "full-spectrum",
     group: "Rarity",
     icon: "🌈",
