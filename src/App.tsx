@@ -31,7 +31,7 @@ import { useYesterdaysBest, type ResolvedBest } from "./hooks/useYesterdaysBest"
 import { useAcceptedSuggestions } from "./hooks/useAcceptedSuggestions";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { useInputPlacement } from "./hooks/useInputPlacement";
-import { EMBER_TIER, recordFlameShare, shareFireTier, shareFlameTier } from "./game/shareFlames";
+import { EMBER_TIER, recordAblazeShare, recordFlameShare, shareFireTier, shareFlameTier } from "./game/shareFlames";
 import { isWinningRarity } from "./game/rank";
 import { celebrationFor } from "./game/celebration";
 import {
@@ -605,7 +605,9 @@ export default function App() {
   // The badges go by the tier alone, embers included.
   const shareFire = shareFireTier(progress.acceptedWords, date);
   const sharedInFlames = () => {
-    if (shareFire && recordFlameShare(date, shareFire)) setFlameShares((n) => n + 1);
+    const newTier = shareFire !== null && recordFlameShare(date, shareFire);
+    const newAblaze = shareFlames !== null && recordAblazeShare(date);
+    if (newTier || newAblaze) setFlameShares((n) => n + 1);
   };
   // Just below the fire, Extremely Rare, they glow purple instead.
   const shareTint = shareFire === EMBER_TIER;
