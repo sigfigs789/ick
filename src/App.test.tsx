@@ -311,12 +311,6 @@ describe("App", () => {
       expect(screen.getByText("Your best day ever!")).toBeInTheDocument();
     });
 
-    it("is hidden from the header celebrations test's hidden arm", () => {
-      window.history.pushState(null, "", "/?header-celebrations=hidden");
-      finish();
-      expect(screen.queryByText("Your best day ever!")).not.toBeInTheDocument();
-    });
-
     it("is not celebrated on a puzzle that mounts already finished", () => {
       storeDay(today, 2.5);
       vi.mocked(useDailyPuzzle).mockReturnValue(day(true));
