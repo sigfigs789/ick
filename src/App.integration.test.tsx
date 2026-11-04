@@ -140,9 +140,6 @@ beforeEach(() => {
   // Reporting is on here, so finishing a puzzle would draw the word of the day
   // experiment at random; these tests are about the word itself.
   localStorage.setItem("ick:word-of-day", "shown");
-  // And opening a puzzle would draw the input placement test; keep the input
-  // where these tests expect it, under the drop.
-  localStorage.setItem("ick:input-placement-test", "above");
   resetLiveCheckSession();
   track.mockClear();
   stubFetch();
@@ -155,7 +152,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe("input placement test", () => {
+describe("guess input placement", () => {
   /** Whether the guess input comes after the guess log on the page. */
   function inputBelowLog(): boolean {
     const log = screen.getByRole("region", { name: /your guesses/i });
@@ -163,13 +160,7 @@ describe("input placement test", () => {
     return Boolean(log.compareDocumentPosition(input) & Node.DOCUMENT_POSITION_FOLLOWING);
   }
 
-  it("keeps the input above the guess log for the above arm", () => {
-    render(<App />);
-    expect(inputBelowLog()).toBe(false);
-  });
-
-  it("puts the input below the guess log for the below arm, and plays from there", async () => {
-    localStorage.setItem("ick:input-placement-test", "below");
+  it("always puts the input below the guess log, and plays from there", async () => {
     const [word] = playableWords(1, DROP, TODAY);
     render(<App />);
     expect(inputBelowLog()).toBe(true);
@@ -177,26 +168,7 @@ describe("input placement test", () => {
     await submit(word);
     await waitFor(() => expect(loggedWords()).toEqual([word]));
     expect(inputBelowLog()).toBe(true);
-  });
-
-  it("draws a player once, the first time the input shows, and reports it", () => {
-    localStorage.removeItem("ick:input-placement-test");
-    const first = render(<App />);
-    const arm = localStorage.getItem("ick:input-placement-test");
-    expect(arm === "above" || arm === "below").toBe(true);
-    expect(inputBelowLog()).toBe(arm === "below");
-    const draws = () => track.mock.calls.filter(([name]) => name === "input_placement_assigned");
-    expect(draws()).toHaveLength(1);
-    expect(draws()[0][1]).toMatchObject({
-      variant: arm === "below" ? "shown" : "hidden",
-      placement: arm,
-      returning: false,
-      puzzle_date: TODAY,
-    });
-
-    first.unmount();
-    render(<App />);
-    expect(draws()).toHaveLength(1);
+    expect(track.mock.calls.some(([name]) => name === "input_placement_assigned")).toBe(false);
   });
 });
 
