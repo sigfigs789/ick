@@ -1565,7 +1565,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
   {
     id: "olympic-flame",
     group: "Rarity",
-    icon: "🔥",
+    icon: "🔦",
     title: "Olympic flame",
     description: "Carry the torch: share 5 different puzzles while the Share button is ablaze, your words averaging Elusive or better.",
     check: sharedAblaze(5),
