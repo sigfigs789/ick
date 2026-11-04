@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { rarityScore } from "./dictionary";
-import { flameLevel, flameSharesMade, recordFlameShare, shareFireTier, shareFlameTier } from "./shareFlames";
+import { ablazeSharesMade, flameLevel, recordAblazeShare, flameSharesMade, recordFlameShare, shareFireTier, shareFlameTier } from "./shareFlames";
 
 const DATE = "2026-10-28";
 
@@ -74,5 +74,26 @@ describe("recordFlameShare", () => {
     expect(flameSharesMade()).toEqual({ Legend: "2026-10-02" });
     localStorage.setItem("ick:flame-shares", "not json");
     expect(flameSharesMade()).toEqual({});
+  });
+});
+
+describe("recordAblazeShare", () => {
+  it("counts each puzzle once, oldest first", () => {
+    localStorage.clear();
+    expect(recordAblazeShare("2026-10-05")).toBe(true);
+    expect(recordAblazeShare("2026-10-05")).toBe(false);
+    expect(recordAblazeShare("2026-10-03")).toBe(true);
+    expect(ablazeSharesMade()).toEqual(["2026-10-03", "2026-10-05"]);
+  });
+
+  it("seeds the count from the first share in each colour of fire, not the embers", () => {
+    localStorage.clear();
+    recordFlameShare("2026-09-01", "Extremely Rare");
+    recordFlameShare("2026-09-02", "Elusive");
+    recordFlameShare("2026-09-04", "Mythic");
+    recordFlameShare("2026-09-04", "Legend");
+    recordAblazeShare("2026-09-08");
+    expect(ablazeSharesMade()).toEqual(["2026-09-02", "2026-09-04", "2026-09-08"]);
+    expect(recordAblazeShare("2026-09-02")).toBe(false);
   });
 });

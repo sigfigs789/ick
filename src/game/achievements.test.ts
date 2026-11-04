@@ -759,6 +759,15 @@ describe("Flame shares", () => {
     expect(statusOf("sun-warrior", {}).earnedOn).toBeNull();
     expect(statusOf("susanoo", {}).earnedOn).toBeNull();
   });
+
+  it("lights the Olympic flame on the fifth puzzle shared ablaze", () => {
+    const four = ["2026-10-01", "2026-10-02", "2026-10-04", "2026-10-07"];
+    const locked = statusOf("olympic-flame", { ablazeShares: four });
+    expect(locked.earnedOn).toBeNull();
+    expect(locked.progress).toEqual({ current: 4, target: 5 });
+    const five = [...four, "2026-10-09", "2026-10-12"];
+    expect(statusOf("olympic-flame", { ablazeShares: five }).earnedOn).toBe("2026-10-09");
+  });
 });
 
 describe("countedRecord", () => {

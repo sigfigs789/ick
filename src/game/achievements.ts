@@ -29,7 +29,7 @@ import { modeForDate } from "./mode";
 import { nextMonthStart } from "./month";
 import { loadPlayerId } from "./player";
 import { isWinningRarity } from "./rank";
-import { flameSharesMade, type FlameShares, type ShareFireTier } from "./shareFlames";
+import { ablazeSharesMade, flameSharesMade, type FlameShares, type ShareFireTier } from "./shareFlames";
 import { CURRENT_TIERS } from "./stats";
 import { loadStreak, playedHistory, playedOnItsDay } from "./storage";
 import { streakPlacings, type StreakPlace, type StreakPlacings } from "./streakPlacings";
@@ -71,6 +71,8 @@ export interface AchievementRecord {
   bestWordWins?: number;
   /** The first puzzle shared with the Share button burning in each tier (see game/shareFlames.ts). */
   flameShares?: FlameShares;
+  /** The puzzles shared with the Share button ablaze, one date each, oldest first (see game/shareFlames.ts). */
+  ablazeShares?: readonly string[];
   /** The first day this player was seen at each top-three place on the streak board (see game/streakClimb.ts). */
   streakPlacings?: StreakPlacings;
 }
@@ -669,6 +671,14 @@ function sameWordTwice({ history }: AchievementRecord): Check {
 /** A share taken with the words averaging `tier`: in its embers or its fire. */
 function sharedInFlames(tier: ShareFireTier): Achievement["check"] {
   return ({ flameShares }) => ({ earnedOn: flameShares?.[tier] ?? null });
+}
+
+/** `target` different puzzles shared with the Share button ablaze, earned on the `target`th. */
+function sharedAblaze(target: number): Achievement["check"] {
+  return ({ ablazeShares = [] }) =>
+    ablazeShares.length >= target
+      ? { earnedOn: ablazeShares[target - 1] }
+      : { earnedOn: null, progress: { current: ablazeShares.length, target } };
 }
 
 /** Seen at `place` on the streak board, or above it. */
@@ -1553,6 +1563,14 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     check: sharedInFlames("Legend"),
   },
   {
+    id: "olympic-flame",
+    group: "Rarity",
+    icon: "🔥",
+    title: "Olympic flame",
+    description: "Carry the torch: share 5 different puzzles while the Share button is ablaze, your words averaging Elusive or better.",
+    check: sharedAblaze(5),
+  },
+  {
     id: "word-suggested",
     group: "Word scouting",
     icon: "💡",
@@ -1916,6 +1934,7 @@ function deviceRecord(streak: StreakState): AchievementRecord {
     suggestions: suggestedWords(),
     bestWordWins: readBestWordWins(),
     flameShares: flameSharesMade(),
+    ablazeShares: ablazeSharesMade(),
     streakPlacings: streakPlacings(),
   };
 }
