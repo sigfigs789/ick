@@ -26,7 +26,6 @@ import { BestWordNewsCard } from "./components/BestWordNewsCard";
 import { WelcomeBackCard } from "./components/WelcomeBackCard";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
-import { useWordOfDay } from "./hooks/useWordOfDay";
 import { useYesterdaysBest, type ResolvedBest } from "./hooks/useYesterdaysBest";
 import { useAcceptedSuggestions } from "./hooks/useAcceptedSuggestions";
 import { useForceUpdate } from "./hooks/useForceUpdate";
@@ -140,7 +139,6 @@ export default function App() {
     crossMode,
     copying,
     copyToOtherMode,
-    revealAnswer,
     resetAnswers,
     mode,
     modeChosen,
@@ -177,9 +175,6 @@ export default function App() {
   } | null>(null);
   const endUnlocked = useCallback(() => setUnlocked(null), []);
   const sound = useSound();
-  // Half of players never see the word of the day; the draw is the first
-  // finished puzzle, where it would first appear (see game/wordOfDay.ts).
-  const wordOfDayShown = useWordOfDay(progress.completed, date);
   // The share panel stays out of the way until the Share beside the guess
   // count is pressed, which opens it and scrolls to it. Each press bumps the
   // count, so a second press scrolls back to it again. A new puzzle starts
@@ -709,10 +704,6 @@ export default function App() {
             drop={drop}
             date={date}
             isToday={isToday}
-            completed={progress.completed}
-            retryOffered={retryOffered}
-            onReveal={revealAnswer}
-            wordOfDay={wordOfDayShown}
           />
         </PuzzleNav>
         {/* Over the words it is about: a fold rejected live on this puzzle

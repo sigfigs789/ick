@@ -14,7 +14,7 @@ import {
 } from "./scorecard";
 
 /**
- * An experiment on /experimentsV2 -- the word of the day, the share name --
+ * An experiment on /experimentsV2 -- the share name, the input placement --
  * as `analytics_v2_experiment` returns it (see the 2026-11-01 migrations, where
  * every number is defined), and the call it points to: keep the thing tested,
  * or take it out.
@@ -206,8 +206,8 @@ const pts = (gap: number) => {
   return `${n} ${n === 1 ? "pt" : "pts"}`;
 };
 
-/** Keep `subject` (the thing tested, as "the word of the day"), take it out, or not yet -- from everyone drawn. */
-export function verdict(experiment: Experiment, subject = "the word of the day"): Verdict {
+/** Keep `subject` (the thing tested, as "the username in shares"), take it out, or not yet -- from everyone drawn. */
+export function verdict(experiment: Experiment, subject = "the thing tested"): Verdict {
   const shown = arm(experiment, "shown", "all");
   const hidden = arm(experiment, "hidden", "all");
   const least = Math.min(shown.d1.cohort, hidden.d1.cohort);

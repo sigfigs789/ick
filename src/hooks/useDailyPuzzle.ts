@@ -12,7 +12,6 @@ import {
   resetProgress,
   retryWord,
   answerRevealed,
-  forfeitRetry,
   playedOnItsDay,
   playedBothModesLately,
   rescoreAcceptedWords,
@@ -57,7 +56,6 @@ import {
   trackAcceptedAnswer,
   trackAnswerCopied,
   trackAnswerRetried,
-  trackAnswerRevealed,
   trackBaseFormSubstitution,
   trackMerriamWebsterApproved,
   trackMerriamWebsterFailed,
@@ -610,10 +608,9 @@ export function useDailyPuzzle() {
    * The do-over (see game/doOver.ts), on today's puzzle only, once
    * earned and not spent -- here or in the other mode's game. A second retry
    * beside the puzzle's own, spent after it -- including on a puzzle the
-   * player finished again after spending the first. Not once the word of the
-   * day has been revealed (see DropDisplay): it would re-open a puzzle whose
-   * best word is known. While it is held, the word stays hidden just as it
-   * does behind the puzzle's own retry, so finishing never reveals it.
+   * player finished again after spending the first. Not on a puzzle whose word
+   * of the day was revealed back when that was offered (see
+   * storage.answerRevealed): it would re-open a puzzle whose best word is known.
    */
   const doOverLeft =
     isToday &&
@@ -621,7 +618,7 @@ export function useDailyPuzzle() {
     !progress.doOverUsed &&
     !answerRevealed(progress) &&
     doOverHeld(streak, viewedDate);
-  /** Any retry left, own or do-over -- also what keeps the word of the day hidden. */
+  /** Any retry left, own or do-over. */
   const retryOffered = ownRetryLeft || doOverLeft;
   const canRetry = retryOffered && progress.acceptedWords.length > 0;
   /** Spent, on a puzzle that was offering it -- so the UI can say so rather than
@@ -696,32 +693,6 @@ export function useDailyPuzzle() {
     },
     [isToday, viewedDate]
   );
-
-  /**
-   * Give up the retry to see the day's word (see DropDisplay).
-   *
-   * No word moves, so nothing is rolled back and the board is left alone --
-   * the only change is that the retry is spent, which is what closes the door
-   * on looking the answer up and then re-opening the puzzle to play it.
-   *
-   * Rechecks the allowance for the same reason `retryAnswer` does: a puzzle can
-   * go stale under a tab left open overnight.
-   */
-  const revealAnswer = useCallback(() => {
-    if (!retryAvailableFor(viewedDate)) return;
-    const before = progressRef.current;
-    // Something to give up: the puzzle's own retry, or the do-over it is
-    // still holding. Only the own retry is spent -- the do-over stays the
-    // week's, and the word now showing is what keeps it off this puzzle.
-    const doOverHere =
-      isToday && !before.doOverUsed && !answerRevealed(before) && doOverHeld(loadStreak(), viewedDate);
-    if (before.retryUsed && !doOverHere) return;
-    const updated = forfeitRetry(before);
-    if (updated === before) return;
-    progressRef.current = updated;
-    setProgress(updated);
-    trackAnswerRevealed(viewedDate, before.acceptedWords.length);
-  }, [isToday, viewedDate]);
 
   /**
    * What every banked word would be in the other mode, keyed by word, for the
@@ -926,7 +897,6 @@ export function useDailyPuzzle() {
     retrySpent,
     retriesLeft,
     retryAnswer,
-    revealAnswer,
     resetAnswers,
     /** The mode a word would be copied into, and what each word does there. */
     otherMode: target,

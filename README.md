@@ -59,9 +59,7 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
   and it never expires. A pie beside the lazy weekend's fills a quarter a day
   played and turns 🔄 on the fourth; the retry button reads "2 retries" while
   both are held, and the come-back line names it the day before it is earned.
-  Revealing the word of the day costs only the puzzle's own retry, but once
-  the word is showing the do-over cannot be used on that puzzle; the player
-  keeps it. Spending both earns "Twice in one day".
+  Spending both earns "Twice in one day".
 - **Word validation** (`src/game/submit.ts`): a submission must contain the
   drop as a contiguous, in-order substring, be a known word, and not be the
   same word (or an obvious inflection of the same word — see

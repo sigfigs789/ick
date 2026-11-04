@@ -148,7 +148,6 @@ export function PlayScreen({ covered = false, onSeeLeaderboard }: Props) {
     retryOffered,
     retrySpent,
     retryAnswer,
-    revealAnswer,
   } = useDailyPuzzle();
 
   const scrollRef = useRef<ScrollView>(null);
@@ -539,10 +538,6 @@ export function PlayScreen({ covered = false, onSeeLeaderboard }: Props) {
             drop={drop}
             date={date}
             isToday={isToday}
-            completed={progress.completed}
-            retryOffered={retryOffered}
-            onReveal={revealAnswer}
-            wordOfDay
           />
         </PuzzleNav>
 
