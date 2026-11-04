@@ -29,7 +29,6 @@ import { useSound } from "./hooks/useSound";
 import { useYesterdaysBest, type ResolvedBest } from "./hooks/useYesterdaysBest";
 import { useAcceptedSuggestions } from "./hooks/useAcceptedSuggestions";
 import { useForceUpdate } from "./hooks/useForceUpdate";
-import { useInputPlacement } from "./hooks/useInputPlacement";
 import { EMBER_TIER, recordFlameShare, shareFireTier, shareFlameTier } from "./game/shareFlames";
 import { isWinningRarity } from "./game/rank";
 import { celebrationFor } from "./game/celebration";
@@ -591,9 +590,6 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unlockedShown, unlocked?.key]);
 
-  // Above the guess log or below it, by the input placement test (see
-  // game/inputPlacementTest.ts), drawn the first time the input shows.
-  const inputPlacement = useInputPlacement(date, !progress.completed);
   // The tier both Share buttons burn in once the words average Elusive or
   // better (see game/shareFlames.ts).
   const shareFlames = shareFlameTier(progress.acceptedWords, date);
@@ -724,11 +720,6 @@ export default function App() {
             onDismiss={closeWelcome}
           />
         )}
-        {/* The input sits straight under the drop, so it stays where it is
-            as words land below it rather than being pushed down the page by
-            each one -- unless the input placement test puts it below the
-            guess log, after the words already played. */}
-        {inputPlacement === "above" && guessEntry}
         <GuessLog
           acceptedWords={progress.acceptedWords}
           completed={progress.completed}
@@ -764,7 +755,9 @@ export default function App() {
             ) : undefined
           }
         />
-        {inputPlacement === "below" && guessEntry}
+        {/* The input sits below the guess log, after the words already
+            played (the input placement test's winning arm). */}
+        {guessEntry}
 
         {!progress.completed && !isToday && (
           <p className="archive-note">

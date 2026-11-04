@@ -21,7 +21,6 @@ import { markLook, markShare, type SessionTimeReport } from "./game/sessionTime"
 import { todayDateString } from "./game/date";
 import { parseSourceCode, type ModeAssignment } from "./game/onboarding";
 import { IDLE_HINT_DELAY_MS, currentIdleHintArm, type IdleHintArm } from "./game/idleHint";
-import type { InputPlacementVariant } from "./game/inputPlacementTest";
 import type { ShareNameVariant } from "./game/shareNameTest";
 import { APP_VERSION } from "./version";
 import { isBotUserAgent } from "./game/botUa";
@@ -844,26 +843,6 @@ function idleHintArmProps(): EventProps {
 export function trackShareNameAssigned(variant: ShareNameVariant, date: string, returning: boolean) {
   send("share_name_assigned", {
     variant,
-    returning,
-    puzzle_date: date,
-    puzzle_number: puzzleNumber(date),
-    live_date: todayDateString(),
-    mode: modeOf(date),
-  });
-}
-
-/**
- * The input placement test's draw (see game/inputPlacementTest.ts), once per
- * player, on the first unfinished puzzle they see the input on. Shaped like
- * the share name test's, for `analytics_v2_experiment`, which reads two arms
- * named `shown` and `hidden`: `variant` is `shown` for the input below the
- * guess log, the arm under test, and `hidden` for it above, where it has
- * always been. `placement` says the same in the test's own words.
- */
-export function trackInputPlacementAssigned(placement: InputPlacementVariant, date: string, returning: boolean) {
-  send("input_placement_assigned", {
-    variant: placement === "below" ? "shown" : "hidden",
-    placement,
     returning,
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),
