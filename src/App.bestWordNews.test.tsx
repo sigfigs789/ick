@@ -40,7 +40,6 @@ function puzzle(overrides: Record<string, unknown> = {}) {
     retryOffered: false,
     retrySpent: false,
     retryAnswer: vi.fn(),
-    revealAnswer: vi.fn(),
     resetAnswers: vi.fn(),
     otherMode: "freeform" as const,
     crossMode: {},

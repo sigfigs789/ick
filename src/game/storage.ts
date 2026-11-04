@@ -743,7 +743,8 @@ export function rescoreAcceptedWords(
 }
 
 /**
- * Whether the player has paid to see this puzzle's word of the day.
+ * Whether the player paid to see this puzzle's word of the day, back when the
+ * puzzle offered that.
  *
  * `revealed` says so outright. A reveal saved before that flag existed reads
  * off the retry instead: spent with no word moved (`retried` absent) is the
@@ -753,27 +754,4 @@ export function rescoreAcceptedWords(
  */
 export function answerRevealed(progress: DailyProgress): boolean {
   return progress.revealed === true || (progress.retryUsed === true && progress.retried === undefined);
-}
-
-/**
- * Give up this puzzle's retry without spending it on a word.
- *
- * The one caller is the reveal under the drop (see DropDisplay): a finished
- * puzzle still holding a retry -- its own, or the do-over -- is a
- * puzzle the player may yet re-open, and showing them the best word first
- * would turn the mulligan into a lookup. So the reveal costs the retry, and
- * this is the payment -- the same flag `retryWord` sets, with none of the
- * roll-back, because no word moved -- plus `revealed`, which keeps the
- * do-over off this puzzle without spending the week's (see game/doOver.ts).
- *
- * Returns `progress` unchanged when the word is already revealed, so callers
- * can compare by identity to tell whether it happened. Whether there is a
- * retry left to give up is the caller's to check: the do-over lives outside
- * the puzzle's record.
- */
-export function forfeitRetry(progress: DailyProgress): DailyProgress {
-  if (answerRevealed(progress)) return progress;
-  const updated: DailyProgress = { ...progress, retryUsed: true, revealed: true };
-  saveProgress(updated);
-  return updated;
 }

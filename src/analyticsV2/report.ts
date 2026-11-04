@@ -139,7 +139,6 @@ export interface Report {
 
 /** The experiments on /experimentsV2 (see experiment.ts); null for one the database sent nothing for. */
 export interface Experiments {
-  wordOfDay: Experiment | null;
   shareName: Experiment | null;
   /** Its `shown` arm is the input below the guess log, `hidden` above (see game/inputPlacementTest.ts). */
   inputPlacement: Experiment | null;
@@ -326,7 +325,6 @@ export async function fetchExperiments(today: string, span?: { from: string; to:
   const query = span ? `&from=${span.from}&to=${span.to}` : "";
   const body = await readReport(`/api/review?list=experiments-v2&today=${today}${query}`);
   return {
-    wordOfDay: parseExperiment(body.wordOfDay),
     shareName: parseExperiment(body.shareName),
     inputPlacement: parseExperiment(body.inputPlacement),
     idleHintNew: parseExperiment(body.idleHintNew),

@@ -192,64 +192,6 @@ describe("useDailyPuzzle retry", () => {
   });
 });
 
-describe("useDailyPuzzle reveal", () => {
-  it("spends the retry and keeps the words, so the reveal can't be undone", async () => {
-    const { result } = renderHook(() => useDailyPuzzle());
-    await act(async () => {
-      await result.current.submitWord(FIRST);
-    });
-    const banked = result.current.progress.acceptedWords;
-
-    act(() => result.current.revealAnswer());
-
-    expect(result.current.progress.acceptedWords).toEqual(banked);
-    expect(result.current.retryOffered).toBe(false);
-    expect(result.current.retrySpent).toBe(true);
-    // Nothing left to spend on a word afterwards.
-    act(() => result.current.retryAnswer(FIRST));
-    expect(result.current.progress.acceptedWords).toEqual(banked);
-  });
-
-  it("reports the reveal with the guesses standing behind it", async () => {
-    const { result } = renderHook(() => useDailyPuzzle());
-    await act(async () => {
-      await result.current.submitWord(FIRST);
-    });
-    await act(async () => {
-      await result.current.submitWord(SECOND);
-    });
-    track.mockClear();
-
-    act(() => result.current.revealAnswer());
-
-    expect(track).toHaveBeenCalledWith(
-      "answer_revealed",
-      expect.objectContaining({ puzzle_date: TODAY, answer_count: 2 })
-    );
-  });
-
-  it("spends an archive puzzle's retry the same way, and posts no board write", async () => {
-    joinBoard();
-    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }));
-    vi.stubGlobal("fetch", fetchMock);
-
-    const { result } = renderHook(() => useDailyPuzzle());
-    act(() => result.current.goToPrevious());
-    await act(async () => {
-      await result.current.submitWord(YESTERDAYS_WORD);
-    });
-    fetchMock.mockClear();
-
-    act(() => result.current.revealAnswer());
-
-    expect(result.current.progress.retryUsed).toBe(true);
-    expect(result.current.retrySpent).toBe(true);
-    // Nothing posted: the board takes today's puzzle only, so an archive day's
-    // retry moves this browser's record and leaves the standings alone.
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-});
-
 describe("useDailyPuzzle retry and the leaderboard", () => {
   it("corrects the board straight away rather than waiting for a replacement", async () => {
     joinBoard();
@@ -463,22 +405,5 @@ describe("useDailyPuzzle retry with the do-over", () => {
     expect(result.current.progress.acceptedWords.map((w) => w.word)).not.toContain(second);
     expect(result.current.retriesLeft).toBe(0);
     expect(result.current.retrySpent).toBe(true);
-  });
-
-  it("lets the reveal close the do-over on this puzzle without spending it", async () => {
-    const { result } = renderHook(() => useDailyPuzzle());
-    await finish(result, words);
-    const first = result.current.progress.acceptedWords[0].word;
-    act(() => result.current.retryAnswer(first));
-    await finish(result, words.filter((w) => w !== first));
-    expect(result.current.retryOffered).toBe(true);
-
-    act(() => result.current.revealAnswer());
-
-    expect(result.current.progress.revealed).toBe(true);
-    expect(result.current.retryOffered).toBe(false);
-    expect(result.current.retrySpent).toBe(true);
-    expect(result.current.retriesLeft).toBe(0);
-    expect(localStorage.getItem("ick:do-over-spent")).toBeNull();
   });
 });

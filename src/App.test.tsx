@@ -69,7 +69,6 @@ function puzzle(overrides: Record<string, unknown> = {}) {
     retrySpent: false,
     retriesLeft: null,
     retryAnswer,
-    revealAnswer: vi.fn(),
     resetAnswers: vi.fn(),
     otherMode: "freeform" as const,
     crossMode: {},
@@ -310,12 +309,6 @@ describe("App", () => {
       expect(screen.queryByText("Your best day ever!")).not.toBeInTheDocument();
       act(() => screen.getByRole("button", { name: "Dismiss" }).click());
       expect(screen.getByText("Your best day ever!")).toBeInTheDocument();
-    });
-
-    it("is hidden from the header celebrations test's hidden arm", () => {
-      window.history.pushState(null, "", "/?header-celebrations=hidden");
-      finish();
-      expect(screen.queryByText("Your best day ever!")).not.toBeInTheDocument();
     });
 
     it("is not celebrated on a puzzle that mounts already finished", () => {
