@@ -85,4 +85,15 @@ describe("recordAblazeShare", () => {
     expect(recordAblazeShare("2026-10-03")).toBe(true);
     expect(ablazeSharesMade()).toEqual(["2026-10-03", "2026-10-05"]);
   });
+
+  it("seeds the count from the first share in each colour of fire, not the embers", () => {
+    localStorage.clear();
+    recordFlameShare("2026-09-01", "Extremely Rare");
+    recordFlameShare("2026-09-02", "Elusive");
+    recordFlameShare("2026-09-04", "Mythic");
+    recordFlameShare("2026-09-04", "Legend");
+    recordAblazeShare("2026-09-08");
+    expect(ablazeSharesMade()).toEqual(["2026-09-02", "2026-09-04", "2026-09-08"]);
+    expect(recordAblazeShare("2026-09-02")).toBe(false);
+  });
 });

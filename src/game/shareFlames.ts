@@ -108,13 +108,17 @@ const ABLAZE_SHARES_KEY = "ick:ablaze-shares";
 /**
  * The puzzles this browser has shared with the Share button ablaze -- the
  * words averaging Elusive or better, flames and all, not just the embers --
- * one date each, oldest first, for the Olympic flame badge.
+ * one date each, oldest first, for the Olympic flame badge. Shares from
+ * before this count was kept are seeded from the first share in each colour of
+ * fire (see `flameSharesMade`), the only ones the record knew.
  */
 export function ablazeSharesMade(): string[] {
   try {
     const stored: unknown = JSON.parse(localStorage.getItem(ABLAZE_SHARES_KEY) ?? "[]");
-    if (!Array.isArray(stored)) return [];
-    return [...new Set(stored.filter((date): date is string => typeof date === "string"))].sort();
+    const dates = Array.isArray(stored) ? stored.filter((date): date is string => typeof date === "string") : [];
+    const made = flameSharesMade();
+    const known = FLAME_TIERS.flatMap((tier) => made[tier] ?? []);
+    return [...new Set([...dates, ...known])].sort();
   } catch {
     return [];
   }
