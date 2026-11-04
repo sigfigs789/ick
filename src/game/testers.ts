@@ -3,10 +3,8 @@ import { accountName, loadPlayerId } from "./player";
 
 /**
  * Players put in the new arm of every experiment by hand: the idle hint's
- * treatment (see game/idleHint.ts), the word of the day shown (see
- * game/wordOfDay.ts), the username
- * left out of shares by default (see game/shareNameTest.ts), and the
- * guess input below the guess log (see game/inputPlacementTest.ts).
+ * treatment (see game/idleHint.ts) and the username left out of shares
+ * by default (see game/shareNameTest.ts).
  *
  * Listed by handle, the name the board shows, since that is the name anyone
  * asking to be let in knows themselves by. Like an `?idle-hint=` force, a

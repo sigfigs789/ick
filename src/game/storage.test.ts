@@ -12,7 +12,6 @@ import {
   resetProgress,
   retryWord,
   answerRevealed,
-  forfeitRetry,
   STREAK_KEY,
 } from "./storage";
 import { rarityScore } from "./dictionary";
@@ -977,50 +976,9 @@ describe("retryWord with the do-over", () => {
     expect(again.doOverUsed).toBe(true);
     expect(retryWord(again, "strut", { doOver: true })).toBe(again);
   });
-
-  it("is not spent by the reveal", () => {
-    const progress = recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
-    expect(forfeitRetry(progress).doOverUsed).toBeUndefined();
-  });
 });
 
-describe("forfeitRetry", () => {
-  it("spends the retry without touching the words", () => {
-    let progress = recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
-    progress = recordAcceptedWord(progress, word("strut", 3.2, "Rare"));
-
-    const given = forfeitRetry(progress);
-
-    expect(given.acceptedWords).toEqual(progress.acceptedWords);
-    expect(given.retryUsed).toBe(true);
-    expect(loadProgress("2024-01-01")).toMatchObject({ retryUsed: true });
-  });
-
-  it("closes the door on retrying a word afterwards", () => {
-    const progress = recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
-    const given = forfeitRetry(progress);
-    expect(retryWord(given, "strange")).toBe(given);
-  });
-
-  it("leaves a spent retry alone, by identity", () => {
-    const progress = forfeitRetry(
-      recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange")),
-    );
-    expect(forfeitRetry(progress)).toBe(progress);
-  });
-
-  it("marks the word revealed after a retry spent on a word, for the do-over", () => {
-    let progress = recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
-    progress = retryWord(progress, "strange");
-    expect(answerRevealed(progress)).toBe(false);
-
-    const given = forfeitRetry(progress);
-
-    expect(given.revealed).toBe(true);
-    expect(answerRevealed(given)).toBe(true);
-    expect(forfeitRetry(given)).toBe(given);
-  });
-
+describe("answerRevealed", () => {
   it("reads a reveal saved before the flag off the retry spent with no word moved", () => {
     const progress = recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
     expect(answerRevealed({ ...progress, retryUsed: true })).toBe(true);

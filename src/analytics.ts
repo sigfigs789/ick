@@ -21,9 +21,7 @@ import { markLook, markShare, type SessionTimeReport } from "./game/sessionTime"
 import { todayDateString } from "./game/date";
 import { parseSourceCode, type ModeAssignment } from "./game/onboarding";
 import { IDLE_HINT_DELAY_MS, currentIdleHintArm, type IdleHintArm } from "./game/idleHint";
-import type { InputPlacementVariant } from "./game/inputPlacementTest";
 import type { ShareNameVariant } from "./game/shareNameTest";
-import type { WordOfDayVariant } from "./game/wordOfDay";
 import { APP_VERSION } from "./version";
 import { isBotUserAgent } from "./game/botUa";
 import { logEvent, type EventProps } from "./eventLog";
@@ -173,20 +171,6 @@ export function trackAnswerRetried(
     answer_count: answerCount,
     // Whether this was the do-over (see game/doOver.ts), not the puzzle's own retry.
     do_over: doOver,
-  });
-}
-
-/**
- * The player traded their unspent retry for a look at the day's word (see
- * DropDisplay). Counted separately from `answer_retried`: both spend the same
- * allowance, but one takes a word back and this one buys a spoiler, and how
- * often players prefer the spoiler is the question worth watching.
- */
-export function trackAnswerRevealed(date: string, answerCount: number) {
-  send("answer_revealed", {
-    puzzle_date: date,
-    puzzle_number: puzzleNumber(date),
-    answer_count: answerCount,
   });
 }
 
@@ -849,24 +833,9 @@ function idleHintArmProps(): EventProps {
 }
 
 /**
- * The word of the day experiment's draw (see game/wordOfDay.ts), once per
- * player, on the puzzle they first finished. `live_date` is the day it counts
- * on in `analytics_v2_word_of_day`: the finished puzzle can be an archived one.
- */
-export function trackWordOfDayAssigned(variant: WordOfDayVariant, date: string) {
-  send("word_of_day_assigned", {
-    variant,
-    puzzle_date: date,
-    puzzle_number: puzzleNumber(date),
-    live_date: todayDateString(),
-    mode: modeOf(date),
-  });
-}
-
-/**
  * The share name test's draw (see game/shareNameTest.ts), once per player, on
- * the first share built with no "Show username" choice saved. Shaped like the
- * word of the day's, for `analytics_v2_experiment`, which splits new players
+ * the first share built with no "Show username" choice saved. Shaped for
+ * `analytics_v2_experiment`, which splits new players
  * from returning ones by their first word; `returning` is the browser's own
  * view of the same thing (a word banked on an earlier puzzle), kept so the two
  * can be checked against each other.
@@ -874,26 +843,6 @@ export function trackWordOfDayAssigned(variant: WordOfDayVariant, date: string) 
 export function trackShareNameAssigned(variant: ShareNameVariant, date: string, returning: boolean) {
   send("share_name_assigned", {
     variant,
-    returning,
-    puzzle_date: date,
-    puzzle_number: puzzleNumber(date),
-    live_date: todayDateString(),
-    mode: modeOf(date),
-  });
-}
-
-/**
- * The input placement test's draw (see game/inputPlacementTest.ts), once per
- * player, on the first unfinished puzzle they see the input on. Shaped like
- * the share name test's, for `analytics_v2_experiment`, which reads two arms
- * named `shown` and `hidden`: `variant` is `shown` for the input below the
- * guess log, the arm under test, and `hidden` for it above, where it has
- * always been. `placement` says the same in the test's own words.
- */
-export function trackInputPlacementAssigned(placement: InputPlacementVariant, date: string, returning: boolean) {
-  send("input_placement_assigned", {
-    variant: placement === "below" ? "shown" : "hidden",
-    placement,
     returning,
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),

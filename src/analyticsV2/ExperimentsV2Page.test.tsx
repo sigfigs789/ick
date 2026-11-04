@@ -16,8 +16,8 @@ const rowOf = (table: string, measure: string) =>
   )!;
 
 describe("ExperimentsV2Page", () => {
-  it("draws the word of the day's call and its arms for everyone, new and returning players", async () => {
-    const wordOfDay = {
+  it("draws an experiment's call and its arms for everyone, new and returning players", async () => {
+    const shareName = {
       since: "2026-11-01",
       arms: [
         { variant: "shown", segment: "all", assigned: 320, d1: { cohort: 300, returned: 90 }, d7: { cohort: 200, returned: 20 } },
@@ -26,17 +26,17 @@ describe("ExperimentsV2Page", () => {
         { variant: "hidden", segment: "new", assigned: 110, d1: { cohort: 100, returned: 10 }, d7: { cohort: 80, returned: 4 } },
       ],
     };
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ wordOfDay }), { status: 200 }));
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ shareName }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
     render(<ExperimentsV2Page />);
 
-    expect(await screen.findByRole("heading", { name: "Word of the day" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Username in shares" })).toBeTruthy();
     expect(String((fetchMock.mock.calls[0] as unknown[])[0])).toContain("list=experiments-v2&today=2026-10-22");
-    expect(screen.getByText("Keep the word of the day")).toBeTruthy();
+    expect(screen.getByText("Keep the username in shares")).toBeTruthy();
     for (const name of ["Everyone", "New", "Returning"]) {
       expect(screen.getByRole("heading", { name })).toBeTruthy();
     }
-    const everyone = rowOf("Everyone drawn: with the word of the day against without.", "D1 retention");
+    const everyone = rowOf("Everyone drawn: with the username in shares against without.", "D1 retention");
     expect(everyone.textContent).toContain("30%");
     expect(everyone.textContent).toContain("+10 pts *");
     // Returning is everyone less new: 70 of 200 shown (35%), 50 of 200 hidden (25%).
@@ -48,7 +48,7 @@ describe("ExperimentsV2Page", () => {
       "Players drawn200200",
     );
     // Drawn only after a first word, so the arms cannot differ on activation; the row says so rather than show 100%.
-    expect(rowOf("Everyone drawn: with the word of the day against without.", "Activation").textContent).toBe(
+    expect(rowOf("Everyone drawn: with the username in shares against without.", "Activation").textContent).toBe(
       "Activationn/an/a–",
     );
   });
@@ -63,14 +63,14 @@ describe("ExperimentsV2Page", () => {
     });
     const fetchMock = vi.fn(async (url: string) => {
       const from = new URL(url, "http://x").searchParams.get("from");
-      const body = { wordOfDay: drawn(from === "2026-10-15" ? 7 : from === "2026-10-22" ? 3 : 50) };
+      const body = { shareName: drawn(from === "2026-10-15" ? 7 : from === "2026-10-22" ? 3 : 50) };
       return new Response(JSON.stringify(body), { status: 200 });
     });
     vi.stubGlobal("fetch", fetchMock);
     render(<ExperimentsV2Page />);
-    const playersDrawn = () => rowOf("Everyone drawn: with the word of the day against without.", "Players drawn").textContent;
+    const playersDrawn = () => rowOf("Everyone drawn: with the username in shares against without.", "Players drawn").textContent;
 
-    await screen.findByRole("heading", { name: "Word of the day" });
+    await screen.findByRole("heading", { name: "Username in shares" });
     expect(String(fetchMock.mock.calls[0][0])).not.toContain("from=");
     expect(screen.getByRole("button", { name: "Since it started" }).getAttribute("aria-pressed")).toBe("true");
     expect(playersDrawn()).toBe("Players drawn5050");
@@ -101,7 +101,7 @@ describe("ExperimentsV2Page", () => {
         { variant: "hidden", segment: "new", assigned: 90, d1: { cohort: 80, returned: 20 } },
       ],
     };
-    const body = { wordOfDay: null, shareName };
+    const body = { shareName };
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(body), { status: 200 })));
     render(<ExperimentsV2Page />);
 
@@ -147,7 +147,7 @@ describe("ExperimentsV2Page", () => {
         },
       ],
     };
-    const body = { wordOfDay: null, shareName: null, inputPlacement };
+    const body = { shareName: null, inputPlacement };
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(body), { status: 200 })));
     render(<ExperimentsV2Page />);
 
@@ -189,7 +189,7 @@ describe("ExperimentsV2Page", () => {
         { variant: "hidden", segment: "all", assigned: 42, d1: { cohort: 31, returned: 8 } },
       ],
     };
-    const body = { wordOfDay: null, idleHintNew: idleHint, idleHintReturning: idleHint };
+    const body = { idleHintNew: idleHint, idleHintReturning: idleHint };
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(body), { status: 200 })));
     render(<ExperimentsV2Page />);
 
@@ -203,7 +203,7 @@ describe("ExperimentsV2Page", () => {
   });
 
   it("says so when the database sent no experiment", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ wordOfDay: null }), { status: 200 })));
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ shareName: null }), { status: 200 })));
     render(<ExperimentsV2Page />);
 
     expect(await screen.findByText("No experiment is running.")).toBeTruthy();

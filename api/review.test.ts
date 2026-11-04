@@ -544,7 +544,6 @@ describe("api/review", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
-      wordOfDay: body,
       shareName: body,
       inputPlacement: body,
       idleHintNew: body,
@@ -556,20 +555,18 @@ describe("api/review", () => {
       "analytics_v2_experiment",
       "analytics_v2_experiment",
       "analytics_v2_experiment",
-      "analytics_v2_experiment",
     ]);
-    expect(JSON.parse(String(calls[0][1].body))).toEqual({ p_today: "2026-10-22", p_event: "word_of_day_assigned" });
-    expect(JSON.parse(String(calls[1][1].body))).toEqual({ p_today: "2026-10-22", p_event: "share_name_assigned" });
-    expect(JSON.parse(String(calls[2][1].body))).toEqual({
+    expect(JSON.parse(String(calls[0][1].body))).toEqual({ p_today: "2026-10-22", p_event: "share_name_assigned" });
+    expect(JSON.parse(String(calls[1][1].body))).toEqual({
       p_today: "2026-10-22",
       p_event: "input_placement_assigned",
     });
-    expect(JSON.parse(String(calls[3][1].body))).toEqual({
+    expect(JSON.parse(String(calls[2][1].body))).toEqual({
       p_today: "2026-10-22",
       p_event: "idle_hint_triggered",
       p_experiment: "new",
     });
-    expect(JSON.parse(String(calls[4][1].body))).toEqual({
+    expect(JSON.parse(String(calls[3][1].body))).toEqual({
       p_today: "2026-10-22",
       p_event: "idle_hint_triggered",
       p_experiment: "returning",
@@ -585,7 +582,7 @@ describe("api/review", () => {
 
     expect(response.status).toBe(200);
     const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
-    for (const [i, event] of ["word_of_day_assigned", "share_name_assigned"].entries()) {
+    for (const [i, event] of ["share_name_assigned", "input_placement_assigned"].entries()) {
       expect(JSON.parse(String(calls[i][1].body))).toEqual({
         p_today: "2026-10-22",
         p_event: event,
@@ -593,7 +590,7 @@ describe("api/review", () => {
         p_to: "2026-10-22",
       });
     }
-    expect(JSON.parse(String(calls[4][1].body))).toEqual({
+    expect(JSON.parse(String(calls[3][1].body))).toEqual({
       p_today: "2026-10-22",
       p_event: "idle_hint_triggered",
       p_from: "2026-10-15",

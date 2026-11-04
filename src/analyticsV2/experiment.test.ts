@@ -11,7 +11,7 @@ function arms(shownD1: [number, number], hiddenD1: [number, number], week?: [[nu
   return { since: "2026-11-01", arms: [make("shown", shownD1, week?.[0]), make("hidden", hiddenD1, week?.[1])] };
 }
 
-describe("word of the day experiment", () => {
+describe("experiment", () => {
   it("reads what the database sent, dropping arms it does not know", () => {
     const parsed = parseExperiment({
       since: "2026-11-01",

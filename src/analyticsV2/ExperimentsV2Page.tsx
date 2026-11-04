@@ -56,8 +56,7 @@ export function ExperimentsV2Page() {
       empty="No experiment is running."
       isEmpty={
         !experiments ||
-        (!experiments.wordOfDay &&
-          !experiments.shareName &&
+        (!experiments.shareName &&
           !experiments.inputPlacement &&
           !experiments.idleHintNew &&
           !experiments.idleHintReturning)
@@ -75,25 +74,6 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
   const drawn = experiments.span ? ` Players drawn: ${describe(experiments.span, today)}.` : "";
   return (
     <div className="av2">
-      {experiments.wordOfDay && (
-        <Section
-          title="Word of the day"
-          note={`Whether showing the word of the day under a finished puzzle moves the scorecard. Over players.${drawn}`}
-        >
-          <ExperimentView
-            experiment={experiments.wordOfDay}
-            subject="the word of the day"
-            about={
-              <>
-                Half of players never see the word under a finished puzzle&rsquo;s drop. Each is drawn once, the first
-                time they finish a puzzle. Try either arm with <code>?word-of-day=hidden</code> or <code>=shown</code>;
-                a forced arm is not counted.
-              </>
-            }
-          />
-        </Section>
-      )}
-
       {experiments.shareName && (
         <Section
           title="Username in shares"
@@ -129,9 +109,8 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
             arms={{ shown: "Below", hidden: "Above" }}
             about={
               <>
-                One in five new draws gets the input below the guess log; the rest keep it above. Each is drawn once,
-                the first time the input appears. Try either arm with <code>?input-placement=below</code> or{" "}
-                <code>=above</code>; a forced arm, or a tester, is not counted.
+                Ended 2026-11-04: every player now gets the input below the guess log. While it ran, four in five
+                new draws got it below and the rest kept it above, each drawn once, the first time the input appeared.
               </>
             }
           />

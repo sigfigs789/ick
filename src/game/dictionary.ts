@@ -1063,8 +1063,7 @@ let FOLD_REVIEW_VERDICTS: ReadonlyMap<string, FoldReviewVerdict> = new Map();
  * Every word-data file but the drops and the score scale is fetched after the
  * app starts rather than with it: the curated dictionary and its frequencies,
  * Claude's estimated Zipf (src/data/estimated-zipf/), the curated overrides,
- * pins and rejections, the fold exemptions and reviewed verdicts, the reveal
- * words and definitions, and the pre-NEW_SCORING_START legacy rarity. Together
+ * pins and rejections, the fold exemptions and reviewed verdicts, and the pre-NEW_SCORING_START legacy rarity. Together
  * they were about 3.5 MB gzipped, nearly all of the first load. None is
  * needed to draw a puzzle or show a saved score, so a new player sees the
  * board while they arrive, and the Play button waits for them.
@@ -1123,8 +1122,6 @@ function loadRecentScoringData(): Promise<void> {
     importData(() => import("../data/word-rejections.json")),
     importData(() => import("../data/same-root-pins.json")),
     importData(() => import("../data/derived-rejections.json")),
-    importData(() => import("../data/reveal-words.json")),
-    importData(() => import("../data/reveal-definitions.json")),
   ]).then(
     ([
       estimates,
@@ -1138,8 +1135,6 @@ function loadRecentScoringData(): Promise<void> {
       wordRejections,
       sameRootPins,
       derivedRejections,
-      revealWords,
-      revealDefinitions,
     ]) => {
       WORDS = dictionary.default as string[];
       WORD_INDEX = new Map(WORDS.map((w, i) => [w, i]));
@@ -1162,8 +1157,6 @@ function loadRecentScoringData(): Promise<void> {
       DERIVED_REJECTIONS = indexDerivedRejections(
         derivedRejections.default as Record<string, Record<string, readonly string[]>>
       );
-      REVEAL_WORDS = revealWords.default.words;
-      REVEAL_DEFINITIONS = revealDefinitions.default as Record<string, string>;
       // Through `unknown`: once two batches estimate different words, the
       // JSON's inferred type gives each batch the other's words as
       // `?: undefined`, and a direct cast to Record<string, number> no longer
@@ -3158,92 +3151,6 @@ export function bestWordForDrop(drop: string, date?: string): AcceptedWord | und
     }
   }
   return best;
-}
-
-/**
- * The band the revealed word has to land in. A perfect 10.00 is almost always a
- * word no corpus attests -- exactly the kind nobody takes away from the puzzle
- * -- so the reveal aims below it, at rarities a player can plausibly learn and
- * then actually use.
- *
- * The floor is 8.0 rather than 9.0 because that is where the vocabulary
- * actually lives. Held at 9.0 the reviewed list reached 483 of the 1,055 drops;
- * at 8.0 it reaches all but four of them, and `palimpsest`, `soporific` and
- * `defenestration` become revealable instead of being filtered out for the
- * crime of appearing in books.
- */
-const LEARNABLE_MIN_SCORE = 8.0;
-const LEARNABLE_MAX_SCORE = 9.9;
-
-/**
- * The reviewed vocabulary the reveal draws from first: words worth carrying
- * away, hand-picked rather than mined, because nothing in the frequency data
- * separates `persnickety` from `gastroduodenal` -- both are equally unwritten,
- * and only one is worth a player's memory.
- *
- * Words the frequency data cannot reach are simply absent, and words too
- * common to land in the band sit here unused until a rarity refresh moves them,
- * which is why the list is longer than the set that can be revealed today.
- *
- * Not dated like the scoring tables. The reveal is a suggestion rather than a
- * score, so growing this list may change what an archived puzzle reveals, and
- * that costs the player nothing.
- */
-let REVEAL_WORDS: readonly string[] = [];
-
-/**
- * Glosses for the reviewed words, written for the reveal rather than lifted
- * from a dictionary: what the word means, said plainly enough that a player who
- * has never seen it could go and use it. They sit behind a toggle, so clarity
- * wins over brevity every time -- a gloss runs as long as the word needs, gives
- * the second sense where the word has one, and never leaves a bare synonym to
- * trade one unfamiliar word for another ("a spittoon", "stinking"). Where the
- * plainest word for the thing is itself rare, the gloss says what the thing is
- * as well ("a spittoon: a pot kept on the floor to spit tobacco juice into").
- * No part-of-speech labels -- the gloss's own shape carries that ("a jumbled
- * medley", "to speak at length"), which reads better under a word the player
- * just met.
- *
- * Every reviewed word has one, and a test holds the two files to that.
- */
-let REVEAL_DEFINITIONS: Readonly<Record<string, string>> = {};
-
-/** The one-line gloss for a reviewed word, or undefined for anything else. */
-export function definitionFor(word: string): string | undefined {
-  return REVEAL_DEFINITIONS[word.toLowerCase()];
-}
-
-/**
- * The word revealed once the puzzle is done: a reviewed word from REVEAL_WORDS
- * that `drop` reaches and that scores inside the band, rarest first, since every
- * one of them has already been judged worth learning.
- *
- * Same containment and rejection rules as `bestWordForDrop`, but the pick runs
- * the other way -- down from the ceiling, into the range a player can hold on
- * to. When the drop reaches no reviewed word the reveal falls back to that
- * ceiling word, which is what it always showed.
- *
- * The fallback is deliberately the ceiling and not the best unreviewed word in
- * the band. Mining the band by frequency alone returns forms of other words,
- * lab vocabulary and, twice in a sample of forty, a slur -- nothing in the data
- * tells those apart from `persnickety`. The band is tested on the shown score,
- * not the raw one, so a reviewed reveal never prints a number outside the range
- * it promises.
- */
-export function learnableWordForDrop(drop: string, date?: string): AcceptedWord | undefined {
-  const needle = drop.toLowerCase();
-  const scoring = scoringFor(date);
-  let reviewed: AcceptedWord | undefined;
-  for (const word of REVEAL_WORDS) {
-    if (word === needle || !word.includes(needle)) continue;
-    if (curatedRejection(word, date) !== undefined) continue;
-    const info = rarityFor(word, date);
-    if (!info) continue;
-    const shown = Number(scoring.format(scoring.score(info.zipf)));
-    if (shown < LEARNABLE_MIN_SCORE || shown > LEARNABLE_MAX_SCORE) continue;
-    if (!reviewed || info.zipf < reviewed.zipf) reviewed = { word, ...info };
-  }
-  return reviewed ?? bestWordForDrop(drop, date);
 }
 
 /**
