@@ -12,6 +12,7 @@ import {
   type TransferPayload,
 } from "../game/transfer";
 import { navigate, TRANSFER_PATH } from "../routes";
+import { PermissionModal } from "./PermissionModal";
 
 /**
  * Moving a player to another browser, as a page at /transfer.
@@ -69,6 +70,7 @@ function SendTransfer() {
   const [link, setLink] = useState<string | null>(null);
   const [state, setState] = useState<"idle" | "working" | "empty" | "failed">("idle");
   const [copied, setCopied] = useState(false);
+  const [permissionDenied, setPermissionDenied] = useState(false);
 
   const playerId = loadPlayerId();
 
@@ -93,10 +95,12 @@ function SendTransfer() {
     try {
       await navigator.clipboard.writeText(link);
       setCopied(true);
+      setPermissionDenied(false);
     } catch {
-      // No clipboard permission, or an insecure origin. The link is on screen
-      // and selectable, which is the fallback and needs no announcement.
+      // No clipboard permission, or an insecure origin. Explain it in a popup
+      // with a way to fix it; the base page stays free of permission copy.
       setCopied(false);
+      setPermissionDenied(true);
     }
   }, [link]);
 
@@ -172,6 +176,13 @@ function SendTransfer() {
       )}
 
       <AdoptById />
+
+      <PermissionModal
+        open={permissionDenied}
+        permission="clipboard"
+        onRetry={() => void copy()}
+        onClose={() => setPermissionDenied(false)}
+      />
     </>
   );
 }
