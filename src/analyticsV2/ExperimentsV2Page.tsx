@@ -129,9 +129,8 @@ function List({ experiments, today }: { experiments: Experiments; today: string 
             arms={{ shown: "Below", hidden: "Above" }}
             about={
               <>
-                One in five new draws gets the input below the guess log; the rest keep it above. Each is drawn once,
-                the first time the input appears. Try either arm with <code>?input-placement=below</code> or{" "}
-                <code>=above</code>; a forced arm, or a tester, is not counted.
+                Ended 2026-11-04: every player now gets the input below the guess log. While it ran, four in five
+                new draws got it below and the rest kept it above, each drawn once, the first time the input appeared.
               </>
             }
           />
