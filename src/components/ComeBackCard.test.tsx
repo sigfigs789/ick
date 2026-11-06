@@ -6,6 +6,7 @@ import { ComeBackCard } from "./ComeBackCard";
 const streak: StreakState = {
   currentStreak: 2,
   longestStreak: 2,
+  freezePlays: 3,
   totalCompleted: 2,
   crushedIt: 0,
   elite: 0,
@@ -31,7 +32,7 @@ describe("ComeBackCard", () => {
 
   it("leaves a line with nothing to explain as plain text", async () => {
     // Cap full, no weekend left this week: beating the best is all that's ahead.
-    const capped = { ...streak, currentStreak: 11, longestStreak: 12, bankedFreezes: 1 };
+    const capped = { ...streak, currentStreak: 5, longestStreak: 6, bankedFreezes: 1 };
     render(<ComeBackCard streak={capped} date="2026-10-30" />);
     expect(await screen.findByText(/days to beat your best streak/)).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();

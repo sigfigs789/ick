@@ -40,7 +40,7 @@ describe("StreakDisplay", () => {
 
     // A streak too short to hold a freeze and no word today: the streak, and the
     // freeze pie filling towards the first, with no 0/0 count.
-    rerender(<StreakDisplay streak={{ ...streak, currentStreak: 2 }} hideEmpty hasWords={false} />);
+    rerender(<StreakDisplay streak={{ ...streak, currentStreak: 1 }} hideEmpty hasWords={false} />);
     expect(screen.getByRole("button", { name: /day streak/ })).toBeInTheDocument();
     const freezes = screen.getByRole("button", { name: /Streak freezes/ });
     expect(freezes.querySelector(".rest-day__pie")).not.toBeNull();
@@ -288,10 +288,12 @@ describe("StreakDisplay", () => {
     fireEvent.click(badge);
     const popup = screen.getByRole("dialog", { name: "Streak freezes" });
     expect(popup.querySelector("strong")?.textContent).toBe("1 of 2 🧊 acquired");
-    // Past day 3 and at the top cap: neither rule applies any more.
-    expect(popup.textContent).toContain("You get another one every 7 days of your streak. You can save up to 2 at a time.");
-    expect(popup.textContent).not.toContain("day 3");
-    expect(popup.textContent).not.toContain("14 day");
+    // Past day 10 and at the top cap: neither the bonus nor the cap rising applies any more.
+    expect(popup.textContent).toContain(
+      "You earn one every 4 days you play, in a row or not. You can save up to 2 at a time."
+    );
+    expect(popup.textContent).not.toContain("bonus");
+    expect(popup.textContent).not.toContain("10 day");
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -310,19 +312,19 @@ describe("StreakDisplay", () => {
       return text;
     };
 
-    // Before day 3, with no cap yet.
-    expect(rules({ ...streak, currentStreak: 2, longestStreak: 2 })).toContain(
-      "You get your first one on day 3 of your streak, then another every 7 days of your streak. " +
-        "You can only save 1 at a time. Reach a 14 day streak to save up to 2."
+    // Before a 2 day streak, with no cap yet.
+    expect(rules({ ...streak, currentStreak: 1, longestStreak: 1 })).toContain(
+      "You earn one every 4 days you play, in a row or not, and a bonus one when your streak reaches 10 days. " +
+        "Reach a 2 day streak to save 1, and a 10 day streak to save up to 2."
     );
-    // Day 3's freeze earned, the cap still 1.
+    // The cap 1 from a 2 day streak.
     expect(rules({ ...streak, currentStreak: 5, longestStreak: 5 })).toContain(
-      "You get another one every 7 days of your streak. " +
-        "You can only save 1 at a time. Reach a 14 day streak to save up to 2."
+      "You earn one every 4 days you play, in a row or not, and a bonus one when your streak reaches 10 days. " +
+        "You can only save 1 at a time. Reach a 10 day streak to save up to 2."
     );
-    // A new streak before day 3, the cap already 2 from a past one.
+    // A new streak before day 10, the cap already 2 from a past one.
     expect(rules({ ...streak, currentStreak: 1, longestStreak: 20 })).toContain(
-      "You get your first one on day 3 of your streak, then another every 7 days of your streak. " +
+      "You earn one every 4 days you play, in a row or not, and a bonus one when your streak reaches 10 days. " +
         "You can save up to 2 at a time."
     );
   });
@@ -351,12 +353,12 @@ describe("StreakDisplay", () => {
   it("shows a pie of the days towards the next freeze while none is held, and 🧊 once one is", () => {
     const pie = () => screen.getByRole("button", { name: /streak freezes/i }).querySelector(".rest-day__pie");
     const { rerender } = render(
-      <StreakDisplay streak={{ ...streak, currentStreak: 10, longestStreak: 20, bankedFreezes: 0 }} />
+      <StreakDisplay streak={{ ...streak, currentStreak: 10, longestStreak: 20, bankedFreezes: 0, freezePlays: 3 }} />
     );
     expect(pie()).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: /streak freezes/i }));
     expect(screen.getByRole("dialog", { name: "Streak freezes" }).querySelector("strong")?.textContent).toBe(
-      "No 🧊 acquired: 3 of 7 days to the next"
+      "No 🧊 acquired: 3 of 4 days to the next"
     );
 
     rerender(<StreakDisplay streak={{ ...streak, currentStreak: 10, longestStreak: 20, bankedFreezes: 1 }} />);
