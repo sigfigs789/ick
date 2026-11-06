@@ -1092,9 +1092,9 @@ come after it.
   saves and locks it (so it's reviewable later) but never touches the
   streak — only a valid answer submitted on its own real calendar date
   counts. Saved freezes cover missed days, one each: one is earned every 4
-  days played (in a row or not), plus a bonus one when a streak reaches 10
-  days, and a player holds up to 1 once they have ever reached a 2 day
-  streak and 2 once they have ever reached 10 (the cap
+  days played (in a row or not), plus a bonus one when a streak reaches 2
+  days and another at 10, and a player holds up to 1 once they have ever
+  reached a 2 day streak and 2 once they have ever reached 10 (the cap
   never goes back down; players holding 3 from the old cap of 3 keep them
   until spent, shown as 3/2), and the 🔥 turns to
   🧊 while one is covering. There is no free missed day: every missed day

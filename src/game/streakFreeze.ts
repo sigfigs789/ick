@@ -6,9 +6,9 @@
  * stops being a reason to come back. So playing earns saved freezes
  * (`bankedFreezes`): one on every FREEZE_PLAYS-th day played, each on its own
  * day, whether or not those days ran in a row (`freezePlays` counts them, and
- * a broken streak does not reset the count), and a bonus one the day a streak
- * reaches BONUS_FREEZE_STREAK days played -- the streak count, which frozen
- * days do not add to. They are held up to a cap set by the longest streak the
+ * a broken streak does not reset the count), and a bonus one on each day a
+ * streak reaches FIRST_CAP_STREAK or BONUS_FREEZE_STREAK days played -- the
+ * streak count, which frozen days do not add to. They are held up to a cap set by the longest streak the
  * player has ever had (see `streakFreezeCap`): one from a 2 day streak, two
  * from a 10 day one. The cap is permanent: a player who once reached 10 days
  * can hold two on every streak after.
@@ -148,8 +148,11 @@ export const FREEZE_PLAYS = 4;
 /** The streak, in days played, whose day earns a bonus saved freeze and raises the cap to two. */
 export const BONUS_FREEZE_STREAK = 10;
 
-/** The streak, in days played, that raises the cap to one. */
-const FIRST_CAP_STREAK = 2;
+/** The streak, in days played, whose day earns a bonus saved freeze and raises the cap to one. */
+export const FIRST_CAP_STREAK = 2;
+
+/** The streak days, in days played, that each earn a bonus saved freeze, as the cap rises to fit it. */
+const BONUS_STREAK_DAYS = [FIRST_CAP_STREAK, BONUS_FREEZE_STREAK];
 
 /**
  * Days played towards the next saved freeze. A save from before they were
@@ -184,15 +187,17 @@ export function freezeCap(days: number): number {
 
 /**
  * How saved freezes work, for the freeze badge's popup: only the rules still
- * ahead of the player. The day-10 bonus is told until this streak has passed
- * it, and the limit rising until `cap` is two.
+ * ahead of the player. The day-2 and day-10 bonuses are told until this
+ * streak has passed them, and the limit rising until `cap` is two.
  */
 export function freezeRules(currentStreak: number, cap: number): string {
   const earn =
     `You earn one every ${FREEZE_PLAYS} days you play, in a row or not` +
-    (currentStreak < BONUS_FREEZE_STREAK
-      ? `, and a bonus one when your streak reaches ${BONUS_FREEZE_STREAK} days.`
-      : ".");
+    (currentStreak < FIRST_CAP_STREAK
+      ? `, and a bonus one when your streak reaches ${FIRST_CAP_STREAK} days and again at ${BONUS_FREEZE_STREAK}.`
+      : currentStreak < BONUS_FREEZE_STREAK
+        ? `, and a bonus one when your streak reaches ${BONUS_FREEZE_STREAK} days.`
+        : ".");
   const hold =
     cap === 0
       ? `Reach a ${FIRST_CAP_STREAK} day streak to save 1, and a ${BONUS_FREEZE_STREAK} day streak to save up to ${MAX_FREEZE_CAP}.`
@@ -210,7 +215,8 @@ export function streakFreezeCap(streak: StreakState): number {
 /**
  * The saved freezes earned by a day just played, which brought the streak to
  * `currentStreak`: one if it is the FREEZE_PLAYS-th day played since the
- * last, and one more if the streak has just reached BONUS_FREEZE_STREAK, up
+ * last, and one more if the streak has just reached FIRST_CAP_STREAK or
+ * BONUS_FREEZE_STREAK, up
  * to the cap. Call once per day played on its own day.
  */
 export function earnFreeze(streak: StreakState): StreakState {
@@ -219,7 +225,7 @@ export function earnFreeze(streak: StreakState): StreakState {
   const before = streak.freezePlays ?? Math.max(0, streak.currentStreak - 1) % FREEZE_PLAYS;
   const plays = before + 1;
   const earned =
-    (plays >= FREEZE_PLAYS ? 1 : 0) + (streak.currentStreak === BONUS_FREEZE_STREAK ? 1 : 0);
+    (plays >= FREEZE_PLAYS ? 1 : 0) + (BONUS_STREAK_DAYS.includes(streak.currentStreak) ? 1 : 0);
   const banked = streak.bankedFreezes ?? 0;
   const kept = Math.max(banked, Math.min(banked + earned, streakFreezeCap(streak)));
   return {
@@ -235,7 +241,7 @@ export function earnFreeze(streak: StreakState): StreakState {
  * the cap. For the come-back line.
  */
 export function earnsFreezeOn(plays: number, streakDay: number): boolean {
-  return plays % FREEZE_PLAYS === 0 || streakDay === BONUS_FREEZE_STREAK;
+  return plays % FREEZE_PLAYS === 0 || BONUS_STREAK_DAYS.includes(streakDay);
 }
 
 /**
