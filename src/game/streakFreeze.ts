@@ -209,7 +209,7 @@ export function freezeRules(currentStreak: number, cap: number): string {
 
 /** The one line the freeze badge's popup needs for a player with this cap. */
 export function freezeTip(cap: number): string {
-  if (cap === 0) return "Get a freeze tomorrow. It keeps your streak going if you miss a day.";
+  if (cap === 0) return "It keeps your streak going if you miss a day.";
   if (cap < MAX_FREEZE_CAP) return `Refresh one every ${FREEZE_PLAYS} days. Next cap at ${BONUS_FREEZE_STREAK} days.`;
   return `You can save up to ${MAX_FREEZE_CAP} at a time.`;
 }

@@ -310,7 +310,7 @@ describe("StreakDisplay", () => {
 
     // Before a 2 day streak, with no cap yet.
     expect(rules({ ...streak, currentStreak: 1, longestStreak: 1 })).toContain(
-      "Get a freeze tomorrow. It keeps your streak going if you miss a day."
+      "It keeps your streak going if you miss a day."
     );
     // The cap 1 from a 2 day streak.
     expect(rules({ ...streak, currentStreak: 5, longestStreak: 5 })).toContain(

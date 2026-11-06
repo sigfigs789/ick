@@ -20,6 +20,7 @@ import { useKeepInViewport } from "../hooks/useKeepInViewport";
 
 function freezeSummary(banked: number, cap: number, earning?: { played: number; of: number }): string {
   if (banked === 0) {
+    if (cap === 0) return "Come back tomorrow to get your first 🧊 freeze";
     return earning ? `No 🧊 acquired: ${earning.played} of ${earning.of} days to the next` : "No 🧊 acquired";
   }
   // Held from when the limit was three; kept, but no more are earned past it.
