@@ -560,14 +560,16 @@ describe("streak freezes", () => {
     recordAcceptedWord(newProgress(date, "str"), word(`w-${date}`));
   }
 
-  it("earns a saved freeze on day 3 that covers a missed day", () => {
+  it("earns a saved freeze on the 4th day played that covers a missed day", () => {
     for (let d = 1; d <= 3; d++) play(`2024-01-0${d}`);
-    expect(loadStreak()).toMatchObject({ currentStreak: 3, bankedFreezes: 1 });
-    setToday("2024-01-05"); // skipped 01-04
-    expect(loadStreak()).toMatchObject({ currentStreak: 3, bankedFreezes: 0, frozenDates: ["2024-01-04"] });
+    expect(loadStreak()).toMatchObject({ currentStreak: 3, bankedFreezes: 0, freezeDays: 3 });
+    play("2024-01-04");
+    expect(loadStreak()).toMatchObject({ currentStreak: 4, bankedFreezes: 1, freezeDays: 0 });
+    setToday("2024-01-06"); // skipped 01-05
+    expect(loadStreak()).toMatchObject({ currentStreak: 4, bankedFreezes: 0, frozenDates: ["2024-01-05"] });
 
-    play("2024-01-05");
-    expect(loadStreak()).toMatchObject({ currentStreak: 4, frozenDates: ["2024-01-04"] });
+    play("2024-01-06");
+    expect(loadStreak()).toMatchObject({ currentStreak: 5, frozenDates: ["2024-01-05"] });
   });
 
   it("gives no free missed day before the first freeze is earned", () => {
@@ -577,21 +579,24 @@ describe("streak freezes", () => {
     expect(loadStreak()).toMatchObject({ currentStreak: 0, longestStreak: 2 });
   });
 
-  it("earns a saved freeze at 7 days that covers a missed day, with no free day after", () => {
+  it("counts days played towards the next freeze from one spent", () => {
     for (let d = 1; d <= 7; d++) play(`2024-01-0${d}`);
-    expect(loadStreak()).toMatchObject({ currentStreak: 7, bankedFreezes: 1 });
+    // Earned on day 4; days 5 to 7 at the full cap count for nothing.
+    expect(loadStreak()).toMatchObject({ currentStreak: 7, bankedFreezes: 1, freezeDays: 0 });
 
     play("2024-01-09"); // skipped 01-08 (saved freeze)
-    expect(loadStreak()).toMatchObject({ currentStreak: 8, bankedFreezes: 0 });
+    expect(loadStreak()).toMatchObject({ currentStreak: 8, bankedFreezes: 0, freezeDays: 1 });
 
     play("2024-01-11"); // skipped 01-10, with no freeze left and no free day
-    expect(loadStreak()).toMatchObject({ currentStreak: 1, longestStreak: 8 });
+    // The welcome-back freeze fills the cap, so the count waits again.
+    expect(loadStreak()).toMatchObject({ currentStreak: 1, longestStreak: 8, bankedFreezes: 1, freezeDays: 0 });
   });
 
-  it("lets a new streak earn from its first week up to the cap a past one reached", () => {
+  it("lets a new streak earn up to the cap a past one reached", () => {
     for (let d = 1; d <= 14; d++) play(`2024-01-${String(d).padStart(2, "0")}`);
     for (let d = 20; d <= 22; d++) play(`2024-01-${d}`); // a new streak, 3 days
-    // One from coming back (see welcomeBack), one from day 3.
+    // One from coming back (see welcomeBack), one from the 4th day played
+    // since the cap rose to 2 on day 14.
     expect(loadStreak()).toMatchObject({ currentStreak: 3, longestStreak: 14, bankedFreezes: 2 });
     for (let d = 23; d <= 26; d++) play(`2024-01-${d}`); // 7 days, already at the cap
     expect(loadStreak()).toMatchObject({ currentStreak: 7, longestStreak: 14, bankedFreezes: 2 });

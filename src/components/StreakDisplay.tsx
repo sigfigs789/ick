@@ -37,12 +37,10 @@ function freezeSummary(banked: number, cap: number, earning?: { played: number; 
 function FreezeBadge({
   banked,
   cap,
-  currentStreak,
   earning,
 }: {
   banked: number;
   cap: number;
-  currentStreak: number;
   earning?: { played: number; of: number };
 }) {
   const pie = banked === 0 ? earning : undefined;
@@ -87,7 +85,7 @@ function FreezeBadge({
       {open && (
         <span className="streak-display__freeze-popup" id={popupId} role="dialog" aria-label="Streak freezes">
           <strong>{freezeSummary(banked, cap, pie)}</strong>
-          <span>{freezeRules(currentStreak, cap)}</span>
+          <span>{freezeRules(cap)}</span>
         </span>
       )}
     </span>
@@ -214,7 +212,7 @@ export function StreakDisplay({
   const showFreezes = !hideEmpty || cap > 0 || streak.currentStreak > 0;
   // The days towards the next freeze, for its pie: only for the streak as it
   // stands now, not a past puzzle's.
-  const freezeEarning = isToday || date === undefined ? freezeProgress(streak.currentStreak) : undefined;
+  const freezeEarning = isToday || date === undefined ? freezeProgress(streak) : undefined;
   const showTotal = !hideEmpty || hasWords;
   const showStreak = !hideEmpty || streak.currentStreak > 0 || frozen || risky || cap > 0;
   if (!showStreak && !showTotal) return null;
@@ -236,7 +234,7 @@ export function StreakDisplay({
           {restDay && <RestDayBadge className="streak-display__flame" />}
           <StreakBadge icon={restDay ? null : icon} count={streak.currentStreak} />
           {showFreezes && (
-            <FreezeBadge banked={banked} cap={cap} currentStreak={streak.currentStreak} earning={freezeEarning} />
+            <FreezeBadge banked={banked} cap={cap} earning={freezeEarning} />
           )}
           {weekendEarned && (
             <RestDayBadge played={REST_DAY_PLAYS} sundayOnly={dayOfWeek(date) === 6} className="streak-display__week" />

@@ -20,6 +20,7 @@ const THU = "2026-11-05";
 const FRI = "2026-11-06";
 const SAT = "2026-11-07";
 const NEXT_MON = "2026-11-09";
+const NEXT_TUE = "2026-11-10";
 
 beforeEach(() => localStorage.clear());
 
@@ -31,12 +32,12 @@ describe("do-over", () => {
     expect(doOverPlays(streak([MON, TUE]), TUE)).toBe(2);
   });
 
-  it("is earned on the fourth day played and never expires", () => {
-    expect(doOverHeld(streak([MON, TUE, WED]), WED)).toBe(false);
-    expect(doOverHeld(streak([MON, TUE, WED, THU]), THU)).toBe(true);
-    expect(doOverHeld(streak([MON, TUE, WED, THU]), "2026-12-20")).toBe(true);
+  it("is earned on the fifth day played and never expires", () => {
+    expect(doOverHeld(streak([MON, TUE, WED, THU]), THU)).toBe(false);
+    expect(doOverHeld(streak([MON, TUE, WED, THU, FRI]), FRI)).toBe(true);
+    expect(doOverHeld(streak([MON, TUE, WED, THU, FRI]), "2026-12-20")).toBe(true);
     // Only one is held.
-    expect(doOverProgress(streak([MON, TUE, WED, THU, FRI, SAT]), SAT)).toEqual({ played: 4 });
+    expect(doOverProgress(streak([MON, TUE, WED, THU, FRI, SAT]), SAT)).toEqual({ played: 5 });
   });
 
   it("counts again from the day after it is spent", () => {
@@ -44,12 +45,13 @@ describe("do-over", () => {
     spendDoOver(THU);
     expect(doOverHeld(streak(days), SAT)).toBe(false);
     expect(doOverProgress(streak(days), SAT)).toEqual({ played: 2 });
-    expect(doOverHeld(streak([...days, NEXT_MON]), NEXT_MON)).toBe(true);
+    expect(doOverHeld(streak([...days, NEXT_MON]), NEXT_MON)).toBe(false);
+    expect(doOverHeld(streak([...days, NEXT_MON, NEXT_TUE]), NEXT_TUE)).toBe(true);
   });
 
-  it("is a day away only on the third day played", () => {
-    expect(doOverTomorrow(streak([MON, TUE, WED]), WED)).toBe(true);
-    expect(doOverTomorrow(streak([MON, TUE]), TUE)).toBe(false);
-    expect(doOverTomorrow(streak([MON, TUE, WED]), THU)).toBe(false);
+  it("is a day away only on the fourth day played", () => {
+    expect(doOverTomorrow(streak([MON, TUE, WED, THU]), THU)).toBe(true);
+    expect(doOverTomorrow(streak([MON, TUE, WED]), WED)).toBe(false);
+    expect(doOverTomorrow(streak([MON, TUE, WED, THU]), FRI)).toBe(false);
   });
 });

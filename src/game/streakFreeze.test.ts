@@ -6,6 +6,7 @@ import {
   missedYesterday,
   backdateFreezes,
   coveredThrough,
+  daysToFreeze,
   earnFreeze,
   freezeCap,
   freezesOn,
@@ -342,34 +343,69 @@ describe("saved freezes", () => {
     expect([1, 2, 3, 13, 14, 27, 28, 365].map(freezeCap)).toEqual([0, 0, 1, 1, 2, 2, 2, 2]);
   });
 
-  it("earns the first on the third day, then one on every seventh day, up to the cap", () => {
-    const fresh = { longestStreak: 0 };
-    expect(earnFreeze(streakOf({ ...fresh, currentStreak: 2 })).bankedFreezes).toBeUndefined();
-    expect(earnFreeze(streakOf({ ...fresh, currentStreak: 3 })).bankedFreezes).toBe(1);
-    expect(earnFreeze(streakOf({ ...fresh, currentStreak: 4, bankedFreezes: 0 })).bankedFreezes).toBe(0);
-    // Spent since day 3: day 7 earns it back.
-    expect(earnFreeze(streakOf({ ...fresh, currentStreak: 7, bankedFreezes: 0 })).bankedFreezes).toBe(1);
-    expect(earnFreeze(streakOf({ ...fresh, currentStreak: 7, bankedFreezes: 1 })).bankedFreezes).toBe(1);
-    expect(earnFreeze(streakOf({ ...fresh, currentStreak: 6 })).bankedFreezes).toBeUndefined();
-    expect(earnFreeze(streakOf({ ...fresh, currentStreak: 7 })).bankedFreezes).toBe(1);
-    expect(earnFreeze(streakOf({ ...fresh, currentStreak: 14, bankedFreezes: 1 })).bankedFreezes).toBe(2);
-    expect(earnFreeze(streakOf({ ...fresh, currentStreak: 21, bankedFreezes: 2 })).bankedFreezes).toBe(2);
-    expect(earnFreeze(streakOf({ ...fresh, currentStreak: 28, bankedFreezes: 2 })).bankedFreezes).toBe(2);
-    // Three held from the old cap are kept, though no more are earned.
-    expect(earnFreeze(streakOf({ ...fresh, currentStreak: 42, bankedFreezes: 3 })).bankedFreezes).toBe(3);
-    expect(earnFreeze(streakOf({ ...fresh, currentStreak: 36, bankedFreezes: 0 })).bankedFreezes).toBe(0);
+  /** Play `days` days in a row from `start`, as storage does: advance the streak, then earn. */
+  function play(start: StreakState, days: number): StreakState[] {
+    const seen: StreakState[] = [];
+    let s = start;
+    for (let i = 0; i < days; i++) {
+      const currentStreak = s.currentStreak + 1;
+      s = earnFreeze({ ...s, currentStreak, longestStreak: Math.max(s.longestStreak, currentStreak) });
+      seen.push(s);
+    }
+    return seen;
+  }
+
+  it("earns one every 4 days played, up to the cap", () => {
+    const fresh = streakOf({ currentStreak: 0, longestStreak: 0 });
+    const days = play(fresh, 21);
+    // The first on day 4; then the cap of one is full until 14, which raises it.
+    expect(days.map((d) => d.bankedFreezes ?? 0)).toEqual([
+      0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2,
+    ]);
+    expect(days.map((d) => d.freezeDays)).toEqual([
+      1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 0, 0, 0, 0, 0,
+    ]);
   });
 
-  it("keeps the cap a past streak reached, so a returning player earns from their first week", () => {
-    const returning = { longestStreak: 40, bankedFreezes: 0 };
-    expect(earnFreeze(streakOf({ ...returning, currentStreak: 3 })).bankedFreezes).toBe(1);
-    expect(earnFreeze(streakOf({ ...returning, currentStreak: 7 })).bankedFreezes).toBe(1);
-    expect(earnFreeze(streakOf({ ...returning, currentStreak: 14, bankedFreezes: 1 })).bankedFreezes).toBe(2);
-    // A past 14-day streak caps at two.
-    expect(earnFreeze(streakOf({ longestStreak: 20, currentStreak: 7, bankedFreezes: 1 })).bankedFreezes).toBe(2);
-    expect(
-      earnFreeze(streakOf({ longestStreak: 20, currentStreak: 21, bankedFreezes: 2 })).bankedFreezes
-    ).toBe(2);
+  it("counts nothing at a full cap, and starts counting again once one is spent", () => {
+    const full = streakOf({ currentStreak: 30, longestStreak: 30, bankedFreezes: 2, freezeDays: 0 });
+    expect(play(full, 5).map((d) => d.bankedFreezes)).toEqual([2, 2, 2, 2, 2]);
+    const spent = { ...full, bankedFreezes: 1 };
+    expect(play(spent, 4).map((d) => [d.bankedFreezes, d.freezeDays])).toEqual([
+      [1, 1],
+      [1, 2],
+      [1, 3],
+      [2, 0],
+    ]);
+  });
+
+  it("counts days played, not the streak: a streak ending keeps the count", () => {
+    const counted = streakOf({ currentStreak: 0, longestStreak: 20, bankedFreezes: 0, freezeDays: 3 });
+    expect(earnFreeze({ ...counted, currentStreak: 1 })).toMatchObject({ bankedFreezes: 1, freezeDays: 0 });
+  });
+
+  it("waits a day short of a freeze until the player's longest streak can hold one", () => {
+    const short = streakOf({ currentStreak: 1, longestStreak: 2, bankedFreezes: 0, freezeDays: 3 });
+    expect(earnFreeze(short)).toMatchObject({ bankedFreezes: 0, freezeDays: 3 });
+  });
+
+  it("keeps three held from the old cap, earning no more", () => {
+    const old = streakOf({ currentStreak: 42, longestStreak: 42, bankedFreezes: 3 });
+    expect(earnFreeze(old)).toMatchObject({ bankedFreezes: 3, freezeDays: 0 });
+  });
+
+  it("starts a streak saved before days were counted near its next freeze", () => {
+    // Day 12 of a streak, none held: counted as 3, so day 13 earns one.
+    const before = streakOf({ currentStreak: 13, longestStreak: 13, bankedFreezes: 0 });
+    expect(earnFreeze(before)).toMatchObject({ bankedFreezes: 1, freezeDays: 0 });
+  });
+
+  it("says how many days until the next one", () => {
+    expect(daysToFreeze(streakOf({ currentStreak: 0, longestStreak: 0 }))).toBe(4);
+    expect(daysToFreeze(streakOf({ currentStreak: 2, longestStreak: 2, freezeDays: 2 }))).toBe(2);
+    // A full cap of one rises on day 14, which counts, then three more days.
+    expect(daysToFreeze(streakOf({ currentStreak: 10, longestStreak: 10, bankedFreezes: 1 }))).toBe(7);
+    expect(daysToFreeze(streakOf({ currentStreak: 30, longestStreak: 30, bankedFreezes: 2 }))).toBeNull();
   });
 
   it("spends one on every missed day", () => {
@@ -575,13 +611,11 @@ describe("startStreak", () => {
 });
 
 describe("freezeProgress", () => {
-  it("counts the days from the last freeze earned to the next: day 3, then every seventh", () => {
-    expect(freezeProgress(0)).toEqual({ played: 0, of: 3 });
-    expect(freezeProgress(2)).toEqual({ played: 2, of: 3 });
-    expect(freezeProgress(3)).toEqual({ played: 0, of: 4 });
-    expect(freezeProgress(6)).toEqual({ played: 3, of: 4 });
-    expect(freezeProgress(7)).toEqual({ played: 0, of: 7 });
-    expect(freezeProgress(10)).toEqual({ played: 3, of: 7 });
-    expect(freezeProgress(14)).toEqual({ played: 0, of: 7 });
+  it("counts the days played towards the next freeze, out of 4", () => {
+    expect(freezeProgress(streakOf({ currentStreak: 0, freezeDays: 0 }))).toEqual({ played: 0, of: 4 });
+    expect(freezeProgress(streakOf({ freezeDays: 3 }))).toEqual({ played: 3, of: 4 });
+    // Saved before days were counted: the streak, up to a day short.
+    expect(freezeProgress(streakOf({ currentStreak: 2, longestStreak: 2 }))).toEqual({ played: 2, of: 4 });
+    expect(freezeProgress(streakOf({ bankedFreezes: 0 }))).toEqual({ played: 3, of: 4 });
   });
 });

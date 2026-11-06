@@ -10,6 +10,7 @@ const streak: StreakState = {
   crushedIt: 0,
   elite: 0,
   highScore: 0,
+  freezeDays: 3,
 };
 
 describe("ComeBackCard", () => {

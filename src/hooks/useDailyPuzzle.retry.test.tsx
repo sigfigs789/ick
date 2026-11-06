@@ -349,24 +349,24 @@ describe("useDailyPuzzle retry and the day's score", () => {
 });
 
 describe("useDailyPuzzle retry with the do-over", () => {
-  // A Friday, with Monday to Thursday already played: the do-over is held.
-  const FRIDAY = "2026-11-06";
-  const FRIDAY_DROP = dropForDate(FRIDAY).toLowerCase();
-  const words = playableWords(FRIDAY_DROP, 6);
+  // A Saturday, with Monday to Friday already played: the do-over is held.
+  const SATURDAY = "2026-11-07";
+  const SATURDAY_DROP = dropForDate(SATURDAY).toLowerCase();
+  const words = playableWords(SATURDAY_DROP, 6);
 
   beforeEach(() => {
-    vi.setSystemTime(new Date(`${FRIDAY}T12:00:00`));
+    vi.setSystemTime(new Date(`${SATURDAY}T12:00:00`));
     localStorage.setItem(
       "ick:streak",
       JSON.stringify({
-        currentStreak: 4,
-        longestStreak: 4,
-        totalCompleted: 4,
+        currentStreak: 5,
+        longestStreak: 5,
+        totalCompleted: 5,
         crushedIt: 0,
         elite: 0,
         highScore: 0,
-        lastPlayed: addDays(FRIDAY, -1),
-        playedDates: [-4, -3, -2, -1].map((n) => addDays(FRIDAY, n)),
+        lastPlayed: addDays(SATURDAY, -1),
+        playedDates: [-5, -4, -3, -2, -1].map((n) => addDays(SATURDAY, n)),
       })
     );
   });

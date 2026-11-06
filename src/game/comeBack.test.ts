@@ -39,26 +39,29 @@ describe("streakGoal", () => {
     expect(streakGoal(streak({ currentStreak: 0, longestStreak: 1 }), FRIDAY)).toBeNull();
   });
 
-  it("tells a 2-day player when the first freeze comes", () => {
-    expect(streakGoal(streak({ currentStreak: 1, longestStreak: 2 }), FRIDAY)).toBe("2 days to your next 🧊 streak freeze.");
+  it("tells a player when their next freeze comes", () => {
+    expect(streakGoal(streak({ currentStreak: 1, longestStreak: 2, freezeDays: 2 }), FRIDAY)).toBe(
+      "2 days to your next 🧊 streak freeze."
+    );
   });
 
   it("names the freeze tomorrow earns", () => {
-    expect(streakGoal(streak({ currentStreak: 2, longestStreak: 2 }), FRIDAY)).toMatch(
+    expect(streakGoal(streak({ currentStreak: 2, longestStreak: 2, freezeDays: 3 }), FRIDAY)).toMatch(
       /^Tomorrow earns a 🧊 freeze/
     );
-    // Day 7 earns one too, while there is room under the cap.
+    // A streak saved before days were counted starts a day short, while there
+    // is room under the cap.
     expect(
       streakGoal(streak({ currentStreak: 6, longestStreak: 6, bankedFreezes: 0 }), FRIDAY)
     ).toMatch(/^Tomorrow earns/);
   });
 
   it("does not promise a freeze the cap would not keep", () => {
-    // 4 days, one freeze held, cap 1 until 14 days: day 7 earns nothing kept,
-    // and day 14 is the first that raises the cap.
+    // 4 days, one freeze held, cap 1 until 14 days: days played count for
+    // nothing until day 14 raises the cap, and the 4th from it earns the 2nd.
     expect(
       streakGoal(streak({ currentStreak: 4, longestStreak: 4, bankedFreezes: 1 }), FRIDAY)
-    ).toBe("10 days until your 🧊 freeze limit goes up to 2.");
+    ).toBe("13 days to a 2nd 🧊 streak freeze, once your freeze limit goes up to 2.");
   });
 
   it("says the cap rises when it is full", () => {
@@ -69,7 +72,7 @@ describe("streakGoal", () => {
     ).toBe("5 days to beat your best streak of 5.");
     expect(
       streakGoal(streak({ currentStreak: 13, longestStreak: 13, bankedFreezes: 1 }), FRIDAY)
-    ).toBe("Tomorrow your 🧊 freeze limit goes up to 2, and you earn a freeze to fill it.");
+    ).toBe("4 days to a 2nd 🧊 streak freeze, once your freeze limit goes up to 2.");
     // Two is the most the cap ever reaches, so a full one past 14 days never rises.
     expect(
       streakGoal(streak({ currentStreak: 20, longestStreak: 20, bankedFreezes: 2 }), FRIDAY)
@@ -83,12 +86,12 @@ describe("streakGoal", () => {
   });
 
   it("counts the freeze a holder would add when there is room for it", () => {
-    // Cap 2 from a best of 20, one held: day 14 of this run earns the 2nd.
+    // Cap 2 from a best of 20, one held: the 4th day played earns the 2nd.
     expect(
-      streakGoal(streak({ currentStreak: 8, longestStreak: 20, bankedFreezes: 1 }), FRIDAY)
-    ).toBe("6 days to a 2nd 🧊 streak freeze.");
+      streakGoal(streak({ currentStreak: 8, longestStreak: 20, bankedFreezes: 1, freezeDays: 0 }), FRIDAY)
+    ).toBe("4 days to a 2nd 🧊 streak freeze.");
     expect(
-      streakGoal(streak({ currentStreak: 13, longestStreak: 20, bankedFreezes: 1 }), FRIDAY)
+      streakGoal(streak({ currentStreak: 13, longestStreak: 20, bankedFreezes: 1, freezeDays: 3 }), FRIDAY)
     ).toBe("Tomorrow earns a 2nd 🧊 streak freeze.");
   });
 
@@ -102,13 +105,13 @@ describe("streakGoal", () => {
   });
 
   it("names whichever of the next freeze and the best streak is nearer", () => {
-    // Cap full at 1 until 14 days: the cap rises 10 days out, the best is 3 away.
+    // Cap full at 1 until 14 days: the next freeze is 13 days out, the best 3 away.
     expect(
       streakGoal(streak({ currentStreak: 4, longestStreak: 6, bankedFreezes: 1 }), FRIDAY)
     ).toBe("3 days to beat your best streak of 6.");
     // A tie goes to the freeze.
     expect(
-      streakGoal(streak({ currentStreak: 4, longestStreak: 6, bankedFreezes: 0 }), FRIDAY)
+      streakGoal(streak({ currentStreak: 4, longestStreak: 6, bankedFreezes: 0, freezeDays: 1 }), FRIDAY)
     ).toBe("3 days to your next 🧊 streak freeze.");
   });
 
@@ -122,20 +125,25 @@ describe("streakGoal", () => {
   });
 
   describe("Do-over", () => {
-    // The week of 2026-11-02, three days played by Wednesday.
-    const three = ["2026-11-02", "2026-11-03", "2026-11-04"];
+    // The week of 2026-11-02, four days played by Thursday.
+    const four = ["2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05"];
     const run = (playedDates: string[]) =>
-      streak({ currentStreak: 3, longestStreak: 20, bankedFreezes: 2, playedDates });
+      streak({ currentStreak: 4, longestStreak: 20, bankedFreezes: 2, playedDates });
 
     it("is named the day before it is earned", () => {
-      expect(streakGoal(run(three), "2026-11-04")).toBe("Play tomorrow and earn a do-over 🔄");
-      expect(comeBackGoal(run(three), "2026-11-04")?.explainer?.title).toBe("Do-over");
-      expect(streakGoal(run(three.slice(0, 2)), "2026-11-03") ?? "").not.toMatch(/do-over/);
+      expect(streakGoal(run(four), "2026-11-05")).toBe("Play tomorrow and earn a do-over 🔄");
+      expect(comeBackGoal(run(four), "2026-11-05")?.explainer?.title).toBe("Do-over");
+      expect(comeBackGoal(run(four), "2026-11-05")?.explainer?.text).toContain("every 5 days played");
+      expect(streakGoal(run(four.slice(0, 3)), "2026-11-04") ?? "").not.toMatch(/do-over/);
     });
 
     it("is named to a new player too", () => {
-      const fresh = streak({ currentStreak: 1, longestStreak: 1, playedDates: ["2026-11-02", "2026-11-03", "2026-11-05"] });
-      expect(streakGoal(fresh, "2026-11-05")).toBe("Play tomorrow and earn a do-over 🔄");
+      const fresh = streak({
+        currentStreak: 1,
+        longestStreak: 1,
+        playedDates: ["2026-11-02", "2026-11-03", "2026-11-05", "2026-11-06"],
+      });
+      expect(streakGoal(fresh, "2026-11-06")).toBe("Play tomorrow and earn a do-over 🔄");
     });
   });
 
@@ -158,7 +166,7 @@ describe("streakGoal", () => {
 
     it("is not mentioned once unlocked", () => {
       // Cap full and the best streak 12 days off: the do-over, a day away, instead.
-      expect(streakGoal(run(["2026-11-02", "2026-11-03", "2026-11-04"]), "2026-11-04")).toBe(
+      expect(streakGoal(run(["2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05"]), "2026-11-05")).toBe(
         "Play tomorrow and earn a do-over 🔄"
       );
       expect(streakGoal(run(["2026-10-26", "2026-10-28", "2026-10-30"]), "2026-10-30")).not.toMatch(/lazy weekend/);
@@ -172,9 +180,12 @@ describe("streakGoal", () => {
     it("is ranked by how soon it lands, a tie going to the freeze", () => {
       // Both two days away: the freeze.
       expect(
-        streakGoal(streak({ currentStreak: 1, longestStreak: 2, playedDates: ["2026-10-26"] }), "2026-10-26")
+        streakGoal(
+          streak({ currentStreak: 1, longestStreak: 2, freezeDays: 2, playedDates: ["2026-10-26"] }),
+          "2026-10-26"
+        )
       ).toBe("2 days to your next 🧊 streak freeze.");
-      // Two days to a lazy weekend, four to the cap rising at 14.
+      // Two days to a lazy weekend, seven to a freeze once the cap rises at 14.
       expect(
         streakGoal(
           streak({ currentStreak: 10, longestStreak: 10, bankedFreezes: 1, playedDates: ["2026-10-26"] }),
@@ -193,7 +204,10 @@ describe("streakGoal", () => {
 
     it("comes after a freeze tomorrow earns", () => {
       expect(
-        streakGoal(streak({ currentStreak: 2, longestStreak: 2, playedDates: ["2026-10-26"] }), "2026-10-26")
+        streakGoal(
+          streak({ currentStreak: 2, longestStreak: 2, freezeDays: 3, playedDates: ["2026-10-26"] }),
+          "2026-10-26"
+        )
       ).toMatch(/^Tomorrow earns a 🧊 freeze/);
     });
   });
@@ -300,12 +314,14 @@ describe("streakGoal", () => {
     });
 
     it("is not used while a freeze is within 2 days", () => {
-      expect(streakGoal(streak({ longestStreak: 2 }), FRIDAY, [lockedOne("clean-sweep")])).toBe("2 days to your next 🧊 streak freeze.");
-      // A full cap of 1 rises at 14 days: 2 away from 12, 3 away from 11.
-      expect(streakGoal(streak({ currentStreak: 12, longestStreak: 12, bankedFreezes: 1 }), FRIDAY, [lockedOne("clean-sweep")])).toBe(
-        "2 days until your 🧊 freeze limit goes up to 2."
+      expect(streakGoal(streak({ longestStreak: 2, freezeDays: 2 }), FRIDAY, [lockedOne("clean-sweep")])).toBe(
+        "2 days to your next 🧊 streak freeze."
       );
-      expect(streakGoal(streak({ currentStreak: 11, longestStreak: 11, bankedFreezes: 1 }), FRIDAY, [lockedOne("clean-sweep")])).toBe(
+      // 2 days away, then 3.
+      expect(streakGoal(streak({ currentStreak: 12, longestStreak: 12, bankedFreezes: 0, freezeDays: 2 }), FRIDAY, [lockedOne("clean-sweep")])).toBe(
+        "2 days to your next 🧊 streak freeze."
+      );
+      expect(streakGoal(streak({ currentStreak: 12, longestStreak: 12, bankedFreezes: 0, freezeDays: 1 }), FRIDAY, [lockedOne("clean-sweep")])).toBe(
         'Shoot for 🧹 "Clean sweep" Achievement!'
       );
     });
@@ -333,7 +349,7 @@ describe("streakGoal", () => {
 
   describe("comeBackGoal", () => {
     it("explains a freeze", () => {
-      expect(comeBackGoal(streak({ longestStreak: 2 }), FRIDAY)?.explainer?.title).toBe("Streak freezes");
+      expect(comeBackGoal(streak({ longestStreak: 2, freezeDays: 2 }), FRIDAY)?.explainer?.title).toBe("Streak freezes");
     });
 
     it("explains a lazy weekend, or a lazy Sunday", () => {

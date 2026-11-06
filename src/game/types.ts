@@ -148,6 +148,11 @@ export interface StreakState {
    */
   bankedFreezes?: number;
   /**
+   * Days played towards the next saved freeze (see `earnFreeze` in
+   * game/streakFreeze.ts). Absent on saves from before it was counted.
+   */
+  freezeDays?: number;
+  /**
    * Saved freezes and the cap as they stood at the end of each recent day the
    * streak was played or covered, so a past puzzle shows the freezes held on
    * its day rather than today's (see `freezesOn` in game/streakFreeze.ts).

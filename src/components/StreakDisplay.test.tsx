@@ -288,9 +288,8 @@ describe("StreakDisplay", () => {
     fireEvent.click(badge);
     const popup = screen.getByRole("dialog", { name: "Streak freezes" });
     expect(popup.querySelector("strong")?.textContent).toBe("1 of 2 🧊 acquired");
-    // Past day 3 and at the top cap: neither rule applies any more.
-    expect(popup.textContent).toContain("You get another one every 7 days of your streak. You can save up to 2 at a time.");
-    expect(popup.textContent).not.toContain("day 3");
+    // At the top cap: the limit rising no longer applies.
+    expect(popup.textContent).toContain("You get one every 4 days you play. You can save up to 2 at a time.");
     expect(popup.textContent).not.toContain("14 day");
 
     fireEvent.keyDown(document, { key: "Escape" });
@@ -310,20 +309,16 @@ describe("StreakDisplay", () => {
       return text;
     };
 
-    // Before day 3, with no cap yet.
-    expect(rules({ ...streak, currentStreak: 2, longestStreak: 2 })).toContain(
-      "You get your first one on day 3 of your streak, then another every 7 days of your streak. " +
-        "You can only save 1 at a time. Reach a 14 day streak to save up to 2."
-    );
-    // Day 3's freeze earned, the cap still 1.
-    expect(rules({ ...streak, currentStreak: 5, longestStreak: 5 })).toContain(
-      "You get another one every 7 days of your streak. " +
-        "You can only save 1 at a time. Reach a 14 day streak to save up to 2."
-    );
-    // A new streak before day 3, the cap already 2 from a past one.
+    // No cap yet, or a cap of 1.
+    for (const longestStreak of [2, 5]) {
+      expect(rules({ ...streak, currentStreak: 2, longestStreak })).toContain(
+        "You get one every 4 days you play. " +
+          "You can only save 1 at a time. Reach a 14 day streak to save up to 2."
+      );
+    }
+    // The cap already 2 from a past streak.
     expect(rules({ ...streak, currentStreak: 1, longestStreak: 20 })).toContain(
-      "You get your first one on day 3 of your streak, then another every 7 days of your streak. " +
-        "You can save up to 2 at a time."
+      "You get one every 4 days you play. You can save up to 2 at a time."
     );
   });
 
@@ -351,12 +346,12 @@ describe("StreakDisplay", () => {
   it("shows a pie of the days towards the next freeze while none is held, and 🧊 once one is", () => {
     const pie = () => screen.getByRole("button", { name: /streak freezes/i }).querySelector(".rest-day__pie");
     const { rerender } = render(
-      <StreakDisplay streak={{ ...streak, currentStreak: 10, longestStreak: 20, bankedFreezes: 0 }} />
+      <StreakDisplay streak={{ ...streak, currentStreak: 10, longestStreak: 20, bankedFreezes: 0, freezeDays: 3 }} />
     );
     expect(pie()).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: /streak freezes/i }));
     expect(screen.getByRole("dialog", { name: "Streak freezes" }).querySelector("strong")?.textContent).toBe(
-      "No 🧊 acquired: 3 of 7 days to the next"
+      "No 🧊 acquired: 3 of 4 days to the next"
     );
 
     rerender(<StreakDisplay streak={{ ...streak, currentStreak: 10, longestStreak: 20, bankedFreezes: 1 }} />);
@@ -389,17 +384,17 @@ describe("StreakDisplay", () => {
     expect(screen.queryByText("Elite")).not.toBeInTheDocument();
     expect(screen.queryByText("High score")).not.toBeInTheDocument();
   });
-  it("fills the do-over pie a quarter a day and turns 🔄 on the fourth", () => {
+  it("fills the do-over pie a fifth a day and turns 🔄 on the fifth", () => {
     localStorage.clear();
     const played = (dates: string[]) => ({ ...streak, currentStreak: dates.length, longestStreak: dates.length, playedDates: dates });
-    const week = ["2026-11-02", "2026-11-03", "2026-11-04"];
-    const { rerender } = render(<StreakDisplay streak={played(week)} date="2026-11-04" isToday />);
+    const week = ["2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05"];
+    const { rerender } = render(<StreakDisplay streak={played(week)} date="2026-11-05" isToday />);
     fireEvent.click(screen.getByRole("button", { name: /Do-over/ }));
     expect(screen.getByRole("dialog", { name: "Do-over" })).toHaveTextContent(
-      "Play 4 days to earn a do-over 🔄, an extra retry. 3 of 4 so far."
+      "Play 5 days to earn a do-over 🔄, an extra retry. 4 of 5 so far."
     );
 
-    rerender(<StreakDisplay streak={played([...week, "2026-11-05"])} date="2026-11-05" isToday />);
+    rerender(<StreakDisplay streak={played([...week, "2026-11-06"])} date="2026-11-06" isToday />);
     expect(screen.getByRole("button", { name: /Do-over/ })).toHaveTextContent("🔄");
   });
 });

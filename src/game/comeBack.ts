@@ -12,14 +12,9 @@
 import { holdersOf, type AchievementStatus } from "./achievements";
 import { maxGuessesFor } from "./constants";
 import { addDays } from "./date";
-import { DO_OVER_EMOJI, doOverTomorrow } from "./doOver";
-import { freezeCap, freezeRules, LAZY_WEEKEND_RULE, restDayProgress } from "./streakFreeze";
+import { DO_OVER_EMOJI, DO_OVER_PLAYS, doOverTomorrow } from "./doOver";
+import { daysToFreeze, freezeCap, freezeRules, LAZY_WEEKEND_RULE, restDayProgress } from "./streakFreeze";
 import type { StreakState } from "./types";
-
-/** Whether a streak reaching `days` played days earns a saved freeze (see streakFreeze.earnFreeze). */
-function earnsFreezeOn(days: number): boolean {
-  return days === 3 || (days > 0 && days % 7 === 0);
-}
 
 /** What a lazy Sunday is, for the line promising one once Friday is too late. */
 const LAZY_SUNDAY_RULE =
@@ -52,8 +47,8 @@ const LAZY_SUNDAY_RULE =
  * A freeze past the cap is not kept, so it is not promised. A player already
  * holding one hears which it would be -- a 2nd, a 3rd -- since "your next
  * freeze" reads as the one they have. And a player whose cap is full hears
- * that the cap rises, since that is what the wait is for: the day it rises
- * also earns the freeze that fills it.
+ * that the cap rises, since that is what the wait is for: days played only
+ * count towards the freeze that fills it once it has.
  */
 export function streakGoal(
   streak: StreakState,
@@ -83,45 +78,39 @@ export function comeBackGoal(
   locked: readonly AchievementStatus[] = []
 ): { line: string; explainer?: GoalExplainer } | null {
   const days = streak.currentStreak;
-  const next = days + 1;
   const best = Math.max(streak.longestStreak, days);
   const doOverGoal =
     doOverTomorrow(streak, today)
       ? {
           line: `Play tomorrow and earn a do-over ${DO_OVER_EMOJI}`,
-          explainer: { title: "Do-over", text: "An extra retry, kept until you use it. Earn one every 4 days played; hold one at a time." },
+          explainer: { title: "Do-over", text: `An extra retry, kept until you use it. Earn one every ${DO_OVER_PLAYS} days played; hold one at a time.` },
         }
       : null;
   if (best <= NEW_PLAYER_BEST) return doOverGoal ?? achievementGoal(locked, streak, today);
   const banked = streak.bankedFreezes ?? 0;
-  const keeps = (on: number) => earnsFreezeOn(on) && banked < freezeCap(Math.max(best, on));
 
   // Only up to two are ever earned, so the next is at most the 2nd. (A player
   // still holding three from the old limit has a full cap, so is never told one.)
   const nth = ["", "", "2nd", "3rd"][banked + 1];
+  // A full cap counts nothing until the limit rises with a 14 day streak.
   const capFull = banked > 0 && banked >= freezeCap(best);
 
   // Each reward with the days played until it lands, and its rank in a tie.
   const goals: { away: number; rank: number; soon: number; line: string; explainer?: GoalExplainer }[] = [];
 
-  // A full cap only rises at 14 days, and a kept freeze is never more than
-  // four weeks out.
-  for (let freezeDay = next; freezeDay <= next + 28; freezeDay++) {
-    if (!keeps(freezeDay)) continue;
-    const away = freezeDay - days;
+  const away = daysToFreeze(streak);
+  if (away !== null) {
     let line: string;
-    if (away === 1) {
-      if (capFull) line = `Tomorrow your 🧊 freeze limit goes up to ${banked + 1}, and you earn a freeze to fill it.`;
-      else if (nth) line = `Tomorrow earns a ${nth} 🧊 streak freeze.`;
+    if (capFull) {
+      line = `${away} days to a ${nth} 🧊 streak freeze, once your freeze limit goes up to ${banked + 1}.`;
+    } else if (away === 1) {
+      if (nth) line = `Tomorrow earns a ${nth} 🧊 streak freeze.`;
       else line = "Tomorrow earns a 🧊 freeze, which saves your streak on a day you miss.";
-    } else if (capFull) {
-      line = `${away} days until your 🧊 freeze limit goes up to ${banked + 1}.`;
     } else {
       line = `${away} days to ${nth ? `a ${nth}` : "your next"} 🧊 streak freeze.`;
     }
-    const explainer = { title: "Streak freezes", text: freezeRules(days, freezeCap(best)) };
+    const explainer = { title: "Streak freezes", text: freezeRules(freezeCap(best)) };
     goals.push({ away, rank: 0, soon: SOON_DAYS.freeze, line, explainer });
-    break;
   }
 
   // Only for a streak worth resting: a lost one has nothing for the weekend to keep.
