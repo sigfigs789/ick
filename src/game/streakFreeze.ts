@@ -200,11 +200,18 @@ export function freezeRules(currentStreak: number, cap: number): string {
         : ".");
   const hold =
     cap === 0
-      ? `Day ${FIRST_CAP_STREAK} earns your first freeze cap. Come back tomorrow!`
+      ? `Reach a ${FIRST_CAP_STREAK} day streak to save 1, and a ${BONUS_FREEZE_STREAK} day streak to save up to ${MAX_FREEZE_CAP}.`
       : cap < MAX_FREEZE_CAP
-        ? `Refresh one every ${FREEZE_PLAYS} days. Next cap at ${BONUS_FREEZE_STREAK} days.`
+        ? `You can only save 1 at a time. Reach a ${BONUS_FREEZE_STREAK} day streak to save up to ${MAX_FREEZE_CAP}.`
         : `You can save up to ${MAX_FREEZE_CAP} at a time.`;
   return `A streak freeze 🧊 keeps your streak going if you miss a day. ${earn} ${hold}`;
+}
+
+/** The one line the freeze badge's popup needs for a player with this cap. */
+export function freezeTip(cap: number): string {
+  if (cap === 0) return "Get a freeze tomorrow. It keeps your streak going if you miss a day.";
+  if (cap < MAX_FREEZE_CAP) return `Refresh one every ${FREEZE_PLAYS} days. Next cap at ${BONUS_FREEZE_STREAK} days.`;
+  return `You can save up to ${MAX_FREEZE_CAP} at a time.`;
 }
 
 /** The cap for this player: set by the longest streak they have ever had. */

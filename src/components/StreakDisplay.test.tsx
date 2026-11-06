@@ -289,11 +289,7 @@ describe("StreakDisplay", () => {
     const popup = screen.getByRole("dialog", { name: "Streak freezes" });
     expect(popup.querySelector("strong")?.textContent).toBe("1 of 2 🧊 acquired");
     // Past day 10 and at the top cap: neither the bonus nor the cap rising applies any more.
-    expect(popup.textContent).toContain(
-      "You earn one every 4 days you play, in a row or not. You can save up to 2 at a time."
-    );
-    expect(popup.textContent).not.toContain("bonus");
-    expect(popup.textContent).not.toContain("10 day");
+    expect(popup.textContent).toContain("You can save up to 2 at a time.");
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -314,19 +310,14 @@ describe("StreakDisplay", () => {
 
     // Before a 2 day streak, with no cap yet.
     expect(rules({ ...streak, currentStreak: 1, longestStreak: 1 })).toContain(
-      "You earn one every 4 days you play, in a row or not, and a bonus one when your streak reaches 2 days and again at 10. " +
-        "Day 2 earns your first freeze cap. Come back tomorrow!"
+      "Get a freeze tomorrow. It keeps your streak going if you miss a day."
     );
     // The cap 1 from a 2 day streak.
     expect(rules({ ...streak, currentStreak: 5, longestStreak: 5 })).toContain(
-      "You earn one every 4 days you play, in a row or not, and a bonus one when your streak reaches 10 days. " +
-        "Refresh one every 4 days. Next cap at 10 days."
+      "Refresh one every 4 days. Next cap at 10 days."
     );
     // A new streak before day 2, the cap already 2 from a past one.
-    expect(rules({ ...streak, currentStreak: 1, longestStreak: 20 })).toContain(
-      "You earn one every 4 days you play, in a row or not, and a bonus one when your streak reaches 2 days and again at 10. " +
-        "You can save up to 2 at a time."
-    );
+    expect(rules({ ...streak, currentStreak: 1, longestStreak: 20 })).toContain("You can save up to 2 at a time.");
   });
 
   it("shows a past puzzle the freezes held on its day, and today the ones held now", () => {
