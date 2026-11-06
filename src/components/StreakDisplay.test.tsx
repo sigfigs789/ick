@@ -315,12 +315,12 @@ describe("StreakDisplay", () => {
     // Before a 2 day streak, with no cap yet.
     expect(rules({ ...streak, currentStreak: 1, longestStreak: 1 })).toContain(
       "You earn one every 4 days you play, in a row or not, and a bonus one when your streak reaches 2 days and again at 10. " +
-        "Reach a 2 day streak to save 1, and a 10 day streak to save up to 2."
+        "Day 2 earns your first freeze cap. Come back tomorrow!"
     );
     // The cap 1 from a 2 day streak.
     expect(rules({ ...streak, currentStreak: 5, longestStreak: 5 })).toContain(
       "You earn one every 4 days you play, in a row or not, and a bonus one when your streak reaches 10 days. " +
-        "You can only save 1 at a time. Reach a 10 day streak to save up to 2."
+        "Refresh one every 4 days. Next cap at 10 days."
     );
     // A new streak before day 2, the cap already 2 from a past one.
     expect(rules({ ...streak, currentStreak: 1, longestStreak: 20 })).toContain(

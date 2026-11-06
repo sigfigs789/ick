@@ -200,9 +200,9 @@ export function freezeRules(currentStreak: number, cap: number): string {
         : ".");
   const hold =
     cap === 0
-      ? `Reach a ${FIRST_CAP_STREAK} day streak to save 1, and a ${BONUS_FREEZE_STREAK} day streak to save up to ${MAX_FREEZE_CAP}.`
+      ? `Day ${FIRST_CAP_STREAK} earns your first freeze cap. Come back tomorrow!`
       : cap < MAX_FREEZE_CAP
-        ? `You can only save 1 at a time. Reach a ${BONUS_FREEZE_STREAK} day streak to save up to ${MAX_FREEZE_CAP}.`
+        ? `Refresh one every ${FREEZE_PLAYS} days. Next cap at ${BONUS_FREEZE_STREAK} days.`
         : `You can save up to ${MAX_FREEZE_CAP} at a time.`;
   return `A streak freeze 🧊 keeps your streak going if you miss a day. ${earn} ${hold}`;
 }
