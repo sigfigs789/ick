@@ -344,11 +344,11 @@ describe("saved freezes", () => {
 
   it("earns one on every fourth day played, in a row or not, up to the cap", () => {
     const held = { longestStreak: 5, bankedFreezes: 0 };
-    expect(earnFreeze(streakOf({ ...held, currentStreak: 2, freezePlays: 0 }))).toMatchObject({
+    expect(earnFreeze(streakOf({ ...held, currentStreak: 3, freezePlays: 0 }))).toMatchObject({
       freezePlays: 1,
       bankedFreezes: 0,
     });
-    expect(earnFreeze(streakOf({ ...held, currentStreak: 2, freezePlays: 2 }))).toMatchObject({
+    expect(earnFreeze(streakOf({ ...held, currentStreak: 3, freezePlays: 2 }))).toMatchObject({
       freezePlays: 3,
       bankedFreezes: 0,
     });
@@ -376,6 +376,17 @@ describe("saved freezes", () => {
       earnFreeze(streakOf({ longestStreak: 40, currentStreak: 20, freezePlays: 3, bankedFreezes: 3 }))
         .bankedFreezes
     ).toBe(3);
+  });
+
+  it("gives a bonus one on the day a streak reaches 2, when the cap rises to one", () => {
+    expect(earnFreeze(streakOf({ currentStreak: 2, longestStreak: 2, freezePlays: 1 }))).toMatchObject({
+      freezePlays: 2,
+      bankedFreezes: 1,
+    });
+    // Only on the second day.
+    expect(
+      earnFreeze(streakOf({ currentStreak: 3, longestStreak: 3, freezePlays: 1 })).bankedFreezes
+    ).toBeUndefined();
   });
 
   it("gives a bonus one on the day a streak reaches 10, when the cap rises to two", () => {

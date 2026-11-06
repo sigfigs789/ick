@@ -223,7 +223,8 @@ describe("Saturday rest days", () => {
       setToday(date);
       recordAcceptedWord(newProgress(date, "str"), word("strange"));
     }
-    setToday("2026-11-01");
+    // Friday's day-2 freeze covers the Saturday, but not the Sunday too.
+    setToday("2026-11-02");
     expect(loadStreak().currentStreak).toBe(0);
   });
 
@@ -560,22 +561,30 @@ describe("streak freezes", () => {
     recordAcceptedWord(newProgress(date, "str"), word(`w-${date}`));
   }
 
-  it("earns a saved freeze on the fourth day played that covers a missed day", () => {
-    for (let d = 1; d <= 3; d++) play(`2024-01-0${d}`);
-    expect(loadStreak()).toMatchObject({ currentStreak: 3, bankedFreezes: 0, freezePlays: 3 });
-    play("2024-01-04");
-    expect(loadStreak()).toMatchObject({ currentStreak: 4, bankedFreezes: 1, freezePlays: 0 });
-    setToday("2024-01-06"); // skipped 01-05
-    expect(loadStreak()).toMatchObject({ currentStreak: 4, bankedFreezes: 0, frozenDates: ["2024-01-05"] });
+  it("earns a saved freeze on day 2 of a streak, as the cap rises to fit it", () => {
+    play("2024-01-01");
+    expect(loadStreak()).toMatchObject({ currentStreak: 1, bankedFreezes: 0 });
+    play("2024-01-02");
+    expect(loadStreak()).toMatchObject({ currentStreak: 2, bankedFreezes: 1, freezePlays: 2 });
+  });
 
-    play("2024-01-06");
-    expect(loadStreak()).toMatchObject({ currentStreak: 5, frozenDates: ["2024-01-05"] });
+  it("earns a saved freeze on the fourth day played that covers a missed day", () => {
+    play("2024-01-01");
+    play("2024-01-02"); // day 2's freeze
+    setToday("2024-01-04"); // skipped 01-03
+    expect(loadStreak()).toMatchObject({ currentStreak: 2, bankedFreezes: 0, frozenDates: ["2024-01-03"] });
+    play("2024-01-04");
+    expect(loadStreak()).toMatchObject({ currentStreak: 3, bankedFreezes: 0, freezePlays: 3 });
+    play("2024-01-05"); // the fourth day played
+    expect(loadStreak()).toMatchObject({ currentStreak: 4, bankedFreezes: 1, freezePlays: 0 });
   });
 
   it("counts the days played towards a freeze across a broken streak", () => {
     play("2024-01-01");
     play("2024-01-02");
-    play("2024-01-05"); // skipped 01-03 and 01-04: a new streak
+    // Skipped 01-03 and 01-04, one more than day 2's freeze covers: a new
+    // streak, with no freeze, but the days played still count.
+    play("2024-01-05");
     expect(loadStreak()).toMatchObject({ currentStreak: 1, bankedFreezes: 0, freezePlays: 3 });
     play("2024-01-06"); // the fourth day played, though not in a row
     expect(loadStreak()).toMatchObject({ currentStreak: 2, bankedFreezes: 1, freezePlays: 0 });
@@ -590,9 +599,8 @@ describe("streak freezes", () => {
 
   it("gives no free missed day before the first freeze is earned", () => {
     play("2024-01-01");
-    play("2024-01-02");
-    setToday("2024-01-04"); // skipped 01-03, with no freeze yet
-    expect(loadStreak()).toMatchObject({ currentStreak: 0, longestStreak: 2 });
+    setToday("2024-01-03"); // skipped 01-02, with no freeze yet
+    expect(loadStreak()).toMatchObject({ currentStreak: 0, longestStreak: 1 });
   });
 
   it("spends a saved freeze on a missed day, with no free day after", () => {

@@ -39,8 +39,8 @@ describe("streakGoal", () => {
     expect(streakGoal(streak({ currentStreak: 0, longestStreak: 1 }), FRIDAY)).toBeNull();
   });
 
-  it("tells a 2-day player when the first freeze comes", () => {
-    expect(streakGoal(streak({ currentStreak: 1, longestStreak: 2, freezePlays: 2 }), FRIDAY)).toBe(
+  it("tells a player when the next freeze comes", () => {
+    expect(streakGoal(streak({ currentStreak: 3, longestStreak: 3, freezePlays: 2 }), FRIDAY)).toBe(
       "2 days to your next 🧊 streak freeze."
     );
   });
@@ -53,7 +53,11 @@ describe("streakGoal", () => {
     expect(
       streakGoal(streak({ currentStreak: 1, longestStreak: 5, bankedFreezes: 0, freezePlays: 3 }), FRIDAY)
     ).toMatch(/^Tomorrow earns/);
-    // The tenth day of a streak earns a bonus one, as the cap rises to fit it.
+    // The second day of a streak earns a bonus one, as the cap rises to fit it.
+    expect(streakGoal(streak({ currentStreak: 1, longestStreak: 2, freezePlays: 0 }), FRIDAY)).toMatch(
+      /^Tomorrow earns a 🧊 freeze/
+    );
+    // And so does the tenth.
     expect(
       streakGoal(streak({ currentStreak: 9, longestStreak: 9, bankedFreezes: 1, freezePlays: 0 }), FRIDAY)
     ).toBe("Tomorrow your 🧊 freeze limit goes up to 2, and you earn a freeze to fill it.");
@@ -179,7 +183,7 @@ describe("streakGoal", () => {
       // Both two days away: the freeze.
       expect(
         streakGoal(
-          streak({ currentStreak: 1, longestStreak: 2, freezePlays: 2, playedDates: ["2026-10-26"] }),
+          streak({ currentStreak: 3, longestStreak: 3, freezePlays: 2, playedDates: ["2026-10-26"] }),
           "2026-10-26"
         )
       ).toBe("2 days to your next 🧊 streak freeze.");
@@ -312,7 +316,7 @@ describe("streakGoal", () => {
     });
 
     it("is not used while a freeze is within 2 days", () => {
-      expect(streakGoal(streak({ longestStreak: 2, freezePlays: 2 }), FRIDAY, [lockedOne("clean-sweep")])).toBe(
+      expect(streakGoal(streak({ currentStreak: 3, longestStreak: 3, freezePlays: 2 }), FRIDAY, [lockedOne("clean-sweep")])).toBe(
         "2 days to your next 🧊 streak freeze."
       );
       // A full cap of 1 rises at 10 days: 2 away from 8, 3 away from 7.
