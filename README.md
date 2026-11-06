@@ -1091,9 +1091,10 @@ come after it.
   one resumes where you left off. Completing an archived puzzle still
   saves and locks it (so it's reviewable later) but never touches the
   streak — only a valid answer submitted on its own real calendar date
-  counts. Saved freezes cover missed days, one each: a streak earns its
-  first on day 3 and then one every 7 days played, and holds up to 1 once
-  it has ever reached 3 days and 2 once it has ever reached 14 (the cap
+  counts. Saved freezes cover missed days, one each: one is earned every 4
+  days played (in a row or not), plus a bonus one when a streak reaches 10
+  days, and a player holds up to 1 once they have ever reached a 2 day
+  streak and 2 once they have ever reached 10 (the cap
   never goes back down; players holding 3 from the old cap of 3 keep them
   until spent, shown as 3/2), and the 🔥 turns to
   🧊 while one is covering. There is no free missed day: every missed day

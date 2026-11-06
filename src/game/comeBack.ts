@@ -13,13 +13,15 @@ import { holdersOf, type AchievementStatus } from "./achievements";
 import { maxGuessesFor } from "./constants";
 import { addDays } from "./date";
 import { DO_OVER_EMOJI, doOverTomorrow } from "./doOver";
-import { freezeCap, freezeRules, LAZY_WEEKEND_RULE, restDayProgress } from "./streakFreeze";
+import {
+  earnsFreezeOn,
+  freezeCap,
+  freezePlays,
+  freezeRules,
+  LAZY_WEEKEND_RULE,
+  restDayProgress,
+} from "./streakFreeze";
 import type { StreakState } from "./types";
-
-/** Whether a streak reaching `days` played days earns a saved freeze (see streakFreeze.earnFreeze). */
-function earnsFreezeOn(days: number): boolean {
-  return days === 3 || (days > 0 && days % 7 === 0);
-}
 
 /** What a lazy Sunday is, for the line promising one once Friday is too late. */
 const LAZY_SUNDAY_RULE =
@@ -83,7 +85,6 @@ export function comeBackGoal(
   locked: readonly AchievementStatus[] = []
 ): { line: string; explainer?: GoalExplainer } | null {
   const days = streak.currentStreak;
-  const next = days + 1;
   const best = Math.max(streak.longestStreak, days);
   const doOverGoal =
     doOverTomorrow(streak, today)
@@ -94,7 +95,10 @@ export function comeBackGoal(
       : null;
   if (best <= NEW_PLAYER_BEST) return doOverGoal ?? achievementGoal(locked, streak, today);
   const banked = streak.bankedFreezes ?? 0;
-  const keeps = (on: number) => earnsFreezeOn(on) && banked < freezeCap(Math.max(best, on));
+  const plays = freezePlays(streak);
+  // `ahead` more days played, carrying the streak on.
+  const keeps = (ahead: number) =>
+    earnsFreezeOn(plays + ahead, days + ahead) && banked < freezeCap(Math.max(best, days + ahead));
 
   // Only up to two are ever earned, so the next is at most the 2nd. (A player
   // still holding three from the old limit has a full cap, so is never told one.)
@@ -104,11 +108,10 @@ export function comeBackGoal(
   // Each reward with the days played until it lands, and its rank in a tie.
   const goals: { away: number; rank: number; soon: number; line: string; explainer?: GoalExplainer }[] = [];
 
-  // A full cap only rises at 14 days, and a kept freeze is never more than
-  // four weeks out.
-  for (let freezeDay = next; freezeDay <= next + 28; freezeDay++) {
-    if (!keeps(freezeDay)) continue;
-    const away = freezeDay - days;
+  // A full cap only rises at 10 days, and a kept freeze is never more than
+  // that out.
+  for (let away = 1; away <= 10; away++) {
+    if (!keeps(away)) continue;
     let line: string;
     if (away === 1) {
       if (capFull) line = `Tomorrow your 🧊 freeze limit goes up to ${banked + 1}, and you earn a freeze to fill it.`;

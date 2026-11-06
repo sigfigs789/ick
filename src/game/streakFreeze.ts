@@ -3,12 +3,15 @@
  *
  * An all-or-nothing streak punishes hardest the players it should keep. Someone
  * a few days in who misses a Saturday drops to zero, and a streak that is gone
- * stops being a reason to come back. So a streak earns saved freezes
- * (`bankedFreezes`) early: the first on its third day played, then one on
- * every seventh day played -- the streak count, which frozen days do not add
- * to -- held up to a cap set by the longest streak the player has ever had
- * (see `streakFreezeCap`). The cap is permanent: a player who once reached 14
- * days can hold two on every streak after.
+ * stops being a reason to come back. So playing earns saved freezes
+ * (`bankedFreezes`): one on every FREEZE_PLAYS-th day played, each on its own
+ * day, whether or not those days ran in a row (`freezePlays` counts them, and
+ * a broken streak does not reset the count), and a bonus one the day a streak
+ * reaches BONUS_FREEZE_STREAK days played -- the streak count, which frozen
+ * days do not add to. They are held up to a cap set by the longest streak the
+ * player has ever had (see `streakFreezeCap`): one from a 2 day streak, two
+ * from a 10 day one. The cap is permanent: a player who once reached 10 days
+ * can hold two on every streak after.
  *
  * There is no free missed day: every missed day spends a saved freeze or ends
  * the streak. Saved freezes are spent one per missed day, and only when there
@@ -139,61 +142,63 @@ export function missedDays(streak: StreakState, after: string, before: string): 
   );
 }
 
-/** The first saved freeze is earned on a streak's third day played. */
-const FIRST_FREEZE_DAY = 3;
+/** Days played, each on its own day and not necessarily in a row, that earn a saved freeze. */
+export const FREEZE_PLAYS = 4;
 
-/** After that, one is earned on every seventh day played in a streak. */
-const DAYS_PER_EARNED_FREEZE = 7;
+/** The streak, in days played, whose day earns a bonus saved freeze and raises the cap to two. */
+export const BONUS_FREEZE_STREAK = 10;
+
+/** The streak, in days played, that raises the cap to one. */
+const FIRST_CAP_STREAK = 2;
 
 /**
- * The days played towards the next saved freeze, for the freeze badge's pie:
- * `played` of the `of` days from the last day that earned one (or the
- * streak's start) to the next -- day 3, then every seventh day.
+ * Days played towards the next saved freeze. A save from before they were
+ * counted (2026-11-06) carries on from where its streak stood in the cycle.
  */
-export function freezeProgress(currentStreak: number): { played: number; of: number } {
-  if (currentStreak < FIRST_FREEZE_DAY) return { played: currentStreak, of: FIRST_FREEZE_DAY };
-  const last =
-    currentStreak < DAYS_PER_EARNED_FREEZE
-      ? FIRST_FREEZE_DAY
-      : currentStreak - (currentStreak % DAYS_PER_EARNED_FREEZE);
-  const next = (Math.floor(currentStreak / DAYS_PER_EARNED_FREEZE) + 1) * DAYS_PER_EARNED_FREEZE;
-  return { played: currentStreak - last, of: next - last };
+export function freezePlays(streak: StreakState): number {
+  return streak.freezePlays ?? streak.currentStreak % FREEZE_PLAYS;
 }
 
-/** The most saved freezes any player can hold, and the longest streak that raises the cap to it. */
+/** The days played towards the next saved freeze, for the freeze badge's pie. */
+export function freezeProgress(streak: StreakState): { played: number; of: number } {
+  return { played: freezePlays(streak), of: FREEZE_PLAYS };
+}
+
+/** The most saved freezes any player can hold. */
 const MAX_FREEZE_CAP = 2;
-const MAX_CAP_STREAK = 14;
 
 /**
  * The most saved freezes a player whose longest streak is `days` can hold:
- * none in the first two days, one from 3 days, two from 14. A freeze earned
- * past the cap is not kept.
+ * none in the first day, one from 2 days, two from 10. A freeze earned past
+ * the cap is not kept.
  *
  * It was three from 28 days until 2026-10-24. A player already holding three
  * keeps them -- nothing here takes a saved freeze away, and earning only ever
  * adds up to the cap -- so they show as 3/2 until they spend one.
  */
 export function freezeCap(days: number): number {
-  if (days >= MAX_CAP_STREAK) return MAX_FREEZE_CAP;
-  if (days >= FIRST_FREEZE_DAY) return 1;
+  if (days >= BONUS_FREEZE_STREAK) return MAX_FREEZE_CAP;
+  if (days >= FIRST_CAP_STREAK) return 1;
   return 0;
 }
 
 /**
  * How saved freezes work, for the freeze badge's popup: only the rules still
- * ahead of the player. Day 3's freeze is told until this streak has passed it,
- * and the limit rising to 2 until `cap` has.
+ * ahead of the player. The day-10 bonus is told until this streak has passed
+ * it, and the limit rising until `cap` is two.
  */
 export function freezeRules(currentStreak: number, cap: number): string {
-  const everyN = `every ${DAYS_PER_EARNED_FREEZE} days of your streak`;
   const earn =
-    currentStreak < FIRST_FREEZE_DAY
-      ? `You get your first one on day ${FIRST_FREEZE_DAY} of your streak, then another ${everyN}.`
-      : `You get another one ${everyN}.`;
+    `You earn one every ${FREEZE_PLAYS} days you play, in a row or not` +
+    (currentStreak < BONUS_FREEZE_STREAK
+      ? `, and a bonus one when your streak reaches ${BONUS_FREEZE_STREAK} days.`
+      : ".");
   const hold =
-    cap < MAX_FREEZE_CAP
-      ? `You can only save 1 at a time. Reach a ${MAX_CAP_STREAK} day streak to save up to ${MAX_FREEZE_CAP}.`
-      : `You can save up to ${MAX_FREEZE_CAP} at a time.`;
+    cap === 0
+      ? `Reach a ${FIRST_CAP_STREAK} day streak to save 1, and a ${BONUS_FREEZE_STREAK} day streak to save up to ${MAX_FREEZE_CAP}.`
+      : cap < MAX_FREEZE_CAP
+        ? `You can only save 1 at a time. Reach a ${BONUS_FREEZE_STREAK} day streak to save up to ${MAX_FREEZE_CAP}.`
+        : `You can save up to ${MAX_FREEZE_CAP} at a time.`;
   return `A streak freeze 🧊 keeps your streak going if you miss a day. ${earn} ${hold}`;
 }
 
@@ -202,15 +207,35 @@ export function streakFreezeCap(streak: StreakState): number {
   return freezeCap(Math.max(streak.longestStreak, streak.currentStreak));
 }
 
-/** Saved freezes after the streak reaches `currentStreak` played days. */
+/**
+ * The saved freezes earned by a day just played, which brought the streak to
+ * `currentStreak`: one if it is the FREEZE_PLAYS-th day played since the
+ * last, and one more if the streak has just reached BONUS_FREEZE_STREAK, up
+ * to the cap. Call once per day played on its own day.
+ */
 export function earnFreeze(streak: StreakState): StreakState {
+  // A save from before the count was kept counts on from the streak as it
+  // stood before this day (see `freezePlays`).
+  const before = streak.freezePlays ?? Math.max(0, streak.currentStreak - 1) % FREEZE_PLAYS;
+  const plays = before + 1;
+  const earned =
+    (plays >= FREEZE_PLAYS ? 1 : 0) + (streak.currentStreak === BONUS_FREEZE_STREAK ? 1 : 0);
   const banked = streak.bankedFreezes ?? 0;
-  const days = streak.currentStreak;
-  if (days === 0 || (days !== FIRST_FREEZE_DAY && days % DAYS_PER_EARNED_FREEZE !== 0)) {
-    return streak;
-  }
-  const earned = Math.min(banked + 1, streakFreezeCap(streak));
-  return earned > banked ? { ...streak, bankedFreezes: earned } : streak;
+  const kept = Math.max(banked, Math.min(banked + earned, streakFreezeCap(streak)));
+  return {
+    ...streak,
+    freezePlays: plays % FREEZE_PLAYS,
+    ...(kept > banked ? { bankedFreezes: kept } : {}),
+  };
+}
+
+/**
+ * Whether the day played that brings the count to `plays` days played
+ * towards a freeze and the streak to `streakDay` earns a saved freeze, before
+ * the cap. For the come-back line.
+ */
+export function earnsFreezeOn(plays: number, streakDay: number): boolean {
+  return plays % FREEZE_PLAYS === 0 || streakDay === BONUS_FREEZE_STREAK;
 }
 
 /**
@@ -233,8 +258,8 @@ export function backdateFreezes(streak: StreakState): StreakState {
   };
 }
 
-/** The best streak that makes a lapsed player a returning one: the first freeze's. */
-const WELCOME_BACK_MIN_BEST = FIRST_FREEZE_DAY;
+/** The best streak that makes a lapsed player a returning one. */
+const WELCOME_BACK_MIN_BEST = 3;
 
 /**
  * Days after one welcome-back freeze before the next. A player who comes and
@@ -261,7 +286,7 @@ export interface WelcomeBack {
  *
  * The reason is a saved freeze for the new streak, given on today's first
  * word (see `startStreak`): a player who has just lost a streak to a missed
- * day is the one most likely to miss another before day 3 earns one. At most
+ * day is the one most likely to miss another before play earns one. At most
  * one every WELCOME_BACK_COOLDOWN_DAYS.
  */
 export function welcomeBack(streak: StreakState, today: string): WelcomeBack | null {

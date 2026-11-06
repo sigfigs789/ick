@@ -214,7 +214,7 @@ export function StreakDisplay({
   const showFreezes = !hideEmpty || cap > 0 || streak.currentStreak > 0;
   // The days towards the next freeze, for its pie: only for the streak as it
   // stands now, not a past puzzle's.
-  const freezeEarning = isToday || date === undefined ? freezeProgress(streak.currentStreak) : undefined;
+  const freezeEarning = isToday || date === undefined ? freezeProgress(streak) : undefined;
   const showTotal = !hideEmpty || hasWords;
   const showStreak = !hideEmpty || streak.currentStreak > 0 || frozen || risky || cap > 0;
   if (!showStreak && !showTotal) return null;
