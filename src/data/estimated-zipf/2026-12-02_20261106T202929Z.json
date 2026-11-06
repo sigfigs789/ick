@@ -1,0 +1,24 @@
+{
+  "since": "2026-12-02",
+  "drop": "AD",
+  "model": "claude-opus-5-5",
+  "source": "claude",
+  "run": "https://github.com/sigfigs789/ick/actions/runs/42288594822",
+  "estimatedAt": "2026-11-06T20:29:29Z",
+  "zipf": {
+    "adenotonsillectomized": -0.6,
+    "adenotonsillectomizes": -1.3,
+    "chemoradiosensitiser": -0.2,
+    "chemoradiosensitisers": -0.6,
+    "chemoradiotherapeutic": -0.1,
+    "chlorodeoxyadenosines": -1.2,
+    "hyperadiponectinemic": -0.4,
+    "hypoadiponectinemias": -1.1,
+    "microautoradiographs": -0.5,
+    "nitrobenzoxadiazoles": -0.7,
+    "pseudotraditionalism": -0.3,
+    "radiochromatoscanner": -0.8,
+    "radiocinematographic": -0.7,
+    "ultradiscretizations": -0.7
+  }
+}
