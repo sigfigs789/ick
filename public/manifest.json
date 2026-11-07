@@ -1,6 +1,6 @@
 {
-  "name": "Mashallah: Scroll The Quran — find the rarest word each day",
-  "short_name": "Mashallah: Scroll The Quran",
+  "name": "WordInk — find the rarest word each day",
+  "short_name": "WordInk",
   "description": "A daily game where you find the rarest word you can that contains today's letters.",
   "start_url": "/",
   "scope": "/",

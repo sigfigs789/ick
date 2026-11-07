@@ -336,7 +336,7 @@ export function AppHeader({
 
   const wordmark = (
     <a className="app__wordmark-link" href={pathFor("game")} onClick={goHome}>
-      Mashallah
+      Word<span className="app__wordmark-ink">Ink</span>
     </a>
   );
 

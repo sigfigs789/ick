@@ -46,7 +46,7 @@ describe("the header", () => {
       "page",
     );
     // The wordmark is a way back to the puzzle.
-    await userEvent.click(screen.getByRole("link", { name: /^Mashallah$/ }));
+    await userEvent.click(screen.getByRole("link", { name: /^Word ?Ink$/ }));
     expect(window.location.pathname).toBe("/");
   });
 
@@ -98,7 +98,7 @@ describe("the header", () => {
   it("keeps the wordmark as the page's h1 only on the puzzle", () => {
     const { unmount } = render(<Harness />);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "Mashallah",
+      "WordInk",
     );
 
     // The other two pages have a heading of their own that says what they are,
@@ -112,7 +112,7 @@ describe("the header", () => {
       screen.getByText(
         (_, el) =>
           el?.className === "app__wordmark" &&
-          el.textContent?.startsWith("Mashallah") === true,
+          el.textContent?.startsWith("WordInk") === true,
       ),
     ).toBeInTheDocument();
   });

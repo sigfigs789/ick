@@ -15,11 +15,11 @@ both.
 ## Name — 30 characters max
 
 ```
-Mashallah: Scroll The Quran: Daily Rare Word Game
+WordInk: Daily Rare Word Game
 ```
 
 (29) The bare wordmark would be the nicer name and is the one on the icon, but
-"Mashallah: Scroll The Quran" alone tells a person scrolling search results nothing, and the name is
+"WordInk" alone tells a person scrolling search results nothing, and the name is
 the only field that is always visible. What follows the colon is doing the work
 that the subtitle cannot be relied on to do, since Apple truncates it in several
 places the name survives.
@@ -82,7 +82,7 @@ The word list is curated from SCOWL and Wiktionary and runs past 200,000 entries
 
 The scoring gets careful about the things word games usually get wrong. Adding an s to a word is not a discovery, so a plural is scored as the word it came from rather than as a rare word in its own right. This is why "asphyxiates" does not outrank "asphyxiate".
 
-Mashallah: Scroll The Quran is also playable in a browser at wordink.app and inside Reddit. It is the same daily puzzle and the same leaderboard wherever you play it.
+WordInk is also playable in a browser at wordink.app and inside Reddit. It is the same daily puzzle and the same leaderboard wherever you play it.
 
 Made by one person, for fun.
 ```

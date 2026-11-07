@@ -38,7 +38,7 @@ const MW_STATUS_SEVERITY: Record<string, number> = { obsolete: 3, archaic: 2 };
 // The game's own input rule: English letters only, no upper length cap beyond
 // the input's own, so long real words ("gastroenterologist") stay eligible.
 const WORD_RE = /^[a-z]{2,30}$/;
-const USER_AGENT = "Mashallah: Scroll The Quran live word check (wordink.app)";
+const USER_AGENT = "WordInk live word check (wordink.app)";
 // Upstream calls are bounded so the function can't hang; the client stops waiting
 // after LIVE_HANDOFF_MS, but a wedged request would still hold quota.
 const UPSTREAM_TIMEOUT_MS = 5000;

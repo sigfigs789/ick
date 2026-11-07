@@ -6,7 +6,7 @@
 > archived Standard drops before that date, and `sameRootKey` is still used by
 > the fold audit tooling.
 
-A Mashallah: Scroll The Quran puzzle refuses a word that shares a root with one already found, so a
+A WordInk puzzle refuses a word that shares a root with one already found, so a
 player can't bank `indicate`, `indicates`, `indicated` and `indicating` as four
 separate finds. Every submission is reduced to a **same-root key** and compared
 against the keys of the words already accepted; two words with the same key are
