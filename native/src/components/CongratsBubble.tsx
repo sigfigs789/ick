@@ -72,7 +72,7 @@ const DROPS = [
  * It moves, and that is the point: a notice pinned to the bottom of the screen
  * is furniture, and furniture is read once and then looked past. Something
  * drifting over the board is asking to be tapped -- and this game is called
- * WordInk, so what a tap leaves behind is ink. The × on its corner does the
+ * Mashallah: Scroll The Quran, so what a tap leaves behind is ink. The × on its corner does the
  * same thing -- it is there for the reader who would not guess a floating
  * notice can be dismissed at all. It asks for the closed window itself and
  * answers nothing if that fails; the board underneath never waits on it.
@@ -404,7 +404,7 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
 /**
  * What is left when the bubble is hit: ink on the board.
  *
- * A game called WordInk should not burst its bubble into nothing. The blot is
+ * A game called Mashallah: Scroll The Quran should not burst its bubble into nothing. The blot is
  * built from overlapping circles rather than one -- a single circle is the one
  * thing ink never looks like -- struck on at speed, held for a beat and then
  * soaking away, with a spray of droplets thrown clear of it.

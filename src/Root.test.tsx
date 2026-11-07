@@ -122,7 +122,7 @@ describe("keeping the board in step on open", () => {
     // got: every page but the puzzle is its own chunk, so it arrives a tick
     // after the header does.
     expect(await screen.findByText("found words")).toBeInTheDocument();
-    expect(screen.getByRole("banner")).toHaveTextContent("WordInk");
+    expect(screen.getByRole("banner")).toHaveTextContent("Mashallah: Scroll The Quran");
     expect(
       screen.getByRole("button", { name: /Leaderboards/ }),
     ).toBeInTheDocument();

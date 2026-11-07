@@ -65,7 +65,7 @@ export function UpdateBanner() {
       accessibilityRole="alert"
     >
       <Text style={[styles.message, { color: theme.cautionFg }]}>
-        A new version of WordInk is out. Update to keep your scores on the leaderboard.
+        A new version of Mashallah: Scroll The Quran is out. Update to keep your scores on the leaderboard.
       </Text>
       <Pressable
         onPress={() => {
@@ -75,7 +75,7 @@ export function UpdateBanner() {
         }}
         disabled={updating}
         accessibilityRole="button"
-        accessibilityLabel="Update WordInk"
+        accessibilityLabel="Update Mashallah: Scroll The Quran"
         accessibilityState={{ busy: updating, disabled: updating }}
         hitSlop={space.sm}
         style={({ pressed }) => [

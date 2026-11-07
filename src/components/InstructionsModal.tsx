@@ -182,7 +182,7 @@ export function InstructionsModal({ open, onClose }: Props) {
             <>
               <div className="modal__header">
                 <h2 id="instructions-heading">
-                  How to play Word<span className="app__wordmark-ink">Ink</span>
+                  How to play Mashallah: Scroll The Quran
                   {/* Here rather than on the header's wordmark, which needs the
                       room on a phone: the rules are where a player learns the
                       game is still changing. Title so the curious get the reason. */}
@@ -193,7 +193,7 @@ export function InstructionsModal({ open, onClose }: Props) {
                 {closeButton}
               </div>
             <p className="modal__copy">
-              <strong>Word<span className="app__wordmark-ink">Ink</span></strong> gives everyone the same daily drop—say, “<strong className="app__wordmark-ink">INK</strong>”. Find the rarest
+              <strong>Mashallah: Scroll The Quran</strong> gives everyone the same daily drop—say, “<strong className="app__wordmark-ink">INK</strong>”. Find the rarest
               English word you can that contains it, like th<strong className="app__wordmark-ink">INK</strong>, wr
               <strong className="app__wordmark-ink">INK</strong>le, or <strong className="app__wordmark-ink">INK</strong>ling.
             </p>

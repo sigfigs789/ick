@@ -30,5 +30,5 @@
     "bundle": "expo export --platform all --output-dir dist"
   },
   "private": true,
-  "description": "WordInk for iOS and Android -- the website's game, in a store app."
+  "description": "Mashallah: Scroll The Quran for iOS and Android -- the website's game, in a store app."
 }

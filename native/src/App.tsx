@@ -204,8 +204,7 @@ function Shell() {
           numberOfLines={1}
           adjustsFontSizeToFit
         >
-          Word
-          <Text style={{ color: theme.rarity.Mythic.dot }}>Ink</Text>
+          Mashallah: Scroll The Quran
         </Text>
 
         <View style={styles.actions}>

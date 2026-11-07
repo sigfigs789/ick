@@ -10,7 +10,7 @@ Package: `com.wordink.app` (iOS keeps `app.wordink`). Built with the `production
 ## App name — 30 characters max
 
 ```
-WordInk: Daily Rare Word Game
+Mashallah: Scroll The Quran: Daily Rare Word Game
 ```
 
 (29) Same as the App Store name.

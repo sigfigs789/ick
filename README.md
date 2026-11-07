@@ -1,4 +1,4 @@
-# WordInk
+# Mashallah: Scroll The Quran
 
 A daily game where you find the rarest word you can, inspired by Wordle
 and BombParty. Every player gets the same 2- or 3-letter drop each day
@@ -395,7 +395,7 @@ The same file also holds reviewed **non-words**: a word that never made the
 curated list, judged once and recorded with its fault — a misspelling
 (`conniseur`), a brand or a title (`californication`), a clipping (`conflag`).
 Nothing about play changes for those; the entry replaces the generic "not in
-WordInk's curated list" message with the specific one, and — because only a
+Mashallah: Scroll The Quran's curated list" message with the specific one, and — because only a
 `not-a-word` rejection is handed to the live Merriam-Webster fallback — spares
 the quota a word that has already been answered. The tests tell the two kinds
 apart by dictionary membership: a retired word must still be scoreable and must

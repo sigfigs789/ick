@@ -2,7 +2,7 @@ import type { Day, Range, Rate, Report, Week } from "./report";
 
 /**
  * The scorecard: seven categories, each with the three bands a small daily
- * browser word game is held to, and where WordInk stands.
+ * browser word game is held to, and where Mashallah: Scroll The Quran stands.
  *
  * The bands are as given, and leave gaps: D1 of 20% is past going nowhere
  * (under 15%) but short of promising (25%). A number in a gap is "In between",

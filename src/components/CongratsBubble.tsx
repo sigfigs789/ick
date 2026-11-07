@@ -65,7 +65,7 @@ const OWN_HAPTICS = [30, 40, 30, 40, 30, 40, 60, 60, 160];
  * It moves, and that is the point: a notice parked at the foot of the page is
  * furniture, and furniture is read once and then looked past. Something
  * wandering over the board is asking to be hit -- and this game is called
- * WordInk, so what a hit leaves behind is ink. Pressing it is the whole of the
+ * Mashallah: Scroll The Quran, so what a hit leaves behind is ink. Pressing it is the whole of the
  * interaction. The × on its corner does the same thing -- it is there for the
  * reader who would not guess a floating notice can be dismissed at all.
  *
