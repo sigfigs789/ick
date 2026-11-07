@@ -2,8 +2,8 @@ import { useEffect, useId, useRef, useState } from "react";
 import {
   atRisk,
   freezeProgress,
-  freezeRules,
   freezesOn,
+  freezeTip,
   isRestDay,
   REST_DAY_PLAYS,
   resting,
@@ -20,6 +20,7 @@ import { useKeepInViewport } from "../hooks/useKeepInViewport";
 
 function freezeSummary(banked: number, cap: number, earning?: { played: number; of: number }): string {
   if (banked === 0) {
+    if (cap === 0) return "Earn your first 🧊 freeze tomorrow!";
     return earning ? `No 🧊 acquired: ${earning.played} of ${earning.of} days to the next` : "No 🧊 acquired";
   }
   // Held from when the limit was three; kept, but no more are earned past it.
@@ -37,12 +38,10 @@ function freezeSummary(banked: number, cap: number, earning?: { played: number; 
 function FreezeBadge({
   banked,
   cap,
-  currentStreak,
   earning,
 }: {
   banked: number;
   cap: number;
-  currentStreak: number;
   earning?: { played: number; of: number };
 }) {
   const pie = banked === 0 ? earning : undefined;
@@ -87,7 +86,7 @@ function FreezeBadge({
       {open && (
         <span className="streak-display__freeze-popup" id={popupId} role="dialog" aria-label="Streak freezes">
           <strong>{freezeSummary(banked, cap, pie)}</strong>
-          <span>{freezeRules(currentStreak, cap)}</span>
+          <span>{freezeTip(cap)}</span>
         </span>
       )}
     </span>
@@ -236,7 +235,7 @@ export function StreakDisplay({
           {restDay && <RestDayBadge className="streak-display__flame" />}
           <StreakBadge icon={restDay ? null : icon} count={streak.currentStreak} />
           {showFreezes && (
-            <FreezeBadge banked={banked} cap={cap} currentStreak={streak.currentStreak} earning={freezeEarning} />
+            <FreezeBadge banked={banked} cap={cap} earning={freezeEarning} />
           )}
           {weekendEarned && (
             <RestDayBadge played={REST_DAY_PLAYS} sundayOnly={dayOfWeek(date) === 6} className="streak-display__week" />

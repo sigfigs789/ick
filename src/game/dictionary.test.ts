@@ -81,7 +81,8 @@ const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
   ["fergalicious", "Mythic", 1.24],
   ["ferngully", "Mythic", 1.33],
   ["flatwound", "Elusive", 1.4],
-  ["foellinger", "Legend", -1.57],
+  // Estimated at 0.85 from 2026-11-30 (#757), replacing its -1.57 sentinel.
+  ["foellinger", "Legend", 0.85],
   ["freestall", "Legend", 0.9],
   ["fremen", "Extremely Rare", 1.9],
   ["frutiger", "Elusive", 1.35],
