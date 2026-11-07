@@ -12,7 +12,7 @@ function doOverRule(played: number): string {
 
 /**
  * The do-over badge, beside the lazy weekend's (see game/doOver.ts): a pie
- * filling a quarter a day played that turns 🔄 on the fourth, and starts
+ * filling a third a day played that turns 🔄 on the third, and starts
  * over once it is spent. Hover or select it for the rule, as the lazy
  * weekend's pie does.
  */
