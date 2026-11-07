@@ -1,5 +1,5 @@
 /**
- * The do-over: a second retry, earned by every DO_OVER_PLAYS days played
+ * The do-over: a second retry, earned by every DO_OVER_PLAYS (3) days played
  * (each on its own day, see `playedDates`). Only one is ever held, so days
  * played while one is held earn nothing more; but it never expires, and
  * spending it starts the count for the next. The count runs from the day
@@ -20,7 +20,7 @@ import { addDays } from "./date";
 import type { StreakState } from "./types";
 
 /** Days played, each on its own day, that earn a do-over. */
-export const DO_OVER_PLAYS = 4;
+export const DO_OVER_PLAYS = 3;
 
 /** The do-over's emoji, wherever it is shown. */
 export const DO_OVER_EMOJI = "🔄";

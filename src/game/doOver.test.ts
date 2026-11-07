@@ -31,25 +31,25 @@ describe("do-over", () => {
     expect(doOverPlays(streak([MON, TUE]), TUE)).toBe(2);
   });
 
-  it("is earned on the fourth day played and never expires", () => {
-    expect(doOverHeld(streak([MON, TUE, WED]), WED)).toBe(false);
-    expect(doOverHeld(streak([MON, TUE, WED, THU]), THU)).toBe(true);
-    expect(doOverHeld(streak([MON, TUE, WED, THU]), "2026-12-20")).toBe(true);
+  it("is earned on the third day played and never expires", () => {
+    expect(doOverHeld(streak([MON, TUE]), TUE)).toBe(false);
+    expect(doOverHeld(streak([MON, TUE, WED]), WED)).toBe(true);
+    expect(doOverHeld(streak([MON, TUE, WED]), "2026-12-20")).toBe(true);
     // Only one is held.
-    expect(doOverProgress(streak([MON, TUE, WED, THU, FRI, SAT]), SAT)).toEqual({ played: 4 });
+    expect(doOverProgress(streak([MON, TUE, WED, THU, FRI, SAT]), SAT)).toEqual({ played: 3 });
   });
 
   it("counts again from the day after it is spent", () => {
-    const days = [MON, TUE, WED, THU, FRI, SAT, SUN.replace("01", "08")];
-    spendDoOver(THU);
-    expect(doOverHeld(streak(days), SAT)).toBe(false);
-    expect(doOverProgress(streak(days), SAT)).toEqual({ played: 2 });
-    expect(doOverHeld(streak([...days, NEXT_MON]), NEXT_MON)).toBe(true);
+    const days = [MON, TUE, WED, THU, FRI];
+    spendDoOver(WED);
+    expect(doOverHeld(streak(days), FRI)).toBe(false);
+    expect(doOverProgress(streak(days), FRI)).toEqual({ played: 2 });
+    expect(doOverHeld(streak([...days, SAT]), SAT)).toBe(true);
   });
 
-  it("is a day away only on the third day played", () => {
-    expect(doOverTomorrow(streak([MON, TUE, WED]), WED)).toBe(true);
-    expect(doOverTomorrow(streak([MON, TUE]), TUE)).toBe(false);
-    expect(doOverTomorrow(streak([MON, TUE, WED]), THU)).toBe(false);
+  it("is a day away only on the second day played", () => {
+    expect(doOverTomorrow(streak([MON, TUE]), TUE)).toBe(true);
+    expect(doOverTomorrow(streak([MON]), MON)).toBe(false);
+    expect(doOverTomorrow(streak([MON, TUE]), WED)).toBe(false);
   });
 });

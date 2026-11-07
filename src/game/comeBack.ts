@@ -90,7 +90,7 @@ export function comeBackGoal(
     doOverTomorrow(streak, today)
       ? {
           line: `Play tomorrow and earn a do-over ${DO_OVER_EMOJI}`,
-          explainer: { title: "Do-over", text: "An extra retry, kept until you use it. Earn one every 4 days played; hold one at a time." },
+          explainer: { title: "Do-over", text: "An extra retry, kept until you use it. Earn one every 3 days played; hold one at a time." },
         }
       : null;
   if (best <= NEW_PLAYER_BEST) return doOverGoal ?? achievementGoal(locked, streak, today);
