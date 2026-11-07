@@ -204,7 +204,7 @@ function Shell() {
           numberOfLines={1}
           adjustsFontSizeToFit
         >
-          Mashallah: Scroll The Quran
+          Mashallah
         </Text>
 
         <View style={styles.actions}>
