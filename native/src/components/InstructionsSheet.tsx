@@ -15,11 +15,11 @@ export function InstructionsSheet({ open, onClose }: Props) {
   return (
     <Sheet
       open={open}
-      title={<>How to play Word<Text style={{ color: theme.rarity.Mythic.dot }}>Ink</Text></>}
+      title={<>How to play Mashallah: Scroll The Quran</>}
       onClose={onClose}
     >
       <Text style={[styles.copy, { color: theme.fg }]}>
-        <Text style={styles.strong}>Word<Text style={{ color: theme.rarity.Mythic.dot }}>Ink</Text></Text> gives everyone the same daily drop — say, “<Text style={[styles.strong, { color: theme.rarity.Mythic.dot }]}>INK</Text>”. Find the rarest English
+        <Text style={styles.strong}>Mashallah: Scroll The Quran</Text> gives everyone the same daily drop — say, “<Text style={[styles.strong, { color: theme.rarity.Mythic.dot }]}>INK</Text>”. Find the rarest English
         word you can that contains it, like th<Text style={[styles.strong, { color: theme.rarity.Mythic.dot }]}>INK</Text>, wr
         <Text style={[styles.strong, { color: theme.rarity.Mythic.dot }]}>INK</Text>le, or <Text style={[styles.strong, { color: theme.rarity.Mythic.dot }]}>INK</Text>ling.
       </Text>

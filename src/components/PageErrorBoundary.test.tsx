@@ -19,13 +19,13 @@ describe("PageErrorBoundary", () => {
   it("keeps what is around it and offers a reload when the page throws", () => {
     render(
       <>
-        <header>WordInk</header>
+        <header>Mashallah: Scroll The Quran</header>
         <PageErrorBoundary resetKey="leaderboard">
           <Broken />
         </PageErrorBoundary>
       </>,
     );
-    expect(screen.getByText("WordInk")).toBeInTheDocument();
+    expect(screen.getByText("Mashallah: Scroll The Quran")).toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent("Couldn't load this page.");
     expect(screen.getByRole("button", { name: "Reload" })).toBeInTheDocument();
   });

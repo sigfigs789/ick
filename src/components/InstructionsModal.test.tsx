@@ -33,10 +33,8 @@ describe("InstructionsModal", () => {
         onClose={vi.fn()}
       />,
     );
-    // "Ink" is its own span in the heading, and jsdom has no layout to know
-    // it is inline, so the computed name comes back as "Word Ink".
     expect(
-      screen.getByRole("dialog", { name: /how to play word ?ink/i }),
+      screen.getByRole("dialog", { name: /how to play mashallah: scroll the quran/i }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /close instructions/i }),
@@ -92,7 +90,7 @@ describe("InstructionsModal", () => {
       fireEvent.keyDown(document, { key: "Escape" });
       expect(onClose).not.toHaveBeenCalled();
       expect(
-        screen.getByRole("dialog", { name: /how to play word ?ink/i }),
+        screen.getByRole("dialog", { name: /how to play mashallah: scroll the quran/i }),
       ).toBeInTheDocument();
       // Back where the player left, in the same sheet rather than a new one.
       expect(
@@ -108,7 +106,7 @@ describe("InstructionsModal", () => {
         screen.getByRole("button", { name: /back to how to play/i }),
       );
       expect(
-        screen.getByRole("dialog", { name: /how to play word ?ink/i }),
+        screen.getByRole("dialog", { name: /how to play mashallah: scroll the quran/i }),
       ).toBeInTheDocument();
       expect(onClose).not.toHaveBeenCalled();
       await userEvent.click(

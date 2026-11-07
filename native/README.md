@@ -1,4 +1,4 @@
-# WordInk for iOS and Android
+# Mashallah: Scroll The Quran for iOS and Android
 
 A daily word game. Every player gets the same two or three letters — say `INK` —
 and has four guesses to find the rarest English word containing them, in order:

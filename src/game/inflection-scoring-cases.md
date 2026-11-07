@@ -1,6 +1,6 @@
 # Inflection & derivation scoring folds
 
-WordInk scores a word by how rare it is: rarer word, higher score. A problem
+Mashallah: Scroll The Quran scores a word by how rare it is: rarer word, higher score. A problem
 falls out of that directly — an inflected or derived form is almost always
 *rarer* in the corpus than the plain word it comes from ("angrier" is measured
 rarer than "angry", "asphyxiates" rarer than "asphyxiate"), so left alone it

@@ -22,10 +22,10 @@ describe("ShareButton", () => {
 
   it("copies the supplied text, reports success, and records the share", async () => {
     const onShared = vi.fn();
-    render(<ShareButton text="WordInk result" onShared={onShared} />);
+    render(<ShareButton text="Mashallah: Scroll The Quran result" onShared={onShared} />);
 
     await userEvent.click(screen.getByRole("button", { name: "Share" }));
-    expect(writeText).toHaveBeenCalledWith("WordInk result");
+    expect(writeText).toHaveBeenCalledWith("Mashallah: Scroll The Quran result");
     expect(screen.getByRole("button", { name: "Copied!" })).toBeInTheDocument();
     expect(onShared).toHaveBeenCalledTimes(1);
   });
@@ -34,7 +34,7 @@ describe("ShareButton", () => {
     writeText.mockRejectedValue(new Error("permission denied"));
     const execCopy = vi.fn(() => true);
     Object.defineProperty(document, "execCommand", { value: execCopy, configurable: true });
-    render(<ShareButton text="WordInk result" />);
+    render(<ShareButton text="Mashallah: Scroll The Quran result" />);
 
     await userEvent.click(screen.getByRole("button", { name: "Share" }));
     expect(execCopy).toHaveBeenCalledWith("copy");
