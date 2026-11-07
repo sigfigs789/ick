@@ -1,0 +1,25 @@
+{
+  "since": "2026-12-07",
+  "drop": "MO",
+  "model": "claude-opus-5-5",
+  "source": "claude",
+  "run": "https://github.com/sigfigs789/ick/actions/runs/42403261741",
+  "estimatedAt": "2026-11-07T18:51:40Z",
+  "zipf": {
+    "angiotomodensitometry": -0.8,
+    "bromotetrahydrofurans": -1.1,
+    "carbomonoxyhemoglobin": -0.9,
+    "erythroleukemogenesis": -1.0,
+    "hemochromocytometers": -1.2,
+    "hemochromocytometric": -1.2,
+    "hydroxybromolactones": -0.9,
+    "monoglycosylglycerol": -0.7,
+    "monohydroxybenzoates": -0.9,
+    "monolysocardiolipins": -0.8,
+    "monomethylhydrazines": -1.0,
+    "neuroimmunomodulator": -0.2,
+    "pheochromocytomatous": -1.1,
+    "polychemotherapeutic": -0.6,
+    "ultrasonotomographic": -1.1
+  }
+}
