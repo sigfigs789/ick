@@ -204,7 +204,8 @@ function Shell() {
           numberOfLines={1}
           adjustsFontSizeToFit
         >
-          Mashallah
+          Word
+          <Text style={{ color: theme.rarity.Mythic.dot }}>Ink</Text>
         </Text>
 
         <View style={styles.actions}>

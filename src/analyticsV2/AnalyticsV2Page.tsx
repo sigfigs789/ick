@@ -13,7 +13,7 @@ import { WindowPicker } from "./WindowPicker";
  *
  * Visitor and player counts, a scorecard against the bands for a small daily
  * browser word game, then retention, engagement, virality and momentum, the
- * numbers particular to Mashallah: Scroll The Quran that say why players come back or leave, and
+ * numbers particular to WordInk that say why players come back or leave, and
  * acquisition by source last.
  *
  * Visitors and players are kept apart throughout: a visitor turned up, a
@@ -73,7 +73,7 @@ export function AnalyticsV2Page() {
   return (
     <ReviewPage
       title="Analytics v2"
-      note="How Mashallah: Scroll The Quran is tracking against the bar for a daily word game, and why players come back."
+      note="How WordInk is tracking against the bar for a daily word game, and why players come back."
       count={0}
       state={state}
       refreshing={refreshing}
@@ -226,7 +226,7 @@ function Dashboard({ report, before }: { report: Report; before: Report | null }
         <SourceGrowthTable sources={span.sources} days={days} priorTracked={tracked(addDays(span.from, -days))} />
       </Section>
 
-      <Section title="Why players come back" note={`The numbers particular to Mashallah: Scroll The Quran. ${label}.`}>
+      <Section title="Why players come back" note={`The numbers particular to WordInk. ${label}.`}>
         <h3 className="av2__subheading">Activation rate</h3>
         <Tiles
           tiles={[
@@ -331,7 +331,7 @@ function Scorecard({ rows, before }: { rows: Row[]; before: Row[] }) {
           <thead>
             <tr>
               <th scope="col">Metric</th>
-              <th scope="col">Mashallah: Scroll The Quran</th>
+              <th scope="col">WordInk</th>
               <th scope="col">Going nowhere</th>
               <th scope="col">Promising</th>
               <th scope="col">Great shape</th>
