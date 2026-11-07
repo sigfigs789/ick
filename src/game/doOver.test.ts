@@ -19,7 +19,6 @@ const WED = "2026-11-04";
 const THU = "2026-11-05";
 const FRI = "2026-11-06";
 const SAT = "2026-11-07";
-const NEXT_MON = "2026-11-09";
 
 beforeEach(() => localStorage.clear());
 
