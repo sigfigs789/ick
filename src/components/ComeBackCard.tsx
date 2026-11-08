@@ -1,12 +1,15 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { syncAchievements } from "../game/achievements";
 import { comeBackGoal, type GoalExplainer } from "../game/comeBack";
-import type { StreakState } from "../game/types";
+import { ablazeSharesMade, shareFireTier, shareFlameTier } from "../game/shareFlames";
+import type { AcceptedWord, StreakState } from "../game/types";
 
 interface Props {
   streak: StreakState;
   /** The puzzle on screen. */
   date: string;
+  /** The words banked on it, which decide what sharing it would earn. */
+  words: readonly AcceptedWord[];
 }
 
 /**
@@ -16,10 +19,11 @@ interface Props {
  * A line naming a 🧊 freeze or a lazy weekend can be selected for a popup
  * saying what that is (see `comeBackGoal`).
  */
-export function ComeBackCard({ streak, date }: Props) {
+export function ComeBackCard({ streak, date, words }: Props) {
   // The achievements still locked, for when nothing nearer is ahead. Memoized:
   // reading them walks the stored history. The suggestion badges are left out:
-  // they are not won by coming back to play.
+  // they are not won by coming back to play. What a share now would earn comes
+  // first (see `comeBackGoal`), so it is worked out from the words on screen.
   const goal = useMemo(
     () =>
       comeBackGoal(
@@ -27,9 +31,13 @@ export function ComeBackCard({ streak, date }: Props) {
         date,
         syncAchievements(streak).filter(
           (status) => !status.earnedOn && !status.achievement.viaSuggestions
-        )
+        ),
+        {
+          tier: shareFireTier(words, date),
+          ablaze: shareFlameTier(words, date) !== null && !ablazeSharesMade().includes(date),
+        }
       ),
-    [streak, date]
+    [streak, date, words]
   );
 
   if (goal === null) return null;

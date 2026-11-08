@@ -111,6 +111,13 @@ export interface Achievement {
    * game/comeBack.ts): the current streak, days played, or words banked.
    */
   byPlaying?: "streak" | "days" | "words";
+  /**
+   * Earned by sharing a puzzle with the Share button burning in this tier (see
+   * `sharedInFlames`), so a share taken now would earn it (see game/comeBack.ts).
+   */
+  sharedAt?: ShareFireTier;
+  /** Earned by sharing puzzles ablaze (see `sharedAblaze`): a share taken now counts toward it. */
+  sharedAblaze?: true;
 }
 
 export interface AchievementStatus {
@@ -1536,6 +1543,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     icon: "🔮",
     title: "Susanoo",
     description: "Share a result while the Share button is coated in purple, your words averaging Extremely Rare.",
+    sharedAt: "Extremely Rare",
     check: sharedInFlames("Extremely Rare"),
   },
   {
@@ -1544,6 +1552,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     icon: "☀️",
     title: "Sun Warrior",
     description: "Share a result while the Share button burns gold, your words averaging Elusive.",
+    sharedAt: "Elusive",
     check: sharedInFlames("Elusive"),
   },
   {
@@ -1552,6 +1561,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     icon: "🤺",
     title: "Agni Kai",
     description: "Share a result while the Share button burns red, your words averaging Mythic.",
+    sharedAt: "Mythic",
     check: sharedInFlames("Mythic"),
   },
   {
@@ -1560,6 +1570,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     icon: "🌑",
     title: "Amaterasu",
     description: "Share a result while the Share button burns black, your words averaging Legend.",
+    sharedAt: "Legend",
     check: sharedInFlames("Legend"),
   },
   {
@@ -1568,6 +1579,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     icon: "🔥",
     title: "Olympic flame",
     description: "Carry the torch: share 5 different puzzles while the Share button is ablaze, your words averaging Elusive or better.",
+    sharedAblaze: true,
     check: sharedAblaze(5),
   },
   {
