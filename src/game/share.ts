@@ -6,6 +6,7 @@ import {
 } from "./dictionary";
 import { MODE_LABELS, currentMode, modeForDate, modeIsChosen, type GameMode } from "./mode";
 import { shareCode } from "./onboarding";
+import { SHARE_CARD_PATH, encodeShareCard, type CardWord, type ShareCard } from "./shareCard";
 import dropData from "../data/drops.json";
 import type { AcceptedWord, Rarity } from "./types";
 
@@ -52,10 +53,21 @@ export type ShareSource = "share" | "twitter";
  * to it, which is a round trip a friend's first load spends before the game
  * has started downloading.
  */
-function shareUrl(source: ShareSource | null, mode: GameMode): string {
-  if (source === "share") return `https://www.wordink.app/?s=${shareCode("sh", mode)}`;
-  if (source === "twitter") return `www.wordink.app/?s=${shareCode("t", mode)}`;
-  return "wordink.app";
+function shareUrl(source: ShareSource | null, mode: GameMode, card: ShareCard): string {
+  if (source === null) return "wordink.app";
+  const code = shareCode(source === "share" ? "sh" : "t", mode);
+  // The result rides on the link so its preview can picture it (see
+  // game/shareCard.ts). The in-app preview above has no link to unfurl.
+  const query = [["s", code], ...encodeShareCard(card)]
+    .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+    .join("&");
+  if (source === "share") return `https://www.wordink.app${SHARE_CARD_PATH}?${query}`;
+  return `www.wordink.app${SHARE_CARD_PATH}?${query}`;
+}
+
+/** The share square's colour for `rarity` on `date`'s puzzle, as the preview image draws it. */
+function cardRarity(rarity: Rarity, date: string): CardWord["rarity"] {
+  return rarity === "Legend" && !usesRetunedTiers(date) ? "legacy-legend" : rarity;
 }
 
 export function puzzleNumber(dateStr: string): number {
@@ -139,10 +151,13 @@ export function buildShareText(
 
   // The rarest word is the one "top" reveals.
   const best = rarestWord(words);
+  const cardWords: CardWord[] = [];
   const resultLine = words
     .map((w) => {
       const named = reveal === "all" || (reveal === "top" && w === best);
       const score = formatRarityScore(w.zipf, dateStr);
+      const rarity = cardRarity(w.rarity, dateStr);
+      cardWords.push(named ? { rarity, score, word: w.word } : { rarity, score });
       return named
         ? `${raritySymbol(w.rarity, dateStr)} ${w.word} (${score})`
         : `${raritySymbol(w.rarity, dateStr)} ${score}`;
@@ -185,6 +200,16 @@ export function buildShareText(
   if (progressLine && playerName) lines.push(`Playing as ${playerName}`);
   // The link opens today's puzzle, not this one, so an archived day from before
   // the switch -- whose mode the calendar picked -- sends the sharer's own.
-  lines.push(shareUrl(source, modeIsChosen(dateStr) ? mode : currentMode()));
+  const card: ShareCard = {
+    date: dateStr,
+    drop,
+    words: cardWords,
+    total: score,
+    totalLabel: scoreLabel,
+  };
+  if (modeIsChosen(dateStr)) card.mode = mode === "freeform" ? "Freeform" : "Standard";
+  if (progressLine && options.streak !== undefined) card.streak = options.streak;
+  if (progressLine && playerName) card.playerName = playerName;
+  lines.push(shareUrl(source, modeIsChosen(dateStr) ? mode : currentMode(), card));
   return lines.join("\n");
 }

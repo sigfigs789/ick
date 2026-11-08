@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { buildShareText, puzzleNumber } from "./share";
 import dropData from "../data/drops.json";
-import { rarityScore } from "./dictionary";
+import { formatRarityScore, rarityScore, totalRarityScore } from "./dictionary";
+import { decodeShareCard } from "./shareCard";
 import { MODE_CHOICE_START, resetModeCache, setMode } from "./mode";
 import type { AcceptedWord } from "./types";
 
@@ -68,29 +69,77 @@ describe("buildShareText", () => {
     ).toContain("\nwordink.app");
   });
 
+  /** The query of the link a share ends with. */
+  function linkParams(text: string): URLSearchParams {
+    const lines = text.split("\n");
+    const link = lines[lines.length - 1];
+    return new URL(link.startsWith("http") ? link : `https://${link}`).searchParams;
+  }
+
   it("adds compact share attribution only when explicitly requested", () => {
     expect(
       buildShareText("2024-01-05", "str", words, { source: "share" }),
-    ).toMatch(/https:\/\/www\.wordink\.app\/\?s=sh\.s$/);
+    ).toMatch(/\nhttps:\/\/www\.wordink\.app\/r\?s=sh\.s&/);
   });
 
   it("tags a share link with the mode the puzzle was played in", () => {
     const date = "2026-09-28";
-    expect(buildShareText(date, "str", words, { source: "share", mode: "freeform" })).toMatch(
-      /\?s=sh\.f$/,
-    );
-    expect(buildShareText(date, "str", words, { source: "share", mode: "standard" })).toMatch(
-      /\?s=sh\.s$/,
-    );
-    expect(buildShareText(date, "str", words, { source: "twitter", mode: "freeform" })).toMatch(
-      /\?s=t\.f$/,
-    );
+    const code = (options: Parameters<typeof buildShareText>[3]) =>
+      linkParams(buildShareText(date, "str", words, options)).get("s");
+    expect(code({ source: "share", mode: "freeform" })).toBe("sh.f");
+    expect(code({ source: "share", mode: "standard" })).toBe("sh.s");
+    expect(code({ source: "twitter", mode: "freeform" })).toBe("t.f");
   });
 
   it("uses a compact X attribution code without a protocol prefix", () => {
-    expect(
-      buildShareText("2024-01-05", "str", words, { source: "twitter" }),
-    ).toMatch(/wordink\.app\/\?s=t\.s$/);
+    const text = buildShareText("2024-01-05", "str", words, { source: "twitter" });
+    expect(text).toMatch(/\nwww\.wordink\.app\/r\?s=t\.s&/);
+  });
+
+  it("carries the shared result on the link, for its preview image", () => {
+    const text = buildShareText("2026-09-28", "str", words, {
+      source: "share",
+      mode: "freeform",
+      streak: 4,
+      playerName: "u/mo",
+      isToday: true,
+    });
+    const card = decodeShareCard(linkParams(text));
+    expect(card).toEqual({
+      date: "2026-09-28",
+      drop: "str",
+      mode: "Freeform",
+      words: words.map((w) => ({
+        rarity: w.rarity,
+        score: formatRarityScore(w.zipf, "2026-09-28"),
+      })),
+      total: totalRarityScore(words, "2026-09-28").toFixed(1),
+      totalLabel: "Today",
+      streak: 4,
+      playerName: "u/mo",
+    });
+  });
+
+  it("names on the link only the words the text names", () => {
+    const params = (reveal: "none" | "top" | "all") =>
+      decodeShareCard(
+        linkParams(buildShareText("2024-01-05", "str", words, { source: "share", reveal })),
+      )!.words.map((w) => w.word);
+    expect(params("none")).toEqual([undefined, undefined, undefined]);
+    expect(params("top")).toEqual([undefined, undefined, "aardvark"]);
+    expect(params("all")).toEqual(["the", "strange", "aardvark"]);
+  });
+
+  it("leaves the stats the X layout drops off its link too", () => {
+    const text = buildShareText("2024-01-05", "str", words, {
+      source: "twitter",
+      format: "x",
+      streak: 4,
+      playerName: "u/mo",
+    });
+    const card = decodeShareCard(linkParams(text))!;
+    expect(card.streak).toBeUndefined();
+    expect(card.playerName).toBeUndefined();
   });
 
   it("shows the actual words and rarity scores, without rarity labels, when spoilerFree is false", () => {
