@@ -329,13 +329,13 @@ function AchievementCard({ status }: { status: AchievementStatus }) {
         ) : (
           <span className="stats__achievement-meta">Locked</span>
         )}
-        {earnedOn && <AchievementShareButton achievement={{ ...achievement, word }} />}
         {share && (
           <span className={`stats__achievement-share${onlyYou ? " stats__achievement-share--you" : ""}`}>
             {share}
           </span>
         )}
       </span>
+      {earnedOn && <AchievementShareButton achievement={{ ...achievement, word }} />}
     </li>
   );
 }

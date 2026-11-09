@@ -7322,8 +7322,9 @@ button.app__menu-item + button.app__menu-item {
 
 /* Sharing an earned achievement (components/AchievementShareButton.tsx). */
 .stats__achievement-share-button {
-  align-self: flex-start;
-  margin-top: 0.25rem;
+  flex: none;
+  align-self: center;
+  margin-left: auto;
   padding: 0.2rem 0.65rem;
   border: 1px solid hsl(265 72% 58%);
   border-radius: 999px;
