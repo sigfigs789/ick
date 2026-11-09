@@ -30,3 +30,24 @@ beforeAll(async () => {
   const dictionary = await import("../game/dictionary");
   if (typeof dictionary.scoringReady === "function") await dictionary.scoringReady("2026-08-01");
 });
+
+// Freeform could be chosen only until 2026-11-09 (MODE_CHOICE_END in
+// game/mode.ts), and a good many tests play it. Start the wall clock at noon on
+// that last day -- and let it run on from there, so real-timer tests that wait
+// on Date still see time pass -- or every one of them would start failing the
+// day Freeform was retired. A test that needs another day fakes its own clock
+// (vi.setSystemTime, vi.useFakeTimers), which replaces this one and puts it back.
+{
+  const RealDate = Date;
+  const offset = new RealDate("2026-11-09T12:00:00").getTime() - RealDate.now();
+  class OffsetDate extends RealDate {
+    constructor(...args: unknown[]) {
+      // Forwarding the constructor's overloads untouched.
+      super(...((args.length === 0 ? [RealDate.now() + offset] : args) as [number]));
+    }
+    static now() {
+      return RealDate.now() + offset;
+    }
+  }
+  globalThis.Date = OffsetDate as unknown as DateConstructor;
+}

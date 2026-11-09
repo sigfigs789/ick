@@ -34,7 +34,7 @@
  */
 
 import { addDays, daysSinceEpoch, todayDateString } from "./date";
-import { MODE_CHOICE_START, MODE_LABELS, type GameMode } from "./mode";
+import { MODE_CHOICE_END, MODE_CHOICE_START, MODE_LABELS, type GameMode } from "./mode";
 import { nextMonthStart, previousMonthStart } from "./month";
 import { playedBefore, playedFreeformLately } from "./storage";
 import { previousWeek, weekEnd, weekStart } from "./week";
@@ -95,7 +95,9 @@ export function congratsSpots(date: string = todayDateString()): CongratsSpot[] 
   }
   return windows.flatMap(({ window, start, end }) => {
     const spots: CongratsSpot[] = [{ window, start, mode: "standard" }];
-    if (end >= MODE_CHOICE_START) spots.push({ window, start, mode: "freeform" });
+    // ...and only one that opened before Freeform was retired (MODE_CHOICE_END),
+    // after which there is no Freeform board to have won.
+    if (end >= MODE_CHOICE_START && start < MODE_CHOICE_END) spots.push({ window, start, mode: "freeform" });
     return spots;
   });
 }

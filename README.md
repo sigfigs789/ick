@@ -6,9 +6,9 @@ and BombParty. Every player gets the same 2- or 3-letter drop each day
 it, in order, for up to 4 distinct guesses. The goal is rarity — your best
 one is crowned in the log. No timer, no login, just a 0–10 rarity score and
 tier (Common → Legend) on every accepted word. Stop anytime with "Lock
-in my result," or use all 4 guesses. Every puzzle can be played in
-**Standard** or **Freeform** mode (see below), and each mode has its own
-progress and its own leaderboard.
+in my result," or use all 4 guesses. Every puzzle plays under **Standard**
+rules. (Freeform, a player-chosen variant that ran from 2026-09-27 to
+2026-11-09, was retired; see below.)
 
 Built in React + TypeScript (Vite). Game logic in `src/game/` is plain
 TypeScript with no DOM or React dependencies.
@@ -47,10 +47,12 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
   easier drops: the ones with the most Rare+ answers for their length, picked
   so that consecutive busy days reach different kinds of words
   (`scripts/reorder-drops.py`).
-- **Modes** (`src/game/mode.ts`): from `MODE_CHOICE_START` (2026-09-27) the
-  player picks Standard (the default) or Freeform, and the choice is
-  remembered. 2026-09-14 to 2026-09-26 was the Freeform trial, when the calendar
-  set the mode. Earlier puzzles are Standard only. Every rule is dated by
+- **Modes** (`src/game/mode.ts`): from `MODE_CHOICE_START` (2026-09-27) to
+  `MODE_CHOICE_END` (2026-11-10, exclusive) the player picked Standard (the
+  default) or Freeform, and the choice was remembered. From `MODE_CHOICE_END`
+  every puzzle is Standard for everybody, a remembered Freeform choice is reset
+  to Standard, and there is no switch. 2026-09-14 to 2026-09-26 was the Freeform trial, when
+  the calendar set the mode. Earlier puzzles are Standard only. Every rule is dated by
   puzzle, so an archived puzzle always plays under its original rules.
 - **Do-over** (`src/game/doOver.ts`): an extra retry, spent on today's
   puzzle once its own retry is gone. One is earned every 4 days played (each

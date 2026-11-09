@@ -26,6 +26,8 @@
  * One player plays one mode at a time; this is that one.
  */
 
+import { todayDateString } from "./clock";
+
 export type GameMode = "standard" | "freeform";
 
 /** What each mode is called on screen. */
@@ -46,6 +48,21 @@ export const MODE_LABELS: Record<GameMode, string> = {
  * it turns over with the puzzle rather than with a clock.
  */
 export const MODE_CHOICE_START = "2026-09-27";
+
+/**
+ * The first puzzle nobody chooses for: Freeform is retired.
+ *
+ * From this date every puzzle is Standard for everybody, whatever mode their
+ * browser had remembered, and the switch is gone from the header. Dates before
+ * it are untouched -- the trial week and the chosen era keep the rules they
+ * were played under, like every other cutover in this game -- which is why the
+ * mode still exists as a type: the record of those days has to be able to say
+ * what they were.
+ *
+ * Compared as a puzzle date string, so it turns over with the puzzle: tomorrow
+ * relative to 2026-11-09.
+ */
+export const MODE_CHOICE_END = "2026-11-10";
 
 /**
  * Standard, for a player who has never touched the switch.
@@ -72,7 +89,19 @@ function isMode(value: unknown): value is GameMode {
 export function loadMode(): GameMode {
   try {
     const stored = localStorage.getItem(MODE_KEY);
-    return isMode(stored) ? stored : DEFAULT_MODE;
+    if (!isMode(stored)) return DEFAULT_MODE;
+    // Once the choice has ended, whoever had remembered Freeform is moved to
+    // Standard -- and the memory is rewritten, so nothing downstream reads the
+    // old value back.
+    if (stored !== DEFAULT_MODE && todayDateString() >= MODE_CHOICE_END) {
+      try {
+        localStorage.setItem(MODE_KEY, DEFAULT_MODE);
+      } catch {
+        // Still Standard for this session; the next load moves them again.
+      }
+      return DEFAULT_MODE;
+    }
+    return stored;
   } catch {
     return DEFAULT_MODE;
   }
@@ -102,6 +131,8 @@ const listeners = new Set<Listener>();
  * so the one place that changes it says so out loud. See hooks/useGameMode.ts.
  */
 export function setMode(mode: GameMode): void {
+  // Freeform is retired: once the choice has ended nothing can switch to it.
+  if (mode !== DEFAULT_MODE && todayDateString() >= MODE_CHOICE_END) return;
   if (mode === currentMode()) return;
   current = mode;
   try {
@@ -177,7 +208,7 @@ export const FREEFORM_TRIAL_END = MODE_CHOICE_START;
  * dates before it are untouched by any of this.
  */
 export function modeIsChosen(date: string): boolean {
-  return date >= MODE_CHOICE_START;
+  return date >= MODE_CHOICE_START && date < MODE_CHOICE_END;
 }
 
 /**
@@ -209,6 +240,7 @@ export function modeIsChosen(date: string): boolean {
  */
 export function modeForDate(date: string, chosen?: GameMode): GameMode {
   if (modeIsChosen(date)) return chosen ?? currentMode();
+  if (date >= MODE_CHOICE_END) return DEFAULT_MODE;
   return date >= FREEFORM_TRIAL_START ? "freeform" : DEFAULT_MODE;
 }
 
@@ -243,6 +275,7 @@ export function modeForDate(date: string, chosen?: GameMode): GameMode {
  * can settle after the player has flipped the switch.
  */
 export function boardFor(date: string, mode: GameMode = modeForDate(date)): GameMode | null {
+  if (date >= MODE_CHOICE_END) return DEFAULT_MODE;
   return modeIsChosen(date) ? mode : null;
 }
 
