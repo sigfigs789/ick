@@ -3,11 +3,11 @@
   "rulesDate": "2027-01-07",
   "measured": 506215,
   "estimated": {
-    "playable": 416052,
+    "playable": 416053,
     "notPlayable": 0
   },
   "unattested": {
-    "playable": 289716,
+    "playable": 289715,
     "notPlayable": 5301
   },
   "batches": [
@@ -125,6 +125,10 @@
     },
     {
       "since": "2026-12-08",
+      "estimates": 1
+    },
+    {
+      "since": "2026-12-09",
       "estimates": 1
     }
   ],
@@ -300,8 +304,8 @@
     {
       "date": "2026-11-02",
       "drop": "TE",
-      "estimated": 58395,
-      "unattested": 26540,
+      "estimated": 58396,
+      "unattested": 26539,
       "swept": "68.8%"
     },
     {
@@ -559,8 +563,8 @@
     {
       "date": "2026-12-09",
       "drop": "FR",
-      "estimated": 5488,
-      "unattested": 1,
+      "estimated": 5489,
+      "unattested": 0,
       "swept": "100.0%"
     },
     {
@@ -608,8 +612,8 @@
     {
       "date": "2026-12-16",
       "drop": "FF",
-      "estimated": 2359,
-      "unattested": 2943,
+      "estimated": 2360,
+      "unattested": 2942,
       "swept": "44.5%"
     },
     {
@@ -622,8 +626,8 @@
     {
       "date": "2026-12-18",
       "drop": "AC",
-      "estimated": 24111,
-      "unattested": 12336,
+      "estimated": 24112,
+      "unattested": 12335,
       "swept": "66.2%"
     },
     {
