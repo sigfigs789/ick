@@ -7319,3 +7319,67 @@ button.app__menu-item + button.app__menu-item {
   height: 100%;
   background: var(--fg-muted);
 }
+
+/* Sharing an earned achievement (components/AchievementShareButton.tsx). */
+.stats__achievement-share-button {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+  padding: 0.2rem 0.65rem;
+  border: 1px solid hsl(265 72% 58%);
+  border-radius: 999px;
+  background: transparent;
+  color: hsl(265 72% 52%);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.stats__achievement-share-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+@media (prefers-color-scheme: dark) {
+  .stats__achievement-share-button {
+    color: hsl(265 90% 78%);
+  }
+}
+/* Off-screen while it's captured; no animation so the image is the finished card. */
+.achievement-share-host {
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  width: 22rem;
+  pointer-events: none;
+}
+.achievement-share-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 1.5rem 1.5rem 1.25rem;
+  border: 2px solid hsl(265 72% 58%);
+  border-radius: 1rem;
+  background: var(--card-bg);
+  color: var(--fg);
+  box-shadow: 0 0 0 6px hsl(265 72% 58% / 0.2);
+  font-family: inherit;
+  text-align: center;
+}
+.achievement-share-card .achievement-unlocked__rays,
+.achievement-share-card .achievement-unlocked__badge {
+  animation: none;
+}
+.achievement-share-card__brand {
+  margin-top: 0.6rem;
+  color: hsl(265 72% 52%);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+@media (prefers-color-scheme: dark) {
+  .achievement-share-card__brand {
+    color: hsl(265 90% 78%);
+  }
+}
