@@ -1,3 +1,4 @@
+import { AchievementShareButton } from "./AchievementShareButton";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ACHIEVEMENT_GROUPS,
@@ -334,6 +335,7 @@ function AchievementCard({ status }: { status: AchievementStatus }) {
           </span>
         )}
       </span>
+      {earnedOn && <AchievementShareButton achievement={{ ...achievement, word }} />}
     </li>
   );
 }
