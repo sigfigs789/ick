@@ -7371,16 +7371,14 @@ button.app__menu-item + button.app__menu-item {
 .achievement-share-card .achievement-unlocked__badge {
   animation: none;
 }
+/* The header's wordmark: "Word" in the text colour, "Ink" in its red. */
 .achievement-share-card__brand {
   margin-top: 0.6rem;
-  color: hsl(265 72% 52%);
+  color: var(--fg);
   font-family: var(--font-display);
-  font-size: 0.95rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-}
-@media (prefers-color-scheme: dark) {
-  .achievement-share-card__brand {
-    color: hsl(265 90% 78%);
-  }
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.1;
 }

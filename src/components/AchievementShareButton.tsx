@@ -34,7 +34,9 @@ export function AchievementShareCard({ achievement }: { achievement: EarnedAchie
           With <strong>{achievement.word}</strong>
         </span>
       )}
-      <span className="achievement-share-card__brand">WordInk</span>
+      <span className="achievement-share-card__brand">
+        Word<span className="app__wordmark-ink">Ink</span>
+      </span>
     </div>
   );
 }
