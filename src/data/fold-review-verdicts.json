@@ -399,6 +399,16 @@
     "since": "2027-02-02",
     "reason": "Folded onto `bicorne` (bicorned > bicorne), costing 0.38 points; it is a form of `bicorn` (Zipf 1.06). Flagged by the daily fold check for the 2027-02-02 `OR` drop (two-horned adjective, not hat bicorne) and confirmed on adversarial re-review (two-horned adjective, not the hat)."
   },
+  "biled": {
+    "base": "boil",
+    "since": "2027-03-02",
+    "reason": "Folded onto `bile` (biled > bile), costing 2.78 points; it is a form of `boil` (Zipf 3.83). Flagged by the daily fold check for the 2027-03-02 `IL` drop (dialect for boiled, not bile) and confirmed on adversarial re-review (dialect boiled; bile is unrelated)."
+  },
+  "bileing": {
+    "base": "boil",
+    "since": "2027-03-02",
+    "reason": "Folded onto `bile` (bileing > bile), costing 2.78 points; it is a form of `boil` (Zipf 3.83). Flagged by the daily fold check for the 2027-03-02 `IL` drop (dialect for boiling, not bile) and confirmed on adversarial re-review (dialect boiling; bile is unrelated)."
+  },
   "biling": {
     "base": "boil",
     "since": "2027-01-14",
@@ -419,6 +429,11 @@
     "since": "2027-01-16",
     "reason": "Folded onto `bip` (bipeds > biped > bip), costing 0.96 points; it is a form of `biped` (Zipf 2.01). Flagged by the daily fold check for the 2027-01-16 `IP` drop (plural of biped, not bip) and confirmed on adversarial re-review (reviewer right; fold lands on wrong word)."
   },
+  "blondines": {
+    "base": "blondine",
+    "since": "2027-03-04",
+    "reason": "Folded onto `blondin` (blondines > blondin), costing 0.80 points; it is a form of `blondine` (Zipf 1.75). Flagged by the daily fold check for the 2027-03-04 `ND` drop (plural of blondine, not blondin) and confirmed on adversarial re-review (plural of blondine; blondin is unrelated)."
+  },
   "blottable": {
     "base": "blot",
     "since": "2026-11-27",
@@ -428,6 +443,11 @@
     "base": "blowie",
     "since": "2026-11-19",
     "reason": "Folded onto `blowy` (blowies > blowy), costing 0.49 points; it is a form of `blowie` (Zipf 1.46). Flagged by the daily fold check for the 2026-11-19 `IES` drop (Aussie blowflies, not plural of adjective blowy) and confirmed on adversarial re-review (blowflies, not adjective blowy)."
+  },
+  "bolled": {
+    "base": "boll",
+    "since": "2027-03-06",
+    "reason": "Folded onto `bol` (bolled > bol), costing 2.38 points; it is a form of `boll` (Zipf 2.52). Flagged by the daily fold check for the 2027-03-06 `OLL` drop (having bolls, not bol) and confirmed on adversarial re-review (having bolls; bol unrelated)."
   },
   "bombees": {
     "base": "bomb",
@@ -518,6 +538,11 @@
     "base": "canvass",
     "since": "2026-12-12",
     "reason": "Folded onto `canvas` (canvasings > canvasing > canvas), costing 3.82 points; it is a form of `canvass` (Zipf 2.81). Flagged by the daily fold check for the 2026-12-12 `SI` drop (soliciting sense is canvass, not fabric) and confirmed on adversarial re-review (soliciting sense is canvass)."
+  },
+  "canvassed": {
+    "base": "canvass",
+    "since": "2027-03-11",
+    "reason": "Folded onto `canvas` (canvassed > canvas), costing 1.90 points; it is a form of `canvass` (Zipf 2.81). Flagged by the daily fold check for the 2027-03-11 `ASS` drop (past of canvass, not canvas) and confirmed on adversarial re-review (canvass means solicit, not fabric canvas)."
   },
   "canvassing": {
     "base": "canvass",
@@ -789,10 +814,20 @@
     "since": "2026-11-03",
     "reason": "Folded onto `conch` (conching > conch), costing 2.18 points; it is a form of `conche` (Zipf 1.16). Flagged by the daily fold check for the 2026-11-03 `CHI` drop (chocolate refining verb conche) and confirmed on adversarial re-review (chocolate refining conche, not conch shell)."
   },
+  "conded": {
+    "base": "cond",
+    "since": "2027-03-04",
+    "reason": "Folded onto `conde` (conded > conde), costing 2.19 points; it is a form of `cond` (Zipf 2.65). Flagged by the daily fold check for the 2027-03-04 `ND` drop (past tense of cond, not conde) and confirmed on adversarial re-review (past tense of cond; conde is unrelated)."
+  },
   "condemming": {
     "base": "condemn",
     "since": "2026-11-13",
     "reason": "Folded onto `condem` (condemming > condem), costing 0.59 points; it is a form of `condemn` (Zipf 3.72). Flagged by the daily fold check for the 2026-11-13 `MIN` drop (misspelling of condemning, not condem) and confirmed on adversarial re-review (misspelt condemning, not condem)."
+  },
+  "conding": {
+    "base": "cond",
+    "since": "2027-03-04",
+    "reason": "Folded onto `conde` (conding > conde), costing 2.19 points; it is a form of `cond` (Zipf 2.65). Flagged by the daily fold check for the 2027-03-04 `ND` drop (participle of cond, not conde) and confirmed on adversarial re-review (participle of cond; conde is unrelated)."
   },
   "confidantly": {
     "base": "confident",
@@ -1753,6 +1788,11 @@
     "base": "dream",
     "since": "2026-10-22",
     "reason": "Folded onto `dreame` (dreamees > dreame), costing 0.23 points; it is a form of `dream` (Zipf 4.91). Flagged by the daily fold check for the 2026-10-22 `AM` drop (dreame is not a word) and confirmed on adversarial re-review (dreame is not a word)."
+  },
+  "drolly": {
+    "base": "droll",
+    "since": "2027-03-06",
+    "reason": "Folded onto `drol` (drolly > drol), costing 0.38 points; it is a form of `droll` (Zipf 2.58). Flagged by the daily fold check for the 2027-03-06 `OLL` drop (adverb of droll, not drol) and confirmed on adversarial re-review (adverb of droll; drol not word)."
   },
   "druggabilities": {
     "base": "drug",
@@ -2824,10 +2864,30 @@
     "since": "2026-11-19",
     "reason": "Folded onto `loath` (loathliest > loathly > loath), costing 2.04 points; it is a form of `loathly` (Zipf 2.06). Flagged by the daily fold check for the 2026-11-19 `IES` drop (loathly means hideous, not reluctant) and confirmed on adversarial re-review (loathly means hideous; loath now means reluctant)."
   },
+  "lolled": {
+    "base": "loll",
+    "since": "2027-03-06",
+    "reason": "Folded onto `lol` (lolled > lol), costing 4.56 points; it is a form of `loll` (Zipf 2.25). Flagged by the daily fold check for the 2027-03-06 `OLL` drop (past of loll, not lol) and confirmed on adversarial re-review (past of loll, not lol)."
+  },
   "lolliest": {
     "base": "lolly",
     "since": "2026-11-19",
     "reason": "Folded onto `lol` (lolliest > lolly > lol), costing 5.38 points; it is a form of `lolly` (Zipf 2.81). Flagged by the daily fold check for the 2026-11-19 `IES` drop (lolly is candy, not lol) and confirmed on adversarial re-review (lol is unrelated to lolly)."
+  },
+  "lolling": {
+    "base": "loll",
+    "since": "2027-03-06",
+    "reason": "Folded onto `lol` (lolling > lol), costing 4.09 points; it is a form of `loll` (Zipf 2.25). Flagged by the daily fold check for the 2027-03-06 `OLL` drop (inflection of loll, not lol) and confirmed on adversarial re-review (participle of loll, not lol)."
+  },
+  "lollingly": {
+    "base": "loll",
+    "since": "2027-03-06",
+    "reason": "Folded onto `lol` (lollingly > lolling > lol), costing 5.34 points; it is a form of `loll` (Zipf 2.25). Flagged by the daily fold check for the 2027-03-06 `OLL` drop (from lolling (loll), not lol) and confirmed on adversarial re-review (from loll, not lol)."
+  },
+  "lollings": {
+    "base": "loll",
+    "since": "2027-03-06",
+    "reason": "Folded onto `lol` (lollings > lolling > lol), costing 5.40 points; it is a form of `loll` (Zipf 2.25). Flagged by the daily fold check for the 2027-03-06 `OLL` drop (from loll, not lol) and confirmed on adversarial re-review (from loll, not lol)."
   },
   "lookees": {
     "base": "look",
@@ -2889,6 +2949,11 @@
     "since": "2027-01-27",
     "reason": "Folded onto `mair` (maires > mair), costing 2.04 points; it is a form of `maire` (Zipf 2.28). Flagged by the daily fold check for the 2027-01-27 `IRE` drop (French mayor, not Scots mair) and confirmed on adversarial re-review (reviewer right; fold lands on wrong word)."
   },
+  "mandolined": {
+    "base": "mandoline",
+    "since": "2027-03-04",
+    "reason": "Folded onto `mandolin` (mandolined > mandolin), costing 2.19 points; it is a form of `mandoline` (Zipf 1.78). Flagged by the daily fold check for the 2027-03-04 `ND` drop (sliced with mandoline, not instrument) and confirmed on adversarial re-review (sliced with a mandoline, not the instrument)."
+  },
   "manises": {
     "base": "manis",
     "since": "2026-10-26",
@@ -2913,6 +2978,11 @@
     "base": "masticate",
     "since": "2026-11-16",
     "reason": "Folded onto `mastic` (masticable > mastic), costing 1.35 points; it is a form of `masticate` (Zipf 1.37). Flagged by the daily fold check for the 2026-11-16 `ICA` drop (chewable, not the resin mastic) and confirmed on adversarial re-review (chewable, not the resin mastic)."
+  },
+  "matily": {
+    "base": "maty",
+    "since": "2027-03-02",
+    "reason": "Folded onto `mati` (matily > mati), costing 1.66 points; it is a form of `maty` (Zipf 1.86). Flagged by the daily fold check for the 2027-03-02 `IL` drop (adverb of maty, not mati) and confirmed on adversarial re-review (adverb of maty; mati is unrelated)."
   },
   "matinesses": {
     "base": "matey",
@@ -3214,6 +3284,11 @@
     "since": "2026-12-12",
     "reason": "Folded onto `narco` (narcosing > narcos > narco), costing 1.91 points; it is a form of `narcose` (Zipf 0.46). Flagged by the daily fold check for the 2026-12-12 `SI` drop (narcosis sense, not drug-trafficker narco) and confirmed on adversarial re-review (narcosis sense, not narco trafficker)."
   },
+  "naves": {
+    "base": "nave",
+    "since": "2027-03-01",
+    "reason": "Folded onto `nav` (naves > nav), costing 1.90 points; it is a form of `nave` (Zipf 3.06). Flagged by the daily fold check for the 2027-03-01 `VES` drop (plural of nave, not nav) and confirmed on adversarial re-review (plural of nave; nav is unrelated)."
+  },
   "neuroses": {
     "base": "neurosis",
     "since": "2026-10-26",
@@ -3274,10 +3349,20 @@
     "since": "2026-12-18",
     "reason": "Folded onto `nonaction` (nonactionable > nonaction), costing 1.51 points; it is a form of `actionable` (Zipf 3.00). Flagged by the daily fold check for the 2026-12-18 `AC` drop (non- plus actionable, not nonaction) and confirmed on adversarial re-review (non- plus actionable, not nonaction)."
   },
+  "nonbodily": {
+    "base": "bodily",
+    "since": "2027-03-02",
+    "reason": "Folded onto `nonbody` (nonbodily > nonbody), costing 0.09 points; it is a form of `bodily` (Zipf 3.78). Flagged by the daily fold check for the 2027-03-02 `IL` drop (non- plus bodily, not nonbody) and confirmed on adversarial re-review (lands on nonbody, a nonword, not bodily)."
+  },
   "nondeliberating": {
     "base": "deliberate",
     "since": "2026-10-19",
     "reason": "Folded onto `nondeliberate` (nondeliberating > nondeliberate), costing 0.24 points; it is a form of `deliberate` (Zipf 3.82). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (verb sense, not adjective unintentional) and confirmed on adversarial re-review (Verb deliberate, not adjective unintentional)."
+  },
+  "nondeserted": {
+    "base": "deserted",
+    "since": "2027-03-04",
+    "reason": "Folded onto `nondesert` (nondeserted > nondesert), costing 0.10 points; it is a form of `deserted` (Zipf 3.64). Flagged by the daily fold check for the 2027-03-04 `ND` drop (not abandoned, not non-desert land) and confirmed on adversarial re-review (not abandoned; non-desert land is a different sense)."
   },
   "nondomesticable": {
     "base": "domesticate",
@@ -4349,6 +4434,16 @@
     "since": "2026-10-26",
     "reason": "Folded onto `ass` (preassessing > preasses > asses > ass), costing 5.30 points; it is a form of `assess` (Zipf 4.07). Flagged by the daily fold check for the 2026-10-26 `SES` drop (pre plus assess, not ass) and confirmed on adversarial re-review (assess overshot to asses, ass)."
   },
+  "prebending": {
+    "base": "bend",
+    "since": "2027-03-04",
+    "reason": "Folded onto `prebend` (prebending > prebend), costing 1.13 points; it is a form of `bend` (Zipf 4.13). Flagged by the daily fold check for the 2027-03-04 `ND` drop (bending beforehand, not prebend stipend) and confirmed on adversarial re-review (bending beforehand, not the clerical stipend)."
+  },
+  "prebuild": {
+    "base": "build",
+    "since": "2027-03-02",
+    "reason": "Folded onto `building` (prebuild > prebuilding > building), costing 5.49 points; it is a form of `build` (Zipf 5.04). Flagged by the daily fold check for the 2027-03-02 `IL` drop (verb pre-build, not noun building) and confirmed on adversarial re-review (lands on the noun building, not verb build)."
+  },
   "precipitantly": {
     "base": "precipitant",
     "since": "2026-11-27",
@@ -4653,6 +4748,21 @@
     "base": "prepossessed",
     "since": "2026-10-24",
     "reason": "Folded onto `possess` (prepossessedness > possessedness > possessed > possess), costing 3.91 points; it is a form of `prepossessed` (Zipf 2.43). Flagged by the daily fold check for the 2026-10-24 `EP` drop (prepossess means prejudice, not possess) and confirmed on adversarial re-review (prepossessed means biased, not possessed)."
+  },
+  "pretendent": {
+    "base": "pretend",
+    "since": "2027-03-04",
+    "reason": "Folded onto `tendent` (pretendent > tendent), costing 0.50 points; it is a form of `pretend` (Zipf 4.33). Flagged by the daily fold check for the 2027-03-04 `ND` drop (claimant, from pretend, not tendent) and confirmed on adversarial re-review (claimant from pretend; tendent unrelated)."
+  },
+  "pretendents": {
+    "base": "pretend",
+    "since": "2027-03-04",
+    "reason": "Folded onto `tendent` (pretendents > pretendent > tendent), costing 0.50 points; it is a form of `pretend` (Zipf 4.33). Flagged by the daily fold check for the 2027-03-04 `ND` drop (plural of pretendent, not tendent) and confirmed on adversarial re-review (plural of pretendent; tendent unrelated)."
+  },
+  "pretendingly": {
+    "base": "pretend",
+    "since": "2027-03-04",
+    "reason": "Folded onto `tend` (pretendingly > tendingly > tending > tend), costing 4.69 points; it is a form of `pretend` (Zipf 4.33). Flagged by the daily fold check for the 2027-03-04 `ND` drop (from pretending, not tendingly) and confirmed on adversarial re-review (pre- is part of pretend, not prefix)."
   },
   "pretensive": {
     "base": "pretense",
@@ -5394,6 +5504,11 @@
     "since": "2026-11-21",
     "reason": "Folded onto `seconde` (secondees > seconde), costing 0.91 points; it is a form of `second` (Zipf 5.63). Flagged by the daily fold check for the 2026-11-21 `EE` drop (one seconded, not fencing seconde) and confirmed on adversarial re-review (from second, not fencing seconde)."
   },
+  "secondes": {
+    "base": "seconde",
+    "since": "2027-03-04",
+    "reason": "Folded onto `second` (secondes > second), costing 5.76 points; it is a form of `seconde` (Zipf 1.86). Flagged by the daily fold check for the 2027-03-04 `ND` drop (plural of fencing seconde) and confirmed on adversarial re-review (fencing parry seconde, distinct loanword)."
+  },
   "secretability": {
     "base": "secrete",
     "since": "2026-11-18",
@@ -5694,6 +5809,11 @@
     "since": "2027-02-23",
     "reason": "Folded onto `sluggy` (sluggable > sluggy), costing 0.29 points; it is a form of `slug` (Zipf 3.31). Flagged by the daily fold check for the 2027-02-23 `UG` drop (able to be slugged, not sluggy) and confirmed on adversarial re-review (from verb slug, not sluggy)."
   },
+  "slurrily": {
+    "base": "slur",
+    "since": "2027-03-02",
+    "reason": "Folded onto `slurry` (slurrily > slurry), costing 2.42 points; it is a form of `slur` (Zipf 3.18). Flagged by the daily fold check for the 2027-03-02 `IL` drop (slurred manner, not slurry mixture) and confirmed on adversarial re-review (slurred manner, not the slurry mixture)."
+  },
   "smashingly": {
     "base": "smashing",
     "since": "2027-02-04",
@@ -5708,6 +5828,11 @@
     "base": "snee",
     "since": "2026-11-21",
     "reason": "Folded onto `sneed` (snees > snee > sneed), costing 1.43 points; it is a form of `snee` (Zipf 1.52). Flagged by the daily fold check for the 2026-11-21 `EE` drop (form of snee, not sneed) and confirmed on adversarial re-review (form of snee, not sneed)."
+  },
+  "sondes": {
+    "base": "sonde",
+    "since": "2027-03-04",
+    "reason": "Folded onto `sond` (sondes > sond), costing 0.05 points; it is a form of `sonde` (Zipf 1.41). Flagged by the daily fold check for the 2027-03-04 `ND` drop (plural of sonde, not sond) and confirmed on adversarial re-review (sond is not the base)."
   },
   "sossing": {
     "base": "soss",
@@ -5929,6 +6054,31 @@
     "since": "2026-11-09",
     "reason": "Folded onto `suppli` (suppliable > suppli), costing 0.38 points; it is a form of `supply` (Zipf 4.81). Flagged by the daily fold check for the 2026-11-09 `PL` drop (able to be supplied; base is supply) and confirmed on adversarial re-review (from supply, suppli is a rice ball)."
   },
+  "swaled": {
+    "base": "swale",
+    "since": "2027-03-08",
+    "reason": "Folded onto `swales` (swaled > swale > swales), costing 1.40 points; it is a form of `swale` (Zipf 2.16). Flagged by the daily fold check for the 2027-03-08 `WA` drop (scorched; lands on noun swales) and confirmed on adversarial re-review (verb swale scorch, not hollow noun)."
+  },
+  "swaling": {
+    "base": "swale",
+    "since": "2027-03-08",
+    "reason": "Folded onto `swales` (swaling > swale > swales), costing 1.40 points; it is a form of `swale` (Zipf 2.16). Flagged by the daily fold check for the 2027-03-08 `WA` drop (burning; lands on noun swales) and confirmed on adversarial re-review (verb swale burn, not hollow noun)."
+  },
+  "swalingly": {
+    "base": "swale",
+    "since": "2027-03-08",
+    "reason": "Folded onto `swales` (swalingly > swaling > swale > swales), costing 1.40 points; it is a form of `swale` (Zipf 2.16). Flagged by the daily fold check for the 2027-03-08 `WA` drop (from swaling burning, not hollows) and confirmed on adversarial re-review (from burning sense, not hollows)."
+  },
+  "swalings": {
+    "base": "swale",
+    "since": "2027-03-08",
+    "reason": "Folded onto `swales` (swalings > swaling > swale > swales), costing 1.40 points; it is a form of `swale` (Zipf 2.16). Flagged by the daily fold check for the 2027-03-08 `WA` drop (burnings; lands on noun swales) and confirmed on adversarial re-review (burnings, not hollow noun)."
+  },
+  "swathed": {
+    "base": "swathe",
+    "since": "2027-03-08",
+    "reason": "Folded onto `swath` (swathed > swath), costing 0.87 points; it is a form of `swathe` (Zipf 2.29). Flagged by the daily fold check for the 2027-03-08 `WA` drop (from swathe wrap, not swath) and confirmed on adversarial re-review (swathe wrap, not swath strip)."
+  },
   "swathing": {
     "base": "swathe",
     "since": "2026-12-01",
@@ -6074,6 +6224,11 @@
     "since": "2026-11-21",
     "reason": "Folded onto `the` (theed > the), costing 9.14 points; it is a form of `thee` (Zipf 4.04). Flagged by the daily fold check for the 2026-11-21 `EE` drop (past of thee, not the) and confirmed on adversarial re-review (past of verb thee, not the)."
   },
+  "theives": {
+    "base": "thief",
+    "since": "2027-03-01",
+    "reason": "Folded onto `theif` (theives > theif), costing 0.36 points; it is a form of `thief` (Zipf 3.88). Flagged by the daily fold check for the 2027-03-01 `VES` drop (misspelled thieves; theif is itself a misspelling) and confirmed on adversarial re-review (misspelling folded onto another misspelling, not thief)."
+  },
   "thermometres": {
     "base": "thermometer",
     "since": "2026-11-02",
@@ -6198,6 +6353,11 @@
     "base": "trice",
     "since": "2026-12-08",
     "reason": "Folded onto `trix` (trices > trix), costing 1.26 points; it is a form of `trice` (Zipf 2.40). Flagged by the daily fold check for the 2026-12-08 `CES` drop (form of trice, not trix) and confirmed on adversarial re-review (form of trice, not trix)."
+  },
+  "trilly": {
+    "base": "trill",
+    "since": "2027-03-02",
+    "reason": "Folded onto `tril` (trilly > tril), costing 0.53 points; it is a form of `trill` (Zipf 2.73). Flagged by the daily fold check for the 2027-03-02 `IL` drop (adjective of trill, not tril) and confirmed on adversarial re-review (adjective from trill; tril is unrelated)."
   },
   "trippable": {
     "base": "trip",
@@ -6439,6 +6599,16 @@
     "since": "2027-02-23",
     "reason": "Folded onto `buggy` (undebuggable > debuggable > buggable > buggy), costing 2.93 points; it is a form of `debug` (Zipf 2.86). Flagged by the daily fold check for the 2027-02-23 `UG` drop (cannot be debugged, not buggy) and confirmed on adversarial re-review (from debug; buggable hop wrong)."
   },
+  "undeceivable": {
+    "base": "deceive",
+    "since": "2027-03-04",
+    "reason": "Folded onto `undeceive` (undeceivable > undeceive), costing 1.76 points; it is a form of `deceive` (Zipf 3.38). Flagged by the daily fold check for the 2027-03-04 `ND` drop (un+deceivable, not from undeceive) and confirmed on adversarial re-review (undeceive means disabuse; different sense)."
+  },
+  "undeceivableness": {
+    "base": "deceive",
+    "since": "2027-03-04",
+    "reason": "Folded onto `undeceive` (undeceivableness > undeceivable > undeceive), costing 1.86 points; it is a form of `deceive` (Zipf 3.38). Flagged by the daily fold check for the 2027-03-04 `ND` drop (un+deceivable, not from undeceive) and confirmed on adversarial re-review (built on deceivable, not undeceive)."
+  },
   "undecorable": {
     "base": "decorate",
     "since": "2027-02-02",
@@ -6499,6 +6669,16 @@
     "since": "2026-10-22",
     "reason": "Folded onto `damp` (underdampers > underdamper > underdamp > damp), costing 3.35 points; it is a form of `damper` (Zipf 2.94). Flagged by the daily fold check for the 2026-10-22 `AM` drop (piano damper part, not from underdamp) and confirmed on adversarial re-review (piano damper parts, not underdamping)."
   },
+  "underdoggish": {
+    "base": "underdog",
+    "since": "2027-03-04",
+    "reason": "Folded onto `doggish` (underdoggish > doggish), costing 0.14 points; it is a form of `underdog` (Zipf 3.33). Flagged by the daily fold check for the 2027-03-04 `ND` drop (like an underdog, not doggish) and confirmed on adversarial re-review (built on underdog, not doggish)."
+  },
+  "underdoggy": {
+    "base": "underdog",
+    "since": "2027-03-04",
+    "reason": "Folded onto `doggy` (underdoggy > doggy), costing 2.95 points; it is a form of `underdog` (Zipf 3.33). Flagged by the daily fold check for the 2027-03-04 `ND` drop (like an underdog, not doggy) and confirmed on adversarial re-review (built on underdog, not doggy)."
+  },
   "undergrads": {
     "base": "undergrad",
     "since": "2026-12-02",
@@ -6509,10 +6689,40 @@
     "since": "2027-01-26",
     "reason": "Folded onto `groundlings` (undergroundling > groundling > groundlings), costing 1.00 points; it is a form of `underground` (Zipf 4.32). Flagged by the daily fold check for the 2027-01-26 `OU` drop (one living underground, not groundling) and confirmed on adversarial re-review (reviewer right; fold lands on wrong word)."
   },
+  "underleaves": {
+    "base": "leaf",
+    "since": "2027-03-01",
+    "reason": "Folded onto `leave` (underleaves > leaves > leave), costing 5.80 points; it is a form of `leaf` (Zipf 4.22). Flagged by the daily fold check for the 2027-03-01 `VES` drop (leaf sense, not the verb leave) and confirmed on adversarial re-review (leaf plural, not the verb leave)."
+  },
+  "underlied": {
+    "base": "underlie",
+    "since": "2027-03-04",
+    "reason": "Folded onto `under` (underlied > underly > under), costing 6.38 points; it is a form of `underlie` (Zipf 2.68). Flagged by the daily fold check for the 2027-03-04 `ND` drop (past of underlie, not under) and confirmed on adversarial re-review (past of underlie; under is preposition)."
+  },
+  "underlier": {
+    "base": "underlie",
+    "since": "2027-03-04",
+    "reason": "Folded onto `under` (underlier > underly > under), costing 6.38 points; it is a form of `underlie` (Zipf 2.68). Flagged by the daily fold check for the 2027-03-04 `ND` drop (one that underlies, not under) and confirmed on adversarial re-review (agent noun of underlie)."
+  },
+  "underliers": {
+    "base": "underlie",
+    "since": "2027-03-04",
+    "reason": "Folded onto `under` (underliers > underlier > underly > under), costing 6.38 points; it is a form of `underlie` (Zipf 2.68). Flagged by the daily fold check for the 2027-03-04 `ND` drop (plural of underlier, from underlie) and confirmed on adversarial re-review (plural agent noun of underlie)."
+  },
   "underlies": {
     "base": "underlie",
     "since": "2026-11-19",
     "reason": "Folded onto `under` (underlies > underly > under), costing 4.33 points; it is a form of `underlie` (Zipf 2.68). Flagged by the daily fold check for the 2026-11-19 `IES` drop (third person of underlie, not under) and confirmed on adversarial re-review (verb underlie, not under)."
+  },
+  "underlive": {
+    "base": "live",
+    "since": "2027-03-04",
+    "reason": "Folded onto `life` (underlive > underlives > lives > life), costing 6.62 points; it is a form of `live` (Zipf 5.54). Flagged by the daily fold check for the 2027-03-04 `ND` drop (live below means; not life) and confirmed on adversarial re-review (verb live, not noun life)."
+  },
+  "underlived": {
+    "base": "live",
+    "since": "2027-03-04",
+    "reason": "Folded onto `life` (underlived > underlive > underlives > lives > life), costing 6.62 points; it is a form of `live` (Zipf 5.54). Flagged by the daily fold check for the 2027-03-04 `ND` drop (verb live, not noun life) and confirmed on adversarial re-review (verb live, not noun life)."
   },
   "underliving": {
     "base": "live",
@@ -6523,6 +6733,26 @@
     "base": "underlie",
     "since": "2026-11-04",
     "reason": "Folded onto `under` (underlyes > underly > under), costing 6.38 points; it is a form of `underlie` (Zipf 2.68). Flagged by the daily fold check for the 2026-11-04 `YE` drop (variant of underlie, not under) and confirmed on adversarial re-review (variant of underlie, not under). Fix changed on review of sigfigs789/ick#559: variant of underlies, which scores as underlie."
+  },
+  "underlying": {
+    "base": "underlie",
+    "since": "2027-03-04",
+    "reason": "Folded onto `under` (underlying > underly > under), costing 2.26 points; it is a form of `underlie` (Zipf 2.68). Flagged by the daily fold check for the 2027-03-04 `ND` drop (present participle of underlie) and confirmed on adversarial re-review (participle of underlie, not under)."
+  },
+  "underlyingly": {
+    "base": "underlying",
+    "since": "2027-03-04",
+    "reason": "Folded onto `under` (underlyingly > underlying > underly > under), costing 5.27 points; it is a form of `underlying` (Zipf 4.17). Flagged by the daily fold check for the 2027-03-04 `ND` drop (adverb of underlying, not under) and confirmed on adversarial re-review (adverb of underlying)."
+  },
+  "underlyingness": {
+    "base": "underlying",
+    "since": "2027-03-04",
+    "reason": "Folded onto `under` (underlyingness > underlying > underly > under), costing 6.38 points; it is a form of `underlying` (Zipf 4.17). Flagged by the daily fold check for the 2027-03-04 `ND` drop (noun of underlying, not under) and confirmed on adversarial re-review (noun from underlying)."
+  },
+  "underlyings": {
+    "base": "underlying",
+    "since": "2027-03-04",
+    "reason": "Folded onto `under` (underlyings > underlying > underly > under), costing 6.38 points; it is a form of `underlying` (Zipf 4.17). Flagged by the daily fold check for the 2027-03-04 `ND` drop (plural of underlying, not under) and confirmed on adversarial re-review (plural of underlying)."
   },
   "underream": {
     "base": "ream",
@@ -6564,6 +6794,11 @@
     "since": "2026-10-26",
     "reason": "Folded onto `state` (understatednesses > understatedness > statedness > stated > state), costing 6.45 points; it is a form of `understated` (Zipf 3.11). Flagged by the daily fold check for the 2026-10-26 `SES` drop (understated means restrained, not stated) and confirmed on adversarial re-review (understated means restrained, not stated; prefix-only fix left it on the same base)."
   },
+  "underwaterish": {
+    "base": "underwater",
+    "since": "2027-03-04",
+    "reason": "Folded onto `waterish` (underwaterish > waterish), costing 0.56 points; it is a form of `underwater` (Zipf 3.92). Flagged by the daily fold check for the 2027-03-04 `ND` drop (underwater-like, not watery) and confirmed on adversarial re-review (built on underwater, not waterish)."
+  },
   "underwound": {
     "base": "wind",
     "since": "2027-01-26",
@@ -6593,6 +6828,21 @@
     "base": "undie",
     "since": "2026-11-30",
     "reason": "Folded onto `died` (undieless > undie > undied > died), costing 5.59 points; it is a form of `undie` (Zipf 1.53). Flagged by the daily fold check for the 2026-11-30 `EL` drop (undie underwear, not died) and confirmed on adversarial re-review (undie underwear, not died)."
+  },
+  "undiggable": {
+    "base": "dig",
+    "since": "2027-03-04",
+    "reason": "Folded onto `digg` (undiggable > diggable > digg), costing 2.31 points; it is a form of `dig` (Zipf 4.22). Flagged by the daily fold check for the 2027-03-04 `ND` drop (lands on digg, not dig) and confirmed on adversarial re-review (lands on digg, should be dig)."
+  },
+  "undines": {
+    "base": "undine",
+    "since": "2027-03-04",
+    "reason": "Folded onto `dining` (undines > undine > undining > dining), costing 3.61 points; it is a form of `undine` (Zipf 2.03). Flagged by the daily fold check for the 2027-03-04 `ND` drop (plural of undine, water spirit) and confirmed on adversarial re-review (plural of undine water spirit)."
+  },
+  "undos": {
+    "base": "undo",
+    "since": "2027-03-04",
+    "reason": "Folded onto `dose` (undos > undosed > dosed > dose), costing 3.72 points; it is a form of `undo` (Zipf 3.57). Flagged by the daily fold check for the 2027-03-04 `ND` drop (plural of undo, not dose) and confirmed on adversarial re-review (plural of undo, unrelated to dose)."
   },
   "undruggable": {
     "base": "drug",
@@ -6894,6 +7144,11 @@
     "since": "2026-10-24",
     "reason": "Folded onto `possess` (unprepossessedly > prepossessedly > possessedly > possessed > possess), costing 3.91 points; it is a form of `prepossessed` (Zipf 2.43). Flagged by the daily fold check for the 2026-10-24 `EP` drop (prepossessed means biased, not possessed) and confirmed on adversarial re-review (prepossessed means biased, not possessed)."
   },
+  "unpretendingly": {
+    "base": "pretend",
+    "since": "2027-03-04",
+    "reason": "Folded onto `tend` (unpretendingly > pretendingly > tendingly > tending > tend), costing 4.69 points; it is a form of `pretend` (Zipf 4.33). Flagged by the daily fold check for the 2027-03-04 `ND` drop (from pretend, not tend) and confirmed on adversarial re-review (from pretend, not tend)."
+  },
   "unprivatize": {
     "base": "privatize",
     "since": "2027-02-12",
@@ -7069,6 +7324,16 @@
     "since": "2026-11-09",
     "reason": "Folded onto `suppli` (unsuppliable > suppliable > suppli), costing 0.41 points; it is a form of `supply` (Zipf 4.81). Flagged by the daily fold check for the 2026-11-09 `PL` drop (suppli is an Italian rice ball) and confirmed on adversarial re-review (from supply, suppli is a rice ball)."
   },
+  "unswathe": {
+    "base": "swathe",
+    "since": "2027-03-08",
+    "reason": "Folded onto `swath` (unswathe > unswathed > swathed > swath), costing 2.18 points; it is a form of `swathe` (Zipf 2.29). Flagged by the daily fold check for the 2027-03-08 `WA` drop (unwrap, from swathe not swath) and confirmed on adversarial re-review (unwrap from swathe, not swath)."
+  },
+  "unswathed": {
+    "base": "swathe",
+    "since": "2027-03-08",
+    "reason": "Folded onto `swath` (unswathed > swathed > swath), costing 2.16 points; it is a form of `swathe` (Zipf 2.29). Flagged by the daily fold check for the 2027-03-08 `WA` drop (unwrapped, from swathe not swath) and confirmed on adversarial re-review (unwrapped from swathe, not swath)."
+  },
   "unswathing": {
     "base": "swathe",
     "since": "2026-12-01",
@@ -7224,6 +7489,11 @@
     "since": "2026-12-12",
     "reason": "Folded onto `usin` (usines > usin), costing 1.36 points; it is a form of `usine` (Zipf 1.42). Flagged by the daily fold check for the 2026-12-12 `SI` drop (plural of usine, not usin) and confirmed on adversarial re-review (plural of usine, not usin)."
   },
+  "utiles": {
+    "base": "utile",
+    "since": "2027-03-02",
+    "reason": "Folded onto `util` (utiles > util), costing 0.04 points; it is a form of `utile` (Zipf 1.66). Flagged by the daily fold check for the 2027-03-02 `IL` drop (plural of utile, not util) and confirmed on adversarial re-review (plural of utile, not the unit util)."
+  },
   "valsing": {
     "base": "valse",
     "since": "2026-12-12",
@@ -7304,6 +7574,21 @@
     "since": "2026-12-16",
     "reason": "Folded onto `waff` (wafflyness > waffly > waff), costing 0.74 points; it is a form of `waffle` (Zipf 3.30). Flagged by the daily fold check for the 2026-12-16 `FF` drop (from waffly, meaning waffle-like) and confirmed on adversarial re-review (from waffle, not Scots waff)."
   },
+  "waggable": {
+    "base": "wag",
+    "since": "2027-03-08",
+    "reason": "Folded onto `waggy` (waggable > waggy), costing 0.44 points; it is a form of `wag` (Zipf 3.03). Flagged by the daily fold check for the 2027-03-08 `WA` drop (able to be wagged, not waggy) and confirmed on adversarial re-review (from wag; waggy is sibling, not base)."
+  },
+  "waggably": {
+    "base": "wag",
+    "since": "2027-03-08",
+    "reason": "Folded onto `waggy` (waggably > waggy), costing 0.44 points; it is a form of `wag` (Zipf 3.03). Flagged by the daily fold check for the 2027-03-08 `WA` drop (from wag, not waggy) and confirmed on adversarial re-review (from wag; waggy is sibling, not base)."
+  },
+  "wagoness": {
+    "base": "wagon",
+    "since": "2027-03-08",
+    "reason": "Folded onto `wago` (wagoness > wago), costing 0.38 points; it is a form of `wagon` (Zipf 3.90). Flagged by the daily fold check for the 2027-03-08 `WA` drop (built on wagon, not wago) and confirmed on adversarial re-review (built on wagon; wago not word)."
+  },
   "waterlilies": {
     "base": "waterlily",
     "since": "2026-11-19",
@@ -7333,6 +7618,16 @@
     "base": "wife",
     "since": "2026-11-19",
     "reason": "Folded onto `wifi` (wifies > wifi), costing 3.77 points; it is a form of `wife` (Zipf 5.23). Flagged by the daily fold check for the 2026-11-19 `IES` drop (plural of wifie, not wifi) and confirmed on adversarial re-review (plural of wifie, not wifi)."
+  },
+  "willied": {
+    "base": "willy",
+    "since": "2027-03-02",
+    "reason": "Folded onto `willie` (willied > willie), costing 3.64 points; it is a form of `willy` (Zipf 3.61). Flagged by the daily fold check for the 2027-03-02 `IL` drop (past of willy verb, not willie) and confirmed on adversarial re-review (past tense of willy; willie is a different word)."
+  },
+  "willying": {
+    "base": "willy",
+    "since": "2027-03-02",
+    "reason": "Folded onto `willie` (willying > willie), costing 3.64 points; it is a form of `willy` (Zipf 3.61). Flagged by the daily fold check for the 2027-03-02 `IL` drop (verb form of willy, not willie) and confirmed on adversarial re-review (verb form of willy; willie is a different word)."
   },
   "winningnesses": {
     "base": "winning",
