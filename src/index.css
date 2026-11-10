@@ -7384,3 +7384,56 @@ button.app__menu-item + button.app__menu-item {
     color: hsl(265 90% 78%);
   }
 }
+
+/* Sharing a header celebration as an image (components/CelebrationShareButton.tsx):
+   a small pill under the card's text, in the card's own ink. */
+.celebration-share {
+  margin-top: 0.4rem;
+  padding: 0.25rem 0.85rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.celebration-share:hover {
+  color: var(--fg);
+}
+.celebration-share:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+/* The card's copy, set down off-screen while it is captured: unpinned from the
+   top of the page, finished rather than mid-animation, with room round it for
+   the card's glow. */
+.celebration-share-host {
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  width: 22rem;
+  pointer-events: none;
+}
+.celebration-share-host > .improvement,
+.celebration-share-host > .perfect-month {
+  position: static;
+  transform: none;
+  width: auto;
+  padding: 12px;
+  background: var(--bg);
+}
+.celebration-share-host *,
+.celebration-share-host *::before,
+.celebration-share-host *::after {
+  animation: none !important;
+}
+.celebration-share-host__brand {
+  margin-top: 0.5rem;
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}

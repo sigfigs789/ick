@@ -110,6 +110,13 @@ function showHeaderCelebration(group: HeaderCelebrationGroup, date: string): boo
 
 /** The welcome's card key: no verdict's, as no verdict brought it. */
 const CATCH_UP_KEY = -1;
+/**
+ * The key of the card a first best word's badge brings as the site opens:
+ * clear of the welcome's and of the flame shares' (CATCH_UP_KEY - n).
+ */
+const FIRST_BEST_WORD_KEY = Number.MIN_SAFE_INTEGER;
+/** The badge for a player's first day with the best word (see game/achievements.ts). */
+const BEST_WORD_ACHIEVEMENT = "word-of-the-day";
 
 export default function App() {
   useForceUpdate();
@@ -289,6 +296,10 @@ export default function App() {
   // headerCelebrationsHeld): that word's card names every badge held back
   // until then along with any it earned itself.
   const earnedAchievements = useRef<Set<string> | null>(null);
+  // Whether the best word's badge had had its card before this visit: until it
+  // has, a best word is a first, and the badge's card does the telling (see the
+  // best word's card below).
+  const bestWordBadgeAnnounced = useRef(announcedAchievements().has(BEST_WORD_ACHIEVEMENT));
   const achievementsHeld = useRef(headerCelebrationsHeld());
   useEffect(() => {
     // The counts a lone badge's card reads, asked for before any word earns one.
@@ -525,6 +536,13 @@ export default function App() {
   // ever -- and only when nothing else is up, since it is somebody else's news. Decided once per mount, on the
   // answer's arrival, and once a day for good. It leads the news header
   // celebrations, so it keeps the day's perfect month and rising average away.
+  //
+  // A finder's first best word earns the "Word of the day" badge, and its card
+  // says the same thing, so the badge's card shows in its place: the tally of
+  // wins is asked for first, and if it makes the badge new, the badge is
+  // announced now rather than on the next word, and the best word's card is
+  // spent for the day. Only once the badge has had a card do later best words
+  // get this one.
   const yesterdaysBest = useYesterdaysBest(isToday ? addDays(date, -1) : undefined);
   const [bestNews, setBestNews] = useState<{
     kind: BestWordNewsKind;
@@ -553,9 +571,28 @@ export default function App() {
       unlocked ||
       welcome;
     if (kind === "other" && busy) return;
-    if (!showHeaderCelebration("news", date)) return;
-    markBestWordNewsShown(yesterdaysBest.day);
-    setBestNews({ kind, resolved: yesterdaysBest });
+    const resolved = yesterdaysBest;
+    const show = () => {
+      if (!showHeaderCelebration("news", date)) return;
+      markBestWordNewsShown(resolved.day);
+      setBestNews({ kind, resolved });
+    };
+    if (kind === "other" || bestWordBadgeAnnounced.current) {
+      show();
+      return;
+    }
+    void fetchWordOfTheDayWins().then(() => {
+      if (bestWordNewsShown(resolved.day)) return;
+      announceEarned(FIRST_BEST_WORD_KEY);
+      // Earned, whether its card is up now or was the welcome's as the page
+      // opened: the badge is the news.
+      if (earnedAchievements.current?.has(BEST_WORD_ACHIEVEMENT)) {
+        markBestWordNewsShown(resolved.day);
+        return;
+      }
+      // A tally that hasn't caught up yet: the best word's own card, then.
+      show();
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- decided on arrival only
   }, [yesterdaysBest]);
 

@@ -1000,7 +1000,10 @@ anything that matters.
 The cards that float over the top of today's puzzle to celebrate something or
 bring the player news are known collectively as **HeaderCelebrations**. Each
 is its own component, sharing the `.improvement` card styles (the perfect
-month has its own). They tap away or go by themselves.
+month has its own). Each stays up until its × is tapped, and has a **Share**
+button (`CelebrationShareButton`) that turns a copy of the card, without its
+controls and signed WordInk, into an image for the share sheet (or the
+clipboard, or a download). The achievement card works the same way.
 
 | Group | Card | When it comes due |
 |---|---|---|
@@ -1008,7 +1011,7 @@ month has its own). They tap away or go by themselves.
 | Record | `PersonalBestCelebration` — "Your best day ever!" | the finish that takes the day's total to 30 or more and past every earlier day; a finish that sets both shows the week |
 | Streak | `NewBestCelebration` — "Your longest streak yet!" | today's first word, when it takes the streak past the player's best |
 | Streak | `StreakClimbCelebration` — "Up the streak board!" | a moment after today's first word takes the streak up, if it passed somebody else's run |
-| News | `BestWordNewsCard` — yesterday's best word | as the site opens; every time the player found it, but only once ever when somebody else did (from their 4th day played) |
+| News | `BestWordNewsCard` — yesterday's best word | as the site opens; every time the player found it, but only once ever when somebody else did (from their 4th day played). A player's first best word earns the Word of the day badge, so its achievement card shows instead |
 | News | `PerfectMonthCelebration` — "Perfect {month}!" | the first word that completes a month without a missed day |
 | News | `ImprovementCelebration` — "You're on the rise!" | the finish, at most once a week |
 | News | `TopRankCelebration` — "Top 3 today!", with a link to the leaderboard | a moment after the finish (a retry's re-finish too), when the player is in the top 3 of today's board of 15+ players; last of all, so only on a day neither group has claimed |

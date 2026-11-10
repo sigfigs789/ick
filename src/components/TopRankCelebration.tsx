@@ -1,10 +1,9 @@
-import { useEffect, type MouseEvent } from "react";
+import type { MouseEvent } from "react";
+import { CelebrationShareButton } from "./CelebrationShareButton";
 import { ConfettiBurst } from "./ConfettiBurst";
 import { trackLeaderboardOpened } from "../analytics";
 import { navigate, pathFor } from "../routes";
 
-/** How long the card stays up if nobody closes it, as the streak climb's does. */
-const CELEBRATION_MS = 7000;
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
@@ -14,10 +13,6 @@ const MEDALS = ["🥇", "🥈", "🥉"];
  * link to the board itself.
  */
 export function TopRankCelebration({ rank, onDone }: { rank: number; onDone: () => void }) {
-  useEffect(() => {
-    const timeout = window.setTimeout(onDone, CELEBRATION_MS);
-    return () => window.clearTimeout(timeout);
-  }, [onDone]);
 
   // A link, so it opens in a new tab like any other; a plain click stays in
   // the app and takes the card with it.
@@ -34,7 +29,7 @@ export function TopRankCelebration({ rank, onDone }: { rank: number; onDone: () 
       <ConfettiBurst rising />
       <div className="improvement improvement--best" role="status">
         <div className="improvement__card">
-          <button type="button" className="improvement__close" onClick={onDone} title="Dismiss" aria-label="Dismiss">
+          <button type="button" className="improvement__close" data-share-omit onClick={onDone} title="Dismiss" aria-label="Dismiss">
             ×
           </button>
           <span className="improvement__icon" aria-hidden="true">
@@ -44,9 +39,10 @@ export function TopRankCelebration({ rank, onDone }: { rank: number; onDone: () 
           <span className="improvement__body">
             You're <span className="improvement__gain">#{rank}</span> on today's board.
           </span>
-          <a className="improvement__link" href={pathFor("leaderboard")} onClick={seeBoard}>
+          <a className="improvement__link" data-share-omit href={pathFor("leaderboard")} onClick={seeBoard}>
             See the leaderboard
           </a>
+          <CelebrationShareButton name="top-three" />
         </div>
       </div>
     </>

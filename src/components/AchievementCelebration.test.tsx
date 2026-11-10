@@ -59,12 +59,13 @@ describe("AchievementCelebration", () => {
     expect(screen.getByText("And 1 more. See them all on your Stats page.")).toBeInTheDocument();
   });
 
-  it("goes by itself after a while", () => {
+  it("stays until it is closed", () => {
     vi.useFakeTimers();
     const onDone = vi.fn();
     render(<AchievementCelebration achievements={[byId("first-legend")]} onDone={onDone} />);
-    act(() => vi.advanceTimersByTime(7000));
-    expect(onDone).toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(onDone).not.toHaveBeenCalled();
+    vi.useRealTimers();
   });
 
   it("goes on a tap of its ×, but not on a tap elsewhere on it", () => {
