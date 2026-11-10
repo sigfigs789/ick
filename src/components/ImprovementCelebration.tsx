@@ -1,10 +1,8 @@
-import { useEffect } from "react";
+import { CelebrationShareButton } from "./CelebrationShareButton";
 import { ConfettiBurst } from "./ConfettiBurst";
 import { formatTotal } from "../game/dictionary";
 import { improvementPercent, type Improvement } from "../game/improvement";
 
-/** How long the card stays up if nobody closes it, as the perfect month's does. */
-const CELEBRATION_MS = 7000;
 
 /**
  * The moment a finished puzzle shows the player's average climbing (see
@@ -12,7 +10,7 @@ const CELEBRATION_MS = 7000;
  *
  * The perfect month's card, in green and with an arrow rather than a trophy:
  * it lands when the day is done, so it floats over a finished puzzle rather
- * than in the way of a guess, and goes by itself or on a tap of its ×.
+ * than in the way of a guess, and stays until its × is tapped.
  */
 export function ImprovementCelebration({
   improvement,
@@ -21,10 +19,6 @@ export function ImprovementCelebration({
   improvement: Improvement;
   onDone: () => void;
 }) {
-  useEffect(() => {
-    const timeout = window.setTimeout(onDone, CELEBRATION_MS);
-    return () => window.clearTimeout(timeout);
-  }, [onDone]);
 
   const { recent, earlier, days } = improvement;
   return (
@@ -32,7 +26,7 @@ export function ImprovementCelebration({
       <ConfettiBurst rising />
       <div className="improvement" role="status">
         <div className="improvement__card">
-          <button type="button" className="improvement__close" onClick={onDone} title="Dismiss" aria-label="Dismiss">
+          <button type="button" className="improvement__close" data-share-omit onClick={onDone} title="Dismiss" aria-label="Dismiss">
             ×
           </button>
           <span className="improvement__icon" aria-hidden="true">
@@ -47,6 +41,7 @@ export function ImprovementCelebration({
             </span>
             .
           </span>
+          <CelebrationShareButton name="rising-average" />
         </div>
       </div>
     </>

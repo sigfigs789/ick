@@ -3,6 +3,7 @@ import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { toBlob } from "html-to-image";
 import type { EarnedAchievement } from "../game/achievements";
+import { shareImage } from "./shareImage";
 
 type Status = "idle" | "working" | "copied" | "shared" | "error";
 
@@ -69,28 +70,8 @@ export function AchievementShareButton({ achievement }: { achievement: EarnedAch
     try {
       const blob = await renderCardBlob(achievement);
       if (!blob) throw new Error("toBlob returned null");
-      const fileName = `wordink-${achievement.id}.png`;
-      const file = new File([blob], fileName, { type: "image/png" });
-      if (navigator.canShare?.({ files: [file] })) {
-        try {
-          await navigator.share({ files: [file], title: achievement.title });
-          setStatus("shared");
-        } catch (error) {
-          // Closing the share sheet isn't a failure.
-          setStatus(error instanceof DOMException && error.name === "AbortError" ? "idle" : "error");
-        }
-      } else if (navigator.clipboard && "write" in navigator.clipboard) {
-        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-        setStatus("copied");
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = fileName;
-        a.click();
-        URL.revokeObjectURL(url);
-        setStatus("shared");
-      }
+      const result = await shareImage(blob, `wordink-${achievement.id}.png`, achievement.title);
+      setStatus(result === "cancelled" ? "idle" : result);
     } catch {
       setStatus("error");
     } finally {

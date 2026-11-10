@@ -19,14 +19,14 @@ describe("PersonalBestCelebration", () => {
     expect(document.querySelector(".confetti--grand")).not.toBeNull();
   });
 
-  it("goes on a tap of its ×, or by itself", () => {
+  it("goes on a tap of its ×, never by itself", () => {
     vi.useFakeTimers();
     const onDone = vi.fn();
     render(<PersonalBestCelebration best={{ kind: "day", score: 31, previous: 30 }} onDone={onDone} />);
     fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
     expect(onDone).toHaveBeenCalledTimes(1);
-    vi.advanceTimersByTime(7000);
-    expect(onDone).toHaveBeenCalledTimes(2);
+    vi.advanceTimersByTime(60_000);
+    expect(onDone).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
   });
 });

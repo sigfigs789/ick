@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
@@ -9,6 +9,7 @@ import { PLAYER_KEY } from "./game/player";
 import { PROGRESS_PREFIX } from "./game/storage";
 import { addDays } from "./game/date";
 import { markBestWordNewsShown } from "./game/bestWordNews";
+import { earnedIds, markAchievementsAnnounced, syncAchievements } from "./game/achievements";
 
 vi.mock("./hooks/useDailyPuzzle", () => ({ useDailyPuzzle: vi.fn() }));
 vi.mock("./hooks/useSound", () => ({ useSound: vi.fn() }));
@@ -79,8 +80,24 @@ function playedDays(days: number) {
   }
 }
 
+/** A finder who has had the best word before, and seen the badge for it. */
+function repeatWinner() {
+  localStorage.setItem(BEST_WORD_WINS_KEY, "2");
+  markAchievementsAnnounced(["word-of-the-day"]);
+}
+
+/** A finder whose first best word this is: every other badge already had its card. */
+function firstWin() {
+  markAchievementsAnnounced([...earnedIds(syncAchievements(puzzle().streak))]);
+  localStorage.setItem(BEST_WORD_WINS_KEY, "1");
+}
+
+const BEST_WORD_WINS_KEY = "ick:best-word-wins";
+
 beforeEach(() => {
   vi.clearAllMocks();
+  // The tally of best-word wins comes from storage: the server is never reached.
+  vi.stubGlobal("fetch", vi.fn(async () => Promise.reject(new Error("offline"))));
   localStorage.clear();
   markSeen("instructions");
   localStorage.setItem(PLAYER_KEY, JSON.stringify({ id: SELF }));
@@ -99,6 +116,7 @@ beforeEach(() => {
 describe("yesterday's best word news", () => {
   it("celebrates the finder on opening, once a day", () => {
     playedDays(4);
+    repeatWinner();
     vi.mocked(useYesterdaysBest).mockReturnValue(best([OTHER, SELF]));
     const { unmount } = render(<App />);
     expect(screen.getByText("You had yesterday's best word!")).toBeTruthy();
@@ -106,6 +124,23 @@ describe("yesterday's best word news", () => {
 
     render(<App />);
     expect(screen.queryByText("You had yesterday's best word!")).toBeNull();
+  });
+
+  it("lets the badge tell a first-time finder, instead of the best word's card", async () => {
+    playedDays(4);
+    firstWin();
+    vi.mocked(useYesterdaysBest).mockReturnValue(best([SELF]));
+    const { unmount } = render(<App />);
+    expect(await screen.findByText("Word of the day")).toBeTruthy();
+    await waitFor(() => expect(localStorage.getItem("ick:bestWordNewsShown")).toBe(YESTERDAY));
+    expect(screen.queryByText("You had yesterday's best word!")).toBeNull();
+    unmount();
+
+    // Spent for the day: a reload brings neither back.
+    render(<App />);
+    await Promise.resolve();
+    expect(screen.queryByText("You had yesterday's best word!")).toBeNull();
+    expect(screen.queryByText("Word of the day")).toBeNull();
   });
 
   it("keeps the finder's card from a player still on their first few words", () => {
@@ -136,6 +171,7 @@ describe("yesterday's best word news", () => {
 
   it("still celebrates the finder after they have seen the card", () => {
     playedDays(4);
+    repeatWinner();
     markBestWordNewsShown(addDays(YESTERDAY, -2));
     vi.mocked(useYesterdaysBest).mockReturnValue(best([SELF]));
     render(<App />);
