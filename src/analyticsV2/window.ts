@@ -22,6 +22,7 @@ export interface Preset {
 export const TODAY: Preset = { label: "Today", choice: { kind: "today" } };
 export const PAST_7: Preset = { label: "Past 7 days", choice: { kind: "past", days: 7 } };
 export const PAST_30: Preset = { label: "Past 30 days", choice: { kind: "past", days: 30 } };
+export const PAST_60: Preset = { label: "Past 60 days", choice: { kind: "past", days: 60 } };
 export const SINCE_START: Preset = { label: "Since it started", choice: { kind: "all" } };
 
 /**

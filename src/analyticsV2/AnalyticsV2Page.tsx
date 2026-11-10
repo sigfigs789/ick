@@ -5,7 +5,8 @@ import { todayDateString } from "../game/date";
 import { fetchReport, type Rate, type Report, type Scores, type Source } from "./report";
 import { addDays, count, lastSunday, moved, percent, scorecard, STANDING_NAMES, windowOf, type Row } from "./scorecard";
 import type { DateRange } from "../components/analyticsFormat";
-import { daysIn, describe, lower, PAST_30, PAST_7, sameSpan, spanOf, TODAY, type Choice } from "./window";
+import dropData from "../data/drops.json";
+import { daysIn, describe, lower, PAST_30, PAST_60, PAST_7, sameSpan, spanOf, TODAY, type Choice, type Preset } from "./window";
 import { WindowPicker } from "./WindowPicker";
 
 /**
@@ -37,8 +38,8 @@ import { WindowPicker } from "./WindowPicker";
 export function AnalyticsV2Page() {
   const today = todayDateString();
   const [choice, setChoice] = useState<Choice>(DEFAULT_CHOICE);
-  // Never null here: this page has no "since it started".
-  const span = spanOf(choice, today);
+  // Everything is the days since the first puzzle, so the report is always over a range.
+  const span = spanOf(choice, today) ?? { from: dropData.epoch, to: today };
   const from = span?.from;
   const to = span?.to;
   const load = useCallback(
@@ -303,7 +304,8 @@ function Dashboard({ report, before }: { report: Report; before: Report | null }
 }
 
 const DEFAULT_CHOICE: Choice = PAST_30.choice;
-const PRESETS = [TODAY, PAST_7, PAST_30];
+const ALL_TIME: Preset = { label: "All time", choice: { kind: "all" } };
+const PRESETS = [TODAY, PAST_7, PAST_30, PAST_60, ALL_TIME];
 
 /** The window as it stood yesterday, for the scorecard's change; null for one that starts today. */
 function priorSpan(choice: Choice, today: string): DateRange | null {
