@@ -13,7 +13,7 @@ import {
 } from '../../../src/game/achievements';
 import { formatDateLabel, todayDateString } from '../../../src/game/date';
 import { MODE_LABELS } from '../../../src/game/mode';
-import { CURRENT_TIERS, loadStats, TOP_WORDS, type PlayerStats, type StatWord } from '../../../src/game/stats';
+import { CURRENT_TIERS, loadStats, type PlayerStats, type StatWord } from '../../../src/game/stats';
 import { loadStreak } from '../../../src/game/storage';
 import type { Rarity } from '../../../src/game/types';
 import { PAGE_GUTTER, PageHead, PageNote } from '../components/PageChrome';
@@ -177,7 +177,7 @@ function RarityBars({ byRarity }: { byRarity: PlayerStats['byRarity'] }) {
   );
 }
 
-/** The rarest finds, newest first on a tie, with the day they were found. */
+/** The rarest recent finds (past 2 weeks), newest first on a tie; Show more opens every one. */
 function BestWords({ stats }: { stats: PlayerStats }) {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
@@ -185,11 +185,19 @@ function BestWords({ stats }: { stats: PlayerStats }) {
   // Empty when every word found was on a legacy-scored puzzle (see game/stats.ts).
   if (stats.topWords.length === 0) return null;
   const total = stats.topWords.length;
+  const recent = stats.recentTopWords;
   return (
     <View style={styles.section}>
       <Heading>Best words</Heading>
-      <BestWordList words={stats.topWords.slice(0, TOP_WORDS)} />
-      {total > TOP_WORDS && (
+      <Text style={[styles.groupHeading, { color: theme.fgMuted }]} accessibilityRole="header">
+        Recent
+      </Text>
+      {recent.length > 0 ? (
+        <BestWordList words={recent} />
+      ) : (
+        <Text style={[styles.wordDate, { color: theme.fgFaint }]}>None recently.</Text>
+      )}
+      {total > recent.length && (
         <View style={styles.more}>
           <Text
             onPress={() => {
@@ -203,7 +211,7 @@ function BestWords({ stats }: { stats: PlayerStats }) {
             Show more
           </Text>
           <Text style={[styles.moreCount, { color: theme.fgFaint }]}>
-            {TOP_WORDS} of {total}
+            {total} all time
           </Text>
         </View>
       )}

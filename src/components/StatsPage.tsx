@@ -13,7 +13,7 @@ import {
 } from "../game/achievements";
 import { formatDateLabel, todayDateString } from "../game/date";
 import { MODE_LABELS } from "../game/mode";
-import { CURRENT_TIERS, loadStats, TOP_WORDS, type PlayerStats, type StatWord } from "../game/stats";
+import { CURRENT_TIERS, loadStats, type PlayerStats, type StatWord } from "../game/stats";
 import { loadStreak } from "../game/storage";
 import type { Rarity } from "../game/types";
 import { navigate } from "../routes";
@@ -143,20 +143,22 @@ function BestWords({ stats }: { stats: PlayerStats }) {
   // Empty when every word found was on a legacy-scored puzzle (see game/stats.ts).
   if (stats.topWords.length === 0) return null;
   const total = stats.topWords.length;
+  const recent = stats.recentTopWords;
   return (
     <section className="stats__section" aria-labelledby="stats-best">
       <h2 className="stats__heading" id="stats-best">
         Best words
       </h2>
-      <BestWordList words={stats.topWords.slice(0, TOP_WORDS)} />
-      {total > TOP_WORDS && (
+      <div className="stats__group">
+        <h3 className="stats__group-heading">Recent</h3>
+        {recent.length > 0 ? <BestWordList words={recent} /> : <p className="stats__empty">None recently.</p>}
+      </div>
+      {total > recent.length && (
         <div className="stats__more">
           <button type="button" className="stats__link" onClick={() => setOpen(true)}>
             Show more
           </button>
-          <span className="stats__more-count">
-            {TOP_WORDS} of {total}
-          </span>
+          <span className="stats__more-count">{total} all time</span>
         </div>
       )}
       {open && <AllBestWords words={stats.topWords} onClose={close} />}
