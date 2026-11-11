@@ -31,8 +31,11 @@ export const CURRENT_TIERS: readonly Rarity[] = [
   "Common",
 ];
 
-/** How many of the best words the page lists; "Show more" opens the rest. */
+/** The fewest best words the page previews when it has them; "Show more" opens the rest. */
 export const TOP_WORDS = 5;
+
+/** A recent word scoring at least this always makes the preview, however many there are. */
+export const PREVIEW_ALWAYS_SCORE = 9;
 
 /** How many puzzle days, today's included, the best words reach back. */
 export const BEST_WORDS_DAYS = 14;
@@ -61,8 +64,9 @@ export interface PlayerStats {
   topWords: StatWord[];
   /**
    * The best of `topWords` found on the last BEST_WORDS_DAYS puzzles (by puzzle
-   * date, up to `today`), at most TOP_WORDS: the page's preview. "Show more"
-   * opens all of `topWords`. Without `today`, the first TOP_WORDS of `topWords`.
+   * date, up to `today`): every one scoring PREVIEW_ALWAYS_SCORE or more, and
+   * at least TOP_WORDS when there are that many. The page's preview; "Show
+   * more" opens all of `topWords`. Without `today`, the same cut of `topWords`.
    */
   recentTopWords: StatWord[];
   /** The longest word banked, earliest first on a tie. */
@@ -137,7 +141,7 @@ export function computeStats(
  * be older than the window).
  */
 function recentBest(history: readonly DailyProgress[], topWords: StatWord[], today?: string): StatWord[] {
-  if (!today) return topWords.slice(0, TOP_WORDS);
+  if (!today) return previewCut(topWords);
   const from = addDays(today, 1 - BEST_WORDS_DAYS);
   const best = new Map<string, StatWord>();
   for (const progress of history) {
@@ -149,9 +153,15 @@ function recentBest(history: readonly DailyProgress[], topWords: StatWord[], tod
       if (!seen || found.score > seen.score) best.set(key, found);
     }
   }
-  return [...best.values()]
-    .sort((a, b) => b.score - a.score || b.date.localeCompare(a.date) || a.zipf - b.zipf)
-    .slice(0, TOP_WORDS);
+  return previewCut(
+    [...best.values()].sort((a, b) => b.score - a.score || b.date.localeCompare(a.date) || a.zipf - b.zipf)
+  );
+}
+
+/** From `ranked` (best first): every word at PREVIEW_ALWAYS_SCORE or more, topped up to TOP_WORDS. */
+function previewCut(ranked: StatWord[]): StatWord[] {
+  const high = ranked.filter((word) => word.score >= PREVIEW_ALWAYS_SCORE).length;
+  return ranked.slice(0, Math.max(TOP_WORDS, high));
 }
 
 /** The numbers for this browser. */

@@ -71,6 +71,27 @@ describe("computeStats", () => {
     expect(stats.topWords.map((w) => w.word)).toEqual(["inkhorn", "inkling", "pink", "kink"]);
   });
 
+  it("previews every recent 9.0+ word, and at least five", () => {
+    const rare = ["inkhorn", "inkpot", "inkwell", "inkstand", "inkjet", "inkblot"].map((w) => word(w, "Mythic", 0.5));
+    const many = computeStats(
+      [day("2026-10-20", rare), day("2026-10-21", [word("pink", "Common", 4.8)])],
+      streak,
+      "2026-10-21"
+    );
+    expect(many.recentTopWords.map((w) => w.word)).toHaveLength(6);
+    expect(many.recentTopWords.every((w) => w.score >= 9)).toBe(true);
+
+    const few = computeStats(
+      [
+        day("2026-10-20", [word("inkhorn", "Mythic", 0.5), word("think", "Common", 5.2), word("ink", "Common", 4.5)]),
+        day("2026-10-21", [word("pink", "Common", 4.8), word("kink", "Common", 4.9), word("rink", "Common", 5.0)]),
+      ],
+      streak,
+      "2026-10-21"
+    );
+    expect(few.recentTopWords.map((w) => w.word)).toEqual(["inkhorn", "ink", "pink", "kink", "rink"]);
+  });
+
   it("keeps legacy-scored puzzles out of the best words", () => {
     // Before 2026-08-15 the page has no legacy data, so "think" would show as 52.
     const early = day("2026-08-01", [word("think", "Common", 5.2)], { mode: "standard" });
