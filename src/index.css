@@ -7056,6 +7056,9 @@ button.app__menu-item + button.app__menu-item {
   margin: 0 0 1.9rem;
   color: var(--fg-muted);
 }
+.stats__section .stats__empty {
+  margin-bottom: 0.5rem;
+}
 .stats__link {
   border: 0;
   padding: 0;
