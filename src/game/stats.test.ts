@@ -55,18 +55,18 @@ describe("computeStats", () => {
     expect(stats.topWords.map((w) => w.word)).toEqual(["kink", "pink"]);
   });
 
-  it("previews the best words from the last two weeks, and keeps every word for Show more", () => {
+  it("previews the best words from the last week, and keeps every word for Show more", () => {
     const stats = computeStats(
       [
-        day("2026-10-07", [word("inkhorn", "Mythic", 0.5)]),
-        day("2026-10-08", [word("inkling", "Rare", 2.6)]),
+        day("2026-10-14", [word("inkhorn", "Mythic", 0.5)]),
+        day("2026-10-15", [word("inkling", "Rare", 2.6)]),
         day("2026-10-21", [word("pink", "Common", 4.8)]),
         day("2026-10-22", [word("kink", "Common", 4.9)]),
       ],
       streak,
       "2026-10-21"
     );
-    // 10-08 is the 14th day back; 10-22 is past today and stays out.
+    // 10-15 is the 7th day back; 10-22 is past today and stays out.
     expect(stats.recentTopWords.map((w) => w.word)).toEqual(["inkling", "pink"]);
     expect(stats.topWords.map((w) => w.word)).toEqual(["inkhorn", "inkling", "pink", "kink"]);
   });
