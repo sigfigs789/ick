@@ -37,7 +37,8 @@ import b28 from "./2026-12-08_20261108T185304Z.json";
 import b29 from "./2026-12-09_20261109T232847Z.json";
 import b30 from "./2026-12-11_20261110T205937Z.json";
 import b31 from "./2026-12-12_20261111T214416Z.json";
+import b32 from "./2026-12-12_20261112T214606Z.json";
 
 export default {
-  batches: [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31],
+  batches: [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32],
 };
