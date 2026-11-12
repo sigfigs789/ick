@@ -860,7 +860,7 @@ export default function App() {
               divider, just above yesterday's best: a look ahead to tomorrow,
               read with the footnotes rather than between the player and the
               guesses they have left. */}
-          {isToday && progress.acceptedWords.length > 0 && <ComeBackCard streak={streak} date={date} />}
+          {isToday && progress.acceptedWords.length > 0 && <ComeBackCard streak={streak} date={date} words={progress.acceptedWords} />}
           <YesterdaysBest date={date} isToday={isToday} />
         </div>
       </main>

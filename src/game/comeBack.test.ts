@@ -374,5 +374,79 @@ describe("streakGoal", () => {
       expect(goal?.line).toMatch(/beat your best/);
       expect(goal?.explainer).toBeUndefined();
     });
+
+    describe("a share badge sharing today would earn", () => {
+      const byId = (id: string) => ACHIEVEMENTS.find((a) => a.id === id)!;
+      const locked = (id: string, progress?: { current: number; target: number }) => ({
+        achievement: byId(id),
+        earnedOn: null,
+        progress,
+      });
+      const none = { tier: null, ablaze: false };
+      const run = streak({ currentStreak: 30, longestStreak: 40, bankedFreezes: 2 });
+
+      it("comes ahead of the rest when the Share button would earn it", () => {
+        const sharing = { tier: "Legend" as const, ablaze: false };
+        const goal = comeBackGoal(run, FRIDAY, [locked("clean-sweep"), locked("amaterasu")], sharing);
+        expect(goal).toEqual({
+          line: 'Share today to earn 🌑 "Amaterasu" Achievement!',
+          explainer: {
+            title: "Amaterasu",
+            text: "Share a result while the Share button burns black, your words averaging Legend.",
+          },
+        });
+      });
+
+      it("is only the tier the Share button burns in", () => {
+        const sharing = { tier: "Elusive" as const, ablaze: false };
+        expect(comeBackGoal(run, FRIDAY, [locked("amaterasu")], sharing)).toEqual(
+          comeBackGoal(run, FRIDAY, [locked("amaterasu")], none)
+        );
+        expect(comeBackGoal(run, FRIDAY, [locked("sun-warrior")], sharing)?.line).toBe(
+          'Share today to earn ☀️ "Sun Warrior" Achievement!'
+        );
+      });
+
+      it("is not offered once the badge is earned", () => {
+        const sharing = { tier: "Legend" as const, ablaze: false };
+        const earned = { achievement: byId("amaterasu"), earnedOn: "2026-10-09" };
+        expect(comeBackGoal(run, FRIDAY, [earned], sharing)).toEqual(comeBackGoal(run, FRIDAY, [earned], none));
+      });
+
+      it("names the Olympic flame only when one share completes it", () => {
+        const almost = locked("olympic-flame", { current: 4, target: 5 });
+        expect(comeBackGoal(run, FRIDAY, [almost], { tier: null, ablaze: true })).toEqual({
+          line: 'Share today to earn 🔥 "Olympic flame" Achievement!',
+          explainer: {
+            title: "Olympic flame",
+            text: `${byId("olympic-flame").description} (4/5 so far)`,
+          },
+        });
+        const early = locked("olympic-flame", { current: 3, target: 5 });
+        expect(comeBackGoal(run, FRIDAY, [early], { tier: null, ablaze: true })).toEqual(
+          comeBackGoal(run, FRIDAY, [early], none)
+        );
+        expect(comeBackGoal(run, FRIDAY, [almost], { tier: null, ablaze: false })).toEqual(
+          comeBackGoal(run, FRIDAY, [almost], none)
+        );
+      });
+
+      it("prefers a tier badge to the Olympic flame", () => {
+        const sharing = { tier: "Mythic" as const, ablaze: true };
+        const goal = comeBackGoal(
+          run,
+          FRIDAY,
+          [locked("olympic-flame", { current: 4, target: 5 }), locked("agni-kai")],
+          sharing
+        );
+        expect(goal?.line).toBe('Share today to earn 🤺 "Agni Kai" Achievement!');
+      });
+
+      it("leaves the goal alone when nothing is shared yet", () => {
+        expect(comeBackGoal(run, FRIDAY, [locked("amaterasu")], none)).toEqual(
+          comeBackGoal(run, FRIDAY, [locked("amaterasu")])
+        );
+      });
+    });
   });
 });

@@ -7,6 +7,9 @@
  * and had no reason in front of them to return -- which is what D1 measures.
  * `streakGoal` names the one reward most worth returning for: a freeze it
  * earns, a weekend off, or the best streak it is closing in on.
+ *
+ * A share badge the Share button would earn right now (see `ShareToday`) comes
+ * ahead of all of those: it is one tap away, not days.
  */
 
 import { holdersOf, type AchievementStatus } from "./achievements";
@@ -21,7 +24,18 @@ import {
   LAZY_WEEKEND_RULE,
   restDayProgress,
 } from "./streakFreeze";
+import type { ShareFireTier } from "./shareFlames";
 import type { StreakState } from "./types";
+
+/**
+ * What a share of today's puzzle would earn right now (see game/shareFlames.ts):
+ * the tier its Share button burns in, if any, and whether that puzzle would
+ * count toward the Olympic flame -- ablaze, and not already counted.
+ */
+export interface ShareToday {
+  tier: ShareFireTier | null;
+  ablaze: boolean;
+}
 
 /** What a lazy Sunday is, for the line promising one once Friday is too late. */
 const LAZY_SUNDAY_RULE =
@@ -82,8 +96,11 @@ export interface GoalExplainer {
 export function comeBackGoal(
   streak: StreakState,
   today: string,
-  locked: readonly AchievementStatus[] = []
+  locked: readonly AchievementStatus[] = [],
+  sharing?: ShareToday
 ): { line: string; explainer?: GoalExplainer } | null {
+  const shared = sharing && sharedGoal(locked, sharing);
+  if (shared) return shared;
   const days = streak.currentStreak;
   const best = Math.max(streak.longestStreak, days);
   const doOverGoal =
@@ -230,6 +247,32 @@ export const ACHIEVEMENT_VERBS = [
   "Seize",
   "Pounce on",
 ] as const;
+
+/** Whether sharing today's puzzle as it stands would earn `status`. */
+function earnedBySharing({ achievement, progress }: AchievementStatus, sharing: ShareToday): boolean {
+  if (achievement.sharedAt) return sharing.tier === achievement.sharedAt;
+  if (achievement.sharedAblaze) return sharing.ablaze && !!progress && progress.current + 1 >= progress.target;
+  return false;
+}
+
+/**
+ * A share badge a share of today's puzzle would earn now, the tier badge ahead
+ * of the Olympic flame; null when none would be.
+ */
+function sharedGoal(
+  locked: readonly AchievementStatus[],
+  sharing: ShareToday
+): { line: string; explainer: GoalExplainer } | null {
+  const earnable = locked.filter((status) => !status.earnedOn && earnedBySharing(status, sharing));
+  const pick = earnable.find((status) => status.achievement.sharedAt) ?? earnable[0];
+  if (!pick) return null;
+  const { achievement, progress } = pick;
+  const along = progress && progress.current > 0 ? ` (${progress.current}/${progress.target} so far)` : "";
+  return {
+    line: `Share today to earn ${achievement.icon} "${achievement.title}" Achievement!`,
+    explainer: { title: achievement.title, text: `${achievement.description}${along}` },
+  };
+}
 
 /**
  * An achievement still locked, to shoot for: the one coming back earns
