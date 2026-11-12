@@ -38,7 +38,7 @@ export const TOP_WORDS = 5;
 export const PREVIEW_ALWAYS_SCORE = 9;
 
 /** How many puzzle days, today's included, the best words reach back. */
-export const BEST_WORDS_DAYS = 14;
+export const BEST_WORDS_DAYS = 7;
 
 export interface StatWord {
   word: string;
