@@ -13,7 +13,7 @@ import {
 } from "../game/achievements";
 import { formatDateLabel, todayDateString } from "../game/date";
 import { MODE_LABELS } from "../game/mode";
-import { CURRENT_TIERS, loadStats, type PlayerStats, type StatWord } from "../game/stats";
+import { CURRENT_TIERS, loadStats, TOP_WORDS, type PlayerStats, type StatWord } from "../game/stats";
 import { loadStreak } from "../game/storage";
 import type { Rarity } from "../game/types";
 import { navigate } from "../routes";
@@ -139,11 +139,15 @@ function RarityBars({ byRarity }: { byRarity: PlayerStats["byRarity"] }) {
 
 function BestWords({ stats }: { stats: PlayerStats }) {
   const [open, setOpen] = useState(false);
+  // A record with more than TOP_WORDS recent 9.0+ finds previews TOP_WORDS;
+  // "Show more" adds TOP_WORDS more, then the link becomes "Show all".
+  const [expanded, setExpanded] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   // Empty when every word found was on a legacy-scored puzzle (see game/stats.ts).
   if (stats.topWords.length === 0) return null;
   const total = stats.topWords.length;
-  const recent = stats.recentTopWords;
+  const recent = stats.recentTopWords.slice(0, expanded ? 2 * TOP_WORDS : TOP_WORDS);
+  const canExpand = !expanded && stats.recentTopWords.length > TOP_WORDS;
   return (
     <section className="stats__section" aria-labelledby="stats-best">
       <h2 className="stats__heading" id="stats-best">
@@ -153,10 +157,14 @@ function BestWords({ stats }: { stats: PlayerStats }) {
         <h3 className="stats__group-heading">Recent</h3>
         {recent.length > 0 ? <BestWordList words={recent} /> : <p className="stats__empty">None recently.</p>}
       </div>
-      {total > recent.length && (
+      {(canExpand || total > recent.length) && (
         <div className="stats__more">
-          <button type="button" className="stats__link" onClick={() => setOpen(true)}>
-            Show more
+          <button
+            type="button"
+            className="stats__link"
+            onClick={() => (canExpand ? setExpanded(true) : setOpen(true))}
+          >
+            {canExpand ? "Show more" : expanded ? "Show all" : "Show more"}
           </button>
           <span className="stats__more-count">{total} all time</span>
         </div>
