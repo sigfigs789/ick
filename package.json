@@ -16,6 +16,7 @@
     "select-drops": "python3 scripts/select-drops.py"
   },
   "dependencies": {
+    "@vercel/og": "^0.11.1",
     "emoji-picker-react": "^5.0.0",
     "html-to-image": "^1.11.13",
     "obscenity": "^0.4.6",
