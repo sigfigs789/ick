@@ -232,8 +232,10 @@ export function StreakDisplay({
     >
       {showStreak && (
         <div className="streak-display__row">
-          {restDay && <RestDayBadge className="streak-display__flame" />}
-          <StreakBadge icon={restDay ? null : icon} count={streak.currentStreak} />
+          <StreakBadge icon={icon} count={streak.currentStreak} />
+          {/* The 🔥 stays, so the streak plainly lives on; the 😴 beside it, in a
+              green "Safe" pill, says today is off without reading as a lost streak. */}
+          {restDay && <RestDayBadge active className="streak-display__resting" />}
           {showFreezes && (
             <FreezeBadge banked={banked} cap={cap} earning={freezeEarning} />
           )}

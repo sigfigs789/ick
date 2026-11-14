@@ -81,7 +81,9 @@ describe("StreakDisplay", () => {
     };
     const { rerender } = render(<StreakDisplay streak={friday} date="2026-10-31" isToday />);
     const dancer = screen.getByRole("button", { name: /Lazy weekend/ });
-    expect(dancer.textContent).toBe("😴");
+    expect(dancer.textContent).toBe("😴Safe");
+    // The 🔥 stays beside it: the streak lives on.
+    expect(flame()).toBe("🔥");
     // Hovering with a mouse opens the popup, and leaving closes it.
     const badge = dancer.parentElement as HTMLElement;
     fireEvent.pointerEnter(badge, { pointerType: "mouse" });
@@ -107,9 +109,10 @@ describe("StreakDisplay", () => {
     expect(screen.getByRole("button", { name: /Lazy weekend/ })).toHaveAccessibleName(/Unlocked: Sunday's for snoozing/);
     expect(flame()).toBe("🔥");
 
-    // Sunday after a skipped Saturday: still 😴, no freeze covering anything.
+    // Sunday after a skipped Saturday: still 😴 beside the 🔥, no freeze covering anything.
     rerender(<StreakDisplay streak={friday} date="2026-11-01" isToday />);
-    expect(flame()).toBe("😴");
+    expect(flame()).toBe("🔥");
+    expect(screen.getByRole("button", { name: /Lazy weekend/ }).textContent).toBe("😴Safe");
     expect(screen.queryByLabelText(/A saved freeze is covering/)).not.toBeInTheDocument();
 
     // Monday after the whole weekend skipped: fire.

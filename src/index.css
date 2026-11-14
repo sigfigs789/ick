@@ -2210,6 +2210,30 @@ button.app__menu-item + button.app__menu-item {
   font: inherit;
   cursor: pointer;
 }
+/* A lazy day being taken: a green pill beside the 🔥, so the streak reads as safe. */
+.rest-day--active .rest-day__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.55rem 0.1rem 0.4rem;
+  border: 1px solid color-mix(in srgb, var(--success-fg) 35%, transparent);
+  border-radius: 999px;
+  background: var(--success-bg);
+  color: var(--success-fg);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.rest-day--active .rest-day__icon {
+  display: inline-block;
+  animation: rest-day-doze 3s ease-in-out infinite;
+}
+@keyframes rest-day-doze {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-1px) rotate(-8deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rest-day--active .rest-day__icon { animation: none; }
+}
 .rest-day__popup {
   position: absolute;
   bottom: calc(100% + 0.5rem);
