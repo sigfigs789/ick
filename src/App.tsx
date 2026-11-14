@@ -812,6 +812,7 @@ export default function App() {
             date={date}
             isToday={isToday}
             hideEmpty
+            restPill
             hasWords={progress.acceptedWords.length > 0}
           />
         )}
