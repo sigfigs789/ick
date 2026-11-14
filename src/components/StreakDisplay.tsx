@@ -170,6 +170,11 @@ interface Props {
   hideEmpty?: boolean;
   /** Whether this puzzle has a banked word, for `hideEmpty`. */
   hasWords?: boolean;
+  /**
+   * The play screen only: on a lazy day keep the 🔥 and put a green 😴 "Safe"
+   * pill beside it. Elsewhere the 😴 stands in for the 🔥.
+   */
+  restPill?: boolean;
 }
 
 export function StreakDisplay({
@@ -179,6 +184,7 @@ export function StreakDisplay({
   isToday = false,
   hideEmpty = false,
   hasWords = true,
+  restPill = false,
 }: Props) {
   // One icon for how the streak stands, as the streak board marks it (see
   // components/LeaderboardPage.tsx): 😴 on an earned weekend day not
@@ -232,8 +238,11 @@ export function StreakDisplay({
     >
       {showStreak && (
         <div className="streak-display__row">
-          {restDay && <RestDayBadge className="streak-display__flame" />}
-          <StreakBadge icon={restDay ? null : icon} count={streak.currentStreak} />
+          {restDay && !restPill && <RestDayBadge className="streak-display__flame" />}
+          <StreakBadge icon={restDay && !restPill ? null : icon} count={streak.currentStreak} />
+          {/* On the play screen the 🔥 stays, so the streak plainly lives on; the 😴
+              beside it, in a green "Safe" pill, says today is off without reading as lost. */}
+          {restDay && restPill && <RestDayBadge active className="streak-display__resting" />}
           {showFreezes && (
             <FreezeBadge banked={banked} cap={cap} earning={freezeEarning} />
           )}

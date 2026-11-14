@@ -56,7 +56,10 @@ export function RestDayBadge({
   played,
   reachable = true,
   sundayOnly = false,
+  active = false,
 }: {
+  /** Today is a lazy day being taken: a green pill that reads "Safe". */
+  active?: boolean;
   className?: string;
   played?: number;
   /** Whether three days can still be played this week; the rule then speaks of next week. */
@@ -91,7 +94,7 @@ export function RestDayBadge({
 
   return (
     <span
-      className={`rest-day${className ? ` ${className}` : ""}`}
+      className={`rest-day${active ? " rest-day--active" : ""}${className ? ` ${className}` : ""}`}
       ref={wrapRef}
       // Mouse only: a tap also fires pointerenter, and the click handles taps.
       onPointerEnter={(event) => event.pointerType === "mouse" && setHovered(true)}
@@ -105,7 +108,8 @@ export function RestDayBadge({
         aria-label={`Lazy weekend: ${rule}`}
         onClick={() => setOpen((was) => !was)}
       >
-        {unlocked ? "😴" : <WeekPie played={played} />}
+        {unlocked ? <span className="rest-day__icon">😴</span> : <WeekPie played={played} />}
+        {active && <span className="rest-day__safe">Safe</span>}
       </button>
       {(open || hovered) && (
         <span className="rest-day__popup" id={popupId} ref={popupRef} role="dialog" aria-label="Lazy weekend">
