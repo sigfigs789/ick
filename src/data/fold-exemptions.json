@@ -87,6 +87,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `adultery`, costing 3.36 points. Flagged in the 2026-09-22 semantic audit (adulterize from adulterate, not adultery) and confirmed on adversarial re-review (adulterate sense differs from adultery)."
   },
+  "afared": {
+    "since": "2027-03-26",
+    "reason": "Folded onto `afar` (afared > afar), costing 2.97 points. Flagged by the daily fold check for the 2027-03-26 `FA` drop (not from afar; afeared variant) and confirmed on adversarial re-review (afeared variant, unrelated to afar)."
+  },
   "aforest": {
     "since": "2026-11-23",
     "reason": "Folded onto `afore` (aforest > afore), costing 1.68 points. Flagged by the daily fold check for the 2026-11-23 `ST` drop (variant of afforest, not afore superlative) and confirmed on adversarial re-review (variant of afforest, not afore)."
@@ -103,6 +107,10 @@
     "since": "2026-11-23",
     "reason": "Folded onto `afore` (aforests > aforest > afore), costing 1.69 points. Flagged by the daily fold check for the 2026-11-23 `ST` drop (variant of afforests, not afore) and confirmed on adversarial re-review (variant of afforest, not afore)."
   },
+  "afters": {
+    "since": "2027-03-16",
+    "reason": "Folded onto `after` (afters > after), costing 5.51 points. Flagged by the daily fold check for the 2027-03-16 `TER` drop (afters means dessert, a distinct noun) and confirmed on adversarial re-review (lexicalized noun dessert, drifted from preposition after)."
+  },
   "agamies": {
     "since": "2026-09-27",
     "reason": "Folded onto `agami`, costing 0.23 points. Flagged in the 2026-09-22 semantic audit (agamies from agamy, not agami) and confirmed on adversarial re-review (agami is a bird)."
@@ -114,6 +122,18 @@
   "agonistes": {
     "since": "2026-09-27",
     "reason": "Folded onto `agonist`, costing 1.81 points. Flagged in the 2026-09-22 semantic audit (agonistes Greek epithet, not agonist) and confirmed on adversarial re-review (Greek epithet, not agonist)."
+  },
+  "airfarer": {
+    "since": "2027-03-26",
+    "reason": "Folded onto `airfare` (airfarer > airfare), costing 2.26 points. Flagged by the daily fold check for the 2027-03-26 `FA` drop (air traveller, not airfare) and confirmed on adversarial re-review (air traveller, not price of fare)."
+  },
+  "airfarers": {
+    "since": "2027-03-26",
+    "reason": "Folded onto `airfare` (airfarers > airfarer > airfare), costing 2.26 points. Flagged by the daily fold check for the 2027-03-26 `FA` drop (air travellers, not airfare) and confirmed on adversarial re-review (air travellers, not price of fare)."
+  },
+  "airfaring": {
+    "since": "2027-03-26",
+    "reason": "Folded onto `airfare` (airfaring > airfare), costing 2.26 points. Flagged by the daily fold check for the 2027-03-26 `FA` drop (air travelling, not airfare) and confirmed on adversarial re-review (air travelling, not price of fare)."
   },
   "airportable": {
     "since": "2026-10-12",
@@ -142,6 +162,10 @@
   "alces": {
     "since": "2026-12-08",
     "reason": "Folded onto `alc` (alces > alc), costing 1.33 points. Flagged by the daily fold check for the 2026-12-08 `CES` drop (moose genus, not alc) and confirmed on adversarial re-review (moose genus, unrelated to alc)."
+  },
+  "alethes": {
+    "since": "2027-03-21",
+    "reason": "Folded onto `alethic` (alethes > alethe > alethic), costing 0.94 points. Flagged by the daily fold check for the 2027-03-21 `AL` drop (plural of alethe thrush, not alethic) and confirmed on adversarial re-review (thrush plural, not alethic)."
   },
   "alexanders": {
     "since": "2027-03-04",
@@ -274,6 +298,10 @@
   "anthemises": {
     "since": "2026-09-27",
     "reason": "Folded onto `anthemis`, costing 0.62 points. Flagged in the 2026-09-22 semantic audit (anthemise verb vs plant genus) and confirmed on adversarial re-review (Anthemis plant genus, unrelated verb)."
+  },
+  "antialias": {
+    "since": "2027-03-21",
+    "reason": "Folded onto `alias` (antialias > alias), costing 2.25 points. Flagged by the daily fold check for the 2027-03-21 `AL` drop (graphics anti-aliasing, not pseudonym alias) and confirmed on adversarial re-review (signal aliasing, not pseudonym sense)."
   },
   "antiantidote": {
     "since": "2026-09-27",
@@ -946,6 +974,14 @@
     "since": "2026-09-27",
     "reason": "Jeering at a player. From the verb `barrack`, not the soldiers' `barracks`."
   },
+  "barreter": {
+    "since": "2027-03-16",
+    "reason": "Folded onto `barret` (barreter > barret), costing 1.81 points. Flagged by the daily fold check for the 2027-03-16 `TER` drop (barreter is quarrel-stirrer; barret is cap) and confirmed on adversarial re-review (barretor from barat fraud; barret cap)."
+  },
+  "barreters": {
+    "since": "2027-03-16",
+    "reason": "Folded onto `barret` (barreters > barreter > barret), costing 1.81 points. Flagged by the daily fold check for the 2027-03-16 `TER` drop (barreter is quarrel-stirrer; barret is cap) and confirmed on adversarial re-review (barretor from barat fraud; barret cap)."
+  },
   "barriness": {
     "since": "2026-09-27",
     "reason": "Folded onto `barry`, costing 4.53 points. Flagged in the 2026-09-22 semantic audit (barry unrelated to barriness) and confirmed on adversarial re-review (base is bar, not barry)."
@@ -1445,6 +1481,10 @@
   "cades": {
     "since": "2026-09-27",
     "reason": "Folded onto `cad`, costing 2.19 points. Flagged in the 2026-09-22 semantic audit (cade plural; cad different word) and confirmed on adversarial re-review (cade lamb versus cad scoundrel)."
+  },
+  "calced": {
+    "since": "2027-03-21",
+    "reason": "Folded onto `calc` (calced > calc), costing 2.36 points. Flagged by the daily fold check for the 2027-03-21 `AL` drop (calced means shod, not calc) and confirmed on adversarial re-review (Latin calceus shod, not calc)."
   },
   "calorise": {
     "since": "2026-09-27",
@@ -2421,6 +2461,10 @@
   "crowly": {
     "since": "2026-09-27",
     "reason": "Folded onto `crow`, costing 3.90 points. Flagged in the 2026-09-22 semantic audit (from crowl? or crow+ly unclear) and confirmed on adversarial re-review (likely from crawl/crowl, unclear)."
+  },
+  "crues": {
+    "since": "2027-03-17",
+    "reason": "Folded onto `cru` (crues > cru), costing 1.82 points. Flagged by the daily fold check for the 2027-03-17 `UE` drop (not plural of cru; plural crus) and confirmed on adversarial re-review (plural of crue, not cru)."
   },
   "crumblier": {
     "since": "2026-09-27",
@@ -3408,6 +3452,16 @@
   "deflagrant": {
     "since": "2026-10-04",
     "reason": "Folded onto `flagrant`, costing up to 2.81 points, by stripping de- to `flagrant`. Not de- + `flagrant`: burning rapidly (deflagrate); unrelated to flagrant. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deflectional": {
+    "since": "2027-03-21",
+    "reason": "Folded onto `flectional` (deflectional > flectional), costing 0.21 points. Flagged by the daily fold check for the 2027-03-21 `AL` drop (from deflection, not grammatical flectional) and confirmed on adversarial re-review (from deflection, not grammatical flection).",
+    "scope": "prefix"
+  },
+  "deflexional": {
+    "since": "2027-03-21",
+    "reason": "Folded onto `flexional` (deflexional > flexional), costing 0.70 points. Flagged by the daily fold check for the 2027-03-21 `AL` drop (from deflexion, not grammatical flexional) and confirmed on adversarial re-review (from deflexion, not grammatical flexion).",
     "scope": "prefix"
   },
   "defloured": {
@@ -5015,6 +5069,22 @@
     "since": "2026-10-11",
     "reason": "Folded onto `dhol` (dholes > dhol), costing 0.81 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (dhole is wild dog, dhol drum) and confirmed on adversarial re-review (dhole is a wild dog; dhol a drum)."
   },
+  "dialize": {
+    "since": "2027-03-21",
+    "reason": "Folded onto `dial` (dialize > dial), costing 3.78 points. Flagged by the daily fold check for the 2027-03-21 `AL` drop (likely dialyze variant, not dial) and confirmed on adversarial re-review (variant of dialyze, unrelated to dial)."
+  },
+  "dialized": {
+    "since": "2027-03-21",
+    "reason": "Folded onto `dial` (dialized > dialize > dial), costing 3.78 points. Flagged by the daily fold check for the 2027-03-21 `AL` drop (likely dialyzed variant, not dial) and confirmed on adversarial re-review (variant of dialyzed, unrelated to dial)."
+  },
+  "dializes": {
+    "since": "2027-03-21",
+    "reason": "Folded onto `dial` (dializes > dialize > dial), costing 3.78 points. Flagged by the daily fold check for the 2027-03-21 `AL` drop (likely dialyzes variant, not dial) and confirmed on adversarial re-review (variant of dialyzes, unrelated to dial)."
+  },
+  "dializing": {
+    "since": "2027-03-21",
+    "reason": "Folded onto `dial` (dializing > dialize > dial), costing 3.78 points. Flagged by the daily fold check for the 2027-03-21 `AL` drop (likely dialyzing variant, not dial) and confirmed on adversarial re-review (variant of dialyzing, unrelated to dial)."
+  },
   "dieses": {
     "since": "2026-10-26",
     "reason": "Folded onto `die` (dieses > dies > die), costing 4.60 points. Flagged by the daily fold check for the 2026-10-26 `SES` drop (plural of diesis, not die) and confirmed on adversarial re-review (plural of diesis, not die)."
@@ -5519,6 +5589,14 @@
     "since": "2026-10-26",
     "reason": "Folded onto `fada` (fadaises > fadaise > fada), costing 1.07 points. Flagged by the daily fold check for the 2026-10-26 `SES` drop (French fadaise, not fada) and confirmed on adversarial re-review (French fadaise, not fada)."
   },
+  "fairing": {
+    "since": "2027-03-26",
+    "reason": "Folded onto `fair` (fairing > fair), costing 3.21 points. Flagged by the daily fold check for the 2027-03-26 `FA` drop (aerodynamic cover or fair gift) and confirmed on adversarial re-review (aerodynamic cover or gift, sense drifted)."
+  },
+  "fairings": {
+    "since": "2027-03-26",
+    "reason": "Folded onto `fair` (fairings > fairing > fair), costing 3.82 points. Flagged by the daily fold check for the 2027-03-26 `FA` drop (plural of fairing, drifted sense) and confirmed on adversarial re-review (aerodynamic cover or gift, sense drifted)."
+  },
   "fally": {
     "since": "2027-01-12",
     "reason": "Folded onto `fal` (fally > fal), costing 1.35 points. Flagged by the daily fold check for the 2027-01-12 `ALL` drop (not a form of fal) and confirmed on adversarial re-review (not a form of fal)."
@@ -5546,6 +5624,22 @@
   "fascisize": {
     "since": "2026-09-27",
     "reason": "Folded onto `fasci`, costing 0.79 points. Flagged in the 2026-09-22 semantic audit (fasci is not that base) and confirmed on adversarial re-review (fasci is not a word)."
+  },
+  "fascize": {
+    "since": "2027-03-26",
+    "reason": "Folded onto `fasc` (fascize > fasc), costing 1.08 points. Flagged by the daily fold check for the 2027-03-26 `FA` drop (fasc is not a real base) and confirmed on adversarial re-review (fasc is not a real base)."
+  },
+  "fascized": {
+    "since": "2027-03-26",
+    "reason": "Folded onto `fasc` (fascized > fascize > fasc), costing 1.08 points. Flagged by the daily fold check for the 2027-03-26 `FA` drop (fasc is not a real base) and confirmed on adversarial re-review (fasc is not a real base)."
+  },
+  "fascizes": {
+    "since": "2027-03-26",
+    "reason": "Folded onto `fasc` (fascizes > fascize > fasc), costing 1.08 points. Flagged by the daily fold check for the 2027-03-26 `FA` drop (fasc is not a real base) and confirmed on adversarial re-review (fasc is not a real base)."
+  },
+  "fascizing": {
+    "since": "2027-03-26",
+    "reason": "Folded onto `fasc` (fascizing > fascize > fasc), costing 1.08 points. Flagged by the daily fold check for the 2027-03-26 `FA` drop (fasc is not a real base) and confirmed on adversarial re-review (fasc is not a real base)."
   },
   "fates": {
     "since": "2026-09-27",
@@ -5950,6 +6044,10 @@
   "gales": {
     "since": "2026-09-27",
     "reason": "Folded onto `gal`, costing 1.38 points. Flagged in the 2026-09-22 semantic audit (gales are winds, not gals) and confirmed on adversarial re-review (gal overshot; gale is base)."
+  },
+  "galetting": {
+    "since": "2027-03-21",
+    "reason": "Folded onto `galette` (galetting > galette), costing 1.12 points. Flagged by the daily fold check for the 2027-03-21 `AL` drop (from gallet mortar chips, not galette) and confirmed on adversarial re-review (from gallet stone chips, not galette pastry)."
   },
   "gallies": {
     "since": "2026-11-19",
@@ -6467,9 +6565,17 @@
     "since": "2026-12-29",
     "reason": "Folded onto `heartburn` (heartburning > heartburn), costing 1.40 points. Flagged by the daily fold check for the 2026-12-29 `NI` drop (resentment, not the digestive heartburn) and confirmed on adversarial re-review (resentment, not digestive heartburn)."
   },
+  "hebraise": {
+    "since": "2027-03-23",
+    "reason": "Folded onto `hebra` (hebraise > hebra), costing 0.37 points. Flagged by the daily fold check for the 2027-03-23 `RA` drop (Hebrew-related, not hebra society) and confirmed on adversarial re-review (hebra is a society, unrelated)."
+  },
   "hebraising": {
     "since": "2026-12-12",
     "reason": "Folded onto `hebra` (hebraising > hebraise > hebra), costing 0.34 points. Flagged by the daily fold check for the 2026-12-12 `SI` drop (hebraise from Hebrew; hebra is wrong) and confirmed on adversarial re-review (hebraise from Hebrew, not hebra)."
+  },
+  "hebraize": {
+    "since": "2027-03-23",
+    "reason": "Folded onto `hebra` (hebraize > hebra), costing 0.34 points. Flagged by the daily fold check for the 2027-03-23 `RA` drop (Hebrew-related, not hebra society) and confirmed on adversarial re-review (hebra is a society, unrelated)."
   },
   "hecte": {
     "since": "2026-09-27",
@@ -7445,6 +7551,22 @@
     "since": "2026-09-27",
     "reason": "Folded onto `lain`, costing 2.34 points. Flagged in the 2026-09-22 semantic audit (laine plural, not lain) and confirmed on adversarial re-review (laine wool versus lain)."
   },
+  "lairise": {
+    "since": "2027-03-20",
+    "reason": "Folded onto `lair` (lairise > lair), costing 2.81 points. Flagged by the daily fold check for the 2027-03-20 `LAI` drop (Aussie lair flashy person, not den) and confirmed on adversarial re-review (Aussie flashy lair, not den)."
+  },
+  "lairised": {
+    "since": "2027-03-20",
+    "reason": "Folded onto `lair` (lairised > lairise > lair), costing 2.81 points. Flagged by the daily fold check for the 2027-03-20 `LAI` drop (Aussie lair flashy person, not den) and confirmed on adversarial re-review (Aussie flashy lair, not den)."
+  },
+  "lairiser": {
+    "since": "2027-03-20",
+    "reason": "Folded onto `lair` (lairiser > lairise > lair), costing 2.81 points. Flagged by the daily fold check for the 2027-03-20 `LAI` drop (Aussie lair flashy person, not den) and confirmed on adversarial re-review (Aussie flashy lair, not den)."
+  },
+  "lairisers": {
+    "since": "2027-03-20",
+    "reason": "Folded onto `lair` (lairisers > lairiser > lairise > lair), costing 2.81 points. Flagged by the daily fold check for the 2027-03-20 `LAI` drop (Aussie lair flashy person, not den) and confirmed on adversarial re-review (Aussie flashy lair, not den)."
+  },
   "laminability": {
     "since": "2026-09-27",
     "reason": "Folded onto `lamin`, costing 1.54 points. Flagged in the 2026-09-22 semantic audit (lamin is a protein, laminability from laminate) and confirmed on adversarial re-review (lamin protein unrelated to laminate)."
@@ -7733,6 +7855,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `lud`, costing 0.92 points. Flagged in the 2026-09-22 semantic audit (lud is a lord/exclamation, not lude) and confirmed on adversarial re-review (lud unrelated to lude)."
   },
+  "lues": {
+    "since": "2027-03-17",
+    "reason": "Folded onto `lue` (lues > lue), costing 1.48 points. Flagged by the daily fold check for the 2027-03-17 `UE` drop (lues is syphilis, singular noun) and confirmed on adversarial re-review (singular noun syphilis, no lue)."
+  },
   "luges": {
     "since": "2026-09-27",
     "reason": "Folded onto `lug`, costing 2.82 points. Flagged in the 2026-09-22 semantic audit (plural of luge) and confirmed on adversarial re-review (luge sled unrelated to lug)."
@@ -7812,6 +7938,10 @@
   "manges": {
     "since": "2026-09-27",
     "reason": "Folded onto `mang`, costing 1.38 points. Flagged in the 2026-09-22 semantic audit (manges from mange, not mang) and confirmed on adversarial re-review (mang overshot; mange is base)."
+  },
+  "mangues": {
+    "since": "2027-03-17",
+    "reason": "Folded onto `mangu` (mangues > mangu), costing 0.86 points. Flagged by the daily fold check for the 2027-03-17 `UE` drop (mangue not mangu dish) and confirmed on adversarial re-review (mangue plural, mangu unrelated dish)."
   },
   "manties": {
     "since": "2026-09-27",
@@ -8329,6 +8459,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `mumps`, costing 2.50 points. Flagged in the 2026-09-22 semantic audit (mump vs mumps disease) and confirmed on adversarial re-review (mump to beg versus disease)."
   },
+  "muntered": {
+    "since": "2027-03-16",
+    "reason": "Folded onto `munter` (muntered > munter), costing 0.85 points. Flagged by the daily fold check for the 2027-03-16 `TER` drop (slang for very drunk, not munter) and confirmed on adversarial re-review (drunk sense, not ugly person munter)."
+  },
   "murres": {
     "since": "2026-09-27",
     "reason": "Folded onto `murr`, costing 0.94 points. Flagged in the 2026-09-22 semantic audit (plural of murre, not murr) and confirmed on adversarial re-review (murre overstripped to murr)."
@@ -8372,6 +8506,10 @@
   "nakes": {
     "since": "2026-09-27",
     "reason": "Folded onto `naked`, costing 4.58 points. Flagged in the 2026-09-22 semantic audit (nakes not form of naked) and confirmed on adversarial re-review (nakes not form of naked)."
+  },
+  "naled": {
+    "since": "2027-03-21",
+    "reason": "Folded onto `nales` (naled > nale > nales), costing 0.58 points. Flagged by the daily fold check for the 2027-03-21 `AL` drop (pesticide name, not nale) and confirmed on adversarial re-review (pesticide name, unrelated to nale)."
   },
   "naleds": {
     "since": "2026-09-27",
@@ -11211,6 +11349,18 @@
     "since": "2026-10-20",
     "reason": "Folded onto `quite` (quites > quite), costing 4.90 points. Flagged by the daily fold check for the 2026-10-20 `QUI` drop (bullfighting quite, not adverb quite) and confirmed on adversarial re-review (bullfighting quite, not the adverb)."
   },
+  "rabated": {
+    "since": "2027-03-23",
+    "reason": "Folded onto `rabat` (rabated > rabat), costing 1.95 points. Flagged by the daily fold check for the 2027-03-23 `RA` drop (from verb rabate, not noun rabat) and confirmed on adversarial re-review (rabat is a noun, unrelated to rabate)."
+  },
+  "rabates": {
+    "since": "2027-03-23",
+    "reason": "Folded onto `rabat` (rabates > rabat), costing 1.95 points. Flagged by the daily fold check for the 2027-03-23 `RA` drop (plural/verb of rabate, not rabat) and confirmed on adversarial re-review (rabat is a noun, unrelated to rabate)."
+  },
+  "rabating": {
+    "since": "2027-03-23",
+    "reason": "Folded onto `rabat` (rabating > rabat), costing 1.95 points. Flagged by the daily fold check for the 2027-03-23 `RA` drop (from verb rabate, not noun rabat) and confirmed on adversarial re-review (rabat is a noun, unrelated to rabate)."
+  },
   "rabes": {
     "since": "2026-09-27",
     "reason": "Folded onto `rabies`, costing 3.12 points. Flagged in the 2026-09-22 semantic audit (rabe is a green, not rabies) and confirmed on adversarial re-review (rabe is a green, not rabies)."
@@ -11243,6 +11393,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `rain`, costing 2.78 points. Flagged in the 2026-09-22 semantic audit (raines not from rain) and confirmed on adversarial re-review (raine is not from rain)."
   },
+  "rais": {
+    "since": "2027-03-23",
+    "reason": "Folded onto `rai` (rais > rai), costing 1.26 points. Flagged by the daily fold check for the 2027-03-23 `RA` drop (Arabic chief/captain, not plural of rai) and confirmed on adversarial re-review (rais means chief, not rai music)."
+  },
   "rakily": {
     "since": "2026-09-27",
     "reason": "Folded onto `raki`, costing 1.46 points. Flagged in the 2026-09-22 semantic audit (from rakish; -ly ate the letter) and confirmed on adversarial re-review (raki is a liquor, unrelated)."
@@ -11267,13 +11421,25 @@
     "since": "2026-09-27",
     "reason": "Folded onto `ranke`, costing 1.14 points. Flagged in the 2026-09-22 semantic audit (from rank, ranke not word) and confirmed on adversarial re-review (ranke is not a word)."
   },
+  "rared": {
+    "since": "2027-03-23",
+    "reason": "Folded onto `rare` (rared > rare), costing 4.38 points. Flagged by the daily fold check for the 2027-03-23 `RA` drop (dialect verb rare means rear up) and confirmed on adversarial re-review (dialect rare means rear, different word)."
+  },
   "rarees": {
     "since": "2026-11-21",
     "reason": "Folded onto `rare` (rarees > rare), costing 4.95 points. Flagged by the daily fold check for the 2026-11-21 `EE` drop (raree show, not rare) and confirmed on adversarial re-review (raree show; sense drifted from rare)."
   },
+  "raring": {
+    "since": "2027-03-23",
+    "reason": "Folded onto `rare` (raring > rare), costing 3.23 points. Flagged by the daily fold check for the 2027-03-23 `RA` drop (raring means eager, from rear) and confirmed on adversarial re-review (raring comes from rear, means eager)."
+  },
   "rashies": {
     "since": "2026-11-19",
     "reason": "Folded onto `rashi` (rashies > rashi), costing 1.57 points. Flagged by the daily fold check for the 2026-11-19 `IES` drop (rash vest, not Rashi) and confirmed on adversarial re-review (rash vest, not Rashi)."
+  },
+  "ravened": {
+    "since": "2027-03-23",
+    "reason": "Folded onto `raven` (ravened > raven), costing 3.32 points. Flagged by the daily fold check for the 2027-03-23 `RA` drop (raven verb means devour, not bird) and confirmed on adversarial re-review (raven verb means devour, not bird)."
   },
   "razeed": {
     "since": "2026-09-27",
@@ -11414,6 +11580,22 @@
   "rensing": {
     "since": "2026-12-12",
     "reason": "Folded onto `ren` (rensing > rens > ren), costing 3.13 points. Flagged by the daily fold check for the 2026-12-12 `SI` drop (not a form of ren) and confirmed on adversarial re-review (not a form of ren)."
+  },
+  "rentered": {
+    "since": "2027-03-16",
+    "reason": "Folded onto `renters` (rentered > renter > renters), costing 2.71 points. Flagged by the daily fold check for the 2027-03-16 `TER` drop (renter verb: invisible seam sewing) and confirmed on adversarial re-review (fine-drawing verb, not people renting)."
+  },
+  "renterer": {
+    "since": "2027-03-16",
+    "reason": "Folded onto `renters` (renterer > renter > renters), costing 2.71 points. Flagged by the daily fold check for the 2027-03-16 `TER` drop (fine-drawer, not one who rents) and confirmed on adversarial re-review (fine-drawer, not one who rents)."
+  },
+  "renterers": {
+    "since": "2027-03-16",
+    "reason": "Folded onto `renters` (renterers > renterer > renter > renters), costing 2.71 points. Flagged by the daily fold check for the 2027-03-16 `TER` drop (fine-drawers, not one who rents) and confirmed on adversarial re-review (fine-drawers, not people who rent)."
+  },
+  "rentering": {
+    "since": "2027-03-16",
+    "reason": "Folded onto `renters` (rentering > renter > renters), costing 2.71 points. Flagged by the daily fold check for the 2027-03-16 `TER` drop (renter verb: invisible seam sewing) and confirmed on adversarial re-review (fine-drawing verb, not people renting)."
   },
   "rentes": {
     "since": "2026-09-27",
@@ -11763,6 +11945,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `salty`, costing 3.78 points. Flagged in the 2026-09-22 semantic audit (saltier comparative, not salty plural) and confirmed on adversarial re-review (saltier is comparative of salty)."
   },
+  "salvably": {
+    "since": "2027-03-21",
+    "reason": "Folded onto `salve` (salvably > salve), costing 2.23 points. Flagged by the daily fold check for the 2027-03-21 `AL` drop (salvable means savable, not ointment salve) and confirmed on adversarial re-review (salvable means savable, not ointment salve)."
+  },
   "samites": {
     "since": "2026-09-27",
     "reason": "Folded onto `samiti`, costing 1.63 points. Flagged in the 2026-09-22 semantic audit (samite fabric vs samiti assembly) and confirmed on adversarial re-review (samite fabric versus samiti assembly)."
@@ -11907,9 +12093,21 @@
     "since": "2026-10-19",
     "reason": "Folded onto `scratchy` (scratchies > scratchy), costing 1.95 points. Flagged by the daily fold check for the 2026-10-19 `RAT` drop (plural noun scratchie, not adjective scratchy) and confirmed on adversarial re-review (Scratch-ticket noun, not adjective scratchy)."
   },
+  "scrimer": {
+    "since": "2027-03-19",
+    "reason": "Folded onto `scrim` (scrimer > scrim), costing 1.81 points. Flagged by the daily fold check for the 2027-03-19 `SCR` drop (archaic fencer, from French escrimeur) and confirmed on adversarial re-review (fencer from escrimeur, unrelated to scrim)."
+  },
+  "scrimers": {
+    "since": "2027-03-19",
+    "reason": "Folded onto `scrim` (scrimers > scrimer > scrim), costing 1.81 points. Flagged by the daily fold check for the 2027-03-19 `SCR` drop (archaic fencers, not scrim) and confirmed on adversarial re-review (fencers from escrimeur, unrelated to scrim)."
+  },
   "scutes": {
     "since": "2026-09-27",
     "reason": "Folded onto `scut`, costing 0.10 points. Flagged in the 2026-09-22 semantic audit (scute is plate; scut is tail) and confirmed on adversarial re-review (scute is plate, scut tail)."
+  },
+  "sealioned": {
+    "since": "2027-03-21",
+    "reason": "Folded onto `sealion` (sealioned > sealion), costing 0.91 points. Flagged by the daily fold check for the 2027-03-21 `AL` drop (internet harassment verb, not the animal) and confirmed on adversarial re-review (harassment verb; meaning drifted from animal)."
   },
   "sealy": {
     "since": "2026-09-27",
@@ -13126,9 +13324,25 @@
     "since": "2026-11-05",
     "reason": "Folded onto `flop` (teraflops > teraflop > flop), costing 2.56 points. Flagged by the daily fold check for the 2026-11-05 `OP` drop (FLOPS acronym, not flop failure) and confirmed on adversarial re-review (FLOPS acronym, not flop failure)."
   },
+  "teras": {
+    "since": "2027-03-16",
+    "reason": "Folded onto `tera` (teras > tera), costing 1.44 points. Flagged by the daily fold check for the 2027-03-16 `TER` drop (teratology monster, not tera plural) and confirmed on adversarial re-review (Greek monster noun, not tera prefix)."
+  },
+  "teres": {
+    "since": "2027-03-16",
+    "reason": "Folded onto `ter` (teres > ter), costing 1.73 points. Flagged by the daily fold check for the 2027-03-16 `TER` drop (muscle name, not plural of ter) and confirmed on adversarial re-review (anatomical muscle name, unrelated to ter)."
+  },
   "ternes": {
     "since": "2026-09-27",
     "reason": "Folded onto `tern`, costing 2.08 points. Flagged in the 2026-09-22 semantic audit (terne is metal alloy, not tern) and confirmed on adversarial re-review (terne alloy unrelated to tern)."
+  },
+  "terped": {
+    "since": "2027-03-16",
+    "reason": "Folded onto `terps` (terped > terp > terps), costing 1.43 points. Flagged by the daily fold check for the 2027-03-16 `TER` drop (terp means interpret, not terpenes) and confirmed on adversarial re-review (interpret slang, not terpenes)."
+  },
+  "terping": {
+    "since": "2027-03-16",
+    "reason": "Folded onto `terps` (terping > terp > terps), costing 1.43 points. Flagged by the daily fold check for the 2027-03-16 `TER` drop (terp means interpret, not terpenes) and confirmed on adversarial re-review (interpret slang, not terpenes)."
   },
   "terranes": {
     "since": "2026-09-27",
@@ -13358,6 +13572,22 @@
     "since": "2026-10-26",
     "reason": "Folded onto `toku` (tokuses > tokus > toku), costing 0.91 points. Flagged by the daily fold check for the 2026-10-26 `SES` drop (plural of tokus, not Japanese toku) and confirmed on adversarial re-review (plural of tokus, not toku)."
   },
+  "tolter": {
+    "since": "2027-03-16",
+    "reason": "Folded onto `tolt` (tolter > tolt), costing 0.27 points. Flagged by the daily fold check for the 2027-03-16 `TER` drop (dialect flounder verb, unrelated to tolt) and confirmed on adversarial re-review (dialect flounder verb, unrelated to tolt)."
+  },
+  "toltered": {
+    "since": "2027-03-16",
+    "reason": "Folded onto `tolt` (toltered > tolter > tolt), costing 0.27 points. Flagged by the daily fold check for the 2027-03-16 `TER` drop (past of tolter, unrelated to tolt) and confirmed on adversarial re-review (tolter verb, unrelated to tolt)."
+  },
+  "toltering": {
+    "since": "2027-03-16",
+    "reason": "Folded onto `tolt` (toltering > tolter > tolt), costing 0.27 points. Flagged by the daily fold check for the 2027-03-16 `TER` drop (form of tolter, unrelated to tolt) and confirmed on adversarial re-review (tolter verb, unrelated to tolt)."
+  },
+  "tolters": {
+    "since": "2027-03-16",
+    "reason": "Folded onto `tolt` (tolters > tolter > tolt), costing 0.27 points. Flagged by the daily fold check for the 2027-03-16 `TER` drop (form of tolter, unrelated to tolt) and confirmed on adversarial re-review (tolter verb, unrelated to tolt)."
+  },
   "tomes": {
     "since": "2026-09-27",
     "reason": "Folded onto `tom`, costing 3.10 points. Flagged in the 2026-09-22 semantic audit (tome is not tom) and confirmed on adversarial re-review (tome is a book, not tom)."
@@ -13414,6 +13644,22 @@
     "since": "2026-08-26",
     "reason": "`transfer` + -al, not trans- + `feral`. The residue is a free word and an unrelated one, so no residue table can see it. Scoped to the prefix, which is what lets `transferals` still fold onto this word rather than scoring above it -- and the entry covers the plural without naming it (see prefixFoldExemptParadigm).",
     "scope": "prefix"
+  },
+  "traped": {
+    "since": "2027-03-23",
+    "reason": "Folded onto `trap` (traped > trap), costing 4.35 points. Flagged by the daily fold check for the 2027-03-23 `RA` drop (past of trape (traipse), not trap) and confirmed on adversarial re-review (trape means traipse, unrelated to trap)."
+  },
+  "trapes": {
+    "since": "2027-03-23",
+    "reason": "Folded onto `trap` (trapes > trap), costing 4.25 points. Flagged by the daily fold check for the 2027-03-23 `RA` drop (variant of traipse, not plural trap) and confirmed on adversarial re-review (trapes means traipse, not trap plural)."
+  },
+  "traping": {
+    "since": "2027-03-23",
+    "reason": "Folded onto `trap` (traping > trap), costing 4.35 points. Flagged by the daily fold check for the 2027-03-23 `RA` drop (participle of trape (traipse)) and confirmed on adversarial re-review (trape means traipse, unrelated to trap)."
+  },
+  "trapsed": {
+    "since": "2027-03-23",
+    "reason": "Folded onto `trap` (trapsed > traps > trap), costing 4.35 points. Flagged by the daily fold check for the 2027-03-23 `RA` drop (past of trapse (traipse)) and confirmed on adversarial re-review (trapse means traipse, unrelated to trap)."
   },
   "trapses": {
     "since": "2026-10-26",
@@ -13574,6 +13820,10 @@
   "unadulterable": {
     "since": "2026-09-27",
     "reason": "Folded onto `adultery`, costing 3.36 points. Flagged in the 2026-09-22 semantic audit (unadulterable from adulterate, not adultery) and confirmed on adversarial re-review (adulterate sense differs from adultery)."
+  },
+  "unalienably": {
+    "since": "2027-03-21",
+    "reason": "Folded onto `alien` (unalienably > alienably > alien), costing 4.29 points. Flagged by the daily fold check for the 2027-03-21 `AL` drop (alienable is not from alien) and confirmed on adversarial re-review (alienable means transferable; drifted from alien)."
   },
   "unalists": {
     "since": "2026-09-27",
@@ -14266,6 +14516,10 @@
     "since": "2027-01-16",
     "reason": "Folded onto `grippy` (ungrippable > grippable > grippy), costing 1.24 points. Flagged by the daily fold check for the 2027-01-16 `IP` drop (un- plus grippable, not grippy) and confirmed on adversarial re-review (reviewer right; fold lands on wrong word)."
   },
+  "ungues": {
+    "since": "2027-03-17",
+    "reason": "Folded onto `guess` (ungues > unguessed > guessed > guess), costing 4.55 points. Flagged by the daily fold check for the 2027-03-17 `UE` drop (plural of unguis, not guess) and confirmed on adversarial re-review (plural of unguis, unrelated to guess)."
+  },
   "ungulae": {
     "since": "2026-09-27",
     "reason": "Folded onto `gula`, costing 1.27 points. Flagged in the 2026-09-22 semantic audit (plural of ungula, not gula) and confirmed on adversarial re-review (ungula unrelated to gula)."
@@ -14563,6 +14817,14 @@
     "since": "2026-09-27",
     "reason": "Folded onto `quant`, costing 2.21 points. Flagged in the 2026-09-22 semantic audit (quantised from quantum, not quant) and confirmed on adversarial re-review (quantum, not quant)."
   },
+  "unrar": {
+    "since": "2027-03-23",
+    "reason": "Folded onto `rare` (unrar > unrared > rared > rare), costing 4.03 points. Flagged by the daily fold check for the 2027-03-23 `RA` drop (extract RAR archive, unrelated to rare) and confirmed on adversarial re-review (unrar is archive extraction, unrelated)."
+  },
+  "unraring": {
+    "since": "2027-03-23",
+    "reason": "Folded onto `rare` (unraring > raring > rare), costing 4.97 points. Flagged by the daily fold check for the 2027-03-23 `RA` drop (raring means eager, not rare) and confirmed on adversarial re-review (raring means eager, unrelated to rare)."
+  },
   "unreeves": {
     "since": "2026-09-27",
     "reason": "Folded onto `reef`, costing 3.94 points. Flagged in the 2026-09-22 semantic audit (unreeve, not reef) and confirmed on adversarial re-review (reeve unrelated to reef)."
@@ -14636,6 +14898,16 @@
   "unsatiably": {
     "since": "2026-09-27",
     "reason": "Folded onto `sati`, costing 2.08 points. Flagged in the 2026-09-22 semantic audit (from satiable, not sati) and confirmed on adversarial re-review (sati unrelated; from satiate)."
+  },
+  "unseater": {
+    "since": "2027-03-16",
+    "reason": "Folded onto `seater` (unseater > seater), costing 2.62 points. Flagged by the daily fold check for the 2027-03-16 `TER` drop (one who unseats, not seater) and confirmed on adversarial re-review (one who unseats, not seater sense).",
+    "scope": "prefix"
+  },
+  "unseaters": {
+    "since": "2027-03-16",
+    "reason": "Folded onto `seater` (unseaters > unseater > seater), costing 2.63 points. Flagged by the daily fold check for the 2027-03-16 `TER` drop (one who unseats, not seater) and confirmed on adversarial re-review (those who unseat, not seater sense).",
+    "scope": "prefix"
   },
   "unseemlier": {
     "since": "2026-09-27",
@@ -15083,6 +15355,14 @@
   "whoopings": {
     "since": "2026-10-11",
     "reason": "Folded onto `whoops` (whoopings > whooping > whoop > whoops), costing 2.96 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (final base whoops differs from whoop) and confirmed on adversarial re-review (chain overshoots to the exclamation whoops)."
+  },
+  "whutter": {
+    "since": "2027-03-16",
+    "reason": "Folded onto `whut` (whutter > whut), costing 1.23 points. Flagged by the daily fold check for the 2027-03-16 `TER` drop (dialect murmur verb, not whut) and confirmed on adversarial re-review (dialect murmur verb, not slang whut)."
+  },
+  "whuttering": {
+    "since": "2027-03-16",
+    "reason": "Folded onto `whut` (whuttering > whutter > whut), costing 1.24 points. Flagged by the daily fold check for the 2027-03-16 `TER` drop (form of whutter, not whut) and confirmed on adversarial re-review (whutter verb, not slang whut)."
   },
   "whves": {
     "since": "2026-09-27",
