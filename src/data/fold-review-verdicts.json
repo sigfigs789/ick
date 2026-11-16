@@ -79,6 +79,11 @@
     "since": "2027-01-19",
     "reason": "Folded onto `alan` (alanes > alan), costing 4.50 points; it is a form of `alane` (Zipf 1.41). Flagged by the daily fold check for the 2027-01-19 `LAN` drop (plural of alane, not alan dog) and confirmed on adversarial re-review (reviewer right; fold lands on wrong word)."
   },
+  "almes": {
+    "base": "alme",
+    "since": "2027-03-21",
+    "reason": "Folded onto `alms` (almes > alm > alms), costing 1.36 points; it is a form of `alme` (Zipf 1.15). Flagged by the daily fold check for the 2027-03-21 `AL` drop (plural of alme dancer, not alms) and confirmed on adversarial re-review (dancer plural, not alms)."
+  },
   "altimetres": {
     "base": "altimeter",
     "since": "2026-12-28",
@@ -288,6 +293,11 @@
     "base": "ask",
     "since": "2026-11-21",
     "reason": "Folded onto `aske` (askees > aske), costing 1.39 points; it is a form of `ask` (Zipf 5.34). Flagged by the daily fold check for the 2026-11-21 `EE` drop (one who is asked, not aske newt) and confirmed on adversarial re-review (from ask, not aske)."
+  },
+  "aspirable": {
+    "base": "aspirate",
+    "since": "2027-03-23",
+    "reason": "Folded onto `aspiring` (aspirable > aspire > aspiring), costing 3.27 points; it is a form of `aspirate` (Zipf 2.10). Flagged by the daily fold check for the 2027-03-23 `RA` drop (able to be aspirated, not aspire) and confirmed on adversarial re-review (able to be aspirated, not aspire)."
   },
   "assessed": {
     "base": "assess",
@@ -518,6 +528,11 @@
     "base": "calx",
     "since": "2026-12-08",
     "reason": "Folded onto `calc` (calces > calc), costing 1.59 points; it is a form of `calx` (Zipf 1.10). Flagged by the daily fold check for the 2026-12-08 `CES` drop (plural of calx, not calc) and confirmed on adversarial re-review (plural of calx, not calc)."
+  },
+  "calibrable": {
+    "base": "calibrate",
+    "since": "2027-03-21",
+    "reason": "Folded onto `calibre` (calibrable > calibre), costing 2.78 points; it is a form of `calibrate` (Zipf 2.79). Flagged by the daily fold check for the 2027-03-21 `AL` drop (able to be calibrated, not calibre) and confirmed on adversarial re-review (calibrate sense, not bore diameter)."
   },
   "calorimetres": {
     "base": "calorimeter",
@@ -1824,6 +1839,11 @@
     "since": "2026-11-14",
     "reason": "Folded onto `duct` (ductible > duct), costing 3.23 points; it is a form of `ductile` (Zipf 2.42). Flagged by the daily fold check for the 2026-11-14 `UC` drop (variant of ductile, not duct) and confirmed on adversarial re-review (variant of ductile, not duct)."
   },
+  "dunned": {
+    "base": "dun",
+    "since": "2027-03-24",
+    "reason": "Folded onto `dunes` (dunned > dun > dunes), costing 1.89 points; it is a form of `dun` (Zipf 3.33). Flagged by the daily fold check for the 2027-03-24 `NNE` drop (past of dun, not dunes) and confirmed on adversarial re-review (dun means demand payment, not dunes)."
+  },
   "dunning": {
     "base": "dun",
     "since": "2026-12-29",
@@ -1924,6 +1944,11 @@
     "since": "2026-12-29",
     "reason": "Folded onto `even` (evenings > evening > even), costing 3.41 points; it is a form of `evening` (Zipf 4.86). Flagged by the daily fold check for the 2026-12-29 `NI` drop (time of day, not even) and confirmed on adversarial re-review (time of day, drifted from even)."
   },
+  "fabes": {
+    "base": "fabe",
+    "since": "2027-03-26",
+    "reason": "Folded onto `fab` (fabes > fab), costing 2.87 points; it is a form of `fabe` (Zipf 1.26). Flagged by the daily fold check for the 2027-03-26 `FA` drop (plural of fabe, gooseberry) and confirmed on adversarial re-review (plural of fabe, gooseberry, not fab)."
+  },
   "fabricability": {
     "base": "fabricate",
     "since": "2026-11-16",
@@ -1938,6 +1963,11 @@
     "base": "fap",
     "since": "2027-01-22",
     "reason": "Folded onto `fappy` (fappable > fappy), costing 0.19 points; it is a form of `fap` (Zipf 2.79). Flagged by the daily fold check for the 2027-01-22 `APP` drop (from fap, not fappy) and confirmed on adversarial re-review (reviewer right; fold lands on wrong word)."
+  },
+  "farcied": {
+    "base": "farcy",
+    "since": "2027-03-26",
+    "reason": "Folded onto `farci` (farcied > farci), costing 0.26 points; it is a form of `farcy` (Zipf 1.09). Flagged by the daily fold check for the 2027-03-26 `FA` drop (has farcy disease, not farci stuffed) and confirmed on adversarial re-review (farcy disease, not farci stuffed)."
   },
   "farcies": {
     "base": "farcy",
@@ -2499,10 +2529,50 @@
     "since": "2026-12-29",
     "reason": "Folded onto `heartburn` (heartburnings > heartburning > heartburn), costing 1.23 points; it is a form of `heartburning` (Zipf 1.81). Flagged by the daily fold check for the 2026-12-29 `NI` drop (resentment, not the digestive heartburn) and confirmed on adversarial re-review (resentment, not digestive heartburn)."
   },
+  "hebraisation": {
+    "base": "hebraise",
+    "since": "2027-03-23",
+    "reason": "Folded onto `hebra` (hebraisation > hebraise > hebra), costing 0.38 points; it is a form of `hebraise` (Zipf -1.30). Flagged by the daily fold check for the 2027-03-23 `RA` drop (Hebrew-related, not hebra society) and confirmed on adversarial re-review (hebra is a society, unrelated)."
+  },
+  "hebraisations": {
+    "base": "hebraise",
+    "since": "2027-03-23",
+    "reason": "Folded onto `hebra` (hebraisations > hebraisation > hebraise > hebra), costing 0.38 points; it is a form of `hebraise` (Zipf -1.30). Flagged by the daily fold check for the 2027-03-23 `RA` drop (Hebrew-related, not hebra society) and confirmed on adversarial re-review (hebra is a society, unrelated)."
+  },
+  "hebraised": {
+    "base": "hebraise",
+    "since": "2027-03-23",
+    "reason": "Folded onto `hebra` (hebraised > hebraise > hebra), costing 0.34 points; it is a form of `hebraise` (Zipf -1.30). Flagged by the daily fold check for the 2027-03-23 `RA` drop (Hebrew-related, not hebra society) and confirmed on adversarial re-review (hebra is a society, unrelated)."
+  },
   "hebraises": {
     "base": "hebraise",
     "since": "2026-10-26",
     "reason": "Folded onto `hebra` (hebraises > hebraise > hebra), costing 0.37 points; it is a form of `hebraise` (Zipf -1.30). Flagged by the daily fold check for the 2026-10-26 `SES` drop (from Hebrew, not hebra) and confirmed on adversarial re-review (from Hebrew, not hebra)."
+  },
+  "hebraization": {
+    "base": "hebraize",
+    "since": "2027-03-23",
+    "reason": "Folded onto `hebra` (hebraization > hebraize > hebra), costing 0.33 points; it is a form of `hebraize` (Zipf -0.42). Flagged by the daily fold check for the 2027-03-23 `RA` drop (Hebrew-related, not hebra society) and confirmed on adversarial re-review (hebra is a society, unrelated)."
+  },
+  "hebraizations": {
+    "base": "hebraize",
+    "since": "2027-03-23",
+    "reason": "Folded onto `hebra` (hebraizations > hebraization > hebraize > hebra), costing 0.38 points; it is a form of `hebraize` (Zipf -0.42). Flagged by the daily fold check for the 2027-03-23 `RA` drop (Hebrew-related, not hebra society) and confirmed on adversarial re-review (hebra is a society, unrelated)."
+  },
+  "hebraized": {
+    "base": "hebraize",
+    "since": "2027-03-23",
+    "reason": "Folded onto `hebra` (hebraized > hebraize > hebra), costing 0.31 points; it is a form of `hebraize` (Zipf -0.42). Flagged by the daily fold check for the 2027-03-23 `RA` drop (Hebrew-related, not hebra society) and confirmed on adversarial re-review (hebra is a society, unrelated)."
+  },
+  "hebraizes": {
+    "base": "hebraize",
+    "since": "2027-03-23",
+    "reason": "Folded onto `hebra` (hebraizes > hebraize > hebra), costing 0.36 points; it is a form of `hebraize` (Zipf -0.42). Flagged by the daily fold check for the 2027-03-23 `RA` drop (Hebrew-related, not hebra society) and confirmed on adversarial re-review (hebra is a society, unrelated)."
+  },
+  "hebraizing": {
+    "base": "hebraize",
+    "since": "2027-03-23",
+    "reason": "Folded onto `hebra` (hebraizing > hebraize > hebra), costing 0.31 points; it is a form of `hebraize` (Zipf -0.42). Flagged by the daily fold check for the 2027-03-23 `RA` drop (Hebrew-related, not hebra society) and confirmed on adversarial re-review (hebra is a society, unrelated)."
   },
   "heftable": {
     "base": "heft",
@@ -3348,6 +3418,11 @@
     "base": "actionable",
     "since": "2026-12-18",
     "reason": "Folded onto `nonaction` (nonactionable > nonaction), costing 1.51 points; it is a form of `actionable` (Zipf 3.00). Flagged by the daily fold check for the 2026-12-18 `AC` drop (non- plus actionable, not nonaction) and confirmed on adversarial re-review (non- plus actionable, not nonaction)."
+  },
+  "nonanswerable": {
+    "base": "answerable",
+    "since": "2027-03-23",
+    "reason": "Folded onto `nonanswer` (nonanswerable > nonanswer), costing 0.27 points; it is a form of `answerable` (Zipf 2.69). Flagged by the daily fold check for the 2027-03-23 `RA` drop (non- plus answerable, not nonanswer) and confirmed on adversarial re-review (nonanswer means evasive reply, different sense)."
   },
   "nonbodily": {
     "base": "bodily",
@@ -4439,6 +4514,11 @@
     "since": "2027-03-04",
     "reason": "Folded onto `prebend` (prebending > prebend), costing 1.13 points; it is a form of `bend` (Zipf 4.13). Flagged by the daily fold check for the 2027-03-04 `ND` drop (bending beforehand, not prebend stipend) and confirmed on adversarial re-review (bending beforehand, not the clerical stipend)."
   },
+  "preblues": {
+    "base": "blues",
+    "since": "2027-03-17",
+    "reason": "Folded onto `blue` (preblues > blues > blue), costing 5.49 points; it is a form of `blues` (Zipf 4.34). Flagged by the daily fold check for the 2027-03-17 `UE` drop (blues music, not color blue) and confirmed on adversarial re-review (blues music, not colour blue)."
+  },
   "prebuild": {
     "base": "build",
     "since": "2027-03-02",
@@ -4524,6 +4604,16 @@
     "since": "2027-02-07",
     "reason": "Folded onto `dative` (predative > dative), costing 1.72 points; it is a form of `predate` (Zipf 2.59). Flagged by the daily fold check for the 2027-02-07 `DA` drop (predatory, not pre- plus dative) and confirmed on adversarial re-review (Means predatory, not pre- plus dative)."
   },
+  "predialed": {
+    "base": "dial",
+    "since": "2027-03-21",
+    "reason": "Folded onto `predial` (predialed > predial), costing 1.09 points; it is a form of `dial` (Zipf 3.93). Flagged by the daily fold check for the 2027-03-21 `AL` drop (pre-dial phone, not predial land) and confirmed on adversarial re-review (pre-dial telephone, not predial land sense)."
+  },
+  "predialing": {
+    "base": "dial",
+    "since": "2027-03-21",
+    "reason": "Folded onto `predial` (predialing > predial), costing 1.09 points; it is a form of `dial` (Zipf 3.93). Flagged by the daily fold check for the 2027-03-21 `AL` drop (pre-dial phone, not predial land) and confirmed on adversarial re-review (pre-dial telephone, not predial land sense)."
+  },
   "predialled": {
     "base": "dial",
     "since": "2027-01-12",
@@ -4533,6 +4623,11 @@
     "base": "dial",
     "since": "2027-01-12",
     "reason": "Folded onto `predial` (predialling > predial), costing 1.09 points; it is a form of `dial` (Zipf 3.93). Flagged by the daily fold check for the 2027-01-12 `ALL` drop (pre-dialling, not predial (landed)) and confirmed on adversarial re-review (pre-dialling, not predial (landed))."
+  },
+  "predictional": {
+    "base": "prediction",
+    "since": "2027-03-21",
+    "reason": "Folded onto `dictional` (predictional > dictional), costing 0.65 points; it is a form of `prediction` (Zipf 3.96). Flagged by the daily fold check for the 2027-03-21 `AL` drop (from prediction, not pre+dictional) and confirmed on adversarial re-review (prediction plus -al, not pre+dictional)."
   },
   "predisposable": {
     "base": "predispose",
@@ -4678,6 +4773,11 @@
     "base": "prejudice",
     "since": "2027-01-26",
     "reason": "Folded onto `judicious` (prejudiciously > judiciously > judicious), costing 2.05 points; it is a form of `prejudice` (Zipf 3.79). Flagged by the daily fold check for the 2027-01-26 `OU` drop (from prejudice, not pre- plus judicious) and confirmed on adversarial re-review (reviewer right; fold lands on wrong word)."
+  },
+  "premisal": {
+    "base": "premise",
+    "since": "2027-03-21",
+    "reason": "Folded onto `misal` (premisal > misal), costing 0.30 points; it is a form of `premise` (Zipf 3.82). Flagged by the daily fold check for the 2027-03-21 `AL` drop (from premise, not pre+misal) and confirmed on adversarial re-review (premise plus -al, not pre+misal)."
   },
   "preorally": {
     "base": "preoral",
@@ -4924,6 +5024,21 @@
     "since": "2026-12-12",
     "reason": "Folded onto `racemes` (racemising > racemise > raceme > racemes), costing 1.19 points; it is a form of `racemise` (Zipf 0.59). Flagged by the daily fold check for the 2026-12-12 `SI` drop (racemic conversion, not raceme flower) and confirmed on adversarial re-review (racemic conversion, not raceme flower)."
   },
+  "raggeder": {
+    "base": "ragged",
+    "since": "2027-03-23",
+    "reason": "Folded onto `rag` (raggeder > ragged > rag), costing 3.17 points; it is a form of `ragged` (Zipf 3.19). Flagged by the daily fold check for the 2027-03-23 `RA` drop (comparative of adjective ragged) and confirmed on adversarial re-review (ragged means uneven/rough, drifted from rag)."
+  },
+  "raggedly": {
+    "base": "ragged",
+    "since": "2027-03-23",
+    "reason": "Folded onto `rag` (raggedly > ragged > rag), costing 2.57 points; it is a form of `ragged` (Zipf 3.19). Flagged by the daily fold check for the 2027-03-23 `RA` drop (adverb of adjective ragged) and confirmed on adversarial re-review (ragged means uneven/rough, drifted from rag)."
+  },
+  "raggedness": {
+    "base": "ragged",
+    "since": "2027-03-23",
+    "reason": "Folded onto `rag` (raggedness > ragged > rag), costing 2.12 points; it is a form of `ragged` (Zipf 3.19). Flagged by the daily fold check for the 2027-03-23 `RA` drop (noun of adjective ragged) and confirmed on adversarial re-review (ragged means uneven/rough, drifted from rag)."
+  },
   "raillied": {
     "base": "rally",
     "since": "2026-11-11",
@@ -5023,6 +5138,11 @@
     "base": "comply",
     "since": "2026-11-06",
     "reason": "Folded onto `recomp` (recomplying > recomply > recomp), costing 0.56 points; it is a form of `comply` (Zipf 4.04). Flagged by the daily fold check for the 2026-11-06 `COM` drop (comply again, not recomp) and confirmed on adversarial re-review (comply again, not recomp)."
+  },
+  "recupped": {
+    "base": "cup",
+    "since": "2027-03-15",
+    "reason": "Folded onto `recupes` (recupped > recup > recupes), costing 0.79 points; it is a form of `cup` (Zipf 5.11). Flagged by the daily fold check for the 2027-03-15 `PPE` drop (lands on recupes, unrelated) and confirmed on adversarial re-review (recupes is not recup's form)."
   },
   "recursing": {
     "base": "recurse",
@@ -5218,6 +5338,26 @@
     "base": "reprove",
     "since": "2026-10-24",
     "reason": "Folded onto `repro` (reproable > repro), costing 1.45 points; it is a form of `reprove` (Zipf 1.79). Flagged by the daily fold check for the 2026-10-24 `EP` drop (archaic reprovable, not repro) and confirmed on adversarial re-review (archaic reprovable, not repro)."
+  },
+  "resectionalize": {
+    "base": "sectionalize",
+    "since": "2027-03-21",
+    "reason": "Folded onto `resectional` (resectionalize > resectional), costing 0.50 points; it is a form of `sectionalize` (Zipf 1.29). Flagged by the daily fold check for the 2027-03-21 `AL` drop (re-sectionalize, not surgical resectional) and confirmed on adversarial re-review (re-sectionalize, not surgical resection sense)."
+  },
+  "resectionalized": {
+    "base": "sectionalize",
+    "since": "2027-03-21",
+    "reason": "Folded onto `resectional` (resectionalized > resectionalize > resectional), costing 0.50 points; it is a form of `sectionalize` (Zipf 1.29). Flagged by the daily fold check for the 2027-03-21 `AL` drop (re-sectionalize, not surgical resectional) and confirmed on adversarial re-review (re-sectionalize, not surgical resection sense)."
+  },
+  "resectionalizes": {
+    "base": "sectionalize",
+    "since": "2027-03-21",
+    "reason": "Folded onto `resectional` (resectionalizes > resectionalize > resectional), costing 0.50 points; it is a form of `sectionalize` (Zipf 1.29). Flagged by the daily fold check for the 2027-03-21 `AL` drop (re-sectionalize, not surgical resectional) and confirmed on adversarial re-review (re-sectionalize, not surgical resection sense)."
+  },
+  "resectionalizing": {
+    "base": "sectionalize",
+    "since": "2027-03-21",
+    "reason": "Folded onto `resectional` (resectionalizing > resectionalize > resectional), costing 0.50 points; it is a form of `sectionalize` (Zipf 1.29). Flagged by the daily fold check for the 2027-03-21 `AL` drop (re-sectionalize, not surgical resectional) and confirmed on adversarial re-review (re-sectionalize, not surgical resection sense)."
   },
   "respeck": {
     "base": "respect",
@@ -5464,6 +5604,11 @@
     "since": "2026-12-02",
     "reason": "Folded onto `salad` (salades > salad), costing 3.99 points; it is a form of `salade` (Zipf 1.64). Flagged by the daily fold check for the 2026-12-02 `AD` drop (salade is a helmet, not salad) and confirmed on adversarial re-review (salade helmet, not salad)."
   },
+  "scalares": {
+    "base": "scalare",
+    "since": "2027-03-21",
+    "reason": "Folded onto `scalar` (scalares > scalar), costing 2.34 points; it is a form of `scalare` (Zipf 1.26). Flagged by the daily fold check for the 2027-03-21 `AL` drop (plural of scalare angelfish, not scalar) and confirmed on adversarial re-review (plural of scalare angelfish, not scalar)."
+  },
   "scallies": {
     "base": "scally",
     "since": "2026-11-19",
@@ -5493,6 +5638,11 @@
     "base": "scrub",
     "since": "2026-11-18",
     "reason": "Folded onto `scrubby` (scrubbability > scrubbable > scrubby), costing 1.51 points; it is a form of `scrub` (Zipf 3.69). Flagged by the daily fold check for the 2026-11-18 `TY` drop (from scrub, not scrubby) and confirmed on adversarial re-review (scrubby means brushy, different sense)."
+  },
+  "scrubbable": {
+    "base": "scrub",
+    "since": "2027-03-19",
+    "reason": "Folded onto `scrubby` (scrubbable > scrubby), costing 1.45 points; it is a form of `scrub` (Zipf 3.69). Flagged by the daily fold check for the 2027-03-19 `SCR` drop (from scrub, not scrubby) and confirmed on adversarial re-review (from scrub, not scrubby shrubby)."
   },
   "searest": {
     "base": "sear",
@@ -5583,6 +5733,11 @@
     "base": "sene",
     "since": "2026-12-23",
     "reason": "Folded onto `sen` (senes > sen), costing 3.89 points; it is a form of `sene` (Zipf 2.05). Flagged by the daily fold check for the 2026-12-23 `SEN` drop (plural of sene, Samoan coin) and confirmed on adversarial re-review (Samoan sene, not sen)."
+  },
+  "seraphines": {
+    "base": "seraphine",
+    "since": "2027-03-23",
+    "reason": "Folded onto `seraphin` (seraphines > seraphin), costing 0.83 points; it is a form of `seraphine` (Zipf 1.60). Flagged by the daily fold check for the 2027-03-23 `RA` drop (seraphine is a reed organ, not seraphin) and confirmed on adversarial re-review (seraphine reed organ differs from seraphin)."
   },
   "serpentising": {
     "base": "serpent",
@@ -5864,6 +6019,11 @@
     "since": "2026-11-21",
     "reason": "Folded onto `speake` (speakees > speake), costing 0.81 points; it is a form of `speak` (Zipf 5.03). Flagged by the daily fold check for the 2026-11-21 `EE` drop (plural of speakee; speake not a word) and confirmed on adversarial re-review (speake not a word; overshot). Fix changed on review of sigfigs789/ick#559: a plain -ee plural of the verb, like helpees and lookees."
   },
+  "spinalised": {
+    "base": "spinal",
+    "since": "2027-03-21",
+    "reason": "Folded onto `spinalis` (spinalised > spinalis), costing 0.38 points; it is a form of `spinal` (Zipf 3.85). Flagged by the daily fold check for the 2027-03-21 `AL` drop (spinalis is a muscle, not spinalise) and confirmed on adversarial re-review (spinalise from spinal, not spinalis muscle)."
+  },
   "spirochaetales": {
     "base": "spirochaete",
     "since": "2026-10-18",
@@ -5888,6 +6048,16 @@
     "base": "squame",
     "since": "2026-10-22",
     "reason": "Folded onto `squam` (squames > squam), costing 0.35 points; it is a form of `squame` (Zipf 1.19). Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of squame, not squam) and confirmed on adversarial re-review (plural of squame; squam unrelated)."
+  },
+  "squattered": {
+    "base": "squatter",
+    "since": "2027-03-16",
+    "reason": "Folded onto `squatters` (squattered > squatter > squatters), costing 2.21 points; it is a form of `squatter` (Zipf 2.55). Flagged by the daily fold check for the 2027-03-16 `TER` drop (splash verb, not squatters plural noun) and confirmed on adversarial re-review (splash verb, not squatters noun plural)."
+  },
+  "squattering": {
+    "base": "squatter",
+    "since": "2027-03-16",
+    "reason": "Folded onto `squatters` (squattering > squatter > squatters), costing 2.21 points; it is a form of `squatter` (Zipf 2.55). Flagged by the daily fold check for the 2027-03-16 `TER` drop (splash verb, not squatters plural noun) and confirmed on adversarial re-review (splash verb, not squatters noun plural)."
   },
   "stabbable": {
     "base": "stab",
@@ -6024,6 +6194,16 @@
     "since": "2026-11-14",
     "reason": "Folded onto `succus` (succussing > succus), costing 0.92 points; it is a form of `succuss` (Zipf 0.32). Flagged by the daily fold check for the 2026-11-14 `UC` drop (from succuss (shake), not succus (juice)) and confirmed on adversarial re-review (succuss shake, not succus juice)."
   },
+  "sueded": {
+    "base": "suede",
+    "since": "2027-03-17",
+    "reason": "Folded onto `sued` (sueded > sued), costing 2.40 points; it is a form of `suede` (Zipf 3.25). Flagged by the daily fold check for the 2027-03-17 `UE` drop (past of suede, not sue) and confirmed on adversarial re-review (suede verb, not sue)."
+  },
+  "sueding": {
+    "base": "suede",
+    "since": "2027-03-17",
+    "reason": "Folded onto `sued` (sueding > sued), costing 3.65 points; it is a form of `suede` (Zipf 3.25). Flagged by the daily fold check for the 2027-03-17 `UE` drop (from verb suede, not sue) and confirmed on adversarial re-review (suede verb, not sue)."
+  },
   "sunner": {
     "base": "sun",
     "since": "2026-12-31",
@@ -6133,6 +6313,21 @@
     "base": "tartare",
     "since": "2026-11-27",
     "reason": "Folded onto `tartar` (tartares > tartar), costing 2.30 points; it is a form of `tartare` (Zipf 2.35). Flagged by the daily fold check for the 2026-11-27 `TA` drop (plural of tartare dish, not tartar) and confirmed on adversarial re-review (tartare dish, not tartar)."
+  },
+  "tearable": {
+    "base": "tear",
+    "since": "2027-03-23",
+    "reason": "Folded onto `tears` (tearable > tear > tears), costing 4.44 points; it is a form of `tear` (Zipf 4.35). Flagged by the daily fold check for the 2027-03-23 `RA` drop (tear as rip, not crying tears) and confirmed on adversarial re-review (tear as rip, not crying tears)."
+  },
+  "tearableness": {
+    "base": "tear",
+    "since": "2027-03-23",
+    "reason": "Folded onto `tears` (tearableness > tearable > tear > tears), costing 4.54 points; it is a form of `tear` (Zipf 4.35). Flagged by the daily fold check for the 2027-03-23 `RA` drop (tear as rip, not crying tears) and confirmed on adversarial re-review (tear as rip, not crying tears)."
+  },
+  "tearably": {
+    "base": "tear",
+    "since": "2027-03-23",
+    "reason": "Folded onto `tears` (tearably > tear > tears), costing 4.50 points; it is a form of `tear` (Zipf 4.35). Flagged by the daily fold check for the 2027-03-23 `RA` drop (tear as rip, not crying tears) and confirmed on adversarial re-review (tear as rip, not crying tears)."
   },
   "teased": {
     "base": "tease",
@@ -6308,6 +6503,11 @@
     "base": "trail",
     "since": "2026-11-11",
     "reason": "Folded onto `tray` (traily > tray), costing 3.48 points; it is a form of `trail` (Zipf 4.45). Flagged by the daily fold check for the 2026-11-11 `AIL` drop (from trail, not tray) and confirmed on adversarial re-review (from trail, not tray)."
+  },
+  "trapesed": {
+    "base": "trapes",
+    "since": "2027-03-23",
+    "reason": "Folded onto `trap` (trapesed > trapes > trap), costing 4.29 points; it is a form of `trapes` (Zipf 0.94). Flagged by the daily fold check for the 2027-03-23 `RA` drop (past of trapes (traipse)) and confirmed on adversarial re-review (trapes means traipse, unrelated to trap)."
   },
   "trapeses": {
     "base": "trapes",
@@ -6869,6 +7069,11 @@
     "since": "2027-01-22",
     "reason": "Folded onto `fappy` (unfappable > fappable > fappy), costing 0.19 points; it is a form of `fap` (Zipf 2.79). Flagged by the daily fold check for the 2027-01-22 `APP` drop (from fap, not fappy) and confirmed on adversarial re-review (reviewer right; fold lands on wrong word)."
   },
+  "unfated": {
+    "base": "fate",
+    "since": "2027-03-26",
+    "reason": "Folded onto `fat` (unfated > unfat > unfatted > fatted > fat), costing 5.09 points; it is a form of `fate` (Zipf 4.36). Flagged by the daily fold check for the 2027-03-26 `FA` drop (not fated, from fate not fat) and confirmed on adversarial re-review (unfated comes from fate, not fat)."
+  },
   "unfishable": {
     "base": "fish",
     "since": "2026-10-18",
@@ -7024,6 +7229,11 @@
     "since": "2026-11-30",
     "reason": "Folded onto `love` (unlovely > unlove > unloves > loves > love), costing 5.66 points; it is a form of `lovely` (Zipf 4.74). Flagged by the daily fold check for the 2026-11-30 `EL` drop (unattractive; not unlove (stop loving)) and confirmed on adversarial re-review (unattractive, not stop loving)."
   },
+  "unmanned": {
+    "base": "man",
+    "since": "2027-03-24",
+    "reason": "Folded onto `mane` (unmanned > unman > unmaned > maned > mane), costing 0.07 points; it is a form of `man` (Zipf 5.82). Flagged by the daily fold check for the 2027-03-24 `NNE` drop (from man, not mane) and confirmed on adversarial re-review (unman comes from man, not mane)."
+  },
   "unmanning": {
     "base": "unman",
     "since": "2026-12-29",
@@ -7073,6 +7283,11 @@
     "base": "unpick",
     "since": "2027-01-23",
     "reason": "Folded onto `picker` (unpicker > picker), costing 2.48 points; it is a form of `unpick` (Zipf 1.86). Flagged by the daily fold check for the 2027-01-23 `CKE` drop (seam ripper, agent of unpick) and confirmed on adversarial re-review (reviewer right; fold lands on wrong word)."
+  },
+  "unpinned": {
+    "base": "pin",
+    "since": "2027-03-24",
+    "reason": "Folded onto `pine` (unpinned > unpin > unpining > pining > pine), costing 3.47 points; it is a form of `pin` (Zipf 4.28). Flagged by the daily fold check for the 2027-03-24 `NNE` drop (from pin, not pine) and confirmed on adversarial re-review (unpin comes from pin, not pine)."
   },
   "unplacably": {
     "base": "placate",
@@ -7169,6 +7384,21 @@
     "since": "2027-02-12",
     "reason": "Folded onto `private` (unprivatizing > unprivatize > unprivate > private), costing 5.58 points; it is a form of `privatize` (Zipf 2.55). Flagged by the daily fold check for the 2027-02-12 `RIV` drop (undo privatization, not unprivate) and confirmed on adversarial re-review (from privatize, not unprivate)."
   },
+  "unrang": {
+    "base": "ring",
+    "since": "2027-03-23",
+    "reason": "Folded onto `range` (unrang > unranged > ranged > range), costing 5.48 points; it is a form of `ring` (Zipf 4.81). Flagged by the daily fold check for the 2027-03-23 `RA` drop (past of unring, not range) and confirmed on adversarial re-review (unrang is past of unring, not range)."
+  },
+  "unrarred": {
+    "base": "unrar",
+    "since": "2027-03-23",
+    "reason": "Folded onto `rare` (unrarred > unrar > unrared > rared > rare), costing 4.97 points; it is a form of `unrar` (Zipf 1.84). Flagged by the daily fold check for the 2027-03-23 `RA` drop (past of unrar, not rare) and confirmed on adversarial re-review (unrar is archive extraction, unrelated)."
+  },
+  "unrarring": {
+    "base": "unrar",
+    "since": "2027-03-23",
+    "reason": "Folded onto `rare` (unrarring > unrar > unrared > rared > rare), costing 4.97 points; it is a form of `unrar` (Zipf 1.84). Flagged by the daily fold check for the 2027-03-23 `RA` drop (participle of unrar, not rare) and confirmed on adversarial re-review (unrar is archive extraction, unrelated)."
+  },
   "unrars": {
     "base": "unrar",
     "since": "2027-02-15",
@@ -7223,6 +7453,16 @@
     "base": "scam",
     "since": "2026-10-22",
     "reason": "Folded onto `scammy` (unscammable > scammable > scammy), costing 0.59 points; it is a form of `scam` (Zipf 3.94). Flagged by the daily fold check for the 2026-10-22 `AM` drop (scammy is adjective; base is scam) and confirmed on adversarial re-review (from verb scam; scammy means dodgy)."
+  },
+  "unscrapable": {
+    "base": "scrape",
+    "since": "2027-03-19",
+    "reason": "Folded onto `scrap` (unscrapable > scrapable > scrap), costing 3.74 points; it is a form of `scrape` (Zipf 3.40). Flagged by the daily fold check for the 2027-03-19 `SCR` drop (scrapable from scrape, not scrap) and confirmed on adversarial re-review (single p: scrape, not scrap)."
+  },
+  "unscrubbable": {
+    "base": "scrub",
+    "since": "2027-03-19",
+    "reason": "Folded onto `scrubby` (unscrubbable > scrubbable > scrubby), costing 1.55 points; it is a form of `scrub` (Zipf 3.69). Flagged by the daily fold check for the 2027-03-19 `SCR` drop (from scrub, not scrubby) and confirmed on adversarial re-review (from scrub, not scrubby shrubby)."
   },
   "unsedate": {
     "base": "sedate",
@@ -7459,6 +7699,11 @@
     "since": "2026-12-29",
     "reason": "Folded onto `wan` (unwaning > unwan > unwans > wans > wan), costing 3.60 points; it is a form of `wane` (Zipf 2.83). Flagged by the daily fold check for the 2026-12-29 `NI` drop (from wane, not wan) and confirmed on adversarial re-review (wane, not wan)."
   },
+  "unwearably": {
+    "base": "wearable",
+    "since": "2027-03-23",
+    "reason": "Folded onto `weary` (unwearably > unweary > weary), costing 3.32 points; it is a form of `wearable` (Zipf 3.29). Flagged by the daily fold check for the 2027-03-23 `RA` drop (from wearable, not weary) and confirmed on adversarial re-review (from wearable, not weary)."
+  },
   "unwieldliness": {
     "base": "unwieldy",
     "since": "2026-11-30",
@@ -7493,6 +7738,11 @@
     "base": "utile",
     "since": "2027-03-02",
     "reason": "Folded onto `util` (utiles > util), costing 0.04 points; it is a form of `utile` (Zipf 1.66). Flagged by the daily fold check for the 2027-03-02 `IL` drop (plural of utile, not util) and confirmed on adversarial re-review (plural of utile, not the unit util)."
+  },
+  "valsed": {
+    "base": "valse",
+    "since": "2027-03-21",
+    "reason": "Folded onto `val` (valsed > vals > val), costing 3.49 points; it is a form of `valse` (Zipf 1.87). Flagged by the daily fold check for the 2027-03-21 `AL` drop (valse means waltz, not val) and confirmed on adversarial re-review (valse means waltz, unrelated to val)."
   },
   "valsing": {
     "base": "valse",
