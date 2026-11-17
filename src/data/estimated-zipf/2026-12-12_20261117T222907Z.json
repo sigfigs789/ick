@@ -1,0 +1,11 @@
+{
+  "since": "2026-12-12",
+  "drop": "SI",
+  "model": "claude-opus-5-5",
+  "source": "claude",
+  "run": "https://github.com/sigfigs789/ick/actions/runs/44190316248",
+  "estimatedAt": "2026-11-17T22:29:07Z",
+  "zipf": {
+    "revisualising": 0.35
+  }
+}
