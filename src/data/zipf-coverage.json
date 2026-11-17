@@ -3,11 +3,11 @@
   "rulesDate": "2027-01-07",
   "measured": 506215,
   "estimated": {
-    "playable": 433349,
+    "playable": 433350,
     "notPlayable": 0
   },
   "unattested": {
-    "playable": 272419,
+    "playable": 272418,
     "notPlayable": 5301
   },
   "batches": [
@@ -158,6 +158,10 @@
     {
       "since": "2026-12-12",
       "estimates": 1503
+    },
+    {
+      "since": "2026-12-12",
+      "estimates": 1
     }
   ],
   "puzzles": [
@@ -318,8 +322,8 @@
     {
       "date": "2026-10-31",
       "drop": "AL",
-      "estimated": 48977,
-      "unattested": 26216,
+      "estimated": 48978,
+      "unattested": 26215,
       "swept": "65.1%"
     },
     {
@@ -612,8 +616,8 @@
     {
       "date": "2026-12-12",
       "drop": "SI",
-      "estimated": 35082,
-      "unattested": 1,
+      "estimated": 35083,
+      "unattested": 0,
       "swept": "100.0%"
     },
     {
@@ -794,8 +798,8 @@
     {
       "date": "2027-01-07",
       "drop": "EV",
-      "estimated": 2956,
-      "unattested": 2613,
+      "estimated": 2957,
+      "unattested": 2612,
       "swept": "53.1%"
     }
   ]
