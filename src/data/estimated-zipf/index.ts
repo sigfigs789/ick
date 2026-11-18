@@ -43,7 +43,8 @@ import b34 from "./2026-12-12_20261114T193014Z.json";
 import b35 from "./2026-12-12_20261115T200823Z.json";
 import b36 from "./2026-12-12_20261116T233520Z.json";
 import b37 from "./2026-12-12_20261117T222907Z.json";
+import b38 from "./2026-12-14_20261118T221258Z.json";
 
 export default {
-  batches: [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32, b33, b34, b35, b36, b37],
+  batches: [b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32, b33, b34, b35, b36, b37, b38],
 };
