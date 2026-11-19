@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DropDisplay } from "./components/DropDisplay";
 import { GuessLog } from "./components/GuessLog";
 import { DEV_TOOLS } from "./dev/devTools";
@@ -24,6 +24,17 @@ import { YesterdaysBest } from "./components/YesterdaysBest";
 import { ComeBackCard } from "./components/ComeBackCard";
 import { BestWordNewsCard } from "./components/BestWordNewsCard";
 import { WelcomeBackCard } from "./components/WelcomeBackCard";
+import { StreakReminderCard } from "./components/StreakReminderCard";
+import {
+  dismissReminderCard,
+  enableReminders,
+  reminderRiskDate,
+  reminderDismissed,
+  reminderPermission,
+  remindersSupported,
+  shouldOfferReminders,
+  syncReminder,
+} from "./game/streakReminder";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { useYesterdaysBest, type ResolvedBest } from "./hooks/useYesterdaysBest";
@@ -53,7 +64,7 @@ import {
   headerCelebrationsHeld,
   type HeaderCelebrationGroup,
 } from "./game/headerCelebrations";
-import { dismissWelcomeBack, welcomeBackDismissedOn } from "./game/storage";
+import { dismissWelcomeBack, playedPuzzleCount, welcomeBackDismissedOn } from "./game/storage";
 import {
   averageImprovement,
   improvementCelebrationDue,
@@ -199,6 +210,29 @@ export default function App() {
     dismissWelcomeBack(date);
     setWelcomeDismissedOn(date);
   };
+  // A reminder for a streak about to end (see game/streakReminder.ts), offered
+  // once on the day the player's 3rd day is played, and the date it ends kept
+  // current on the server for a player who said yes.
+  const [reminderClosed, setReminderClosed] = useState(reminderDismissed);
+  const wordsToday = progress.acceptedWords.length;
+  // Read from storage only when a word lands, not on every render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const playedDays = useMemo(() => playedPuzzleCount(), [wordsToday, date]);
+  const offerReminder =
+    isToday &&
+    welcome === null &&
+    shouldOfferReminders({
+      playedDays,
+      playedToday: progress.acceptedWords.length > 0,
+      supported: remindersSupported(),
+      permission: reminderPermission(),
+      dismissed: reminderClosed,
+    });
+  const riskDate = reminderRiskDate(streak, date);
+  const playedToday = streak.lastCompletedDate === date;
+  useEffect(() => {
+    if (isToday && playedToday) void syncReminder(riskDate);
+  }, [isToday, playedToday, riskDate]);
   // Words the player suggested that have since been accepted, thanked for once
   // and only on a day nothing else has shown: the header celebration cards keep
   // it away themselves, and so do the welcome back, a fold notice and the
@@ -757,6 +791,15 @@ export default function App() {
           <WelcomeBackCard
             welcome={welcome}
             onDismiss={closeWelcome}
+          />
+        )}
+        {offerReminder && (
+          <StreakReminderCard
+            onEnable={() => enableReminders(streak, date)}
+            onDismiss={() => {
+              dismissReminderCard();
+              setReminderClosed(true);
+            }}
           />
         )}
         <GuessLog
