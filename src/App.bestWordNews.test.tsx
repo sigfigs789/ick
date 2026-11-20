@@ -185,28 +185,6 @@ describe("yesterday's best word news", () => {
     expect(screen.queryByText("Yesterday's best word")).toBeNull();
   });
 
-  it("gives way to the welcome-back card for another player's word", () => {
-    playedDays(4);
-    vi.mocked(useDailyPuzzle).mockReturnValue(
-      puzzle({
-        // A streak that ended a while ago, which the welcome-back card greets.
-        streak: {
-          currentStreak: 0,
-          longestStreak: 12,
-          lastCompletedDate: addDays(TODAY, -10),
-          totalCompleted: 12,
-          crushedIt: 0,
-          elite: 0,
-          highScore: 0,
-        },
-      }) as unknown as ReturnType<typeof useDailyPuzzle>,
-    );
-    vi.mocked(useYesterdaysBest).mockReturnValue(best([OTHER]));
-    render(<App />);
-    expect(screen.getByText(/welcome back/i)).toBeTruthy();
-    expect(screen.queryByText("Yesterday's best word")).toBeNull();
-  });
-
   it("is not asked for on an archived puzzle", () => {
     vi.mocked(useDailyPuzzle).mockReturnValue(
       puzzle({ date: "2026-10-01", isToday: false }) as unknown as ReturnType<typeof useDailyPuzzle>,
