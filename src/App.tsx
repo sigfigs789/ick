@@ -214,6 +214,10 @@ export default function App() {
   // to anyone who has played 3 days, and the date it ends kept
   // current on the server for a player who said yes.
   const [reminderClosed, setReminderClosed] = useState(reminderDismissed);
+  // Decided when the puzzle opens: the first word makes the streak 1.
+  const [lapsedAtOpen] = useState(
+    () => streak.currentStreak === 0 && streak.lastCompletedDate !== date,
+  );
   const wordsToday = progress.acceptedWords.length;
   // Read from storage only when a word lands, not on every render.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -223,6 +227,8 @@ export default function App() {
     welcome === null &&
     shouldOfferReminders({
       playedDays,
+      lapsedAtOpen,
+      puzzleDone: progress.completed,
       supported: remindersSupported(),
       permission: reminderPermission(),
       dismissed: reminderClosed,

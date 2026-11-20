@@ -40,6 +40,8 @@ describe("reminderRiskDate", () => {
 describe("shouldOfferReminders", () => {
   const ready = {
     playedDays: 3,
+    lapsedAtOpen: false,
+    puzzleDone: false,
     supported: true,
     permission: "default" as const,
     dismissed: false,
@@ -47,6 +49,10 @@ describe("shouldOfferReminders", () => {
   it("offers from the 3rd day played, played today or not", () => {
     expect(shouldOfferReminders(ready)).toBe(true);
     expect(shouldOfferReminders({ ...ready, playedDays: 10 })).toBe(true);
+  });
+  it("holds a returning player's card until today's puzzle is done", () => {
+    expect(shouldOfferReminders({ ...ready, lapsedAtOpen: true })).toBe(false);
+    expect(shouldOfferReminders({ ...ready, lapsedAtOpen: true, puzzleDone: true })).toBe(true);
   });
   it.each([
     { playedDays: 2 },

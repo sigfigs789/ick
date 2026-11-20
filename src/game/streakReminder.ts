@@ -42,17 +42,26 @@ export function reminderRiskDate(streak: StreakState, today: string): string | n
 
 export interface ReminderContext {
   playedDays: number;
+  /** The player opened today's puzzle with no live streak (back after a while). */
+  lapsedAtOpen: boolean;
+  /** Today's puzzle is finished: all its words played, or locked in. */
+  puzzleDone: boolean;
   supported: boolean;
   permission: NotificationPermission | "unsupported";
   dismissed: boolean;
 }
 
-/** Whether to show the card: 3 days played, on any day, nothing asked yet. */
+/**
+ * Whether to show the card: 3 days played, on any day, nothing asked yet. A
+ * player back after a while is let play today's puzzle through first and asked
+ * once it is done, not over their first words.
+ */
 export function shouldOfferReminders(context: ReminderContext): boolean {
   return (
     context.supported &&
     context.permission === "default" &&
     !context.dismissed &&
+    (!context.lapsedAtOpen || context.puzzleDone) &&
     context.playedDays >= REMIND_AFTER_PLAYED
   );
 }
