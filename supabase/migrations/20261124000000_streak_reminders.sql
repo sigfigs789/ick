@@ -1,4 +1,4 @@
--- Streak reminders: web push subscriptions and who is due one tonight.
+-- Streak reminders: web push subscriptions and who is due one today.
 --
 -- A player who has played three days can ask the browser to remind them when
 -- their streak is about to end (see src/game/streakReminder.ts). The browser
@@ -11,7 +11,7 @@
 -- line, so nothing here needs the subscription's encryption keys.
 --
 -- scripts/send-streak-reminders.mjs runs every 15 minutes, asks
--- due_streak_reminders() who is past REMIND_AFTER local time on their
+-- due_streak_reminders() who is past 11:30 am local time on their
 -- risk_date, sends, and marks each one reminded for that date.
 
 create table if not exists public.push_subscriptions (
@@ -58,8 +58,8 @@ as $$
   delete from public.push_subscriptions where endpoint = p_endpoint;
 $$;
 
--- Everyone whose streak ends tonight, local time is 23:30 or later, and who has
--- not been reminded for tonight yet.
+-- Everyone whose streak ends today, local time is 11:30 or later, and who has
+-- not been reminded for today yet.
 create or replace function public.due_streak_reminders()
 returns table (endpoint text, risk_date date)
 language sql
@@ -69,7 +69,7 @@ as $$
   from public.push_subscriptions s
   where s.risk_date is not null
     and s.risk_date = (now() at time zone s.time_zone)::date
-    and (now() at time zone s.time_zone)::time >= time '23:30'
+    and (now() at time zone s.time_zone)::time >= time '11:30'
     and s.reminded_for is distinct from s.risk_date;
 $$;
 

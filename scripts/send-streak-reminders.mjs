@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Sends the "your streak ends tonight" web push to everyone due one.
+// Sends the "your streak ends today" web push to everyone due one.
 //
 //   node scripts/send-streak-reminders.mjs            send what is due
 //   node scripts/send-streak-reminders.mjs --generate print a new VAPID key pair
@@ -78,7 +78,7 @@ for (const { endpoint, risk_date: riskDate } of due) {
   try {
     const response = await fetch(endpoint, {
       method: "POST",
-      // An hour is plenty: a reminder after midnight is worse than none.
+      // An hour is plenty: a stale reminder is worse than none.
       headers: { authorization: vapidHeader(endpoint), ttl: "3600", urgency: "high", "content-length": "0" },
       signal: AbortSignal.timeout(10_000),
     });

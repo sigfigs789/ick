@@ -1,10 +1,10 @@
 name: Streak reminders
 
-# Every 15 minutes, sends the "your streak ends tonight" web push to players
-# whose local time has passed 23:30 on the day their streak ends. See
+# Every 15 minutes, sends the "your streak ends today" web push to players
+# whose local time has passed 11:30 am on the day their streak ends. See
 # scripts/send-streak-reminders.mjs and the 20261124000000 migration. GitHub's
-# schedule is best-effort and can run late, which only shortens the window; a
-# push is not sent after midnight (TTL one hour).
+# schedule is best-effort and can run late, which only delays the push; one
+# not delivered within an hour is dropped (TTL).
 
 on:
   schedule:

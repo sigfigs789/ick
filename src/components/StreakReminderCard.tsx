@@ -26,7 +26,7 @@ export function StreakReminderCard({ onEnable, onDismiss }: Props) {
         <p className="welcome-back-card__line">
           {state === "failed"
             ? "Couldn't turn reminders on. Check this site's notification setting."
-            : "Get a reminder at 11:30 pm if your streak is about to end."}
+            : "Get a reminder at 11:30 am on days your streak is about to end."}
         </p>
         {state !== "failed" && (
           <button type="button" disabled={state === "asking"} onClick={enable}>

@@ -7,7 +7,7 @@ self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim(
 
 self.addEventListener("push", (event) => {
   event.waitUntil(
-    self.registration.showNotification("Your streak ends tonight", {
+    self.registration.showNotification("Your streak ends today", {
       body: "Play today's puzzle before midnight to keep it going.",
       icon: "/icon-192.png",
       badge: "/icon-192.png",
