@@ -1,5 +1,5 @@
 /**
- * Streak reminders: a web push, around 23:30 local time, on the day a player's
+ * Streak reminders: a web push, around 11:30 am local time, on the day a player's
  * streak ends if they have not played.
  *
  * Offered once a player has played REMIND_AFTER_PLAYED days, never before: a
