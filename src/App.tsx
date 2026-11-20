@@ -211,7 +211,7 @@ export default function App() {
     setWelcomeDismissedOn(date);
   };
   // A reminder for a streak about to end (see game/streakReminder.ts), offered
-  // once on the day the player's 3rd day is played, and the date it ends kept
+  // to anyone who has played 3 days, and the date it ends kept
   // current on the server for a player who said yes.
   const [reminderClosed, setReminderClosed] = useState(reminderDismissed);
   const wordsToday = progress.acceptedWords.length;
@@ -223,7 +223,6 @@ export default function App() {
     welcome === null &&
     shouldOfferReminders({
       playedDays,
-      playedToday: progress.acceptedWords.length > 0,
       supported: remindersSupported(),
       permission: reminderPermission(),
       dismissed: reminderClosed,

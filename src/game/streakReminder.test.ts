@@ -40,17 +40,16 @@ describe("reminderRiskDate", () => {
 describe("shouldOfferReminders", () => {
   const ready = {
     playedDays: 3,
-    playedToday: true,
     supported: true,
     permission: "default" as const,
     dismissed: false,
   };
-  it("offers on the 3rd day played", () => {
+  it("offers from the 3rd day played, played today or not", () => {
     expect(shouldOfferReminders(ready)).toBe(true);
+    expect(shouldOfferReminders({ ...ready, playedDays: 10 })).toBe(true);
   });
   it.each([
     { playedDays: 2 },
-    { playedToday: false },
     { supported: false },
     { permission: "granted" as const },
     { permission: "denied" as const },

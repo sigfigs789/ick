@@ -2,7 +2,8 @@
  * Streak reminders: a web push, around 11:30 am local time, on the day a player's
  * streak ends if they have not played.
  *
- * Offered once a player has played REMIND_AFTER_PLAYED days, never before: a
+ * Offered to any player who has played REMIND_AFTER_PLAYED days, whether or not
+ * today is played yet, never before: a
  * permission prompt on a first visit is how a site gets blocked. The card asks
  * (components/StreakReminderCard.tsx); the browser's own prompt follows only
  * when it is pressed.
@@ -21,7 +22,7 @@ import { loadPlayerId } from "./player";
 import { isRestDay } from "./streakFreeze";
 import type { StreakState } from "./types";
 
-/** Days played before the card is shown: the 3rd day. */
+/** Days played before the card is shown. */
 export const REMIND_AFTER_PLAYED = 3;
 
 const DISMISSED_KEY = "ick:streak-reminder-dismissed";
@@ -41,19 +42,17 @@ export function reminderRiskDate(streak: StreakState, today: string): string | n
 
 export interface ReminderContext {
   playedDays: number;
-  playedToday: boolean;
   supported: boolean;
   permission: NotificationPermission | "unsupported";
   dismissed: boolean;
 }
 
-/** Whether to show the card: 3 days played, today one of them, nothing asked yet. */
+/** Whether to show the card: 3 days played, on any day, nothing asked yet. */
 export function shouldOfferReminders(context: ReminderContext): boolean {
   return (
     context.supported &&
     context.permission === "default" &&
     !context.dismissed &&
-    context.playedToday &&
     context.playedDays >= REMIND_AFTER_PLAYED
   );
 }
