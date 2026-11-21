@@ -12,8 +12,6 @@ import { isWinningRarity } from '../../../src/game/rank';
 import { recordFlameShare, shareFlameTier } from '../../../src/game/shareFlames';
 import { celebrationFor } from '../../../src/game/celebration';
 import { completedWholeMonth } from '../../../src/game/perfectMonth';
-import { welcomeBack } from '../../../src/game/streakFreeze';
-import { dismissWelcomeBack, welcomeBackDismissedOn } from '../../../src/game/storage';
 import {
   averageImprovement,
   improvementCelebrationDue,
@@ -73,7 +71,6 @@ import { StreakDisplay } from '../components/StreakDisplay';
 import { SubmitForm } from '../components/SubmitForm';
 import { SuggestionAcceptedNotice } from '../components/SuggestionAcceptedNotice';
 import { TopRankCelebration } from '../components/TopRankCelebration';
-import { WelcomeBackCard } from '../components/WelcomeBackCard';
 import { WordRulesSheet } from '../components/WordRulesSheet';
 import { YesterdaysBest } from '../components/YesterdaysBest';
 import {
@@ -179,17 +176,6 @@ export function PlayScreen({ covered = false, onSeeLeaderboard }: Props) {
   const [shareAsked, setShareAsked] = useState({ date, count: 0 });
   const shareRequests = shareAsked.date === date ? shareAsked.count : 0;
 
-  // A player back after their streak ended, greeted on today's puzzle until
-  // its first word or until the card is closed -- closed for that day.
-  const [welcomeDismissedOn, setWelcomeDismissedOn] = useState(welcomeBackDismissedOn);
-  const welcome =
-    isToday && progress.acceptedWords.length === 0 && welcomeDismissedOn !== date
-      ? welcomeBack(streak, date)
-      : null;
-  const closeWelcome = () => {
-    dismissWelcomeBack(date);
-    setWelcomeDismissedOn(date);
-  };
   // What coming back tomorrow is worth (see game/comeBack.ts), once today's
   // word is banked -- which is when the streak counts the day.
   const comeBack = useComeBackGoal(streak, date, isToday && progress.acceptedWords.length > 0);
@@ -201,11 +187,9 @@ export function PlayScreen({ covered = false, onSeeLeaderboard }: Props) {
   };
   // Words the player suggested that have since been accepted, thanked for once
   // and only on a day nothing else has shown: the header celebration cards keep
-  // it away themselves, and so do the welcome back and the burst of a Rare word.
-  // (The website also counts its fold notice, which this build does not show.)
-  const acceptedSuggestions = useAcceptedSuggestions(
-    welcome !== null || (isToday && welcomeDismissedOn === date) || burst !== null,
-  );
+  // it away themselves, and so does the burst of a Rare word. (The website also
+  // counts its fold notice, which this build does not show.)
+  const acceptedSuggestions = useAcceptedSuggestions(burst !== null);
 
   /*
    * The session clock.
@@ -438,7 +422,7 @@ export function PlayScreen({ covered = false, onSeeLeaderboard }: Props) {
       bestWordNewsEverShown(),
     );
     if (!kind) return;
-    const busy = showPerfectMonth || improvement || climb || topRank || burst || unlocked || welcome;
+    const busy = showPerfectMonth || improvement || climb || topRank || burst || unlocked;
     if (kind === 'other' && busy) return;
     if (!showHeaderCelebration('news', date)) return;
     markBestWordNewsShown(yesterdaysBest.day);
@@ -547,7 +531,6 @@ export function PlayScreen({ covered = false, onSeeLeaderboard }: Props) {
           onDismiss={acceptedSuggestions.dismiss}
         />
 
-        {welcome && <WelcomeBackCard welcome={welcome} onDismiss={closeWelcome} />}
 
         {/* The input straight under the drop, so it stays put as words land
             below it. */}
