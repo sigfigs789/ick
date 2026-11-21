@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SubmitForm } from "./SubmitForm";
 import { IDLE_HINT_GAP_MS, IDLE_HINT_HOLD_MS, idleHintText, idleHintWords } from "../game/idleHint";
 import { IDLE_HINT_ERASE_MS, IDLE_HINT_TYPE_MS } from "../hooks/useIdleHint";
+import { scoringReady } from "../game/dictionary";
 import { recordVisit } from "../game/visits";
 import { setReporting } from "../analytics";
 import type { AcceptedWord } from "../game/types";
@@ -14,6 +15,9 @@ vi.mock("../audio/sound", () => ({ playKeystroke }));
 
 const DATE = "2026-10-17";
 const DROP = "str";
+// The hints depend on the deferred scoring data (see scoringReady); built before
+// it lands, the list can come out empty and every test below fails with it.
+await scoringReady(DATE);
 const HINTS = idleHintWords(DROP, DATE, []);
 const [HINT] = HINTS;
 const DEFAULT = "type a word…";
