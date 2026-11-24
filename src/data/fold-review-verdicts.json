@@ -194,6 +194,11 @@
     "since": "2026-11-16",
     "reason": "Folded onto `genetic` (antigenetically > genetically > genetic), costing 4.31 points; it is a form of `antigenic` (Zipf 2.21). Flagged by the daily fold check for the 2026-11-16 `ICA` drop (relates to antigen, not genetic) and confirmed on adversarial re-review (antigen-related, not anti- plus genetic)."
   },
+  "antimeres": {
+    "base": "antimere",
+    "since": "2027-04-11",
+    "reason": "Folded onto `mer` (antimeres > antimer > antimers > mers > mer), costing 2.79 points; it is a form of `antimere` (Zipf 0.92). Flagged by the daily fold check for the 2027-04-11 `TIM` drop (plural of antimere, not mer) and confirmed on adversarial re-review (plural of antimere, unrelated to mer)."
+  },
   "antinodal": {
     "base": "antinode",
     "since": "2027-02-07",
@@ -1964,10 +1969,20 @@
     "since": "2026-11-27",
     "reason": "Folded onto `fatty` (fattable > fatty), costing 3.56 points; it is a form of `fatten` (Zipf 2.50). Flagged by the daily fold check for the 2026-11-27 `TA` drop (able to be fattened, not fatty) and confirmed on adversarial re-review (able to be fattened, not fatty)."
   },
+  "featlier": {
+    "base": "featly",
+    "since": "2027-04-04",
+    "reason": "Folded onto `feat` (featlier > featly > feat), costing 3.82 points; it is a form of `featly` (Zipf 1.71). Flagged by the daily fold check for the 2027-04-04 `TL` drop (featly means nimbly, not feat) and confirmed on adversarial re-review (featly means nimbly; feat means achievement)."
+  },
   "featliest": {
     "base": "featly",
     "since": "2026-11-19",
     "reason": "Folded onto `feat` (featliest > featly > feat), costing 3.83 points; it is a form of `featly` (Zipf 1.71). Flagged by the daily fold check for the 2026-11-19 `IES` drop (featly means neatly, not deed) and confirmed on adversarial re-review (featly means neatly, not deed)."
+  },
+  "featliness": {
+    "base": "featly",
+    "since": "2027-04-04",
+    "reason": "Folded onto `feat` (featliness > featly > feat), costing 3.86 points; it is a form of `featly` (Zipf 1.71). Flagged by the daily fold check for the 2027-04-04 `TL` drop (featly means nimbly, not feat) and confirmed on adversarial re-review (featly means nimbly; feat means achievement)."
   },
   "feely": {
     "base": "feel",
@@ -2553,6 +2568,36 @@
     "base": "hydroscope",
     "since": "2026-11-05",
     "reason": "Folded onto `hydroscopic` (hydroscopes > hydroscope > hydroscopic), costing 0.89 points; it is a form of `hydroscope` (Zipf 0.81). Flagged by the daily fold check for the 2026-11-05 `OP` drop (underwater viewer, not moisture-absorbing) and confirmed on adversarial re-review (viewer noun, not moisture adjective)."
+  },
+  "impeded": {
+    "base": "impede",
+    "since": "2027-04-09",
+    "reason": "Folded onto `imp` (impeded > imped > imp), costing 0.50 points; it is a form of `impede` (Zipf 3.14). Flagged by the daily fold check for the 2027-04-09 `IMP` drop (past of impede, not imp) and confirmed on adversarial re-review (past of impede, unrelated to imp)."
+  },
+  "impeder": {
+    "base": "impede",
+    "since": "2027-04-09",
+    "reason": "Folded onto `imp` (impeder > imped > imp), costing 2.72 points; it is a form of `impede` (Zipf 3.14). Flagged by the daily fold check for the 2027-04-09 `IMP` drop (agent of impede, not imp) and confirmed on adversarial re-review (agent of impede, unrelated to imp)."
+  },
+  "impeding": {
+    "base": "impede",
+    "since": "2027-04-09",
+    "reason": "Folded onto `imp` (impeding > imped > imp), costing 0.59 points; it is a form of `impede` (Zipf 3.14). Flagged by the daily fold check for the 2027-04-09 `IMP` drop (participle of impede, not imp) and confirmed on adversarial re-review (participle of impede, unrelated to imp)."
+  },
+  "impinged": {
+    "base": "impinge",
+    "since": "2027-04-09",
+    "reason": "Folded onto `imp` (impinged > imping > imp), costing 1.86 points; it is a form of `impinge` (Zipf 2.31). Flagged by the daily fold check for the 2027-04-09 `IMP` drop (past of impinge, not imp) and confirmed on adversarial re-review (past of impinge, unrelated to imp)."
+  },
+  "impinges": {
+    "base": "impinge",
+    "since": "2027-04-09",
+    "reason": "Folded onto `imp` (impinges > imping > imp), costing 1.85 points; it is a form of `impinge` (Zipf 2.31). Flagged by the daily fold check for the 2027-04-09 `IMP` drop (form of impinge, not imp) and confirmed on adversarial re-review (form of impinge, unrelated to imp)."
+  },
+  "impinging": {
+    "base": "impinge",
+    "since": "2027-04-09",
+    "reason": "Folded onto `imp` (impinging > imping > imp), costing 1.46 points; it is a form of `impinge` (Zipf 2.31). Flagged by the daily fold check for the 2027-04-09 `IMP` drop (participle of impinge, not imp) and confirmed on adversarial re-review (participle of impinge, unrelated to imp)."
   },
   "impling": {
     "base": "imp",
@@ -3289,6 +3334,11 @@
     "since": "2027-03-01",
     "reason": "Folded onto `nav` (naves > nav), costing 1.90 points; it is a form of `nave` (Zipf 3.06). Flagged by the daily fold check for the 2027-03-01 `VES` drop (plural of nave, not nav) and confirmed on adversarial re-review (plural of nave; nav is unrelated)."
   },
+  "nettly": {
+    "base": "nettle",
+    "since": "2027-04-04",
+    "reason": "Folded onto `nett` (nettly > nett), costing 1.62 points; it is a form of `nettle` (Zipf 2.71). Flagged by the daily fold check for the 2027-04-04 `TL` drop (like nettles, not nett) and confirmed on adversarial re-review (like nettles; nett is net amount)."
+  },
   "neuroses": {
     "base": "neurosis",
     "since": "2026-10-26",
@@ -3348,6 +3398,16 @@
     "base": "actionable",
     "since": "2026-12-18",
     "reason": "Folded onto `nonaction` (nonactionable > nonaction), costing 1.51 points; it is a form of `actionable` (Zipf 3.00). Flagged by the daily fold check for the 2026-12-18 `AC` drop (non- plus actionable, not nonaction) and confirmed on adversarial re-review (non- plus actionable, not nonaction)."
+  },
+  "nonbankable": {
+    "base": "bankable",
+    "since": "2027-03-31",
+    "reason": "Folded onto `nonbank` (nonbankable > nonbank), costing 0.80 points; it is a form of `bankable` (Zipf 2.11). Flagged by the daily fold check for the 2027-03-31 `NK` drop (means not bankable, not nonbank) and confirmed on adversarial re-review (negates bankable; nonbank means not a bank)."
+  },
+  "nonbanked": {
+    "base": "banked",
+    "since": "2027-03-31",
+    "reason": "Folded onto `nonbank` (nonbanked > nonbank), costing 0.80 points; it is a form of `banked` (Zipf 3.00). Flagged by the daily fold check for the 2027-03-31 `NK` drop (not banked; nonbank is no verb) and confirmed on adversarial re-review (negates banked; nonbank is not a verb)."
   },
   "nonbodily": {
     "base": "bodily",
@@ -3548,6 +3608,11 @@
     "base": "orthoscope",
     "since": "2026-11-05",
     "reason": "Folded onto `orthoscopic` (orthoscopes > orthoscope > orthoscopic), costing 0.59 points; it is a form of `orthoscope` (Zipf 0.60). Flagged by the daily fold check for the 2026-11-05 `OP` drop (instrument noun, not the adjective) and confirmed on adversarial re-review (instrument noun, not distortion-free adjective)."
+  },
+  "osculable": {
+    "base": "osculate",
+    "since": "2027-04-10",
+    "reason": "Folded onto `oscules` (osculable > oscule > oscules), costing 0.53 points; it is a form of `osculate` (Zipf 1.23). Flagged by the daily fold check for the 2027-04-10 `SC` drop (able to be kissed, not oscule) and confirmed on adversarial re-review (kissable; oscules are small pores)."
   },
   "osteotomize": {
     "base": "osteotomy",
@@ -4138,6 +4203,11 @@
     "base": "patient",
     "since": "2026-11-23",
     "reason": "Folded onto `patients` (patientest > patient > patients), costing 5.08 points; it is a form of `patient` (Zipf 4.77). Flagged by the daily fold check for the 2026-11-23 `ST` drop (superlative adjective, not plural noun patients) and confirmed on adversarial re-review (adjective patient, not plural noun patients)."
+  },
+  "patiently": {
+    "base": "patient",
+    "since": "2027-04-04",
+    "reason": "Folded onto `patients` (patiently > patient > patients), costing 2.02 points; it is a form of `patient` (Zipf 4.77). Flagged by the daily fold check for the 2027-04-04 `TL` drop (adverb of patient, not patients) and confirmed on adversarial re-review (patients are sick people, not patient adj)."
   },
   "patining": {
     "base": "patina",
@@ -5479,10 +5549,35 @@
     "since": "2027-02-17",
     "reason": "Folded onto `sch` (scheds > sched > sch), costing 2.59 points; it is a form of `sched` (Zipf 2.30). Flagged by the daily fold check for the 2027-02-17 `DS` drop (plural of sched, not sch past) and confirmed on adversarial re-review (sched abbreviation, not sch)."
   },
+  "scientise": {
+    "base": "science",
+    "since": "2027-04-10",
+    "reason": "Folded onto `scient` (scientise > scient), costing 0.62 points; it is a form of `science` (Zipf 5.12). Flagged by the daily fold check for the 2027-04-10 `SC` drop (scient means knowing, not science) and confirmed on adversarial re-review (from science; scient is archaic knowing)."
+  },
+  "scientised": {
+    "base": "science",
+    "since": "2027-04-10",
+    "reason": "Folded onto `scient` (scientised > scientise > scient), costing 0.62 points; it is a form of `science` (Zipf 5.12). Flagged by the daily fold check for the 2027-04-10 `SC` drop (scient means knowing, not science) and confirmed on adversarial re-review (from science; scient is archaic knowing)."
+  },
   "scientising": {
     "base": "science",
     "since": "2026-12-12",
     "reason": "Folded onto `scient` (scientising > scientise > scient), costing 0.64 points; it is a form of `science` (Zipf 5.12). Flagged by the daily fold check for the 2026-12-12 `SI` drop (from science; scient means skilful) and confirmed on adversarial re-review (from science; scient means skilful)."
+  },
+  "scientize": {
+    "base": "science",
+    "since": "2027-04-10",
+    "reason": "Folded onto `scient` (scientize > scient), costing 0.61 points; it is a form of `science` (Zipf 5.12). Flagged by the daily fold check for the 2027-04-10 `SC` drop (scient means knowing, not science) and confirmed on adversarial re-review (from science; scient is archaic knowing)."
+  },
+  "scientized": {
+    "base": "science",
+    "since": "2027-04-10",
+    "reason": "Folded onto `scient` (scientized > scientize > scient), costing 0.39 points; it is a form of `science` (Zipf 5.12). Flagged by the daily fold check for the 2027-04-10 `SC` drop (scient means knowing, not science) and confirmed on adversarial re-review (from science; scient is archaic knowing)."
+  },
+  "scientizing": {
+    "base": "science",
+    "since": "2027-04-10",
+    "reason": "Folded onto `scient` (scientizing > scientize > scient), costing 0.61 points; it is a form of `science` (Zipf 5.12). Flagged by the daily fold check for the 2027-04-10 `SC` drop (scient means knowing, not science) and confirmed on adversarial re-review (from science; scient is archaic knowing)."
   },
   "screes": {
     "base": "scree",
@@ -5608,6 +5703,11 @@
     "base": "sever",
     "since": "2027-01-07",
     "reason": "Folded onto `severe` (severing > severe), costing 2.42 points; it is a form of `sever` (Zipf 3.15). Flagged by the daily fold check for the 2027-01-07 `EV` drop (from sever, not severe) and confirmed on adversarial re-review (from sever, not severe)."
+  },
+  "sextoness": {
+    "base": "sexton",
+    "since": "2027-04-08",
+    "reason": "Folded onto `sexto` (sextoness > sexto), costing 0.55 points; it is a form of `sexton` (Zipf 3.08). Flagged by the daily fold check for the 2027-04-08 `TO` drop (female sexton, not sexto) and confirmed on adversarial re-review (female sexton, not sexto book size)."
   },
   "sextonesses": {
     "base": "sexton",
@@ -6099,6 +6199,16 @@
     "since": "2027-01-24",
     "reason": "Folded onto `swith` (swithering > swither > swith), costing 0.37 points; it is a form of `swither` (Zipf 0.95). Flagged by the daily fold check for the 2027-01-24 `IT` drop (form of swither, not swith) and confirmed on adversarial re-review (reviewer right; fold lands on wrong word)."
   },
+  "syllogiser": {
+    "base": "syllogise",
+    "since": "2027-04-01",
+    "reason": "Folded onto `sylloge` (syllogiser > syllogise > sylloge), costing 0.23 points; it is a form of `syllogise` (Zipf 0.48). Flagged by the daily fold check for the 2027-04-01 `SER` drop (sylloge is a collection, unrelated) and confirmed on adversarial re-review (sylloge is a collection, unrelated)."
+  },
+  "syllogisers": {
+    "base": "syllogise",
+    "since": "2027-04-01",
+    "reason": "Folded onto `sylloge` (syllogisers > syllogiser > syllogise > sylloge), costing 0.23 points; it is a form of `syllogise` (Zipf 0.48). Flagged by the daily fold check for the 2027-04-01 `SER` drop (sylloge is a collection, unrelated) and confirmed on adversarial re-review (sylloge is a collection, unrelated)."
+  },
   "syllogises": {
     "base": "syllogism",
     "since": "2026-10-26",
@@ -6264,6 +6374,16 @@
     "since": "2026-11-19",
     "reason": "Folded onto `tiddies` (tiddiest > tiddy > tiddies), costing 1.37 points; it is a form of `tiddy` (Zipf 2.06). Flagged by the daily fold check for the 2026-11-19 `IES` drop (tiddies is slang for breasts) and confirmed on adversarial re-review (tiddies is breast slang)."
   },
+  "timesed": {
+    "base": "times",
+    "since": "2027-04-11",
+    "reason": "Folded onto `time` (timesed > times > time), costing 7.23 points; it is a form of `times` (Zipf 5.56). Flagged by the daily fold check for the 2027-04-11 `TIM` drop (from verb times meaning multiply) and confirmed on adversarial re-review (past of verb times (multiply), not time)."
+  },
+  "tinklier": {
+    "base": "tinkle",
+    "since": "2027-03-31",
+    "reason": "Folded onto `tink` (tinklier > tinkly > tink), costing 2.11 points; it is a form of `tinkle` (Zipf 2.36). Flagged by the daily fold check for the 2027-03-31 `NK` drop (tinkly derives from tinkle) and confirmed on adversarial re-review (tinkly derives from tinkle, not tink)."
+  },
   "tinkliest": {
     "base": "tinkle",
     "since": "2026-11-19",
@@ -6283,6 +6403,26 @@
     "base": "titan",
     "since": "2026-11-27",
     "reason": "Folded onto `tita` (titaness > tita), costing 1.58 points; it is a form of `titan` (Zipf 3.69). Flagged by the daily fold check for the 2026-11-27 `TA` drop (female titan, not tita) and confirmed on adversarial re-review (female titan, not tita)."
+  },
+  "toges": {
+    "base": "toge",
+    "since": "2027-04-08",
+    "reason": "Folded onto `tog` (toges > tog), costing 1.69 points; it is a form of `toge` (Zipf 1.82). Flagged by the daily fold check for the 2027-04-08 `TO` drop (plural of toge, not tog) and confirmed on adversarial re-review (plural of toge, not tog clothes)."
+  },
+  "toles": {
+    "base": "tole",
+    "since": "2027-04-08",
+    "reason": "Folded onto `tol` (toles > tol), costing 1.24 points; it is a form of `tole` (Zipf 1.99). Flagged by the daily fold check for the 2027-04-08 `TO` drop (plural of tole tinware) and confirmed on adversarial re-review (plural of tole tinware, not tol)."
+  },
+  "toodled": {
+    "base": "toodle",
+    "since": "2027-04-08",
+    "reason": "Folded onto `toodles` (toodled > toodle > toodles), costing 1.20 points; it is a form of `toodle` (Zipf 1.53). Flagged by the daily fold check for the 2027-04-08 `TO` drop (toodle stroll, not toodles goodbye) and confirmed on adversarial re-review (toodle strolling, not toodles goodbye)."
+  },
+  "toodling": {
+    "base": "toodle",
+    "since": "2027-04-08",
+    "reason": "Folded onto `toodles` (toodling > toodle > toodles), costing 1.20 points; it is a form of `toodle` (Zipf 1.53). Flagged by the daily fold check for the 2027-04-08 `TO` drop (toodle stroll, not toodles goodbye) and confirmed on adversarial re-review (toodle strolling, not toodles goodbye)."
   },
   "topees": {
     "base": "topee",
@@ -7708,6 +7848,11 @@
     "base": "zemi",
     "since": "2026-10-28",
     "reason": "Folded onto `zem` (zemes > zem), costing 0.89 points; it is a form of `zemi` (Zipf 1.08). Flagged by the daily fold check for the 2026-10-28 `EME` drop (plural of zemi, not zem) and confirmed on adversarial re-review (plural of zeme/zemi; zem unrelated)."
+  },
+  "zinkes": {
+    "base": "zinke",
+    "since": "2027-03-31",
+    "reason": "Folded onto `zink` (zinkes > zink), costing 1.39 points; it is a form of `zinke` (Zipf 2.15). Flagged by the daily fold check for the 2027-03-31 `NK` drop (plural of zinke, a cornett) and confirmed on adversarial re-review (plural of zinke cornett; zink is zinc)."
   },
   "zippable": {
     "base": "zip",
