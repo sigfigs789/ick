@@ -3,11 +3,11 @@
   "rulesDate": "2027-01-07",
   "measured": 506215,
   "estimated": {
-    "playable": 451312,
+    "playable": 452468,
     "notPlayable": 0
   },
   "unattested": {
-    "playable": 254456,
+    "playable": 253300,
     "notPlayable": 5301
   },
   "batches": [
@@ -190,15 +190,19 @@
     {
       "since": "2026-12-18",
       "estimates": 2673
+    },
+    {
+      "since": "2026-12-19",
+      "estimates": 1159
     }
   ],
   "puzzles": [
     {
       "date": "2026-10-09",
       "drop": "ILL",
-      "estimated": 4109,
-      "unattested": 3105,
-      "swept": "57.0%"
+      "estimated": 4119,
+      "unattested": 3095,
+      "swept": "57.1%"
     },
     {
       "date": "2026-10-10",
@@ -350,9 +354,9 @@
     {
       "date": "2026-10-31",
       "drop": "AL",
-      "estimated": 50914,
-      "unattested": 24279,
-      "swept": "67.7%"
+      "estimated": 51007,
+      "unattested": 24186,
+      "swept": "67.8%"
     },
     {
       "date": "2026-11-01",
@@ -364,9 +368,9 @@
     {
       "date": "2026-11-02",
       "drop": "TE",
-      "estimated": 61999,
-      "unattested": 22936,
-      "swept": "73.0%"
+      "estimated": 62078,
+      "unattested": 22857,
+      "swept": "73.1%"
     },
     {
       "date": "2026-11-03",
@@ -378,9 +382,9 @@
     {
       "date": "2026-11-04",
       "drop": "VE",
-      "estimated": 16005,
-      "unattested": 9261,
-      "swept": "63.3%"
+      "estimated": 16023,
+      "unattested": 9243,
+      "swept": "63.4%"
     },
     {
       "date": "2026-11-05",
@@ -693,16 +697,16 @@
     {
       "date": "2026-12-19",
       "drop": "QUE",
-      "estimated": 2050,
-      "unattested": 1156,
-      "swept": "63.9%"
+      "estimated": 3206,
+      "unattested": 0,
+      "swept": "100.0%"
     },
     {
       "date": "2026-12-20",
       "drop": "OV",
-      "estimated": 7050,
-      "unattested": 5448,
-      "swept": "56.4%"
+      "estimated": 7061,
+      "unattested": 5437,
+      "swept": "56.5%"
     },
     {
       "date": "2026-12-21",
@@ -714,30 +718,30 @@
     {
       "date": "2026-12-22",
       "drop": "PER",
-      "estimated": 10702,
-      "unattested": 5453,
-      "swept": "66.2%"
+      "estimated": 10722,
+      "unattested": 5433,
+      "swept": "66.4%"
     },
     {
       "date": "2026-12-23",
       "drop": "SEN",
-      "estimated": 1683,
-      "unattested": 1443,
-      "swept": "53.8%"
+      "estimated": 1685,
+      "unattested": 1441,
+      "swept": "53.9%"
     },
     {
       "date": "2026-12-24",
       "drop": "ORE",
-      "estimated": 5614,
-      "unattested": 1802,
+      "estimated": 5617,
+      "unattested": 1799,
       "swept": "75.7%"
     },
     {
       "date": "2026-12-25",
       "drop": "OC",
-      "estimated": 19498,
-      "unattested": 8883,
-      "swept": "68.7%"
+      "estimated": 19528,
+      "unattested": 8853,
+      "swept": "68.8%"
     },
     {
       "date": "2026-12-26",
@@ -749,37 +753,37 @@
     {
       "date": "2026-12-27",
       "drop": "OT",
-      "estimated": 22164,
-      "unattested": 9014,
-      "swept": "71.1%"
+      "estimated": 22191,
+      "unattested": 8987,
+      "swept": "71.2%"
     },
     {
       "date": "2026-12-28",
       "drop": "ALT",
-      "estimated": 917,
-      "unattested": 538,
-      "swept": "63.0%"
+      "estimated": 922,
+      "unattested": 533,
+      "swept": "63.4%"
     },
     {
       "date": "2026-12-29",
       "drop": "NI",
-      "estimated": 28223,
-      "unattested": 18947,
-      "swept": "59.8%"
+      "estimated": 28264,
+      "unattested": 18906,
+      "swept": "59.9%"
     },
     {
       "date": "2026-12-30",
       "drop": "EQU",
-      "estimated": 1310,
-      "unattested": 338,
-      "swept": "79.5%"
+      "estimated": 1443,
+      "unattested": 205,
+      "swept": "87.6%"
     },
     {
       "date": "2026-12-31",
       "drop": "NER",
-      "estimated": 2462,
-      "unattested": 2039,
-      "swept": "54.7%"
+      "estimated": 2468,
+      "unattested": 2033,
+      "swept": "54.8%"
     },
     {
       "date": "2027-01-01",
@@ -791,9 +795,9 @@
     {
       "date": "2027-01-02",
       "drop": "PT",
-      "estimated": 7612,
-      "unattested": 1827,
-      "swept": "80.6%"
+      "estimated": 7616,
+      "unattested": 1823,
+      "swept": "80.7%"
     },
     {
       "date": "2027-01-03",
@@ -805,30 +809,30 @@
     {
       "date": "2027-01-04",
       "drop": "IND",
-      "estimated": 2123,
-      "unattested": 1902,
-      "swept": "52.7%"
+      "estimated": 2126,
+      "unattested": 1899,
+      "swept": "52.8%"
     },
     {
       "date": "2027-01-05",
       "drop": "PO",
-      "estimated": 20564,
-      "unattested": 6701,
-      "swept": "75.4%"
+      "estimated": 20576,
+      "unattested": 6689,
+      "swept": "75.5%"
     },
     {
       "date": "2027-01-06",
       "drop": "UNC",
-      "estimated": 2361,
-      "unattested": 1979,
-      "swept": "54.4%"
+      "estimated": 2374,
+      "unattested": 1966,
+      "swept": "54.7%"
     },
     {
       "date": "2027-01-07",
       "drop": "EV",
-      "estimated": 3031,
-      "unattested": 2538,
-      "swept": "54.4%"
+      "estimated": 3043,
+      "unattested": 2526,
+      "swept": "54.6%"
     }
   ]
 }
