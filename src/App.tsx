@@ -23,7 +23,6 @@ import { QuickShareButton } from "./components/QuickShareButton";
 import { YesterdaysBest } from "./components/YesterdaysBest";
 import { ComeBackCard } from "./components/ComeBackCard";
 import { BestWordNewsCard } from "./components/BestWordNewsCard";
-import { WelcomeBackCard } from "./components/WelcomeBackCard";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { useYesterdaysBest, type ResolvedBest } from "./hooks/useYesterdaysBest";
@@ -45,7 +44,6 @@ import {
 } from "./game/achievements";
 import type { Rarity } from "./game/types";
 import { completedWholeMonth } from "./game/perfectMonth";
-import { welcomeBack } from "./game/streakFreeze";
 import { beatBestToday } from "./game/newBest";
 import {
   claimHeaderCelebration,
@@ -53,7 +51,6 @@ import {
   headerCelebrationsHeld,
   type HeaderCelebrationGroup,
 } from "./game/headerCelebrations";
-import { dismissWelcomeBack, welcomeBackDismissedOn } from "./game/storage";
 import {
   averageImprovement,
   improvementCelebrationDue,
@@ -187,27 +184,11 @@ export default function App() {
   // closed.
   const [shareRequests, setShareRequests] = useState(0);
   useEffect(() => setShareRequests(0), [date]);
-  // A player back after their streak ended (see game/streakFreeze.ts), greeted
-  // on today's puzzle until its first word or until the card is closed --
-  // closed for that day, so a reload does not bring it back.
-  const [welcomeDismissedOn, setWelcomeDismissedOn] = useState(welcomeBackDismissedOn);
-  const welcome =
-    isToday && progress.acceptedWords.length === 0 && welcomeDismissedOn !== date
-      ? welcomeBack(streak, date)
-      : null;
-  const closeWelcome = () => {
-    dismissWelcomeBack(date);
-    setWelcomeDismissedOn(date);
-  };
   // Words the player suggested that have since been accepted, thanked for once
   // and only on a day nothing else has shown: the header celebration cards keep
-  // it away themselves, and so do the welcome back, a fold notice and the
-  // burst of a Rare word.
+  // it away themselves, and so do a fold notice and the burst of a Rare word.
   const acceptedSuggestions = useAcceptedSuggestions(
-    welcome !== null ||
-      (isToday && welcomeDismissedOn === date) ||
-      foldNotices.length > 0 ||
-      burst !== null,
+    foldNotices.length > 0 || burst !== null,
   );
 
   // The compact share-link code identifies its origin without exposing a
@@ -568,8 +549,7 @@ export default function App() {
       climb ||
       topRank ||
       burst ||
-      unlocked ||
-      welcome;
+      unlocked;
     if (kind === "other" && busy) return;
     const resolved = yesterdaysBest;
     const show = () => {
@@ -753,12 +733,6 @@ export default function App() {
           firstAcceptance={acceptedSuggestions.firstAcceptance}
           onDismiss={acceptedSuggestions.dismiss}
         />
-        {welcome && (
-          <WelcomeBackCard
-            welcome={welcome}
-            onDismiss={closeWelcome}
-          />
-        )}
         <GuessLog
           acceptedWords={progress.acceptedWords}
           completed={progress.completed}

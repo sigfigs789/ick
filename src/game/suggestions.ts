@@ -151,7 +151,7 @@ const NOTICE_DAY_KEY = "ick:suggestionsNoticeOn";
 /**
  * Whether the accepted-word thank-you may show on `today`. It is a quiet
  * extra, so it gives way to anything else the day has already brought -- a
- * header celebration card, the welcome back, a fold notice (`othersToday`) --
+ * header celebration card or a fold notice (`othersToday`) --
  * and the words wait for a quieter day. Once it has shown on a day it keeps
  * that day, so a reload before it is closed brings it back even after a card
  * has come along since.
